@@ -1,0 +1,75 @@
+select distinct pi.sp_id 'Legacy_SPID'
+, '' 'iPEP_SPID'
+, d.drawingnumber 'Rep Drawing Name'
+, '' 'Remarks'
+, '' 'Plant Group Type'
+, pi.BY_IndCpx +'-'+ area +'-'+ unit 'Plant Group Name'
+, left(pi.itemtag,17) PlantGroupNameFromITEMTAG
+    , pi.itemtag ItemTag
+    , pi.BY_SHORTITEMTAG ShortItemTag
+    , (select codelist_text from ###Schema_1###.codelists where codelist_number = 12001 and codelist_index=pi.BY_IdLetters) IdentificationLetters
+    , pI.BY_ItemSeqNo TagsequenceNo
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 19 and  codelist_index = pr.operfluidcode) FluidCode
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 8 and  codelist_index = pr.NominalDiameter) NominalDiameter 
+    , (select codelist_short_text from ###Schema_1###.codelists cl where codelist_number = 12003 and codelist_index = pr.BY_NOMPRESS) 'DIN Nominal Pressure'
+    , pr.BY_PIPEMATL 'DIN piping material'
+    , (select codelist_short_text from ###Schema_1###.codelists cl where codelist_number = 12004 and codelist_index = pr.BY_GASKET) 'DIN Gasket'
+    , pr.BY_VALVECLASS 'DIN valve class'
+    , pr.pipingmaterialsclass 'Piping Materials Class'
+    , (select codelist_short_text from ###Schema_1###.codelists cl where codelist_number = 6 and  codelist_index = pr.Insulpurpose) 'Insulation Purpose'  
+    , pr.InsulThick 'Insulation Thickness'
+    , (select codelist_text from ###Schema_1###.codelists where codelist_number = 50 and  codelist_index =pr.insulationthksource) 'Insulation Thk Source'
+    , pr.InsulTemp 'Insulation Temp'
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 4 and  codelist_index = pr.htracereqmt) 'Heat Trace Requirement'
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 5 and  codelist_index = pr.htracemedium) 'Heat Trace Medium' 
+    , pr.htracemediumtemp 'Heat Trace Medium Temperature'
+--	, (select codelist_short_text from ###Schema_1###.codelists cl where codelist_number = 6 and  codelist_index = pr.SP_JInsulPurpose)
+--	, (select codelist_short_text from ###Schema_1###.codelists cl where codelist_number = 6 and  codelist_index = pr.SP_JInsulThick)
+    , pr.Slope
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 20 and  codelist_index = pr.FluidSystem) 'Fluid System'
+    , (select codelist_short_text from ###Schema_1###.codelists where codelist_number = 93 and codelist_index = pi.ConstructionStatus) 'Construction Status' 
+--  , pi.ConstructionStatus
+    , (select codelist_text from ###Schema_1###.codelists where codelist_number = 47 and codelist_index =pr.FlowDirection) FlowDirection
+    , m.Description 
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 96 and  codelist_index = pr.piperunclass) piperunclass
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 14 and  codelist_index = pr.piperuntype) piperuntype
+    , (select codelist_short_text from ###Schema_1###.codelists cl where codelist_number = 73 and codelist_index = pr.BY_PMCSystemSource) 'PMC System Source Flag'
+    , (select codelist_short_text from ###Schema_1###.codelists where codelist_number = 73 and codelist_index = pr.sp_ConnectorsZeroLength) ConnectorsZeroLength
+    , (select codelist_text from ###Schema_1###.codelists where codelist_number = 38 and codelist_index = pi.plantitemtype) 'Plant Item Type'
+    , r.FileName RepFilename
+    , d.Path RepDrawingPath
+    , r.SP_FileLastModifiedTime
+
+from ###Schema_2###.t_plantitem pi
+join ###Schema_2###.T_PIPERUN pr on pi.sp_id = pr.sp_id 
+join ###Schema_2###.t_modelitem m on pr.sp_id = m.sp_id and m.sp_istypical <> 2
+left join ###Schema_2###.t_representation r on pr.sp_id = r.sp_modelitemid
+left join ###Schema_2###.t_drawing d on r.sp_drawingid = d.sp_id
+
+left join (select u.sp_id, p.name plant, a.name area, sa.name subarea, u.name unit
+    from ###Schema_3###.T_PlantGroup as u     
+    left join ###Schema_3###.T_PlantGroup  sa on sa.sp_id = u.parentid and sa.plantgrouptype = 11000001
+    left join ###Schema_3###.T_PlantGroup as a on a.sp_id = u.parentid and a.plantgrouptype = 72   
+    left join ###Schema_3###.T_PlantGroup as p on p.sp_id = a.parentid and p.plantgrouptype = 70  
+    where u.plantgrouptype = 65) as un on un.sp_id = pi.sp_plantgroupid
+
+where
+r.filename is not null
+and not pr.piperunclass = 2
+
+/*
+select * from ###Schema_1###.codelists where codelist_number = 93 and codelist_index in ('2',
+'1',
+'10003',
+'8',
+'10006',
+'10008',
+'10004',
+'10007',
+'6',
+'10001',
+'3',
+'10002',
+'10012'
+)
+*/

@@ -1,0 +1,89 @@
+SELECT 
+sp_id  'Legacy_SPID'
+, COV_legacy_sp_id  'iPEP_SPID'
+, drawingnumber  'Rep Drawing Number'
+, PlantGroupName  'Plant Group Name'
+, itemtag  'Item Tag'
+, shortitemtag  'Short ItemTag'
+, IdentificationLetters  'Identification Letters'
+, TagSequenceNo  'Tag Seq No'
+, fluidcode  'Fluid Code'
+, NominalDiameter  'Nominal Diameter'
+, NOMPRESS  'DIN nominal pressure'
+, PIPEMATL  'DIN piping material'
+, GASKET  'DIN Gasket'
+, VALVECLASS  'DIN valve class'
+, pipingmaterialsclass  'Piping Materials Class'
+, Insulpurpose  'Insulation Purpose'
+, Insulthick  'Insulation Thk'
+, insulationthksource  'Insulation Thk Source'
+, InsulTemp  'Insulation Temp'
+, tracereqmt  'Heat Trace Requirement'
+, tracemedium  'Heat Trace Medium'
+, htracemediumtemp  'Heat Trace Medium Temp'
+, Slope  'Slope'
+, fluidSystem  'Fluid System'
+, ConstructionStatus  'Construction Status'
+, FlowDirection  'Flow Direction'
+, Description  'Description'
+, piperunclass  'Pipe Run Class'
+, piperuntype  'Pipe Run Type'
+, PMCSystemSource  'PMC System Source Flag'
+, sp_ConnectorsZeroLength  'Connectors Zero Length'
+, plantitemtype  'Plant Item type'
+, RepFilename  'Rep File Name'
+, RepDrawingPath  'Rep Drawing Path'
+
+FROM
+(
+
+select distinct pi.sp_id
+    , m.COV_legacy_sp_id
+    , un.plant +'-'+un.area +'-'+un.unit PlantGroupName
+    , pi.itemtag
+    , pi.COV_SHORTITEMTAG shortitemtag
+	,(select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists where codelist_number = 12001 and codelist_index=pi.COV_IdLetters) IdentificationLetters
+    , pr.TagSequenceNo
+    , d.drawingnumber
+    , (select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists where codelist_number = 38 and codelist_index = pi.plantitemtype) plantitemtype
+    , (select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 8 and  codelist_index = pr.NominalDiameter) NominalDiameter   
+    , (select codelist_short_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 6 and  codelist_index = pr.Insulpurpose) Insulpurpose   
+    , pr.Insulthick
+    , (select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists where codelist_number = 50 and  codelist_index =pr.insulationthksource)insulationthksource 
+    , pr.InsulTemp
+    , pr.Slope 
+    , (select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 14 and  codelist_index = pr.piperuntype) piperuntype
+    , (select codelist_short_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 19 and  codelist_index = pr.operfluidcode) fluidcode
+    , (select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 20 and  codelist_index = pr.FluidSystem) fluidSystem
+    , pr.pipingmaterialsclass
+    , (select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 96 and  codelist_index = pr.piperunclass) piperunclass
+    , (select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 4 and  codelist_index = pr.htracereqmt) tracereqmt
+    , (select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 5 and  codelist_index = pr.htracemedium) tracemedium 
+    , htracemediumtemp
+    , (select codelist_short_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 12004 and codelist_index = pr.COV_GASKET) GASKET
+    , (select codelist_short_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 12005 and codelist_index = pr.COV_NOMPRESS) NOMPRESS
+    , (select codelist_short_text from P_SPPID_AP_CAO_Mpidd.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus)ConstructionStatus  
+    , (select codelist_text from P_SPPID_AP_CAO_Mpidd.codelists where codelist_number = 47 and codelist_index =pr.FlowDirection)FlowDirection
+    , m.Description 
+    , pr.COV_PIPEMATL PIPEMATL
+    , pr.COV_VALVECLASS VALVECLASS
+	,pr.sp_ConnectorsZeroLength ConnectorsZeroLength
+    , (select codelist_short_text from P_SPPID_AP_CAO_Mpidd.codelists cl where codelist_number = 73 and codelist_index = pr.COV_PMCSystemSource) PMCSystemSource
+	,d.Path RepDrawingPath
+    ,r.FileName RepFilename
+    ,r.SP_FileLastModifiedTime
+
+from P_SPPID_AP_CAO_Mpid.t_plantitem pi
+join P_SPPID_AP_CAO_Mpid.T_PIPERUN pr on pi.sp_id = pr.sp_id 
+join P_SPPID_AP_CAO_Mpid.t_modelitem m on pr.sp_id = m.sp_id and m.sp_istypical <> 2
+left join P_SPPID_AP_CAO_Mpid.t_representation r on pr.sp_id = r.sp_modelitemid
+left join P_SPPID_AP_CAO_Mpid.t_drawing d on r.sp_drawingid = d.sp_id
+left join (select u.sp_id, p.name plant, a.name area, sa.name subarea, u.name unit
+    from P_SPPID_AP_CAO_M.t_plantgroup u
+    left join P_SPPID_AP_CAO_M.T_PlantGroup  sa on sa.sp_id = u.parentid and sa.plantgrouptype = 11000001
+    left join P_SPPID_AP_CAO_M.t_plantgroup a on a.sp_id = u.parentid and a.plantgrouptype = 72
+    left join P_SPPID_AP_CAO_M.t_plantgroup p on p.sp_id = a.parentid and p.plantgrouptype = 70
+    where u.plantgrouptype = 65) un on un.sp_id = pi.sp_plantgroupid 
+where and d.Path like '%###path###%';
+
+)#TEMP

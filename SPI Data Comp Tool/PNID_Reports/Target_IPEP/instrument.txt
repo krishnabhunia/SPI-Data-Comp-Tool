@@ -1,0 +1,184 @@
+select [Legacy_SPID],[iPEP_SPID],[Rep Drawing Name],[Remarks],[Plant Group Name],[ItemTag_Source_format],[ItemTag_iPEP],[ShortItemTag],[Measured Variable Code],[Instr Type Modifier],[Loop Func],[Tag Seq No],[Tag Suffix],[DIN nominal pressure],[DIN valve class],[Instr Class],[Instr Type],[Nominal Diameter],[Fail Action],[Sig Point 3 Description],[Sig Point 4 Description],[Sig Point 5 Description],[Sig Point 6 Description],[Sig Point 7 Description],[Sig Point 8 Description],[PU Vendor],[Construction Status],[Description],[Location],[Special Part No],[Plant Item Type],[Insulation Purpose],[Insulation Thickness],[Insulation Thk Source],[Heat Trace Requirement],[Heat Trace Medium],[Heat Trace Medium Temperature],[PipeRun Item Tag],[Name],[Safety Classification],[Safety Relevant],[safety_label],[Increased Reliability],[Quality Relevant],[increased_label],[radioactive],[radioactive_label],[Rep File Name],[Rep Drawing Path],[Plant Group Type],[Last Modified By],[Last Modified Time] 
+from (
+select DISTINCT pi.sp_id
+, m.COV_legacy_sp_id 'Legacy_SPID'
+, pi.sp_id 'iPEP_SPID'
+, d.drawingnumber 'Rep Drawing Name'
+,'' Remarks
+, u.name 'Plant Group Name'
+, CASE 
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-TT' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'E'),len(pi.itemtag) -1 , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-YC' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'C'),len(pi.itemtag) -1 , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-YV' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'V'),len(pi.itemtag) -1 , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-LT' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'E'),len(pi.itemtag) -1 , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-AT' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'E'),len(pi.itemtag) -1 , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-1, 2) = '-E' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, 'E'),len(pi.itemtag)  , 2,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-FT' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'E'),len(pi.itemtag) -1 , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-PT' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'E'),len(pi.itemtag) -1 , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-1, 2) = '-P' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, 'E'),len(pi.itemtag)  , 2,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-1, 2) = '-T' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, 'E'),len(pi.itemtag)  , 2,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-IZ' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'IZ'),len(pi.itemtag)  , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-1, 2) = '-L' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, 'E'),len(pi.itemtag)  , 2,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-1, 2) = '-C' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, ''),len(pi.itemtag)  -1, 2,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-IS' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'IS'),len(pi.itemtag)  , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-1, 2) = '-S' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, 'S'),len(pi.itemtag)  , 2,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-1, 2) = '-M' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, 'M'),len(pi.itemtag)  , 2,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-1, 2) = '-I' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, 'I'),len(pi.itemtag)  , 2,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-IA' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'IA'),len(pi.itemtag)  , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-1, 2) = '-Z' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, ''),len(pi.itemtag) -1 , 2,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-4, 5) = '-IASZ' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 8, 0, 'IASZ'),len(pi.itemtag)  , 5,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-5, 6) = '-ICASZ' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 9, 0, 'ICASZ'),len(pi.itemtag)  , 6,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-OZ' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, ''),len(pi.itemtag)  -2, 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-3, 4) = '-IAZ' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 7, 0, ''),len(pi.itemtag)  -3, 4,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-UZ' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, ''),len(pi.itemtag)  -2, 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-3, 4) = '-IAS' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 7, 0, ''),len(pi.itemtag)  -3, 4,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-PV' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 6, 0, 'V'),len(pi.itemtag) -1 , 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-QI' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, ''),len(pi.itemtag)  -2, 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-3, 4) = '-ICA' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 7, 0, ''),len(pi.itemtag)  -3, 4,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-5, 6) = '-DICAZ' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 9, 0, ''),len(pi.itemtag)  -5, 6,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-IC' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, ''),len(pi.itemtag)  -2, 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-OS' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, ''),len(pi.itemtag)  -2, 3,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-3, 4) = '-DIA' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 7, 0, ''),len(pi.itemtag)  -3, 4,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-4, 5) = '-DIAZ' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 8, 0, ''),len(pi.itemtag)  -4, 5,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-3, 4) = '-FT1' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 7, 0, ''),len(pi.itemtag)  -3, 4,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-3, 4) = '-FT2' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 7, 0, ''),len(pi.itemtag)  -3, 4,'')
+	When substring(pi.itemtag, LEN(pi.itemtag)-2, 3) = '-DI' THEN STUFF(STUFF(pi.itemtag, len(pi.itemtag) - 5, 0, ''),len(pi.itemtag)  -2, 3,'')
+	
+	when i.tagsequenceno is null Then null
+	else CONCAT(u.name,'-',i.measuredvariablecode,i.tagsequenceno)
+end ItemTag_Source_format
+
+, pi.itemtag ItemTag_iPEP
+, pi.COV_ShortItemTag ShortItemTag
+, i.measuredvariablecode 'Measured Variable Code'
+, i.instrumenttypemodifier 'Instr Type Modifier'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 12009 and codelist_index = i.COV_LoopFunc) 'Loop Func'
+, i.tagsequenceno 'Tag Seq No'
+, i.TagSuffix 'Tag Suffix'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 12005 and  codelist_index =ic.COV_NomPress) 'DIN nominal pressure'
+, ic.COV_ValveClass 'DIN valve class'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 29 and codelist_index = i.instrumentclass) as 'Instr Class'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 28 and codelist_index = i.instrumenttype) as 'Instr Type'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 8 and  codelist_index = ic.NominalDiameter) 'Nominal Diameter'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 12 and  codelist_index = im.failureaction) 'Fail Action'
+,(select description
+  from P_SPPID_###schemaname###_Mpid.T_ModelItem as m1
+  join P_SPPID_###schemaname###_Mpid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 3) as 'Sig Point 3 Description'
+  , (select description
+  from P_SPPID_###schemaname###_Mpid.T_ModelItem as m1
+  join P_SPPID_###schemaname###_Mpid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 4) as 'Sig Point 4 Description'
+  , (select description
+  from P_SPPID_###schemaname###_Mpid.T_ModelItem as m1
+  join P_SPPID_###schemaname###_Mpid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 5) as 'Sig Point 5 Description'
+  , (select description
+  from P_SPPID_###schemaname###_Mpid.T_ModelItem as m1
+  join P_SPPID_###schemaname###_Mpid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 6) as 'Sig Point 6 Description'
+  , (select description
+  from P_SPPID_###schemaname###_Mpid.T_ModelItem as m1
+  join P_SPPID_###schemaname###_Mpid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 7) as 'Sig Point 7 Description'
+  , (select description
+  from P_SPPID_###schemaname###_Mpid.T_ModelItem as m1
+  join P_SPPID_###schemaname###_Mpid.T_SignalPoint  as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 8) as 'Sig Point 8 Description'
+, i.COV_PUVendor 'PU Vendor'
+, (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus) 'Construction Status'
+--, pi.ConstructionStatus
+, m.description 'Description'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 17 and  codelist_index =i.Location) 'Location'
+, pi.COV_SpecialPartNo 'Special Part No'
+, (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 38 and codelist_index = pi.plantitemtype) as 'Plant Item Type'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 6 and  codelist_index = i.insulpurpose) 'Insulation Purpose'
+, i.insulthick 'Insulation Thickness'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 50 and  codelist_index =i.insulationthksource) 'Insulation Thk Source'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 4 and  codelist_index = i.htracereqmt) 'Heat Trace Requirement'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 5 and  codelist_index = i.htracemedium) 'Heat Trace Medium' 
+, i.htracemediumtemp 'Heat Trace Medium Temperature'
+, (select pi.ItemTag from P_SPPID_###schemaname###_Mpid.T_PlantItem pi where pi.SP_ID=ic.SP_PipeRunID) 'PipeRun Item Tag'
+, r.FileName 'Rep File Name'
+, pi.name 'Name'
+--, pi.aabbcc_code
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 10 and  codelist_index = i.safetyclassification) as 'Safety Classification'
+, case i.COV_IsSafetyRelevant
+                when  1 then 'False'
+                when  2 then 'True'
+end as 'Safety Relevant'
+,case
+	(select count(9) from P_SPPID_###schemaname###_Mpid.T_Representation as r1
+	join P_SPPID_###schemaname###_Mpid.T_LabelPersist as l1 on r1.sp_id = l1.sp_id
+	where l1.sp_representationid = r.sp_id
+	and lower(r1.filename) like  '\%\safety relevant.sym')
+                when 0 then 'No_Safety_Label'
+                when 1 then 'Has_Safety_Label'
+	else 'Has_many_Safety_Labels' 
+	end as safety_label
+,case COV_IncreasedReliability
+	when  1 then 'False'
+	when  2 then 'True'
+	end as 'Increased Reliability'
+,case i.COV_IsQualityRelevant
+                when  1 then 'False'
+                when  2 then 'True'
+end as 'Quality Relevant'
+, d.Path 'Rep Drawing Path'
+
+
+, case
+	(select count(9)
+	from P_SPPID_###schemaname###_Mpid.T_Representation as r1
+	join P_SPPID_###schemaname###_Mpid.T_LabelPersist as l1 on r1.sp_id = l1.sp_id
+	where l1.sp_representationid = r.sp_id
+	and lower(r1.filename) like  '\%\increased reliability.sym')
+                when  0 then 'No_Increased_Label'
+                when 1 then 'Has_Increased_Label'
+                else 'Has_many_Increased_Labels'
+	end as increased_label
+, case i.COV_IsRadioactive
+                when 1 then 'False'
+                when 2 then 'True'
+end as radioactive
+, case
+  (select count(9)
+  from P_SPPID_###schemaname###_Mpid.T_Representation r1
+  join P_SPPID_###schemaname###_Mpid.T_LabelPersist l1 on r1.sp_id = l1.sp_id
+  where l1.sp_representationid = r.sp_id
+  and lower(r1.filename) like  '\%\radiometric measuring.sym')
+                when 0 then 'No_Radioactive_Label'
+                when 1 then 'Has_Radioactive_Label'
+                else 'Has_many_Radioactive_Labels'
+  end as radioactive_label
+, (select entity_description from p_sppid_###schemaname###_md.entities where entity_number = u.plantgrouptype) 'Plant Group Type'
+, d.SP_AccessedBy 'Last Modified By' 
+, r.SP_FileLastModifiedTime 'Last Modified Time'
+
+from P_SPPID_###schemaname###_Mpid.T_PlantItem as pi
+join P_SPPID_###schemaname###_Mpid.T_Instrument as i on pi.sp_id = i.sp_id
+left join P_SPPID_###schemaname###_Mpid .T_InlineComp as ic on pi.SP_ID=ic.SP_ID 
+join P_SPPID_###schemaname###_Mpid.T_ModelItem as m on i.sp_id = m.sp_id and m.sp_istypical <> 2
+left join P_SPPID_###schemaname###_Mpid.T_Representation as r on i.sp_id = r.sp_modelitemid
+left join P_SPPID_###schemaname###_Mpid.T_Drawing as d on r.sp_drawingid = d.sp_id
+
+left join P_SPPID_###schemaname###_Mpid.T_InstrFailMode im on im.SP_instrumentID = i.sp_id
+left join P_SPPID_###schemaname###_M.t_plantgroup u ON u.SP_ID = pi.SP_PlantGroupID
+
+where
+d.Path like '%###path###%'
+###fullconstraint_1###
+and r.filename is not null) Temp;
+
+/*
+and d.name not like '%PAT%'
+AND d.path not like '%CAOBISC-A332%'
+Constructions Status to be Vlookup with index Value 
+select * from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 93
+*/

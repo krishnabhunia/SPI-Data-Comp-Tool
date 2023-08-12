@@ -1,0 +1,49 @@
+select
+ pi.sp_id Legacy_SPID
+    , '' iPEP_SPID
+    ,un.plant +'-'+un.area +'-'+un.unit PlantGroupName 
+    , pi.itemtag
+    , pi.BY_ShortItemTag ShortItemTag
+    ,(select codelist_text from SPPID_IOBC_UTLpidd.codelists where codelist_number = 12001 and codelist_index=pi.BY_IdLetters) IdentificationLetters
+    , m.description
+    , pi.name
+    , d.drawingnumber
+    , (select codelist_short_text from SPPID_IOBC_UTLpidd.codelists cl where codelist_number = 38 and codelist_index = pi.plantitemtype) plantitemtype
+    , pi.aabbcc_code
+    , eq.tagsequenceno      
+    , (select codelist_text from SPPID_IOBC_UTLpidd.codelists cl where codelist_number = 22 and  codelist_index = eq.equipmenttype) equipmenttype     
+    , (select codelist_text from SPPID_IOBC_UTLpidd.codelists cl where codelist_number = 23 and  codelist_index = eq.equipmentsubclass) equipmentsubclass
+    , (select codelist_text from SPPID_IOBC_UTLpidd.codelists cl where codelist_number = 24 and  codelist_index = eq.class) equipmentclass
+    , (select codelist_text from SPPID_IOBC_UTLpidd.codelists cl where codelist_number = 45 and  codelist_index = eq.insultype) insulationtype
+    , eq.insulthick
+    , (select codelist_text from SPPID_IOBC_UTLpidd.codelists cl where codelist_number = 6 and  codelist_index = eq.insulpurpose) insulationpurpose
+    , (select codelist_text from SPPID_IOBC_UTLpidd.codelists where codelist_number = 50 and  codelist_index =eq.insulationthksource)insulationthksource
+    , (select codelist_text from SPPID_IOBC_UTLpidd.codelists cl where codelist_number = 4 and  codelist_index = eq.htracereqmt) tracereqmt
+    , (select codelist_text from SPPID_IOBC_UTLpidd.codelists cl where codelist_number = 6 and  codelist_index = eq.htracemedium) tracemedium 
+    , eq.htracemediumtemp
+    , eq.BY_ClassNo CLASSNO
+    , eq.BY_EquipmentNo EQUIPMENTNO
+    , eq.BY_FabricationNo FABRICATIONNO
+    , eq.BY_ManDwgNo MANDWGNO
+    , eq.BY_Material MATERIAL
+    , eq.BY_OperPressRange OperatingPressureRange
+    , eq.BY_OperTempRange OperatingTemperatureRange
+    ,(select codelist_short_text from SPPID_IOBC_UTLpidd.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus)ConstructionStatus  
+    , eq.BY_Remark REMARK
+    , eq.BY_TechDat1 TechnDat1
+    , eq.BY_TechDat2 TechnDat2
+    , eq.BY_TechDat3 TechnDat3
+    , eq.BY_WNo WNO
+    ,d.Path RepDrawingPath
+    ,r.FileName RepFilename
+    ,r.SP_FileLastModifiedTime
+from SPPID_IOBC_UTLdpid.t_plantitem pi
+join SPPID_IOBC_UTLdpid.t_equipment eq on pi.sp_id = eq.sp_id
+join SPPID_IOBC_UTLdpid.t_modelitem m on eq.sp_id = m.sp_id and m.sp_istypical <> 2
+left join SPPID_IOBC_UTLdpid.t_representation r on eq.sp_id = r.sp_modelitemid
+left join SPPID_IOBC_UTLdpid.t_drawing d on r.sp_drawingid = d.sp_id
+left join (select u.sp_id, p.name plant, a.name area, null subarea, u.name unit
+    from SPPID_IOBC_UTL.t_plantgroup u
+    left join SPPID_IOBC_UTL.t_plantgroup a on a.sp_id = u.parentid and a.plantgrouptype = 72
+    left join SPPID_IOBC_UTL.t_plantgroup p on p.sp_id = a.parentid and p.plantgrouptype = 70
+    where u.plantgrouptype = 65) un on un.sp_id = pi.sp_plantgroupid;

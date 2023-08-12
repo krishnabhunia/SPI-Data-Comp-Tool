@@ -1,0 +1,151 @@
+select [Legacy_SPID], [iPEP_SPID], [Rep Drawing Name], [Remarks], [Plant Group Name], [ItemTag_Source_format], [ItemTag_iPEP], [ShortItemTag], [Measured Variable Code], [Instr Type Modifier], [Loop Func], [Tag Seq No], [Tag Suffix],[DIN nominal pressure], [DIN valve class], [Instr Class], [Instr Type], [Nominal Diameter], [Fail Action], [Sig Point 3 Description], [Sig Point 4 Description], [Sig Point 5 Description], [Sig Point 6 Description], [Sig Point 7 Description], [Sig Point 8 Description], [PU Vendor], [Construction Status], [Description], [Location], [Special Part No], [Plant Item Type], [Insulation Purpose], [Insulation Thickness], [Insulation Thk Source], [Heat Trace Requirement], [Heat Trace Medium], [Heat Trace Medium Temperature], [PipeRun Item Tag], [Name], [Safety Classification], [Safety Relevant], [safety_label], [Increased Reliability], [Quality Relevant], [increased_label], [radioactive], [radioactive_label], [Rep File Name], [Rep Drawing Path], [Plant Group Type], [Last Modified By], [Last Modified Time] 
+
+from (
+select distinct pi.sp_id 'Legacy_SPID'
+, '' 'iPEP_SPID'
+, d.drawingnumber 'Rep Drawing Name'
+, '' 'Remarks'
+, pi.BY_IndCpx + '-' + pi.BY_ProcArea + '-' + pi.BY_SubProcess 'Plant Group Name'
+
+, pi.itemtag ItemTag_Source_format
+, '' ItemTag_iPEP
+, pi.BY_ShortItemTag ShortItemTag
+, i.measuredvariablecode 'Measured Variable Code'
+, (select i.instrumenttypemodifier where  i.instrumentclass in (1,3)) 'Instr Type Modifier'
+, (select i.instrumenttypemodifier where  i.instrumentclass in (4,5)) 'Loop Func'
+, i.tagsequenceno 'Tag Seq No'
+, i.TagSuffix 'Tag Suffix'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 12003 and  codelist_index =ic.BY_NomPress) 'DIN nominal pressure'
+, ic.BY_ValveClass 'DIN valve class'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 29 and codelist_index = i.instrumentclass) as 'Instr Class'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 28 and codelist_index = i.instrumenttype) as 'Instr Type'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 8 and  codelist_index = ic.NominalDiameter) 'Nominal Diameter'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 12 and  codelist_index = im.failureaction) 'Fail Action'
+, (select description
+  from ###Schema_1###pid.T_ModelItem as m1
+  join ###Schema_1###pid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 3) as 'Sig Point 3 Description'
+  ,(select description
+  from ###Schema_1###pid.T_ModelItem as m1
+  join ###Schema_1###pid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 4) as 'Sig Point 4 Description'
+  ,(select description
+  from ###Schema_1###pid.T_ModelItem as m1
+  join ###Schema_1###pid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 5) as 'Sig Point 5 Description'
+  ,(select description
+  from ###Schema_1###pid.T_ModelItem as m1
+  join ###Schema_1###pid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 6) as 'Sig Point 6 Description'
+  ,(select description
+  from ###Schema_1###pid.T_ModelItem as m1
+  join ###Schema_1###pid.T_SignalPoint as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 7) as 'Sig Point 7 Description'
+  ,(select description
+  from ###Schema_1###pid.T_ModelItem as m1
+  join ###Schema_1###pid.T_SignalPoint  as t1 on m1.sp_id = t1.sp_id
+  where t1.sp_plantitemid = i.sp_id
+  and signalpointnumber = 8) as 'Sig Point 8 Description'
+, i.BY_PUVendor 'PU Vendor'
+, (select codelist_short_text from ###Schema_1###pidd.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus) 'Construction Status'  
+, m.description 'Description'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 17 and  codelist_index =i.Location) 'Location'
+, pi.BY_SpecialPartNo 'Special Part No'
+,(select codelist_short_text from ###Schema_1###pidd.codelists where codelist_number = 38 and codelist_index = pi.plantitemtype) as 'Plant Item Type'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 6 and  codelist_index = i.insulpurpose) 'Insulation Purpose'
+, i.insulthick 'Insulation Thickness'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 50 and  codelist_index =i.insulationthksource) 'Insulation Thk Source'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 4 and  codelist_index = i.htracereqmt) 'Heat Trace Requirement'
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 5 and  codelist_index = i.htracemedium) 'Heat Trace Medium' 
+, i.htracemediumtemp 'Heat Trace Medium Temperature'
+,(select pi.ItemTag from ###Schema_1###pid.T_PlantItem pi where pi.SP_ID=ic.SP_PipeRunID) 'PipeRun Item Tag'
+, r.FileName 'Rep File Name'
+, pi.name 'Name'
+--, pi.aabbcc_code
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 10 and  codelist_index = i.safetyclassification) as 'Safety Classification'
+,case i.BY_IsSafetyRelevant
+                when  1 then 'False'
+                when  2 then 'True'
+end as 'Safety Relevant'
+,case
+	(select count(9) from ###Schema_1###pid.T_Representation as r1
+	join ###Schema_1###pid.T_LabelPersist as l1 on r1.sp_id = l1.sp_id
+	where l1.sp_representationid = r.sp_id
+	and lower(r1.filename) like  '\%\safety relevant.sym')
+                when 0 then 'No_Safety_Label'
+                when 1 then 'Has_Safety_Label'
+	else 'Has_many_Safety_Labels' 
+	end as safety_label
+,case BY_IncreasedReliability
+	when  1 then 'False'
+	when  2 then 'True'
+	end as 'Increased Reliability'
+,case i.BY_IsQualityRelevant
+                when  1 then 'False'
+                when  2 then 'True'
+end as 'Quality Relevant'
+, d.Path 'Rep Drawing Path'
+
+
+,case
+	(select count(9)
+	from ###Schema_1###pid.T_Representation as r1
+	join ###Schema_1###pid.T_LabelPersist as l1 on r1.sp_id = l1.sp_id
+	where l1.sp_representationid = r.sp_id
+	and lower(r1.filename) like  '\%\increased reliability.sym')
+                when  0 then 'No_Increased_Label'
+                when 1 then 'Has_Increased_Label'
+                else 'Has_many_Increased_Labels'
+	end as increased_label
+,case i.BY_IsRadioactive
+                when 1 then 'False'
+                when 2 then 'True'
+end as radioactive
+,case
+(select count(9)
+  from ###Schema_1###pid.T_Representation r1
+  join ###Schema_1###pid.T_LabelPersist l1 on r1.sp_id = l1.sp_id
+  where l1.sp_representationid = r.sp_id
+  and lower(r1.filename) like  '\%\radiometric measuring.sym')
+                when 0 then 'No_Radioactive_Label'
+                when 1 then 'Has_Radioactive_Label'
+                else 'Has_many_Radioactive_Labels'
+end as radioactive_label
+, '' 'Plant Group Type'
+, d.SP_AccessedBy 'Last Modified By' 
+, r.SP_FileLastModifiedTime 'Last Modified Time'
+
+/*
+--Antwerp
+, pi.BY_ItemTag_Alt 'Alternate Item Tag'
+, pi.BY_Item_Alt 'Alternate label level 1'
+, pi.BY_IndCpx_Alt 'Alternate label level 2'
+, pi.BY_ALT_AKZ 'OLD_ITEMTAG'
+-- Antwerp
+*/
+
+from 
+###Schema_1###pid.T_PlantItem as pi
+join ###Schema_1###pid.T_Instrument as i on pi.sp_id = i.sp_id
+left join ###Schema_1###pid.T_InlineComp as ic on pi.SP_ID=ic.SP_ID 
+join ###Schema_1###pid.T_ModelItem as m on i.sp_id = m.sp_id and m.sp_istypical <> 2
+left join ###Schema_1###pid.T_Representation as r on i.sp_id = r.sp_modelitemid
+left join ###Schema_1###pid.T_Drawing as d on r.sp_drawingid = d.sp_id
+
+left join ###Schema_1###pid.T_InstrFailMode im on im.SP_instrumentID = i.sp_id
+left join (select u.sp_id, p.name plant, a.name area, sa.name subarea, u.name unit
+    from ###Schema_2###.T_PlantGroup as u     
+    left join ###Schema_2###.T_PlantGroup  sa on sa.sp_id = u.parentid and sa.plantgrouptype = 11000001
+    left join ###Schema_2###.T_PlantGroup as a on a.sp_id = u.parentid and a.plantgrouptype = 72   
+    left join ###Schema_2###.T_PlantGroup as p on p.sp_id = a.parentid and p.plantgrouptype = 70  
+    where u.plantgrouptype = 65) as un on un.sp_id = pi.sp_plantgroupid
+
+where
+d.name is not null
+and r.filename is not null
+) Temp;

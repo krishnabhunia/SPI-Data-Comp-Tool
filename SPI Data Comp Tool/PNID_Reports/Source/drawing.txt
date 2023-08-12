@@ -1,0 +1,8 @@
+select Name DrawingName
+, DrawingNumber
+, Title DrawingTitle
+, Description
+, path 'Drawing Path'
+, Revision RevisionNumber 
+from ###Schema_1###pid.T_Drawing
+ORDER BY Path

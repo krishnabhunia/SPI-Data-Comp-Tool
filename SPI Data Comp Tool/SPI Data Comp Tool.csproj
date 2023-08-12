@@ -1,0 +1,537 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" />
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1F75F22C-9625-428F-9941-CC3DA205ECD3}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>SPI_Data_Comp_Tool</RootNamespace>
+    <AssemblyName>SPI Data Comp Tool</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <PublishUrl>D:\Krishna\Projects\SPI\SPI_SPEL_SPPID Utility Setup File\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>false</MapFileExtensions>
+    <ProductName>SPI_SPEL_SPPID %28Oracle and SQL Compare%29 Utility</ProductName>
+    <PublisherName>LTTS %28Larsen &amp; Toubro Technological Services%29</PublisherName>
+    <ApplicationRevision>15</ApplicationRevision>
+    <ApplicationVersion>7.5.4.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <CreateDesktopShortcut>true</CreateDesktopShortcut>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>B1AE481068E1C4668EBD1FD38DE984D01B04BADD</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>SPI Data Comp Tool_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>false</SignManifests>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>logo1.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup />
+  <PropertyGroup />
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug_Form\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <OutputPath>bin\x64\Debug_Form\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ClosedXML, Version=0.95.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ClosedXML.0.95.4\lib\net46\ClosedXML.dll</HintPath>
+    </Reference>
+    <Reference Include="DocumentFormat.OpenXml, Version=2.13.1.0, Culture=neutral, PublicKeyToken=8fb06cb64d019a17, processorArchitecture=MSIL">
+      <HintPath>..\packages\DocumentFormat.OpenXml.2.13.1\lib\net46\DocumentFormat.OpenXml.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="EPPlus, Version=5.7.3.0, Culture=neutral, PublicKeyToken=ea159fdaa78159a1, processorArchitecture=MSIL">
+      <HintPath>..\packages\EPPlus.5.7.3\lib\net45\EPPlus.dll</HintPath>
+    </Reference>
+    <Reference Include="ExcelDataReader, Version=3.6.0.0, Culture=neutral, PublicKeyToken=93517dbe6a4012fa, processorArchitecture=MSIL">
+      <HintPath>..\packages\ExcelDataReader.3.6.0\lib\net45\ExcelDataReader.dll</HintPath>
+    </Reference>
+    <Reference Include="ExcelDataReader.DataSet, Version=3.6.0.0, Culture=neutral, PublicKeyToken=93517dbe6a4012fa, processorArchitecture=MSIL">
+      <HintPath>..\packages\ExcelDataReader.DataSet.3.6.0\lib\net35\ExcelDataReader.DataSet.dll</HintPath>
+    </Reference>
+    <Reference Include="ExcelNumberFormat, Version=1.1.0.0, Culture=neutral, PublicKeyToken=23c6f5d73be07eca, processorArchitecture=MSIL">
+      <HintPath>..\packages\ExcelNumberFormat.1.1.0\lib\net20\ExcelNumberFormat.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=5.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.5.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IO.RecyclableMemoryStream, Version=2.1.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IO.RecyclableMemoryStream.2.1.3\lib\net462\Microsoft.IO.RecyclableMemoryStream.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Office.Interop.Excel.15.0.4795.1000\lib\net20\Microsoft.Office.Interop.Excel.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Oracle.ManagedDataAccess, Version=4.122.21.1, Culture=neutral, PublicKeyToken=89b483f429c47342, processorArchitecture=MSIL">
+      <HintPath>..\packages\Oracle.ManagedDataAccess.21.3.0\lib\net462\Oracle.ManagedDataAccess.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.Annotations, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ComponentModel.Annotations.5.0.0\lib\net461\System.ComponentModel.Annotations.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Configuration.Install" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.FileSystem.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IO.FileSystem.Primitives.4.3.0\lib\net46\System.IO.FileSystem.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.Packaging, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IO.Packaging.5.0.0\lib\net46\System.IO.Packaging.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Management" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security" />
+    <Reference Include="System.Text.Encodings.Web, Version=5.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.5.0.1\lib\net461\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json, Version=5.0.0.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.5.0.2\lib\net461\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks" />
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AboutBox1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AboutBox1.Designer.cs">
+      <DependentUpon>AboutBox1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Common_Data.cs" />
+    <Compile Include="Compare_Multiples_Forms.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Compare_Multiples_Forms.Designer.cs">
+      <DependentUpon>Compare_Multiples_Forms.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ComparisonProcessWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ComparisonProcessWindow.Designer.cs">
+      <DependentUpon>ComparisonProcessWindow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CustomisedExcel.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CustomisedExcel.Designer.cs">
+      <DependentUpon>CustomisedExcel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DB Comparison.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DB Comparison.Designer.cs">
+      <DependentUpon>DB Comparison.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form1.Designer.cs">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Logs.cs" />
+    <Compile Include="OracleAndSQLConnection.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="OracleAndSQLConnection.Designer.cs">
+      <DependentUpon>OracleAndSQLConnection.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SPI FK Extraction.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SPI FK Extraction.Designer.cs">
+      <DependentUpon>SPI FK Extraction.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SPIDeltaChangeTrackerOptimised.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SPIDeltaChangeTrackerOptimised.Designer.cs">
+      <DependentUpon>SPIDeltaChangeTrackerOptimised.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UserControlDataBase.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControlDataBase.Designer.cs">
+      <DependentUpon>UserControlDataBase.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ExcelFileReadCustomControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ExcelFileReadCustomControl.Designer.cs">
+      <DependentUpon>ExcelFileReadCustomControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Excel_Excel_Comparison.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Excel_Excel_Comparison.Designer.cs">
+      <DependentUpon>Excel_Excel_Comparison.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Execute Excel Scripts Form.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Execute Excel Scripts Form.Designer.cs">
+      <DependentUpon>Execute Excel Scripts Form.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form_Rules.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_Rules.Designer.cs">
+      <DependentUpon>Form_Rules.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Generate IUD Script Form.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Generate IUD Script Form.Designer.cs">
+      <DependentUpon>Generate IUD Script Form.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MergeLogsExport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MergeLogsExport.Designer.cs">
+      <DependentUpon>MergeLogsExport.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PreMergingTool_Form.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PreMergingTool_Form.Designer.cs">
+      <DependentUpon>PreMergingTool_Form.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pre_Merging_Duplicacy_Form.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pre_Merging_Duplicacy_Form.Designer.cs">
+      <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="LTTS SPI Utility.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LTTS SPI Utility.Designer.cs">
+      <DependentUpon>LTTS SPI Utility.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SPIDeltaChangeLegacyID.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SPIDeltaChangeLegacyID.Designer.cs">
+      <DependentUpon>SPIDeltaChangeLegacyID.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SPIDeltaChangeTracker.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SPIDeltaChangeTracker.Designer.cs">
+      <DependentUpon>SPIDeltaChangeTracker.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SPI_Analysis.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SPI_Analysis.Designer.cs">
+      <DependentUpon>SPI_Analysis.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SPI_Analysis_View.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SPI_Analysis_View.Designer.cs">
+      <DependentUpon>SPI_Analysis_View.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SPI_Spec_Note_Creation_Utility.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SPI_Spec_Note_Creation_Utility.Designer.cs">
+      <DependentUpon>SPI_Spec_Note_Creation_Utility.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SQL_DB_To_Excel.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SQL_DB_To_Excel.Designer.cs">
+      <DependentUpon>SQL_DB_To_Excel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Table Extraction After Delta.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Table Extraction After Delta.Designer.cs">
+      <DependentUpon>Table Extraction After Delta.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Test.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Test.Designer.cs">
+      <DependentUpon>Test.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UserProfileForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UserProfileForm.Designer.cs">
+      <DependentUpon>UserProfileForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="User_Settings.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="User_Settings.Designer.cs">
+      <DependentUpon>User_Settings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewForMultiReference.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewForMultiReference.Designer.cs">
+      <DependentUpon>ViewForMultiReference.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="AboutBox1.resx">
+      <DependentUpon>AboutBox1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Compare_Multiples_Forms.resx">
+      <DependentUpon>Compare_Multiples_Forms.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ComparisonProcessWindow.resx">
+      <DependentUpon>ComparisonProcessWindow.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CustomisedExcel.resx">
+      <DependentUpon>CustomisedExcel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DB Comparison.resx">
+      <DependentUpon>DB Comparison.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OracleAndSQLConnection.resx">
+      <DependentUpon>OracleAndSQLConnection.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SPI FK Extraction.resx">
+      <DependentUpon>SPI FK Extraction.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SPIDeltaChangeTrackerOptimised.resx">
+      <DependentUpon>SPIDeltaChangeTrackerOptimised.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UserControlDataBase.resx">
+      <DependentUpon>UserControlDataBase.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ExcelFileReadCustomControl.resx">
+      <DependentUpon>ExcelFileReadCustomControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Excel_Excel_Comparison.resx">
+      <DependentUpon>Excel_Excel_Comparison.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Execute Excel Scripts Form.resx">
+      <DependentUpon>Execute Excel Scripts Form.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_Rules.resx">
+      <DependentUpon>Form_Rules.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Generate IUD Script Form.resx">
+      <DependentUpon>Generate IUD Script Form.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MergeLogsExport.resx">
+      <DependentUpon>MergeLogsExport.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PreMergingTool_Form.resx">
+      <DependentUpon>PreMergingTool_Form.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pre_Merging_Duplicacy_Form.resx">
+      <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="LTTS SPI Utility.resx">
+      <DependentUpon>LTTS SPI Utility.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SPIDeltaChangeLegacyID.resx">
+      <DependentUpon>SPIDeltaChangeLegacyID.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SPIDeltaChangeTracker.resx">
+      <DependentUpon>SPIDeltaChangeTracker.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SPI_Analysis.resx">
+      <DependentUpon>SPI_Analysis.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SPI_Analysis_View.resx">
+      <DependentUpon>SPI_Analysis_View.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SPI_Spec_Note_Creation_Utility.resx">
+      <DependentUpon>SPI_Spec_Note_Creation_Utility.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SQL_DB_To_Excel.resx">
+      <DependentUpon>SQL_DB_To_Excel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Table Extraction After Delta.resx">
+      <DependentUpon>Table Extraction After Delta.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Test.resx">
+      <DependentUpon>Test.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UserProfileForm.resx">
+      <DependentUpon>UserProfileForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="User_Settings.resx">
+      <DependentUpon>User_Settings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewForMultiReference.resx">
+      <DependentUpon>ViewForMultiReference.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="jsconfig_DB_connection.json" />
+    <None Include="Oracle.DataAccess.Common.Configuration.Section.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Oracle.ManagedDataAccess.Client.Configuration.Section.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
+    <None Include="Properties\DataSources\ExcelFileReadCustomControl.datasource" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <None Include="SPI Data Comp Tool_TemporaryKey.pfx" />
+    <None Include="UserProfile\userProfile.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.6.2">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.6.2 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\logo.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\utility logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="logo.ico" />
+    <Content Include="logo1.ico" />
+    <Content Include="PNID_Reports\Source\drawing.txt" />
+    <Content Include="PNID_Reports\Source\equipment.txt" />
+    <Content Include="PNID_Reports\Source\instrument.txt" />
+    <Content Include="PNID_Reports\Source\nozzle.txt" />
+    <Content Include="PNID_Reports\Source\opc.txt" />
+    <Content Include="PNID_Reports\Source\piperun.txt" />
+    <Content Include="PNID_Reports\Source\piping_component.txt" />
+    <Content Include="PNID_Reports\Source\PlantItem.txt" />
+    <Content Include="PNID_Reports\Source\PlantItem_Antwerp.txt" />
+    <Content Include="PNID_Reports\Source\representation.txt" />
+    <Content Include="PNID_Reports\Target_IPEP\drawing.txt" />
+    <Content Include="PNID_Reports\Target_IPEP\equipment.txt" />
+    <Content Include="PNID_Reports\Target_IPEP\instrument.txt" />
+    <Content Include="PNID_Reports\Target_IPEP\nozzle.txt" />
+    <Content Include="PNID_Reports\Target_IPEP\opc.txt" />
+    <Content Include="PNID_Reports\Target_IPEP\piperun.txt" />
+    <Content Include="PNID_Reports\Target_IPEP\piping_component.txt" />
+    <Content Include="PNID_Reports\Target_IPEP\PlantItem.txt" />
+    <Content Include="PNID_Reports\Target_IPEP\representation.txt" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.4.4\build\EntityFramework.props'))" />
+    <Error Condition="!Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.4.4\build\EntityFramework.targets'))" />
+  </Target>
+  <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.targets" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.targets')" />
+</Project>

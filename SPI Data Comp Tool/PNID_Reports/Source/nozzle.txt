@@ -1,0 +1,40 @@
+select [Legacy_SPID],[iPEP_SPID],[Rep Drawing Number],[Equip Item Tag],[Item Tag],[Short ItemTag],[Tag Prefix],[Tag Sequence No],[Nominal Diameter],[Nozzle Type],[Insulation Purpose],[Insulation Thk],[Insulation Thk Source],[Heat Trace Requirement],[Heat Trace Medium],[Heat Trace Medium Temp],[Construction Status],[Equip Insul Purpose],[Equip Insul Thk],[Equip Type],[Rep File Name],[Equip Heat Trace Medium],[Equip Heat Trace Medium Temp],[Rep Drawing Path],[Last Modified By],[Last Modified Time] 
+from (
+select DISTINCT pi.sp_id
+    , pi.sp_id 'Legacy_SPID'
+    , '' 'iPEP_SPID'
+    , d.drawingnumber 'Rep Drawing Number'
+    , (select ItemTag from ###Schema_1###pid.T_Plantitem pi where eq.sp_id = pi.SP_ID and eq.sp_id = n.SP_EquipmentID) 'Equip Item Tag'
+    , pi.itemtag 'Item Tag'
+    , pi.BY_ShortItemTag 'Short ItemTag'
+    , n.TagPrefix 'Tag Prefix'
+    , n.TagSequenceNo 'Tag Sequence No'
+    , (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 8 and  codelist_index = n.NominalDiameter) 'Nominal Diameter'
+    , (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 35 and codelist_index = n.nozzletype) 'Nozzle Type'
+    , (select codelist_text from ###Schema_1###pidd.codelists cl where codelist_number = 6 and  codelist_index = n.InsulPurpose) 'Insulation Purpose'
+    , n.InsulThick 'Insulation Thk'
+    , (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 50 and  codelist_index =n.InsulationThkSource)'Insulation Thk Source'
+    , (select codelist_text from ###Schema_1###pidd.codelists cl where codelist_number = 4 and  codelist_index = n.HTraceReqmt) 'Heat Trace Requirement'
+    , (select codelist_text from ###Schema_1###pidd.codelists cl where codelist_number = 5 and  codelist_index = n.HTraceMedium) 'Heat Trace Medium'
+    , n.htracemediumtemp 'Heat Trace Medium Temp'
+    , (select codelist_short_text from ###Schema_1###pidd.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus) 'Construction Status'
+    , (select codelist_text from ###Schema_1###pidd.codelists cl where codelist_number = 6 and  codelist_index = eq.InsulPurpose) 'Equip Insul Purpose'
+    , eq.InsulThick 'Equip Insul Thk'
+    , (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 22 and codelist_index = eq.EquipmentType) 'Equip Type'
+    , r.FileName 'Rep File Name'
+    , (select codelist_text from ###Schema_1###pidd.codelists cl where codelist_number = 5 and  codelist_index = eq.htracemedium) 'Equip Heat Trace Medium'
+    , eq.htracemediumtemp 'Equip Heat Trace Medium Temp'
+    , d.path 'Rep Drawing Path'
+    , d.SP_AccessedBy 'Last Modified By' 
+    , r.SP_FileLastModifiedTime 'Last Modified Time'
+
+from ###Schema_1###pid.T_plantitem pi
+join ###Schema_1###pid.T_Nozzle n on n.sp_id = pi.SP_ID
+join ###Schema_1###pid.T_equipment eq on eq.sp_id = n.SP_EquipmentID
+join ###Schema_1###pid.T_modelitem m on n.sp_id = m.sp_id and m.sp_istypical <> 2
+left join ###Schema_1###pid.T_representation r on n.sp_id = r.sp_modelitemid
+left join ###Schema_1###pid.T_drawing d on r.sp_drawingid = d.sp_id 
+left join ###Schema_2###.T_plantgroup u ON u.SP_ID = pi.SP_PlantGroupID
+
+where
+r.filename is not null) TEMP;

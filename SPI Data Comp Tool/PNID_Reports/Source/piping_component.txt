@@ -1,0 +1,79 @@
+select [Legacy_SPID],[iPEP_SPID],[Rep Drawing Name],[Remarks],[Plant Group Name],[ItemTag],[OLD_ItemTag],[ShortItemTag],[IdentificationLetters],[TagSequenceNo],[Special Part No],[Nominal Diameter],[DIN Nominal Pressure],[DIN valve class],[Insulation Purpose],[Insulation Thickness],[Insulation Thk Source],[Insulation Temp],[Heat Trace Requirement],[Heat Trace Medium],[Heat Trace Medium Temperature],[Description],[OpeningAction],[ConstructionStatus],[End 1 Nom Dia],[End 2 Nom Dia],[Set Overpressure],[Set Vacuum],[Piping Comp Class],[Piping Comp Subclass],[Piping Comp Type],[Pipe Run Item Tag],[Plant Item Type],[Name],[Commodity Code],[Orifice No],[Orifice Port Size],[Safety Valve No],[Safety Valve Type],[Sample Point No],[Set Pressure],[Rep File Name],[Rep Drawing Path],[SetOverpressureSI],[SetVacuumSI],[SP_SP_SetPressureSI],[Plant Group Type],[Last Modified By],[Last Modified Time]
+from (
+select distinct pi.sp_id
+, pi.sp_id 'Legacy_SPID'
+, '' 'iPEP_SPID'
+, d.drawingnumber 'Rep Drawing Name'
+, '' 'Remarks'
+, pi.BY_IndCpx + '-' + pi.BY_ProcArea + '-' + pi.BY_SubProcess 'Plant Group Name'
+--, left(pi.itemtag,17) PBS_ExtractFromItemTag
+--, (select  SUBSTRING(pi.ItemTag,1,7) +'-'+ SUBSTRING(d.path,2,4) +'-'+ SUBSTRING(d.path,7,4)) PBS_ExtractFromDwgPath
+    , pi.itemtag ItemTag
+    , '' 'OLD_ItemTag'
+    , pi.BY_SHORTITEMTAG ShortItemTag
+    ,(select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 12001 and codelist_index=pi.BY_IdLetters) IdentificationLetters
+    , pi.BY_ItemSeqNo TagsequenceNo
+    , pi.BY_SPECIALPARTNO 'Special Part No'
+    , (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 8 and codelist_index=ic.nominaldiameter)'Nominal Diameter'
+    , (select codelist_short_text from ###Schema_1###pidd.codelists cl where codelist_number = 12003 and codelist_index = ic.BY_NomPress) 'DIN Nominal Pressure'
+    , ic.BY_ValveClass 'DIN valve class'
+    , (select codelist_short_text from ###Schema_1###pidd.codelists cl where codelist_number = 6 and  codelist_index = p.Insulpurpose) 'Insulation Purpose'  
+    , p.InsulThick 'Insulation Thickness'
+    , (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 50 and  codelist_index =p.insulationthksource) 'Insulation Thk Source'
+    , p.InsulTemp 'Insulation Temp'
+    , (select codelist_text from ###Schema_1###pidd.codelists cl where codelist_number = 4 and  codelist_index = p.htracereqmt) 'Heat Trace Requirement'
+    , (select codelist_text from ###Schema_1###pidd.codelists cl where codelist_number = 5 and  codelist_index = p.htracemedium) 'Heat Trace Medium' 
+    , p.htracemediumtemp 'Heat Trace Medium Temperature'
+	, m.description 'Description'
+	, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number =12 and  codelist_index = ic.OpeningAction) OpeningAction
+	, (select codelist_short_text from ###Schema_1###pidd.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus) 'ConstructionStatus'
+--	, pi.ConstructionStatus
+
+--	, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 8 and  codelist_index=ic.nominaldiameter)'Nominal Diameter'
+	, (select (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 8 and codelist_index=pp.nominaldiameter) from ###Schema_1###pid.T_PipingPoint pp
+		join ###Schema_1###pid.T_plantitem pt on pt.sp_id = pp.SP_PlantItemID where pt.sp_id = p.SP_ID and pp.PipingPointNumber = 1) as 'End 1 Nom Dia'
+	, (select (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 8 and codelist_index=pp.nominaldiameter) from ###Schema_1###pid.T_PipingPoint pp
+		join ###Schema_1###pid.T_plantitem pt on pt.sp_id = pp.SP_PlantItemID where pt.sp_id = p.SP_ID and pp.PipingPointNumber = 2) as 'End 2 Nom Dia'
+        , p.BY_SETOVERPRESSURE 'Set Overpressure' 
+	, p.BY_SETVACUUM 'Set Vacuum'
+	, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 27 and  codelist_index =p.pipingcompclass) 'Piping Comp Class'
+	, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 26 and  codelist_index =p.pipingcompsubclass) 'Piping Comp Subclass'
+	, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 25 and  codelist_index =p.pipingcomptype) 'Piping Comp Type'
+	, (select pi.ItemTag from ###Schema_1###pid.T_PlantItem pi where pi.SP_ID=ic.SP_PipeRunID) 'Pipe Run Item Tag'
+        , (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 38 and codelist_index = pi.plantitemtype) 'Plant Item Type'
+ --   , isnull(d.name,'-') pid_name
+    , pi.name 'Name'
+    , pi.aabbcc_code 'Commodity Code'
+    , ic.BY_OrificeNo 'Orifice No'
+    , ic.OrificePortSize 'Orifice Port Size'
+    , p.BY_SAFETYVALVENO 'Safety Valve No'
+    , p.BY_SAFETYVALVETYPE 'Safety Valve Type'
+    , p.BY_SAMPLEPOINTNO 'Sample Point No'
+    , ic.SP_SetPressure 'Set Pressure'
+    , r.FileName 'Rep File Name'
+    , d.Path 'Rep Drawing Path'
+    , p.SP_BY_SetOverpressureSI 'SetOverpressureSI'
+    , p.SP_BY_SetVacuumSI 'SetVacuumSI'
+    , ic.SP_SP_SetPressureSI
+    , '' 'Plant Group Type'
+    , d.SP_AccessedBy 'Last Modified By' 
+    , r.SP_FileLastModifiedTime 'Last Modified Time'
+
+ from ###Schema_1###pid.t_plantitem pi
+ join ###Schema_1###pid.T_PIPINGCOMP p on pi.sp_id = p.sp_id 
+ left join ###Schema_1###pid.T_INLINECOMP ic on pi.sp_id = ic.sp_id 
+ join ###Schema_1###pid.t_modelitem m on p.sp_id = m.sp_id and m.sp_istypical <> 2
+ left join ###Schema_1###pid.t_representation r on p.sp_id = r.sp_modelitemid
+ left join ###Schema_1###pid.t_drawing d on r.sp_drawingid = d.sp_id
+
+ left join (select u.sp_id, p.name plant, a.name area, sa.name subarea, u.name unit
+    from ###Schema_2###.T_PlantGroup as u     
+    left join ###Schema_2###.T_PlantGroup  sa on sa.sp_id = u.parentid and sa.plantgrouptype = 11000001
+    left join ###Schema_2###.T_PlantGroup as a on a.sp_id = u.parentid and a.plantgrouptype = 72   
+    left join ###Schema_2###.T_PlantGroup as p on p.sp_id = a.parentid and p.plantgrouptype = 70  
+    where u.plantgrouptype = 65) as un on un.sp_id = pi.sp_plantgroupid
+
+left join ###Schema_1###pid.T_PipingPoint pt on pt.SP_PlantItemID = pi.sp_id
+
+where
+r.filename is not null)Temp;

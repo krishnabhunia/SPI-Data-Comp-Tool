@@ -1,0 +1,36 @@
+select distinct o.sp_id
+, d.name DrawingNumber
+, (select name from P_SPPID_###schemaname###_Mpid.T_Drawing d where d.SP_ID = O.MatingOPCPath) 'Paired OPC Drawing No'
+, O.OPCTag 'OPC Tag'
+, (select OPCTag from P_SPPID_###schemaname###_Mpid.T_OPC O where r.SP_ModelItemID = O.SP_pairedWithID) 'Paired OPC Tag' -- Doubt on Paired OPC Tag
+, m.[Description] 'Description'
+, o.ToFromText 'To/From'
+, (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 36 and codelist_index =o.OPCType) 'OPC Type'
+,'' 'Connected Piperun 1 Item Tag'
+--#OPC::Connected Pipe Run 1 Item Tag::Representation.Symbol.Connector1.Representation.ModelItem.ItemTag#
+,'' 'Connected Piperun 2 Item Tag'
+--#OPC::Connected Pipe Run 2 Item Tag::Representation.Symbol.Connector2.Representation.ModelItem.ItemTag#
+,'' 'Paired OPC Connected Piperun 1 Item Tag'
+--#OPC::Paired OPC Connected Pipe Run 1 Item Tag::pairedWithOPC.Representation.Symbol.Connector1.Representation.ModelItem.ItemTag#
+,'' 'Paired OPC Connected Piperun 2 Item Tag'
+--#OPC::Paired OPC Connected Pipe Run 2 Item Tag::pairedWithOPC.Representation.Symbol.Connector2.Representation.ModelItem.ItemTag#
+
+, r.[filename] 'Rep File Name'
+, o.sp_id 'SPID'
+, d.[path] 'Drawing Path'
+
+from P_SPPID_###schemaname###_Mpid.T_OPC O
+JOIN P_SPPID_###schemaname###_Mpid.T_ModelItem m ON m.SP_ID = O.SP_ID
+JOIN P_SPPID_###schemaname###_Mpid.T_Representation r on r.SP_ModelItemID = O.sp_id
+join P_SPPID_###schemaname###_Mpid.T_Drawing d on d.sp_id = r.SP_DrawingID
+
+--left join P_SPPID_###schemaname###_Mpid.T_instrument i on i.sp_id = O.SP_pairedWithID
+--left join P_SPPID_###schemaname###_Mpid.T_PIPERUN pr on pr.sp_id = O.SP_pairedWithID
+
+
+left join P_SPPID_###schemaname###_Mpid.T_PLANTITEMGROUP pg on pg.sp_id = m.sp_id
+--left join P_SPPID_###schemaname###_M.t_plantgroup u ON u.SP_ID = p.SP_PlantGroupID
+where
+d.Path like '%###path###%'
+###fullconstraint_1###
+and r.filename is not null;

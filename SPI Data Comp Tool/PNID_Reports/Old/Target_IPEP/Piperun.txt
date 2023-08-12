@@ -1,0 +1,67 @@
+select m.COV_legacy_sp_id 'Legacy_SPID'
+, pi.sp_id 'iPEP_SPID'
+, d.drawingnumber 'Rep Drawing Name'
+,'' Remarks
+, (select entity_description from p_sppid_###schemaname###_md.entities where entity_number = u.plantgrouptype) 'Plant Group Type'
+, u.name 'Plant Group Name'
+    , pi.itemtag ItemTag
+    , pi.COV_SHORTITEMTAG ShortItemTag
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 12001 and codelist_index=pi.COV_IdLetters) IdentificationLetters
+    , pr.TagSequenceNo
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 19 and  codelist_index = pr.operfluidcode) FluidCode
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 8 and  codelist_index = pr.NominalDiameter) NominalDiameter 
+    , (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 12005 and codelist_index = pr.COV_NOMPRESS) 'DIN Nominal Pressure'
+    , pr.COV_PIPEMATL 'DIN piping material'
+    , (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 12004 and codelist_index = pr.COV_GASKET) 'DIN Gasket'
+    , pr.COV_VALVECLASS 'DIN valve class'
+    , pr.pipingmaterialsclass 'Piping Materials Class'
+    , (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 6 and  codelist_index = pr.Insulpurpose) 'Insulation Purpose'  
+    , pr.InsulThick 'Insulation Thickness'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 50 and  codelist_index =pr.insulationthksource) 'Insulation Thk Source'
+    , pr.InsulTemp 'Insulation Temp'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 4 and  codelist_index = pr.htracereqmt) 'Heat Trace Requirement'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 5 and  codelist_index = pr.htracemedium) 'Heat Trace Medium' 
+    , pr.htracemediumtemp 'Heat Trace Medium Temperature'
+--	, (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 6 and  codelist_index = pr.SP_JInsulPurpose)
+--	, (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 6 and  codelist_index = pr.SP_JInsulThick)
+    , pr.Slope
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 20 and  codelist_index = pr.FluidSystem) 'Fluid System'
+    , (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 93 and codelist_index = pi.ConstructionStatus) 'Construction Status' 
+--  , pi.ConstructionStatus
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 47 and codelist_index =pr.FlowDirection) FlowDirection
+    , m.Description 
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 96 and  codelist_index = pr.piperunclass) piperunclass
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 14 and  codelist_index = pr.piperuntype) piperuntype
+    , (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 73 and codelist_index = pr.COV_PMCSystemSource) 'PMC System Source Flag'
+    , (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 73 and codelist_index = pr.sp_ConnectorsZeroLength) ConnectorsZeroLength
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 38 and codelist_index = pi.plantitemtype) 'Plant Item Type'
+    , r.FileName RepFilename
+    , d.Path RepDrawingPath
+    , r.SP_FileLastModifiedTime
+
+from P_SPPID_###schemaname###_Mpid.t_plantitem pi
+join P_SPPID_###schemaname###_Mpid.T_PIPERUN pr on pi.sp_id = pr.sp_id 
+join P_SPPID_###schemaname###_Mpid.t_modelitem m on pr.sp_id = m.sp_id and m.sp_istypical <> 2
+left join P_SPPID_###schemaname###_Mpid.t_representation r on pr.sp_id = r.sp_modelitemid
+left join P_SPPID_###schemaname###_Mpid.t_drawing d on r.sp_drawingid = d.sp_id
+left join P_SPPID_###schemaname###_M.t_plantgroup u ON u.SP_ID = pi.SP_PlantGroupID
+-- where d.name = 'CAO1285069'
+
+where
+d.Path like '%###path###%'
+###fullconstraint_1###
+and r.filename is not null
+
+
+/*
+Constructions Status to be Vlookup with index Value 
+select * from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 93
+-- select * from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 93 and codelist_index in (10020, 10021, 10022)
+*/
+
+
+/*
+Constructions Status to be Vlookup with index Value 
+select * from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 93
+-- select * from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 93 and codelist_index in (10020, 10021, 10022)
+*/

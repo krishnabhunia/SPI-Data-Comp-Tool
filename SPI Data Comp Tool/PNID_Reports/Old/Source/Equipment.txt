@@ -1,0 +1,61 @@
+select pi.sp_id 'Legacy_SPID'
+	, '' 'iPEP_SPID'
+	, d.drawingnumber 'Rep Drawing Number'
+    ,un.plant +'-'+un.area +'-'+un.unit 'Plant Group Name'
+    , pi.itemtag 'Item Tag'
+    , pi.BY_ShortItemTag 'Short ItemTag'
+    ,(select codelist_text from ###Schema_1###.codelists where codelist_number = 12001 and codelist_index=pi.BY_IdLetters) 'Identification Letters'
+    , eq.tagsequenceno 'Tag Seq No' 
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 24 and  codelist_index = eq.class) 'Equip Class'
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 23 and  codelist_index = eq.equipmentsubclass) 'Equip Subclass'
+    , (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 22 and  codelist_index = eq.equipmenttype) 'Equip Type'     
+    , m.description 'Description'
+    , eq.BY_TechDat1 'Techn. Data 1'
+    , eq.BY_TechDat2 'Techn. Data 2'
+    , eq.BY_TechDat3 'Techn. Data 3'
+    , eq.BY_OperPressRange 'Oper Press Range'
+    , eq.BY_OperTempRange 'Oper Temp Range'
+
+	, eq.BY_Material 'Material'
+	, eq.BY_ManDwgNo 'Drawing No of Manufacturer'
+	, (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 45 and  codelist_index = eq.insultype) 'Insulation Type'
+	, (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 6 and  codelist_index = eq.insulpurpose) 'Insulation Purpose'
+	, eq.insulthick 'Insulation Thk'
+	, (select codelist_text from ###Schema_1###.codelists where codelist_number = 50 and  codelist_index =eq.insulationthksource)'Insulation Thk Source'
+	, (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 4 and  codelist_index = eq.htracereqmt) 'Heat Trace Requirement'
+	, (select codelist_text from ###Schema_1###.codelists cl where codelist_number = 6 and  codelist_index = eq.htracemedium) 'Heat Trace Medium' 
+	, eq.htracemediumtemp 'Heat Trace Medium Temp'
+	, (select codelist_short_text from ###Schema_1###.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus) 'Construction Status'  
+	, r.FileName 'Rep File Name'
+        , pi.name 'Name'
+	, eq.BY_Remark 'Remark'
+	, eq.BY_ClassNo 'Class-No'
+	, eq.BY_EquipmentNo 'Equipment-No'
+	, eq.BY_FabricationNo 'Fabrication-No'
+        , eq.BY_WNo 'W-No'
+	, d.Path 'Rep Drawing Path'
+
+        , (select codelist_short_text from ###Schema_1###.codelists cl where codelist_number = 38 and codelist_index = pi.plantitemtype) 'Plant Item Type'	
+    
+    , '' 'Detail 1'
+    , '' 'Detail 2'
+    , '' 'Detail 3'
+    , '' 'Detail 4'
+    , pi.aabbcc_code 'AABBCC_CODE'
+    ,r.SP_FileLastModifiedTime 'Last Modified By'
+
+from ###Schema_2###.t_plantitem pi
+join ###Schema_2###.t_equipment eq on pi.sp_id = eq.sp_id
+join ###Schema_2###.t_modelitem m on eq.sp_id = m.sp_id and m.sp_istypical <> 2
+left join ###Schema_2###.t_representation r on eq.sp_id = r.sp_modelitemid
+left join ###Schema_2###.t_drawing d on r.sp_drawingid = d.sp_id
+
+left join (select u.sp_id, p.name plant, a.name area, sa.name subarea, u.name unit
+    from ###Schema_3###.T_PlantGroup as u     
+    left join ###Schema_3###.T_PlantGroup  sa on sa.sp_id = u.parentid and sa.plantgrouptype = 11000001
+    left join ###Schema_3###.T_PlantGroup as a on a.sp_id = u.parentid and a.plantgrouptype = 72   
+    left join ###Schema_3###.T_PlantGroup as p on p.sp_id = a.parentid and p.plantgrouptype = 70  
+    where u.plantgrouptype = 65) as un on un.sp_id = pi.sp_plantgroupid
+
+where
+r.filename is not null;

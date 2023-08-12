@@ -1,0 +1,70 @@
+select [Legacy_SPID],[iPEP_SPID],[Model_SPID],[Plantitemtype],[Object_Class],[Object_Sub_Class],[Object_Type],[Plant Group Name],[IdentificationLetters],[TagSequenceNo],[itemtag],[shortitemtag],[FileName],[DrawingNumber],[Drawingpath]
+from (
+select distinct p.sp_id
+, p.sp_id Legacy_SPID
+, '' iPEP_SPID
+, m.SP_ID Model_SPID
+, (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 38 and codelist_index = p.plantitemtype) Plantitemtype
+, CASE
+    when p.plantitemtype =16 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 24 and codelist_index = eq.class )
+    when p.plantitemtype =41 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 29 and codelist_index = i.instrumentclass) 
+    when p.plantitemtype =4 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 96 and codelist_index = pr.piperunclass)
+    when p.plantitemtype =35 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 27 and codelist_index = pc.pipingcompclass)
+    --when p.plantitemtype =21 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 35 and codelist_index = n.nozzletype)
+    when p.plantitemtype =46 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 37 and codelist_index = pg.PlantItemGroupClass)
+end as Object_Class
+, CASE
+    when p.plantitemtype =16 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 23 and codelist_index = eq.EQUIPMENTSUBCLASS )
+    --when p.plantitemtype =41 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 29 and codelist_index = i.instrumentclass) 
+    --when p.plantitemtype =4 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 96 and codelist_index = pr.piperunclass)
+    when p.plantitemtype =35 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 26 and codelist_index = pc.PIPINGCOMPSUBCLASS)
+    --when p.plantitemtype =21 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 35 and codelist_index = n.nozzletype)
+    when p.plantitemtype =46 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 37 and codelist_index = pg.PlantItemGroupClass)
+end as Object_Sub_Class
+, CASE
+    when p.plantitemtype =16 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 22 and codelist_index = eq.EQUIPMENTTYPE )
+    when p.plantitemtype =41 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 28 and codelist_index = i.INSTRUMENTTYPE) 
+    when p.plantitemtype =4 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 14 and codelist_index = pr.PIPERUNTYPE)
+    when p.plantitemtype =35 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 25 and codelist_index = pc.PIPINGCOMPTYPE)
+    when p.plantitemtype =21 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 35 and codelist_index = n.nozzletype)
+    when p.plantitemtype =46 then (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 37 and codelist_index = pg.PlantItemGroupClass)
+end as Object_Type
+, p.BY_IndCpx + '-' + p.BY_ProcArea + '-' + p.BY_SubProcess 'Plant Group Name'
+, CASE
+ 	When p.plantitemtype =21 then n.TagPrefix
+	else (select codelist_text from ###Schema_1###pidd.codelists where codelist_number = 12001 and codelist_index=p.BY_IdLetters)
+end as IdentificationLetters
+, CASE
+	When p.plantitemtype =41 then cast(i.TagsequenceNo as nvarchar)
+	When p.plantitemtype =21 then cast(n.TagSequenceNo as nvarchar)
+	else cast(p.BY_ItemSeqNo as nvarchar)
+end as TagSequenceNo
+, p.itemtag
+, p.by_shortitemtag shortitemtag
+, r.FileName
+, d.name DrawingNumber
+, d.path Drawingpath
+from ###Schema_1###pid.T_PlantItem p
+JOIN ###Schema_1###pid.T_ModelItem M ON M.SP_ID = p.SP_ID
+JOIN ###Schema_1###pid.T_Representation r on r.SP_ModelItemID = p.sp_id
+join ###Schema_1###pid.T_Drawing d on d.sp_id = r.SP_DrawingID
+
+left join ###Schema_1###pid.T_EQUIPMENT eq on eq.sp_id = p.sp_id
+left join ###Schema_1###pid.T_instrument i on i.sp_id = p.sp_id
+left join ###Schema_1###pid.T_PIPERUN pr on pr.sp_id = p.sp_id
+left join ###Schema_1###pid.T_PIPINGCOMP pc on pc.sp_id = p.sp_id
+left join ###Schema_1###pid.T_nozzle n on n.sp_id = p.sp_id
+left join ###Schema_1###pid.T_PLANTITEMGROUP pg on pg.sp_id = p.sp_id
+
+left join (select u.sp_id, p.name plant, a.name area, sa.name subarea, u.name unit
+    from ###Schema_2###.T_PlantGroup as u     
+    left join ###Schema_2###.T_PlantGroup  sa on sa.sp_id = u.parentid and sa.plantgrouptype = 11000001
+    left join ###Schema_2###.T_PlantGroup as a on a.sp_id = u.parentid and a.plantgrouptype = 72   
+    left join ###Schema_2###.T_PlantGroup as p on p.sp_id = a.parentid and p.plantgrouptype = 70  
+    where u.plantgrouptype = 65) as un on un.sp_id = p.sp_plantgroupid
+
+where
+r.FileName is not null)Temp
+--and Plantitem_Class is null
+-- and p.plantitemtype not in (21, 46) 
+order by plantitemtype, Drawingpath, [FileName]

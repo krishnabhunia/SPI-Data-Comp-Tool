@@ -1,0 +1,71 @@
+select [Legacy_SPID],[iPEP_SPID],[Rep Drawing Name],[Remarks],[Plant Group Name],[ItemTag],[OLD_ItemTag],[ShortItemTag],[IdentificationLetters],[TagSequenceNo],[Special Part No],[Nominal Diameter],[DIN Nominal Pressure],[DIN valve class],[Insulation Purpose],[Insulation Thickness],[Insulation Thk Source],[Insulation Temp],[Heat Trace Requirement],[Heat Trace Medium],[Heat Trace Medium Temperature],[Description],[OpeningAction],[ConstructionStatus],[End 1 Nom Dia],[End 2 Nom Dia],[Set Overpressure],[Set Vacuum],[Piping Comp Class],[Piping Comp Subclass],[Piping Comp Type],[Pipe Run Item Tag],[Plant Item Type],[Name],[Commodity Code],[Orifice No],[Orifice Port Size],[Safety Valve No],[Safety Valve Type],[Sample Point No],[Set Pressure],[Rep File Name],[Rep Drawing Path],[SP_COV_SetOverpressureSI],[SP_COV_SetVacuumSI],[SP_SP_SetPressureSI],[Plant Group Type],[Last Modified By],[Last Modified Time]
+from (
+select distinct p.sp_id
+, m.COV_legacy_sp_id 'Legacy_SPID'
+, p.sp_id 'iPEP_SPID'
+, d.drawingnumber 'Rep Drawing Name'
+,'' Remarks
+, u.name 'Plant Group Name'
+    , pi.itemtag ItemTag
+    , pi.COV_ALT_AKZ 'OLD_ItemTag'
+    , pi.COV_SHORTITEMTAG ShortItemTag
+    ,(select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 12001 and codelist_index=pi.COV_IdLetters) IdentificationLetters
+    , p.TagSequenceNo
+    , pi.COV_SPECIALPARTNO 'Special Part No'
+    , (select codelist_text from P_SPPID_###schemaname###_MPIDD.codelists where codelist_number = 8 and  codelist_index=ic.nominaldiameter)'Nominal Diameter'
+    , (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 12005 and codelist_index = ic.COV_NOMPRESS) 'DIN Nominal Pressure'
+    , ic.COV_ValveClass 'DIN valve class'
+    , (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 6 and  codelist_index = p.Insulpurpose) 'Insulation Purpose'  
+    , p.InsulThick 'Insulation Thickness'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 50 and  codelist_index =p.insulationthksource) 'Insulation Thk Source'
+    , p.InsulTemp 'Insulation Temp'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 4 and  codelist_index = p.htracereqmt) 'Heat Trace Requirement'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 5 and  codelist_index = p.htracemedium) 'Heat Trace Medium' 
+    , p.htracemediumtemp 'Heat Trace Medium Temperature'
+    , m.description 'Description'
+    , (select codelist_text from P_SPPID_###schemaname###_MPIDD.codelists where codelist_number =12 and  codelist_index = ic.OpeningAction) OpeningAction
+    , (select codelist_short_text from P_SPPID_###schemaname###_MPIDD.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus) 'ConstructionStatus'
+--  , pi.ConstructionStatus
+    , (select (select codelist_text from P_SPPID_###schemaname###_MPIDD.codelists where codelist_number = 8 and codelist_index=pp.nominaldiameter) from P_SPPID_###schemaname###_Mpid.T_PipingPoint pp
+		join P_SPPID_###schemaname###_Mpid.T_plantitem pt on pt.sp_id = pp.SP_PlantItemID where pt.sp_id = p.SP_ID and pp.PipingPointNumber = 1) as 'End 1 Nom Dia'
+    , (select (select codelist_text from P_SPPID_###schemaname###_MPIDD.codelists where codelist_number = 8 and codelist_index=pp.nominaldiameter) from P_SPPID_###schemaname###_Mpid.T_PipingPoint pp
+		join P_SPPID_###schemaname###_Mpid.T_plantitem pt on pt.sp_id = pp.SP_PlantItemID	where pt.sp_id = p.SP_ID and pp.PipingPointNumber = 2) as 'End 2 Nom Dia'
+        , p.COV_SETOVERPRESSURE 'Set Overpressure' 
+	, p.COV_SETVACUUM 'Set Vacuum'
+	, (select codelist_text from P_SPPID_###schemaname###_MPIDD.codelists where codelist_number = 27 and  codelist_index =p.pipingcompclass) 'Piping Comp Class'
+	, (select codelist_text from P_SPPID_###schemaname###_MPIDD.codelists where codelist_number = 26 and  codelist_index =p.pipingcompsubclass) 'Piping Comp Subclass'
+	, (select codelist_text from P_SPPID_###schemaname###_MPIDD.codelists where codelist_number = 25 and  codelist_index =p.pipingcomptype) 'Piping Comp Type'
+	, (select pi.ItemTag from P_SPPID_###schemaname###_Mpid.T_PlantItem pi where pi.SP_ID=ic.SP_PipeRunID) 'Pipe Run Item Tag'
+        , (select codelist_text from P_SPPID_###schemaname###_MPIDD.codelists where codelist_number = 38 and codelist_index = pi.plantitemtype) 'Plant Item Type'
+ -- , isnull(d.name,'-') pid_name
+    , pi.name 'Name'
+    , pi.aabbcc_code 'Commodity Code'
+    , ic.COV_OrificeNo 'Orifice No'
+    , ic.OrificePortSize 'Orifice Port Size'
+    , p.COV_SAFETYVALVENO 'Safety Valve No'
+    , p.COV_SAFETYVALVETYPE 'Safety Valve Type'
+    , p.COV_SAMPLEPOINTNO 'Sample Point No'
+    , ic.SP_SetPressure 'Set Pressure'
+    , r.FileName 'Rep File Name'
+    , d.Path 'Rep Drawing Path'
+    , p.SP_COV_SetOverpressureSI
+    , p.SP_COV_SetVacuumSI
+    , ic.SP_SP_SetPressureSI
+    , (select entity_description from p_sppid_###schemaname###_md.entities where entity_number = u.plantgrouptype) 'Plant Group Type'
+    , d.SP_AccessedBy 'Last Modified By' 
+    , r.SP_FileLastModifiedTime 'Last Modified Time'
+
+ from P_SPPID_###schemaname###_MPID.t_plantitem pi
+ join P_SPPID_###schemaname###_MPID.T_PIPINGCOMP p on pi.sp_id = p.sp_id 
+ left join P_SPPID_###schemaname###_MPID.T_INLINECOMP ic on pi.sp_id = ic.sp_id 
+ join P_SPPID_###schemaname###_MPID.t_modelitem m on p.sp_id = m.sp_id and m.sp_istypical <> 2
+ left join P_SPPID_###schemaname###_MPID.t_representation r on p.sp_id = r.sp_modelitemid
+ left join P_SPPID_###schemaname###_MPID.t_drawing d on r.sp_drawingid = d.sp_id
+
+ left join P_SPPID_###schemaname###_M.t_plantgroup u ON u.SP_ID = pi.SP_PlantGroupID
+ left join P_SPPID_###schemaname###_Mpid.T_PipingPoint pt on pt.SP_PlantItemID = pi.sp_id
+ 
+where
+d.Path like '%###path###%'
+###fullconstraint_1###
+and r.filename is not null) Temp;

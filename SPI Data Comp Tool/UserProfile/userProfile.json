@@ -1,0 +1,36 @@
+[
+  {
+    "profileName": "krishna_oracle_sql1",
+    "dbSRC": {
+      "str_DBType": "oracle",
+      "str_DataSource": "IESWKCT670",
+      "str_DBName": "SPEL11G",
+      "str_UserName": "SPEL11G",
+      "str_Password": "tb_compare1"
+    },
+    "dbTRG": {
+      "str_DBType": "sql",
+      "str_DataSource": "IESWKCT247",
+      "str_DBName": "db_SPELSQL",
+      "str_UserName": "sa",
+      "str_Password": "tb_compare1"
+    }
+  },
+  {
+    "profileName": "krishna_oracle_sql2",
+    "dbSRC": {
+      "str_DBType": "oracle",
+      "str_DataSource": "IESWKCT670",
+      "str_DBName": "SPEL11G",
+      "str_UserName": "SPEL11G",
+      "str_Password": "tb_compare1"
+    },
+    "dbTRG": {
+      "str_DBType": "sql",
+      "str_DataSource": "IESWKCT247",
+      "str_DBName": "db_SPELSQL",
+      "str_UserName": "sa",
+      "str_Password": "tb_compare1"
+    }
+  }
+]

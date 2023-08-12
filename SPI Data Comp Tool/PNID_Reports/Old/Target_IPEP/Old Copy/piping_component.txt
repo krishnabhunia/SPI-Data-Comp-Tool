@@ -1,0 +1,100 @@
+SELECT Sp_ID  'Legacy_SPID'
+,COV_legacy_sp_id  'iPEP_SPID'
+,drawingnumber  'Rep Drawing Number'
+,itemtag  'Item Tag'
+, COV_ALT_AKZ 'OLD Item Tag'
+,shortitemtag  'Short ItemTag'
+,IdentificationLetters  'Identification Letters'
+,TagSequenceNo  'Tag Sequence No'
+,SPECIALPARTNO  'Special Part No'
+,nominaldiameter  'Nominal Diameter'
+,COV_NomPress  'DIN nominal pressure'
+,COV_ValveClass  'DIN valve class'
+,insulpurpose  'Insulation Purpose'
+,insulthick  'Insulation Thk'
+,insulationthksource  'Insulation Thk Source'
+,tracereqmt  'Heat Trace Requirement'
+,tracemedium  'Heat Trace Medium'
+,htracemediumtemp  'Heat Trace Medium Temperature'
+,description  'Description'
+,OpeningAction  'Opening Action'
+,ConstructionStatus  'Construction Status'
+,  'End 1 Nom Dia'
+,  'End 2 Nom Dia'
+,SETOVERPRESSURE  'Set Overpressure'
+,SETVACUUM  'Set vacuum'
+,pipingcompclass  'Piping Comp Class'
+,pipingcompsubclass  'Piping Comp Subclass'
+,pipingcomptype  'Piping Comp Type'
+,Piperunitemtag  'PipeRun Item Tag'
+,plantitemtype  'Plant Item Type'
+,pid_name  'Name'
+,Comoditycode  'Commodity Code'
+,COV_OrificeNo  'Orifice No'
+,OrificePortSize  'Orifice Port Size'
+,SAFETYVALVENO  'Safety Valve No'
+,SAFETYVALVETYPE  'Safety Valve Type'
+,SAMPLEPOINTNO  'Sample Point No'
+,RepFilename  'Rep File Name'
+,RepDrawingPath  'Rep Drawing Path'
+,PlantGroupName  'PipeRun Plant Group Name'
+,SP_COV_SetOverpressureSI  'Set Overpressure SI Value'
+,SP_COV_SetVacuumSI  'Set Vacuum SI Value'
+
+ FROM (
+ 
+select pi.Sp_ID
+    , m.COV_legacy_sp_id
+    , pi.itemtag
+    ,pi.COV_ALT_AKZ
+    ,un.plant +'-'+un.area +'-'+un.unit PlantGroupName
+	,eq.tagsequenceno
+    , pi.COV_SHORTITEMTAG shortitemtag
+    ,(select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 12001 and codelist_index=pi.COV_IdLetters) IdentificationLetters
+    , pi.COV_SPECIALPARTNO SPECIALPARTNO
+    , m.description
+    ,isnull(d.name,'-') pid_name
+    , d.drawingnumber
+    , (select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 38 and codelist_index = pi.plantitemtype) plantitemtype
+    , pi.aabbcc_code Comoditycode
+    , (select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 8 and  codelist_index=ic.nominaldiameter) nominaldiameter
+    , (select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 6 and  codelist_index = eq.insulpurpose) insulpurpose
+    , eq.insulthick
+    , (select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 25 and  codelist_index =eq.pipingcomptype) pipingcomptype
+    , (select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 26 and  codelist_index =eq.pipingcompsubclass) pipingcompsubclass
+    , (select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 27 and  codelist_index =eq.pipingcompclass) pipingcompclass
+    , (select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 50 and  codelist_index =eq.insulationthksource)insulationthksource
+    , (select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 4 and  codelist_index = eq.htracereqmt) tracereqmt
+    , (select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 5 and  codelist_index = eq.htracemedium) tracemedium 
+    ,eq.htracemediumtemp
+    ,eq.COV_SAFETYVALVENO SAFETYVALVENO
+    ,eq.COV_SAFETYVALVETYPE SAFETYVALVETYPE
+    ,eq.COV_SAMPLEPOINTNO SAMPLEPOINTNO
+    ,eq.COV_SETVACUUM SETVACUUM
+    ,eq.COV_SETOVERPRESSURE SETOVERPRESSURE 
+    ,(select codelist_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number =12 and  codelist_index = ic.OpeningAction) OpeningAction
+    ,ic.COV_NomPress
+    ,ic.COV_ValveClass
+    ,eq.SP_COV_SetOverpressureSI
+    ,eq.SP_COV_SetVacuumSI
+    ,(select pi.ItemTag from P_SPPID_AP_CAO_Mpid.T_PlantItem where SP_ID=ic.SP_PipeRunID)Piperunitemtag
+    ,ic.COV_OrificeNo
+    ,ic.OrificePortSize
+    ,(select codelist_short_text from P_SPPID_AP_CAO_MPIDD.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus)ConstructionStatus  
+    ,d.Path RepDrawingPath
+    ,r.FileName RepFilename
+    ,r.SP_FileLastModifiedTime
+ from P_SPPID_AP_CAO_MPID.t_plantitem pi
+ join P_SPPID_AP_CAO_MPID.T_PIPINGCOMP eq on pi.sp_id = eq.sp_id 
+ left join P_SPPID_AP_CAO_MPID.T_INLINECOMP ic on pi.sp_id = ic.sp_id 
+ join P_SPPID_AP_CAO_MPID.t_modelitem m on eq.sp_id = m.sp_id and m.sp_istypical <> 2
+ left join P_SPPID_AP_CAO_MPID.t_representation r on eq.sp_id = r.sp_modelitemid
+ left join P_SPPID_AP_CAO_MPID.t_drawing d on r.sp_drawingid = d.sp_id
+ left join (select u.sp_id, p.name plant, a.name area, sa.name subarea, u.name unit
+    from P_SPPID_AP_CAO_M.t_plantgroup u     
+    left join P_SPPID_AP_CAO_M.t_plantgroup sa on sa.sp_id = u.parentid and sa.plantgrouptype = 11000001
+    left join P_SPPID_AP_CAO_M.t_plantgroup a on a.sp_id = u.parentid and a.plantgrouptype = 72   
+    left join P_SPPID_AP_CAO_M.t_plantgroup p on p.sp_id = a.parentid and p.plantgrouptype = 70
+    where u.plantgrouptype = 65) un on un.sp_id = pi.sp_plantgroupid
+where d.Path like '%###path###%';
+)#temp;

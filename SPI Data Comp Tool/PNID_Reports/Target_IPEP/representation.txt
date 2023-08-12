@@ -1,0 +1,11 @@
+select r.sp_id
+, r.FileName
+, d.Name DrawingName
+, d.Path DrawingPath 
+from P_SPPID_###schemaname###_Mpid.T_Representation r
+join P_SPPID_###schemaname###_Mpid.T_Drawing d on d.sp_id = r.SP_DrawingID
+where 
+d.Path like '%###path###%'
+###fullconstraint_1###
+AND R.FileName IS NOT NULL
+ORDER BY d.Path

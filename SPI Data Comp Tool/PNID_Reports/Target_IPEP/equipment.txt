@@ -1,0 +1,68 @@
+select [Legacy_SPID],[iPEP_SPID],[Rep Drawing Number],[PlantGroupName],[Item Tag],[Short ItemTag],[Identification Letters],[Tag Seq No],[Equip Class],[Equip Subclass],[Equip Type],[Description],[Techn. Data 1],[Techn. Data 2],[Techn. Data 3],[Oper Press Range],[Oper Temp Range],[Material],[Drawing No of Manufacturer],[Insulation Type],	[Insulation Purpose],[Insulation Thk],[Insulation Thk Source],[Heat Trace Requirement],[Heat Trace Medium],[Heat Trace Medium Temp],[Construction Status],[Rep File Name],[Name],[Remark],[Class-No],[Equipment-No],[Fabrication-No],[W-No],[Rep Drawing Path],[Plant Item Type],[Detail 1],[Detail 2],[Detail 3],[Detail 4],[AABBCC_CODE],[PlantGroupType],[Last Modified By],[Last Modified Time] 
+from (
+select DISTINCT pi.sp_id
+    , m.COV_legacy_sp_id 'Legacy_SPID'
+    , pi.sp_id 'iPEP_SPID'
+    , d.drawingnumber 'Rep Drawing Number'
+    , u.name PlantGroupName
+--  , u.SP_ID PlantGroupID
+    , pi.itemtag 'Item Tag'
+    , pi.COV_ShortItemTag 'Short ItemTag'
+    ,(select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 12001 and codelist_index = pi.COV_IdLetters) 'Identification Letters'
+    , eq.tagsequenceno 'Tag Seq No'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 24 and  codelist_index = eq.class) 'Equip Class'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 23 and  codelist_index = eq.equipmentsubclass) 'Equip Subclass'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 22 and  codelist_index = eq.equipmenttype)  'Equip Type'
+    , m.description 'Description'
+    , eq.COV_TechDat1 'Techn. Data 1'
+    , eq.COV_TechDat2 'Techn. Data 2'
+    , eq.COV_TechDat3 'Techn. Data 3'
+    , eq.COV_OperPressRange 'Oper Press Range'
+    , eq.COV_OperTempRange 'Oper Temp Range'
+    , eq.COV_Material 'Material'
+    , eq.COV_ManDwgNo 'Drawing No of Manufacturer'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 45 and  codelist_index = eq.insultype) 'Insulation Type'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 6 and  codelist_index = eq.insulpurpose) 'Insulation Purpose'
+    , eq.insulthick 'Insulation Thk'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 50 and  codelist_index =eq.insulationthksource)'Insulation Thk Source'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 4 and  codelist_index = eq.htracereqmt) 'Heat Trace Requirement'
+    , (select codelist_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 5 and  codelist_index = eq.htracemedium) 'Heat Trace Medium'
+    , eq.htracemediumtemp 'Heat Trace Medium Temp'
+	, (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists where codelist_number = 93 and codelist_index =pi.ConstructionStatus) 'Construction Status'
+--	, pi.ConstructionStatus
+	, pi.name 'Name'
+	, eq.COV_Remark 'Remark'
+    , eq.COV_ClassNo 'Class-No'
+    , eq.COV_EquipmentNo 'Equipment-No'
+    , eq.COV_FabricationNo 'Fabrication-No'
+    , eq.COV_WNo 'W-No'
+    
+    , (select codelist_short_text from P_SPPID_###schemaname###_Mpidd.codelists cl where codelist_number = 38 and codelist_index = pi.plantitemtype) 'Plant Item Type'
+
+    , pi.COV_Detail1 'Detail 1'
+    , pi.COV_Detail2 'Detail 2'
+    , pi.COV_Detail3 'Detail 3'
+    , pi.COV_Detail4 'Detail 4'
+    , pi.aabbcc_code 'AABBCC_CODE'
+    , r.FileName 'Rep File Name'
+    , d.path 'Rep Drawing Path'
+    , (select entity_description from p_sppid_###schemaname###_md.entities where entity_number = u.plantgrouptype) PlantGroupType
+    , d.SP_AccessedBy 'Last Modified By' 
+    , r.SP_FileLastModifiedTime 'Last Modified Time'
+
+from P_SPPID_###schemaname###_Mpid.t_plantitem pi
+join P_SPPID_###schemaname###_Mpid.t_equipment eq on pi.sp_id = eq.sp_id
+join P_SPPID_###schemaname###_Mpid.t_modelitem m on eq.sp_id = m.sp_id and m.sp_istypical <> 2
+left join P_SPPID_###schemaname###_Mpid.t_representation r on eq.sp_id = r.sp_modelitemid
+left join P_SPPID_###schemaname###_Mpid.t_drawing d on r.sp_drawingid = d.sp_id 
+left join P_SPPID_###schemaname###_M.t_plantgroup u ON u.SP_ID = pi.SP_PlantGroupID
+
+where
+d.Path like '%###path###%'
+###fullconstraint_1###
+and r.filename is not null) Temp;
+/*
+and d.name not like '%PAT%'
+AND d.path not like '%CAOBISC-A332%';
+*/
+

@@ -1,0 +1,9 @@
+select r.sp_id
+, r.FileName
+, d.Name DrawingName
+, d.Path DrawingPath 
+from ###Schema_1###pid.T_Representation r
+join ###Schema_1###pid.T_Drawing d on d.sp_id = r.SP_DrawingID
+where 
+R.FileName IS NOT NULL
+ORDER BY d.Path

@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPI Data Comp Tool", "SPI Data Comp Tool\SPI Data Comp Tool.csproj", "{1F75F22C-9625-428F-9941-CC3DA205ECD3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1F75F22C-9625-428F-9941-CC3DA205ECD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F75F22C-9625-428F-9941-CC3DA205ECD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F75F22C-9625-428F-9941-CC3DA205ECD3}.Debug|x64.ActiveCfg = Debug|x64
+		{1F75F22C-9625-428F-9941-CC3DA205ECD3}.Debug|x64.Build.0 = Debug|x64
+		{1F75F22C-9625-428F-9941-CC3DA205ECD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F75F22C-9625-428F-9941-CC3DA205ECD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F75F22C-9625-428F-9941-CC3DA205ECD3}.Release|x64.ActiveCfg = Release|x64
+		{1F75F22C-9625-428F-9941-CC3DA205ECD3}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CC6E2BF7-1AA6-4C39-AE5B-3C1BA0FA9128}
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 2
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://dev.azure.com/krishnabhunia3107
+		SccProjectUniqueName0 = SPI\u0020Data\u0020Comp\u0020Tool\\SPI\u0020Data\u0020Comp\u0020Tool.csproj
+		SccProjectName0 = SPI\u0020Data\u0020Comp\u0020Tool
+		SccLocalPath0 = SPI\u0020Data\u0020Comp\u0020Tool
+		SccLocalPath1 = .
+	EndGlobalSection
+EndGlobal

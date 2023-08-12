@@ -1,0 +1,18 @@
+select
+(select entity_description from p_sppid_###schemaname###_Md.entities where entity_number=u.plantgrouptype) PlantGroupType
+, u.name PlantGroupName
+, d.name DrawingName
+, d.DrawingNumber
+, Title DrawingTitle
+, d.Description
+, d.path 'Drawing Path'
+, r.SP_MajorRevisionNumber RevisionNumber
+from P_SPPID_###schemaname###_Mpid.T_Drawing d 
+left join P_SPPID_###schemaname###_M.t_plantgroup u ON u.SP_ID = d.SP_PlantGroupID
+left join P_SPPID_###schemaname###_Mpid.T_Revision r ON d.SP_ID = r.SP_drawingID
+where
+d.Path like '%###path###%'
+###fullconstraint_1###
+--d.Path like '%###likepath###%'
+--and d.path not like '%###notlikepath###%'
+ORDER BY d.Path
