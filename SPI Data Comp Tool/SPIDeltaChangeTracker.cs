@@ -224,7 +224,7 @@ namespace SPI_Data_Comp_Tool
                 if (cb_UserProfileList.Items.Count > 0)
                 {
                     cb_UserProfileList.SelectedIndex = 0;
-                    if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                    if (GlobalDebug.boolIsGlobalDebug || GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         if (cb_UserProfileList.Items.Count >= 7)
                         {
@@ -239,12 +239,12 @@ namespace SPI_Data_Comp_Tool
                 dbTRGConnection = new DBConnectionStatus();
                 boolToggle = true;
 
-                if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName) || Debugger.IsAttached)
+                if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName) || GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     gb_Debug.Visible = true;
                 }
 
-                if (Debugger.IsAttached)
+                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     boolLinkLabel = true;
                 }
@@ -1301,7 +1301,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (true)//Debugger.IsAttached)
+                if (true)//GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     switch (comboBox1.SelectedIndex + 1)
                     {
@@ -1603,7 +1603,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     strFilePathChangeSave = llbl_Folder_path.Text + @"\" + tb_FileName.Text + @".xlsx";
 
-                    if (Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled || GlobalDebug.boolIsGlobalDebug)
                     {
                         tb_FileName.Text = $"{common_Data.RemoveSpecialCharacters(cb_SRC_TableName.Text)}_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}";
                     }
@@ -1763,7 +1763,7 @@ namespace SPI_Data_Comp_Tool
                 }
                 else
                 {
-                    if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                    if (GlobalDebug.boolIsGlobalDebug || GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         lblDebugMsg.Text = $"Debug Msg : {v}";
                         lblDebugMsg.Visible = true;
@@ -2728,7 +2728,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     lblExpressionStatus.Text = ex.Message.ToString();
                     lblExpressionStatus.ForeColor = Color.Red;
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         lblExpressionStatus.Text = ex.ToString();
                     }
@@ -3468,7 +3468,7 @@ namespace SPI_Data_Comp_Tool
         {
             //try
             //{
-            //    if (Debugger.IsAttached)
+            //    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
             //    {
             //        Random random = new Random(500);
             //        tb_ProfileName.Text = random.Next(100, 10000).ToString();

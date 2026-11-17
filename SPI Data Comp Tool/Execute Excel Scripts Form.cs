@@ -80,7 +80,7 @@ namespace SPI_Data_Comp_Tool
                 dsPNIDReports = new DataSet();
                 boolPNIDFolderPath = false;
 
-                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug || GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     linkLabel1.Text = @"D:\Krishna\Output\Export Select Query to Excel";
                     llb_PNID_Report_Path.Text = @"D:\Krishna\Output";
@@ -561,7 +561,7 @@ namespace SPI_Data_Comp_Tool
                                     Common_Data.DisplayDebugMsg(rtb_Log, $"Executing script : {dBConnectionStatus_SRC.strCMDText}");
                                     dtPNIDReports.Reset();
 
-                                    //if (Debugger.IsAttached)
+                                    //if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                                     //{
                                     //    dBConnectionStatus_SRC.strCMDText = "SELECT * FROM SOURCE1";
                                     //}
@@ -571,7 +571,7 @@ namespace SPI_Data_Comp_Tool
 
                                     string strCustom = tb_CommonSchema.Text != ""?$"_{tb_CommonSchema.Text}":"";
 
-                                    //if(Debugger.IsAttached)
+                                    //if(GlobalDebug.IsDeveloperDiagnosticsEnabled)
                                     //{
                                     //    dtPNIDReports = dtPNIDReports.Clone();
                                     //}
@@ -710,7 +710,7 @@ namespace SPI_Data_Comp_Tool
             {
                 string strFileName = string.Empty;
 
-                if(Debugger.IsAttached)
+                if(GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     strFileName = $@"{Path.Combine(Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.FullName)}\PNID_Reports\{strSourceORTarget}";
                     //@"D:\Krishna\Projects\SPI\SPI Data Comp Tool\SPI Data Comp Tool\PNID_Reports\Source";

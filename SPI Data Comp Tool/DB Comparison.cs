@@ -202,7 +202,7 @@ namespace SPI_Data_Comp_Tool
                     DisplayMessage(lblStatus, $"User Profile Loaded from {Properties.Settings.Default.ProfilePathUser}");
                 }
 
-                if (GlobalDebug.boolIsGlobalDebug || (cb_UserProfileList.Items.Count > 0 && Debugger.IsAttached))
+                if (GlobalDebug.boolIsGlobalDebug || (cb_UserProfileList.Items.Count > 0 && GlobalDebug.IsDeveloperDiagnosticsEnabled))
                 {
                     cb_UserProfileList.SelectedIndex = 0;
                 }
@@ -220,7 +220,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if ((Debugger.IsAttached) || (intExplicitCall == 1))
+                if ((GlobalDebug.IsDeveloperDiagnosticsEnabled) || (intExplicitCall == 1))
                 {
                     cb_UserProfileList.Visible = true;
                 }
@@ -2646,7 +2646,7 @@ namespace SPI_Data_Comp_Tool
                 else
                 {
                     Debug.WriteLine(string.Format("{0} not implemented", token.Type)); // JConstructor, JRaw
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         DisplayMessage(lbl_ProfileStatus, $"{token.Type} not implemented", Color.Red);
                     }
@@ -2785,7 +2785,7 @@ namespace SPI_Data_Comp_Tool
                 if (ex != null)
                 {
                     lblExpressionStatus.Text = ex.Message.ToString();
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         lblExpressionStatus.Text = ex.ToString();
                     }
@@ -2826,7 +2826,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (Debugger.IsAttached)
+                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     Random random = new Random(500);
                     tb_ProfileName.Text = random.Next(100, 10000).ToString();
@@ -3027,7 +3027,7 @@ namespace SPI_Data_Comp_Tool
                 if (ex != null)
                 {
                     control.Text = ex.Message.ToString();
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         control.Text = ex.ToString();
                     }

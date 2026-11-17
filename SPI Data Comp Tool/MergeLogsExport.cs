@@ -66,7 +66,7 @@ namespace SPI_Data_Comp_Tool
                     lbl_ReadTxtFile.Text = openFileDialogData.strFileNameWithPath;
                     Common_Data.DisplayMessage(rtb_Log, $"File Selected : {openFileDialogData.strFileNameWithPath}");
 
-                    if (!(Debugger.IsAttached))
+                    if (!(GlobalDebug.IsDeveloperDiagnosticsEnabled))
                     {
                         saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Excel File", $"Merge_Log_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}");
                     }

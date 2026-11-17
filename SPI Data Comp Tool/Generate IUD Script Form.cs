@@ -682,7 +682,7 @@ namespace SPI_Data_Comp_Tool
         //    try
         //    {
         //       Common_Data.DisplayMessage(rtb_Log,ex.Message.ToString(), true);
-        //        if (Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
+        //        if (GlobalDebug.IsDeveloperDiagnosticsEnabled || GlobalDebug.boolIsGlobalDebug)
         //        {
         //           Common_Data.DisplayMessage(rtb_Log,ex.ToString(), true);
         //        }
@@ -690,7 +690,7 @@ namespace SPI_Data_Comp_Tool
         //    catch (Exception ex1)
         //    {
         //       Common_Data.DisplayMessage(rtb_Log,ex1.Message.ToString(), true);
-        //        if (Debugger.IsAttached)
+        //        if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
         //        {
         //           Common_Data.DisplayMessage(rtb_Log,ex1.ToString(), true);
         //        }

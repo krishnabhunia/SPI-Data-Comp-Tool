@@ -37,7 +37,7 @@ namespace SPI_Data_Comp_Tool
                 //while (File.Exists(strLogFile) & IsFileLocked(strLogFile))
                 while (File.Exists(strLogFile))
                 {
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         break;
                     }
@@ -57,7 +57,7 @@ namespace SPI_Data_Comp_Tool
                 intCounterForData = 1;
                 while (File.Exists(strDataCaptureFile))
                 {
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         break;
                     }
