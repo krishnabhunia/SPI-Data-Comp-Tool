@@ -33,6 +33,16 @@ namespace SPI_Data_Comp_Tool
 
         private List<DBC> items;
         private static bool boolColorAlternate;
+        private static readonly Regex ConnectionCredentialPattern = new Regex(
+            @"(\b(?:Password|Pwd)\s*=\s*)(?:""[^""]*""|'[^']*'|[^;\r\n]*)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        internal static string RedactConnectionCredentials(string message)
+        {
+            return string.IsNullOrEmpty(message)
+                ? message
+                : ConnectionCredentialPattern.Replace(message, "$1[REDACTED]");
+        }
 
         private SqlDataAdapter sqlDA;
         private OracleDataAdapter oracleDA;
@@ -218,6 +228,7 @@ namespace SPI_Data_Comp_Tool
 
         internal static void DisplayMessage(RichTextBox rtb_Log, string strMsg, bool boolError = false, int overwriteText = -1, Color? color = null)
         {
+            strMsg = RedactConnectionCredentials(strMsg);
             try
             {
                 rtb_Log.SelectionStart = rtb_Log.TextLength;

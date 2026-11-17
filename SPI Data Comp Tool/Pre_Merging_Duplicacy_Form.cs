@@ -582,7 +582,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                BG_DisplayDebugMsg($"Reading GetDataTableFromDB : {strSelectQuery} And {strConnectionString}");
+                BG_DisplayDebugMsg($"Reading GetDataTableFromDB : {strSelectQuery} (connection details omitted)");
                 
                 if (strDBType.ToLower() == "oracle")
                 {
@@ -600,7 +600,7 @@ namespace SPI_Data_Comp_Tool
                     dtLoadFromDB.TableName = "SQL Table";
                 }
 
-                BG_DisplayDebugMsg($"Sucessfully GetDataTableFromDB : {strSelectQuery} And {strConnectionString}");
+                BG_DisplayDebugMsg($"Successfully GetDataTableFromDB : {strSelectQuery} (connection details omitted)");
 
                 dtLoadFromDB = common_Data.ChangeColumnToString(dtLoadFromDB);
 

@@ -1,0 +1,19 @@
+name: Windows data-integrity source checks
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  source-contracts:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run static regression checks
+        run: python -m unittest discover -s tests -p 'test_*.py' -v

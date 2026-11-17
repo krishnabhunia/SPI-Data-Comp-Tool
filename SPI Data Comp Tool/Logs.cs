@@ -83,7 +83,7 @@ namespace SPI_Data_Comp_Tool
             {
                 using (StreamWriter sw = File.AppendText(strLogFile))
                 {
-                    sw.WriteLine(strLog);
+                    sw.WriteLine(Common_Data.RedactConnectionCredentials(strLog));
                     sw.Dispose();
                 }
             }
@@ -100,7 +100,7 @@ namespace SPI_Data_Comp_Tool
                 strLog = $"{string.Format("{0:T}", DateTime.Now)} : {strLog}";
                 using (StreamWriter sw = File.AppendText(strLogFile))
                 {
-                    sw.WriteLine(strLog);
+                    sw.WriteLine(Common_Data.RedactConnectionCredentials(strLog));
                     sw.Dispose();
                 }
             }
@@ -117,7 +117,7 @@ namespace SPI_Data_Comp_Tool
                 string strLog = $"++++++++++++++\n\n{string.Format("{0:T}", DateTime.Now)} : {exc.ToString()}++++++++++++\n\n";
                 using (StreamWriter sw = File.AppendText(strLogFile))
                 {
-                    sw.WriteLine(strLog);
+                    sw.WriteLine(Common_Data.RedactConnectionCredentials(strLog));
                     sw.Dispose();
                 }
             }
