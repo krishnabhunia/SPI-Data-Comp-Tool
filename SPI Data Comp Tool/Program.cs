@@ -67,8 +67,8 @@ namespace SPI_Data_Comp_Tool
                 //Application.Run(new ComparisonProcessWindow());
 
                 //other
-                //Application.Run(new UserTest());
-                //Application.Run(new Test());
+
+
 
             }
             else

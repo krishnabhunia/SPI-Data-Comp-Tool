@@ -15,6 +15,7 @@ namespace SPI_Data_Comp_Tool
         public User_Settings()
         {
             InitializeComponent();
+            UiTheme.Apply(this);
 
             try
             {

@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Designer files match their layout specs
+        run: python3 tools/layout_gen.py --check tools/layouts/*.py
       - name: Fail if connection profiles or passwords are committed
         run: |
           python - <<'PY'
@@ -129,6 +131,8 @@ jobs:
       - name: Screenshot every form
         shell: pwsh
         run: |
+          try { Set-DisplayResolution -Width 1920 -Height 1080 -Force -ErrorAction Stop; Write-Host 'display set to 1920x1080' }
+          catch { Write-Host "::warning::display stays at the runner default (windows are capped to it): $_" }
           $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
           $out = Join-Path $PWD "screenshots"
           New-Item -ItemType Directory -Force $out | Out-Null

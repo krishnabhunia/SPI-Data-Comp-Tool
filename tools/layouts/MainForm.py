@@ -1,0 +1,46 @@
+"""Main window - layout spec for tools/layout_gen.py."""
+from layout_gen import C, T, F, G
+
+DESIGNER = "MainForm.Designer.cs"
+FORM_NAME = "MainForm"
+CLIENT = (760, 440)
+MINIMUM = (640, 400)
+FORM_PADDING = 0
+TOP = ["menuStrip1"]           # docked to the top, outside the layout table
+
+# the old login box and its two holder panels are gone (login removed in 2.2.0)
+DROP = ["gb_logincredentials", "btn_Login", "tb_username", "tb_password", "label1", "label4",
+        "gb_AppDetails", "panel_control"]
+
+TEXTS = {
+    "btn_Exit_Logout": "Exit",
+    "lbl_LoginStatus": "Ready",
+}
+
+PROPS = {
+    "pictureBox1": {"SizeMode": "System.Windows.Forms.PictureBoxSizeMode.Zoom"},
+    "pictureBox2": {"SizeMode": "System.Windows.Forms.PictureBoxSizeMode.Zoom"},
+    "label3": {"ForeColor": "System.Drawing.Color.FromArgb(90, 90, 90)"},
+    "lbl_Version": {"ForeColor": "System.Drawing.Color.FromArgb(90, 90, 90)"},
+    "lbl_LoginStatus": {"ForeColor": "System.Drawing.Color.FromArgb(90, 90, 90)"},
+}
+
+LAYOUT = T("tlp_Root", cols=["50%", "50%"], rows=["100%", "auto"], padding=(16, 16, 16, 8), cells=[
+    (T("tlp_Pictures", cols=["100%"], rows=["55%", "45%"], cells=[
+        (C("pictureBox1", dock="Fill", margin=(0, 0, 0, 8)), 0, 0),
+        (C("pictureBox2", dock="Fill", margin=0), 0, 1),
+    ], margin=(0, 0, 16, 0)), 0, 0),
+    (T("tlp_About", cols=["100%"], rows=["auto", "auto", "100%", "auto"], cells=[
+        (C("label2", anchor="Left, Right", autosize=True, margin=(0, 4, 0, 12)), 0, 0),
+        (C("label3", anchor="Left, Right", autosize=True, margin=0), 0, 1),
+        (F("flp_Actions", [
+            C("btn_Open_DB_Comparison", size=(150, 32), margin=(0, 0, 8, 0)),
+            C("btn_Excel_Comparison", size=(150, 32), margin=(0, 0, 8, 0)),
+            C("btn_Exit_Logout", size=(100, 32), margin=0),
+        ], direction="RightToLeft", anchor="Right"), 0, 3),
+    ]), 1, 0),
+    (F("flp_Status", [
+        C("lbl_LoginStatus", autosize=True, margin=(0, 0, 16, 0)),
+        C("lbl_Version", new="Label", autosize=True, margin=0),
+    ], margin=(0, 12, 0, 0)), 0, 1, 2),
+])
