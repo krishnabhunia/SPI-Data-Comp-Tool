@@ -14,7 +14,7 @@ namespace SPI_Data_Comp_Tool
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -22,6 +22,9 @@ namespace SPI_Data_Comp_Tool
             #region Registering 
             ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
             #endregion
+
+            // CI-only: picture of every window (see FormScreenshots.cs); does nothing in normal use
+            if (FormScreenshots.TryRun(args)) return;
 
             Logs.EnterLogs($"\n=========== Logs Entry Started at {Common_Data.AppendDateInOutputFileName()} ==================================\n");
 
