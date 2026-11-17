@@ -88,6 +88,11 @@ jobs:
           # Portable copy only: skip debug symbols, XML docs and ClickOnce publish output/manifests
           Get-ChildItem $src -File | Where-Object { $_.Extension -notin '.pdb','.xml','.application','.manifest' } |
             Copy-Item -Destination $dst
+          # PNID report SQL templates are read at runtime from <exe folder>\PNID_Reports\Source|Target_IPEP
+          Copy-Item "$src/PNID_Reports" "$dst/PNID_Reports" -Recurse
+          foreach ($t in 'Source/instrument.txt','Target_IPEP/instrument.txt') {
+            if (-not (Test-Path "$dst/PNID_Reports/$t")) { throw "PNID template missing from portable/: $t" }
+          }
           Rename-Item "$dst/SPI Data Comp Tool.exe" "$name.exe"
           Rename-Item "$dst/SPI Data Comp Tool.exe.config" "$name.exe.config"
           if (Test-Path "$dst/app.publish") { throw 'ClickOnce output leaked into portable/' }

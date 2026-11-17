@@ -65,7 +65,7 @@ flowchart TD
 ## Versioning and CI artifacts
 - The version is `x.y.z` from `AssemblyFileVersion` in `Properties/AssemblyInfo.cs` (x = major, y = minor, z = fix).
 - Pull-request builds are tagged `x.y.z-betaNNN` (NNN = CI run number); pushes to `master` build the plain `x.y.z`.
-- Each Windows build uploads one artifact, `SPI_Data_Comp_Tool_<version>`, which downloads as a zip containing `portable/` with `SPI_Data_Comp_Tool_<version>.exe`, its `.exe.config` and the required DLLs.
+- Each Windows build uploads one artifact, `SPI_Data_Comp_Tool_<version>`, which downloads as a zip containing `portable/` with `SPI_Data_Comp_Tool_<version>.exe`, its `.exe.config`, the required DLLs and the `PNID_Reports/Source` and `PNID_Reports/Target_IPEP` SQL templates (read at runtime by **Execute Excel Scripts > PNID Reports**; the project copies them to the build output).
 
 ## Supported workflows vs. assumptions
 The source has forms for database comparison, Excel comparison, delta change tracking and database-to-Excel export. Exact connection strings, supported server versions, data-size limits and complete workflows must be validated manually: the repository does not supply safe integration fixtures for all operations.
