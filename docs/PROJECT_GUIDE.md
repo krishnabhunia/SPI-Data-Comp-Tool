@@ -58,9 +58,10 @@ flowchart TD
 | SrNo. | Setting | How it works |
 |---|---|---|
 | 1 | Connection profiles | Saved from **File > User Profile** to a JSON file you choose; its path is remembered in the user settings (`ProfilePathUser`). Template: `UserProfile/userProfile.example.json`. The real `userProfile.json` is git-ignored. |
-| 2 | Developer mode | On when a debugger is attached, or when the environment variable `SPI_DATA_COMP_DEBUG=1` is set. It is no longer tied to specific Windows user names or a built-in password. In developer mode the profile form keeps passwords in the saved JSON, so keep such files local. |
-| 3 | Default output file (pre-merging tool) | `Documents\Output.xlsx` until you pick another location. |
-| 4 | Logs | `Desktop\LogFolder\Log_dd_MM_yyyy*.log` |
+| 2 | Login | None. The old login screen (a user name and password written in this source) was removed in 2.2.0; the main window opens unlocked. |
+| 3 | Developer mode | On when a debugger is attached, or when the environment variable `SPI_DATA_COMP_DEBUG=1` is set. It is no longer tied to specific Windows user names or a built-in password. In developer mode the profile form keeps passwords in the saved JSON, so keep such files local. |
+| 4 | Default output file (pre-merging tool) | `Documents\Output.xlsx` until you pick another location. |
+| 5 | Logs | `Desktop\LogFolder\Log_dd_MM_yyyy*.log` |
 
 ## Versioning and CI artifacts
 - The version is `x.y.z` from `AssemblyFileVersion` in `Properties/AssemblyInfo.cs` (x = major, y = minor, z = fix).
@@ -71,11 +72,11 @@ flowchart TD
 The source has forms for database comparison, Excel comparison, delta change tracking and database-to-Excel export. Exact connection strings, supported server versions, data-size limits and complete workflows must be validated manually: the repository does not supply safe integration fixtures for all operations.
 
 ## Verification
-The GitHub Actions workflow (`build.yml`) runs on pull requests, pushes to `master` and on demand. It checks this guide, fails if a real connection profile, a non-empty profile password, a password text box pre-filled with a literal, a signing key or the old debug password is committed, builds the solution on a Windows runner (an unresolved assembly reference fails the build) and uploads the portable zip. **Read CI results** rather than assuming success. Desktop GUI interactions, live database connectivity and correctness of comparison results require manual acceptance tests.
+The GitHub Actions workflow (`build.yml`) runs on pull requests, pushes to `master` and on demand. It checks this guide, fails if a real connection profile, a non-empty profile password, a password text box pre-filled with or compared to a literal, access tied to a hard-coded user id, or a signing key is committed, builds the solution on a Windows runner (an unresolved assembly reference fails the build) and uploads the portable zip. **Read CI results** rather than assuming success. Desktop GUI interactions, live database connectivity and correctness of comparison results require manual acceptance tests.
 
 ## Limitations and security
 - Some screens may update data; test in isolated environments, never on production by default.
-- Avoid embedding real database credentials in commits, documentation or CI logs. Earlier commits of this repository contained a real profile file; removing it from the latest commit does not remove it from git history, so treat those credentials as exposed and rotate them.
+- Avoid embedding real database credentials in commits, documentation or CI logs. Earlier commits contained a real profile file and hard-coded passwords. They are gone from the latest code, but git history still holds them until it is rewritten (a separate, owner-approved step that changes every commit id). Treat those credentials as exposed and rotate any that are still in use.
 - Queries are built by string concatenation from table/column names taken from rule files and the UI. Only use trusted rule files.
 - The Excel library's license terms and database drivers need separate validation.
 - No genuine geographic data or measured benchmarks were found, so geographical maps and performance charts are not fabricated.

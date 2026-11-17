@@ -466,7 +466,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 
-                if (Debugger.IsAttached || Environment.UserName == "40009708")
+                if (Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
                 {
                     tb_FileName.Text = $"Output_{common_Data.RemoveSpecialCharacters(DateTime.Now.ToString(), "_")}";
                 }

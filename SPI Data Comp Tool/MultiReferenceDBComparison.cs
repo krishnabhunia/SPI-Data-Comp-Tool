@@ -150,7 +150,7 @@ namespace SPI_Data_Comp_Tool
             boolCompareResult = false;
             boolRulesCheck = false;
 
-            if (Debugger.IsAttached || Environment.UserName == "40009708")
+            if (Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
             {
                 comboBox1.Visible = true;
                 comboBox1.SelectedIndex = 8;
@@ -649,14 +649,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = "IESWKCT670";
                             tb_oracle_dbName.Text = "SPEL11G";
                             tb_oracle_username.Text = "system";
-                            tb_oracle_pwd.Text = "SPEL11G";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "tb_compare1";
 
                             rb_Target_SQL.Checked = true;
                             tb_sql_dsource.Text = "IESWKCT600";
                             tb_sql_dbName.Text = "db_SPELSQL";
                             tb_sql_username.Text = "sa";
-                            tb_sql_pwd.Text = "abcde@1234567";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "tb_compare1";
 
                             break;
@@ -666,14 +666,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = "IESWKCT600";
                             tb_oracle_dbName.Text = "db_SPELSQL";
                             tb_oracle_username.Text = "sa";
-                            tb_oracle_pwd.Text = "abcde@1234567";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "tb_compare1";
 
                             rb_Target_SQL.Checked = true;
                             tb_sql_dsource.Text = "IESWKCT600";
                             tb_sql_dbName.Text = "db_SPELSQL";
                             tb_sql_username.Text = "sa";
-                            tb_sql_pwd.Text = "abcde@1234567";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "tb_compare1";
 
                             break;
@@ -683,14 +683,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = "IESWKCT600";
                             tb_oracle_dbName.Text = "SPELOLDP";
                             tb_oracle_username.Text = "sa";
-                            tb_oracle_pwd.Text = "abcde@1234567";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "plant1el.t_plantitem";
 
                             rb_Target_SQL.Checked = true;
                             tb_sql_dsource.Text = "IESWKCT600";
                             tb_sql_dbName.Text = "SPELOLDP_new";
                             tb_sql_username.Text = "sa";
-                            tb_sql_pwd.Text = "abcde@1234567";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "plant1el.t_plantitem";
 
                             break;
@@ -700,14 +700,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = "IESWKCT670";
                             tb_oracle_dbName.Text = "SPEL11G";
                             tb_oracle_username.Text = "system";
-                            tb_oracle_pwd.Text = "SPEL11G";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "DASISLANDEL.T_motor";
 
                             rb_Target_SQL.Checked = true;
                             tb_sql_dsource.Text = "IESWKCT600";
                             tb_sql_dbName.Text = "JK1703_P";
                             tb_sql_username.Text = "sa";
-                            tb_sql_pwd.Text = "abcde@1234567";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "Plant789el.T_Motor";
 
                             break;
@@ -717,14 +717,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = "IESWKCT670";
                             tb_oracle_dbName.Text = "SPEL11G";
                             tb_oracle_username.Text = "system";
-                            tb_oracle_pwd.Text = "SPEL11G";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "DASISLANDEL.T_Plantitem";
 
                             rb_Target_SQL.Checked = true;
                             tb_sql_dsource.Text = "IESWKCT600";
                             tb_sql_dbName.Text = "JK1703_P";
                             tb_sql_username.Text = "sa";
-                            tb_sql_pwd.Text = "abcde@1234567";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "plant789elp1.t_Plantitem";
 
                             break;
@@ -734,14 +734,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = "IESWKCT670";
                             tb_oracle_dbName.Text = "SPEL11G";
                             tb_oracle_username.Text = "system";
-                            tb_oracle_pwd.Text = "SPEL11G";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "tb_loop";
 
                             rb_Target_SQL.Checked = true;
                             tb_sql_dsource.Text = "IESWKCT600";
                             tb_sql_dbName.Text = "db_SPELSQL";
                             tb_sql_username.Text = "sa";
-                            tb_sql_pwd.Text = "abcde@1234567";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "loop";
 
                             break;
@@ -750,14 +750,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = "IESWKCT670";
                             tb_oracle_dbName.Text = "SPEL11G";
                             tb_oracle_username.Text = "system";
-                            tb_oracle_pwd.Text = "SPEL11G";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "tb_loop_2k";
 
                             rb_Target_SQL.Checked = true;
                             tb_sql_dsource.Text = "IESWKCT600";
                             tb_sql_dbName.Text = "db_SPELSQL";
                             tb_sql_username.Text = "sa";
-                            tb_sql_pwd.Text = "abcde@1234567";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "tb_loop_2k";
 
                             break;
@@ -766,14 +766,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = "localhost";
                             tb_oracle_dbName.Text = "orcl";
                             tb_oracle_username.Text = "system";
-                            tb_oracle_pwd.Text = "1234";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "test";
 
                             rb_Target_Oracle.Checked = true;
                             tb_sql_dsource.Text = "localhost";
                             tb_sql_dbName.Text = "orcl";
                             tb_sql_username.Text = "system";
-                            tb_sql_pwd.Text = "1234";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "test1";
 
                             break;
@@ -782,14 +782,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = @"KRISHNA-HP\KRISHNASQL2019";
                             tb_oracle_dbName.Text = "db_krishna";
                             tb_oracle_username.Text = "sa";
-                            tb_oracle_pwd.Text = "1234";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "multitable1";
 
                             rb_Target_SQL.Checked = true;
                             tb_sql_dsource.Text = @"KRISHNA-HP\KRISHNASQL2019";
                             tb_sql_dbName.Text = "db_krishna";
                             tb_sql_username.Text = "sa";
-                            tb_sql_pwd.Text = "1234";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "multitable2";
 
                             break;
@@ -799,14 +799,14 @@ namespace SPI_Data_Comp_Tool
                             tb_oracle_dsource.Text = @"IESWKCT600";
                             tb_oracle_dbName.Text = "training_p";
                             tb_oracle_username.Text = "sa";
-                            tb_oracle_pwd.Text = "abcde@1234567";
+                            tb_oracle_pwd.Text = "";
                             tb_Source_tableName.Text = "test_sql";
 
                             rb_Target_SQL.Checked = true;
                             tb_sql_dsource.Text = @"IESWKCT600";
                             tb_sql_dbName.Text = "training_p";
                             tb_sql_username.Text = "sa";
-                            tb_sql_pwd.Text = "abcde@1234567";
+                            tb_sql_pwd.Text = "";
                             tb_destination_tableName.Text = "test_sql_1";
 
                             break;
