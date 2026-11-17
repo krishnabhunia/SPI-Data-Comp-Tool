@@ -1,0 +1,19 @@
+[
+  {
+    "profileName": "example_oracle_to_sql",
+    "dbSRC": {
+      "str_DBType": "oracle",
+      "str_DataSource": "<oracle-host>",
+      "str_DBName": "<service-name>",
+      "str_UserName": "<user>",
+      "str_Password": ""
+    },
+    "dbTRG": {
+      "str_DBType": "sql",
+      "str_DataSource": "<sql-server-host>",
+      "str_DBName": "<database>",
+      "str_UserName": "<user>",
+      "str_Password": ""
+    }
+  }
+]

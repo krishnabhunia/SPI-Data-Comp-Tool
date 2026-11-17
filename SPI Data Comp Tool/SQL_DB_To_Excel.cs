@@ -61,14 +61,14 @@ namespace SPI_Data_Comp_Tool
                     tb_SRC_DataSource.Text = @"KRISHNA-HP\KRISHNASQL2019";
                     tb_SRC_DBName.Text = "db_krishna";
                     tb_SRC_UserName.Text = "sa";
-                    tb_SRC_Password.Text = "1234";
+                    tb_SRC_Password.Text = "";
                 }
                 else if (Environment.MachineName.ToString() == "BRTSP00375")
                 {
                     tb_SRC_DataSource.Text = @"IESWKCT247";
                     tb_SRC_DBName.Text = "training_p";
                     tb_SRC_UserName.Text = "sa";
-                    tb_SRC_Password.Text = "abcde@1234567";
+                    tb_SRC_Password.Text = "";
                 }
                 linkLabel1.Text = @"D:\Krishna\Output\Export DB To Excel";
             }
@@ -381,7 +381,7 @@ namespace SPI_Data_Comp_Tool
                     tb_SRC_DataSource.Text = "IESWKCT670";
                     tb_SRC_DBName.Text = "SPEL11G";
                     tb_SRC_UserName.Text = "system";
-                    tb_SRC_Password.Text = "SPEL11G";
+                    tb_SRC_Password.Text = "";
                 }
             }
             catch (Exception ex)
@@ -414,7 +414,7 @@ namespace SPI_Data_Comp_Tool
                     tb_SRC_DataSource.Text = @"IESWKCT247";
                     tb_SRC_DBName.Text = "training_p";
                     tb_SRC_UserName.Text = "sa";
-                    tb_SRC_Password.Text = "abcde@1234567";
+                    tb_SRC_Password.Text = "";
                 }
             }
             catch (Exception ex)

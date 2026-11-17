@@ -2768,11 +2768,14 @@ namespace SPI_Data_Comp_Tool
         public static bool boolIsGlobalDebug { get; private set; }
         public static bool ISGlobalDebug(string strUN, string strPassWD)
         {
-            if (Debugger.IsAttached || Environment.UserName == "40009708" || Environment.UserName == "CXUKC" ||
-                (strUN == "Krishna" || strPassWD == "DebugKrishnaDebug"))
+            // Developer mode is switched on only by an attached debugger or by an explicit
+            // opt-in environment variable. It used to be granted to hard-coded Windows user
+            // names and a hard-coded password, which anyone reading this public source could reuse.
+            if (Debugger.IsAttached ||
+                string.Equals(Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG"), "1", StringComparison.Ordinal))
             {
-                strUserName = "Krishna";
-                strPassword = "DebugKrishnaDebug";
+                strUserName = Environment.UserName;
+                strPassword = "";
                 boolIsGlobalDebug = true;
                 return true;
             }

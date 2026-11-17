@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Local DB connection profiles hold server names and passwords - never commit them.
+# A placeholder template lives in SPI Data Comp Tool/UserProfile/userProfile.example.json
+**/UserProfile/userProfile.json
+**/UserProfile/*.local.json
