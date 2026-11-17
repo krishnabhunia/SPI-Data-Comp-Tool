@@ -85,10 +85,13 @@ jobs:
           $src = "SPI Data Comp Tool/bin/Release"
           $dst = "dist/portable"
           New-Item -ItemType Directory -Force $dst | Out-Null
-          Copy-Item "$src/*" $dst -Recurse -Exclude *.pdb,*.xml
+          # Portable copy only: skip debug symbols, XML docs and ClickOnce publish output/manifests
+          Get-ChildItem $src -File | Where-Object { $_.Extension -notin '.pdb','.xml','.application','.manifest' } |
+            Copy-Item -Destination $dst
           Rename-Item "$dst/SPI Data Comp Tool.exe" "$name.exe"
           Rename-Item "$dst/SPI Data Comp Tool.exe.config" "$name.exe.config"
-          Get-ChildItem dist -Recurse | Select-Object -First 40 | ForEach-Object { $_.FullName }
+          if (Test-Path "$dst/app.publish") { throw 'ClickOnce output leaked into portable/' }
+          Get-ChildItem dist -Recurse | ForEach-Object { $_.FullName }
       - uses: actions/upload-artifact@v4
         with:
           name: SPI_Data_Comp_Tool_${{ steps.ver.outputs.version }}
