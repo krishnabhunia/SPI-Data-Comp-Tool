@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
 using System.IO;
-using System.Security.Cryptography;
 
 namespace SPI_Data_Comp_Tool
 {
@@ -41,7 +40,6 @@ namespace SPI_Data_Comp_Tool
 
         private string[] strPNID_Reports;
         private int int_RowsAffected;
-        private string testedConnectionFingerprint;
 
         private DataSet dsPNIDReports, dsSelect;
         public Execute_Excel_Scripts_Form()
@@ -82,7 +80,7 @@ namespace SPI_Data_Comp_Tool
                 dsPNIDReports = new DataSet();
                 boolPNIDFolderPath = false;
 
-                if (GlobalDebug.boolIsGlobalDebug || GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
                 {
                     linkLabel1.Text = @"D:\Krishna\Output\Export Select Query to Excel";
                     llb_PNID_Report_Path.Text = @"D:\Krishna\Output";
@@ -147,102 +145,63 @@ namespace SPI_Data_Comp_Tool
             {
                 int_RowsAffected = 0;
                 int_Count = 0;
+                Common_Data.DisplayMessage(rtb_Log, "Execution Started");
                 dsSelect = new DataSet();
 
-                RequireFreshDatabaseConnection();
-                if (dtGenerateScript == null || dtGenerateScript.Rows.Count == 0)
-                    throw new InvalidOperationException("Load a nonempty Excel file before proceeding.");
-
-                var selectedColumns = clb_Checked.CheckedItems.Cast<string>().ToList();
-                if (selectedColumns.Count != 1)
-                    throw new InvalidOperationException("Select exactly one column containing SQL scripts.");
-
-                var scriptColumn = selectedColumns[0];
-                var scripts = dtGenerateScript.Rows.Cast<DataRow>()
-                    .Select(row => Convert.ToString(row[scriptColumn]))
-                    .ToList();
-
-                if (!chkb_SelectQuery.Checked)
+                if (dBConnectionStatus_SRC.boolConnection)
                 {
-                    // Validate every statement before showing the preview or opening the database.
-                    foreach (var script in scripts)
-                        SqlScriptSafety.ValidateWrite(script);
+                    List<string> checkedValuesEnum = clb_Checked.CheckedItems.Cast<string>().ToList();
 
-                    var databaseTarget = dBConnectionStatus_SRC.strDBType + " | " +
-                        tb_SRC_DataSource.Text.Trim() + " | " + tb_SRC_DBName.Text.Trim();
-                    var previewTarget = databaseTarget + " | User/schema: " + tb_SRC_UserName.Text.Trim();
-                    var runId = Guid.NewGuid().ToString("N");
-                    if (!SqlScriptAudit.TryWrite(runId, "PREVIEW", databaseTarget, scripts.Count, 0))
-                        Common_Data.DisplayMessage(rtb_Log, "Warning: could not write preview audit entry.", true);
-
-                    using (var previewForm = new SqlScriptPreviewForm(previewTarget, scripts))
+                    if (checkedValuesEnum.Count() > 0)
                     {
-                        if (previewForm.ShowDialog(this) != DialogResult.OK)
+                        if (chkb_SelectQuery.CheckState == CheckState.Unchecked)
                         {
-                            Common_Data.DisplayMessage(rtb_Log, "Preview only: no statements executed.");
-                            return;
+                            dtExecute = common_Data.RemoveColumnExcept(dtGenerateScript, string.Join(",", checkedValuesEnum));
+                            Common_Data.DisplayDebugMsg(rtb_Log, $"Connecting : {dBConnectionStatus_SRC.strConnectionString}");
+                            foreach (DataRow dr in dtExecute.Rows)
+                            {
+                                dBConnectionStatus_SRC.strCMDText = dr[checkedValuesEnum[0].ToString()].ToString();
+                                Common_Data.DisplayMessage(rtb_Log, $"Executing script : {dBConnectionStatus_SRC.strCMDText}");
+                                int_RowsAffected = common_Data.ExecuteNonQuery(dBConnectionStatus_SRC);
+                                Common_Data.DisplayMessage(rtb_Log, $"{int_RowsAffected} : Rows affected");
+                                UpdateProgress(++int_Count, dtExecute.Rows.Count);
+                            }
                         }
-                    }
+                        else if (chkb_SelectQuery.CheckState == CheckState.Checked)
+                        {
+                            dtExecute = common_Data.RemoveColumnExcept(dtGenerateScript, string.Join(", ", string.Join(",", checkedValuesEnum), cmb_SelectFileName.Text));
 
-                    // This dialog owns the running task; the parent window cannot initiate another batch.
-                    using (var progressForm = new SqlScriptProgressForm((progress, token) =>
-                        Task.Run(() => SafeSqlScriptExecutor.Execute(
-                            dBConnectionStatus_SRC.strDBType,
-                            dBConnectionStatus_SRC.strConnectionString,
-                            databaseTarget, scripts, runId, progress, token), token)))
+                            Common_Data.DisplayDebugMsg(rtb_Log, $"Connecting : {dBConnectionStatus_SRC.strConnectionString}");
+                            foreach (DataRow dr in dtExecute.Rows)
+                            {
+
+                                dBConnectionStatus_SRC.strCMDText = dr[checkedValuesEnum[0].ToString()].ToString();
+                                //dtSelect.TableName = dr[cmb_SelectFileName.Text].ToString();
+                                //dtSelect = common_Data.FillDataTable(dtSelect, dBConnectionStatus_SRC);
+
+                                dsSelect = common_Data.FillDataTable(dsSelect, dBConnectionStatus_SRC);
+
+                                Common_Data.DisplayMessage(rtb_Log, $"Executing Select Script : {dBConnectionStatus_SRC.strCMDText}");
+                                str_FileNameWithPath = $@"{linkLabel1.Text}\{dr[cmb_SelectFileName.Text]}.xlsx";
+                                if (WriteExcel.ExportToExcel(dsSelect, str_FileNameWithPath))
+                                {
+                                    Common_Data.DisplayMessage(rtb_Log, $"File saved as : {str_FileNameWithPath}");
+                                }
+                                else
+                                {
+                                    Common_Data.DisplayMessage(rtb_Log, $"There is some problem in saving the file : {str_FileNameWithPath}", true);
+                                }
+                                UpdateProgress(++int_Count, dtExecute.Rows.Count);
+                            }
+                            Common_Data.DisplayMessage(rtb_Log, $"Opening folder : {linkLabel1.Text}");
+                            Process.Start(linkLabel1.Text);
+                        }
+                        Common_Data.DisplayMessage(rtb_Log, $"Process Completed");
+                    }
+                    else
                     {
-                        var outcome = progressForm.ShowDialog(this);
-                        if (outcome == DialogResult.OK)
-                        {
-                            var result = progressForm.Result;
-                            progressBar1.Value = 100;
-                            Common_Data.DisplayMessage(rtb_Log,
-                                "Transaction committed. Statements: " + result.CompletedScripts +
-                                "; rows affected: " + result.RowsAffected + "; audit run: " + runId);
-                            if (!result.AuditCompleted)
-                                Common_Data.DisplayMessage(rtb_Log, "Warning: commit audit entry could not be saved.", true);
-                        }
-                        else if (outcome == DialogResult.Cancel)
-                        {
-                            Common_Data.DisplayMessage(rtb_Log,
-                                "Execution cancelled. Transaction rollback was requested. Audit run: " + runId, true);
-                        }
-                        else
-                        {
-                            // Do not leak statements or connection strings through driver exception messages.
-                            Common_Data.DisplayMessage(rtb_Log,
-                                "Execution failed. Transaction rollback was attempted. Error type: " +
-                                (progressForm.Error == null ? "Unknown" : progressForm.Error.GetType().Name) +
-                                ". Audit run: " + runId, true);
-                        }
+                        Common_Data.DisplayMessage(rtb_Log, $"No Checkbox selected to execute query", true);
                     }
-                }
-                else
-                {
-                    if (!dtGenerateScript.Columns.Contains(cmb_SelectFileName.Text))
-                        throw new InvalidOperationException("Select the column containing export file names.");
-                    foreach (var script in scripts)
-                        SqlScriptSafety.ValidateSelect(script);
-
-                    Common_Data.DisplayMessage(rtb_Log, "SELECT-only export started.");
-                    foreach (DataRow row in dtGenerateScript.Rows)
-                    {
-                        dBConnectionStatus_SRC.strCMDText = Convert.ToString(row[scriptColumn]);
-                        dsSelect = common_Data.FillDataTable(dsSelect, dBConnectionStatus_SRC);
-
-                        var fileName = Path.GetFileNameWithoutExtension(Convert.ToString(row[cmb_SelectFileName.Text]));
-                        if (string.IsNullOrWhiteSpace(fileName) ||
-                            fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
-                            throw new InvalidOperationException("An export file name is empty or invalid.");
-                        str_FileNameWithPath = Path.Combine(linkLabel1.Text, fileName + ".xlsx");
-                        if (WriteExcel.ExportToExcel(dsSelect, str_FileNameWithPath))
-                            Common_Data.DisplayMessage(rtb_Log, "File saved as: " + str_FileNameWithPath);
-                        else
-                            Common_Data.DisplayMessage(rtb_Log, "Export failed for: " + fileName, true);
-                        UpdateProgress(++int_Count, dtGenerateScript.Rows.Count);
-                    }
-                    Common_Data.DisplayMessage(rtb_Log, "SELECT exports completed.");
-                    Process.Start(linkLabel1.Text);
                 }
             }
             catch (Exception ex)
@@ -250,26 +209,6 @@ namespace SPI_Data_Comp_Tool
                 Common_Data.DisplayError(rtb_Log, ex);
             }
         }
-        private string CurrentConnectionFingerprint()
-        {
-            // Compare the exact settings used for the connection test, including changed passwords,
-            // without keeping another plaintext credential copy or writing credentials to logs.
-            var details = string.Join("\u001f", rb_Oracle.Checked ? "oracle" : "sql",
-                tb_SRC_DataSource.Text.Trim(), tb_SRC_DBName.Text.Trim(),
-                cb_windowsAuthentication.Checked.ToString(), tb_SRC_UserName.Text.Trim(),
-                tb_SRC_Password.Text, tb_DefaultPort.Text.Trim());
-            using (var hash = SHA256.Create())
-                return Convert.ToBase64String(hash.ComputeHash(Encoding.UTF8.GetBytes(details)));
-        }
-
-        private void RequireFreshDatabaseConnection()
-        {
-            if (!dBConnectionStatus_SRC.boolConnection ||
-                string.IsNullOrEmpty(testedConnectionFingerprint) ||
-                !string.Equals(testedConnectionFingerprint, CurrentConnectionFingerprint(), StringComparison.Ordinal))
-                throw new InvalidOperationException("Database settings changed or were not tested. Test the connection again to confirm the exact target.");
-        }
-
         private void UpdateProgress(int int_C, int int_TC)
         {
             try
@@ -622,7 +561,7 @@ namespace SPI_Data_Comp_Tool
                                     Common_Data.DisplayDebugMsg(rtb_Log, $"Executing script : {dBConnectionStatus_SRC.strCMDText}");
                                     dtPNIDReports.Reset();
 
-                                    //if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                                    //if (Debugger.IsAttached)
                                     //{
                                     //    dBConnectionStatus_SRC.strCMDText = "SELECT * FROM SOURCE1";
                                     //}
@@ -632,7 +571,7 @@ namespace SPI_Data_Comp_Tool
 
                                     string strCustom = tb_CommonSchema.Text != ""?$"_{tb_CommonSchema.Text}":"";
 
-                                    //if(GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                                    //if(Debugger.IsAttached)
                                     //{
                                     //    dtPNIDReports = dtPNIDReports.Clone();
                                     //}
@@ -771,7 +710,7 @@ namespace SPI_Data_Comp_Tool
             {
                 string strFileName = string.Empty;
 
-                if(GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if(Debugger.IsAttached)
                 {
                     strFileName = $@"{Path.Combine(Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.FullName)}\PNID_Reports\{strSourceORTarget}";
                     //@"D:\Krishna\Projects\SPI\SPI Data Comp Tool\SPI Data Comp Tool\PNID_Reports\Source";
@@ -931,7 +870,6 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 int_Count = 0;
-                RequireFreshDatabaseConnection();
                 if (dBConnectionStatus_SRC.boolConnection)
                 {
                     if (boolSRC_Folder && boolTRG_Folder)
@@ -944,13 +882,12 @@ namespace SPI_Data_Comp_Tool
                         {
                             strQuery = File.ReadAllText(fileInfo.FullName);
                             strQuery = strQuery.Replace("\r", " ").Replace("\n", " ");
+                            dBConnectionStatus_SRC.strCMDText = strQuery;
                             Common_Data.DisplayMessage(rtb_Log, $"Executing Select Script From File : {fileInfo.FullName}");
                             dtSelect.Reset();
 
                             try
                             {
-                                SqlScriptSafety.ValidateSelect(strQuery);
-                                dBConnectionStatus_SRC.strCMDText = strQuery;
                                 dtSelect = common_Data.FillDataTable(dtSelect, dBConnectionStatus_SRC);
                                 strFileName = fileInfo.Name;
                                 strFileName = strFileName.Substring(0, strFileName.LastIndexOf(".txt"));
@@ -1071,7 +1008,6 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                testedConnectionFingerprint = null;
                 string str_DBName = tb_SRC_DBName.Text.Trim();
 
                 if (rb_Oracle.Checked)
@@ -1087,8 +1023,6 @@ namespace SPI_Data_Comp_Tool
                 }
 
                 Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_SRC.strConnectionMSG, (!dBConnectionStatus_SRC.boolConnection), -1, (dBConnectionStatus_SRC.boolConnection) ? Color.DarkGreen : Color.Red);
-                if (dBConnectionStatus_SRC.boolConnection)
-                    testedConnectionFingerprint = CurrentConnectionFingerprint();
             }
             catch (Exception ex)
             {

@@ -173,7 +173,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (Debugger.IsAttached)
                 {
                     lb_Source_ID.Items.Add(clb_Source.Items[0].ToString());
                     lb_Source_Col.Items.Add(clb_Source.Items[2].ToString());
@@ -466,7 +466,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 
-                if (GlobalDebug.IsDeveloperDiagnosticsEnabled || GlobalDebug.boolIsGlobalDebug)
+                if (Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
                 {
                     tb_FileName.Text = $"Output_{common_Data.RemoveSpecialCharacters(DateTime.Now.ToString(), "_")}";
                 }

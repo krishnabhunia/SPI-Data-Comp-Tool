@@ -469,7 +469,7 @@ namespace SPI_Data_Comp_Tool
                         {
                             folderBrowserDialog.SelectedPath = openFileDialogData.PathName_withoutFileName;
 
-                            if(GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                            if(Debugger.IsAttached)
                             {
                                 folderBrowserDialog.SelectedPath = $@"{openFileDialogData.PathName_withoutFileName}\Output";
                             }
@@ -889,7 +889,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (true)//GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (true)//Debugger.IsAttached)
                 {
                     switch (comboBox1.SelectedIndex + 1)
                     {
