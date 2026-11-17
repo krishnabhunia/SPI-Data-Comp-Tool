@@ -198,6 +198,7 @@
       <DependentUpon>AboutBox1.cs</DependentUpon>
     </Compile>
     <Compile Include="Common_Data.cs" />
+    <Compile Include="SafeSqlScriptExecutor.cs" />
     <Compile Include="Compare_Multiples_Forms.cs">
       <SubType>Form</SubType>
     </Compile>

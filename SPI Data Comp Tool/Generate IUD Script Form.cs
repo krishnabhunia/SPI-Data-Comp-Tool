@@ -416,7 +416,8 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 string strInsertScripts = string.Empty;
-                strInsertColName = string.Join(", ", ListCols.Where(y => y.ColumnName.ToUpper() != "DBTYPE").Select(x => string.Join(", ", x.ColumnName)));
+                strInsertColName = string.Join(", ", ListCols.Where(y => y.ColumnName.ToUpper() != "DBTYPE")
+                    .Select(x => SqlScriptSafety.RequireSafeIdentifier(x.ColumnName)));
 
                 dtGenerateScript = common_Data.RemoveColumn(dtGenerateScript, "Insert_Scripts");
 
@@ -426,23 +427,15 @@ namespace SPI_Data_Comp_Tool
                     Common_Data.DisplayMessage(rtb_Log, "Generating Insert Scripts");
                     dtGenerateScript.Columns.Add("Insert_Scripts", typeof(string));
 
-                    strTableName = tb_TableName.Text;
+                    strTableName = SqlScriptSafety.RequireSafeIdentifier(tb_TableName.Text);
 
                     foreach (DataRow dr in dtGenerateScript.Rows)
                     {
                         strInsertValues = string.Empty;
-                        strInsertValues = string.Join(", ", ListCols.Where(y => y.ColumnName.ToUpper() != "DBTYPE").Select(x => string.Join(", ", $"N'{dr[x.ColumnName].ToString().Trim()}'")));
+                        strInsertValues = string.Join(", ", ListCols.Where(y => y.ColumnName.ToUpper() != "DBTYPE")
+                            .Select(x => SqlScriptSafety.SqlLiteral(dr[x.ColumnName])));
                         strInsertScripts = $"Insert Into {strTableName} ({strInsertColName}) Values ({strInsertValues})";
-
-                        if (strInsertScripts.Contains("N''"))
-                        {
-                            strInsertScripts = strInsertScripts.Replace("N''", "NULL");
-                        }
-
-                        while (strInsertScripts.Contains("  "))
-                        {
-                            strInsertScripts = strInsertScripts.Replace("  ", " ");
-                        }
+                        SqlScriptSafety.ValidateWrite(strInsertScripts);
 
                         dr["Insert_Scripts"] = strInsertScripts;
                     }
@@ -554,10 +547,11 @@ namespace SPI_Data_Comp_Tool
 
                     if (checkedValuesEnum.Count() == 0)
                     {
-                        Common_Data.DisplayMessage(rtb_Log, $"Pls Note, No checkbox selected, so scripts will be generated without 'WHERE' clause !!!", true);
+                        Common_Data.DisplayMessage(rtb_Log, "Select at least one key/condition column. Unrestricted UPDATE/DELETE generation is blocked.", true);
+                        return;
                     }
 
-                    strTableName = tb_TableName.Text;
+                    strTableName = SqlScriptSafety.RequireSafeIdentifier(tb_TableName.Text);
 
                     if (rb_Update.Checked && notCheckedValuesEnum.Count() > 0)
                     {
@@ -570,23 +564,17 @@ namespace SPI_Data_Comp_Tool
                             {
                                 continue;
                             }
-                            strSetClause = $" SET {string.Join(" , ", notCheckedValuesEnum.Select(x => string.Join(" = ", x, $"N'{dr[x.ToString()].ToString().Trim()}'")))} ";
+                            strSetClause = " SET " + string.Join(", ", notCheckedValuesEnum.Select(x =>
+                                SqlScriptSafety.RequireSafeIdentifier(x.ToString()) + " = " + SqlScriptSafety.SqlLiteral(dr[x.ToString()])));
                             strWhereClause = string.Empty;
                             if (checkedValuesEnum.Count() > 0)
                             {
-                                strWhereClause = $" WHERE {string.Join(" AND ", checkedValuesEnum.Select(x => string.Join(" = ", x, $"N'{dr[x.ToString()].ToString().Trim()}'")))} ";
+                                strWhereClause = " WHERE " + string.Join(" AND ", checkedValuesEnum.Select(x =>
+                                    SqlScriptSafety.SqlWhereEquals(x.ToString(), dr[x.ToString()])));
                             }
                             strUpdateTable = $"{strUpdateClause}{strSetClause}{strWhereClause}";
 
-                            if (strUpdateTable.Contains("N''"))
-                            {
-                                strUpdateTable = strUpdateTable.Replace("N''", "NULL");
-                            }
-
-                            while (strUpdateTable.Contains("  "))
-                            {
-                                strUpdateTable = strUpdateTable.Replace("  ", " ");
-                            }
+                            SqlScriptSafety.ValidateWrite(strUpdateTable);
 
                             dr["Update_Scripts"] = strUpdateTable;
                         }
@@ -603,19 +591,11 @@ namespace SPI_Data_Comp_Tool
                             strWhereClause = string.Empty;
                             if (checkedValuesEnum.Count() > 0)
                             {
-                                strWhereClause = $" WHERE {string.Join(" AND ", checkedValuesEnum.Select(x => string.Join(" = ", x, $"N'{dr[x.ToString()].ToString().Trim()}'")))} ";
+                                strWhereClause = " WHERE " + string.Join(" AND ", checkedValuesEnum.Select(x =>
+                                    SqlScriptSafety.SqlWhereEquals(x.ToString(), dr[x.ToString()])));
                             }
                             strUpdateTable = $"{strUpdateClause}{strWhereClause}";
-
-                            if (strUpdateTable.Contains("N''"))
-                            {
-                                strUpdateTable = strUpdateTable.Replace("N''", "NULL");
-                            }
-
-                            if (strUpdateTable.Contains("  "))
-                            {
-                                strUpdateTable = strUpdateTable.Replace("  ", " ");
-                            }
+                            SqlScriptSafety.ValidateWrite(strUpdateTable);
 
                             dr["Delete_Scripts"] = strUpdateTable;
                         }
