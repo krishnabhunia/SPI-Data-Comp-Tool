@@ -17,7 +17,7 @@ namespace SPI_Data_Comp_Tool
         {
             InitializeComponent();
 
-            if(Debugger.IsAttached)
+            if(GlobalDebug.IsDeveloperDiagnosticsEnabled)
             {
                 oracleAndSQLConnection1.LoadDebuggingInformation();
             }
@@ -55,7 +55,7 @@ namespace SPI_Data_Comp_Tool
                 if (ex != null)
                 {
                     control.Text = ex.Message.ToString();
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         control.Text = ex.ToString();
                     }

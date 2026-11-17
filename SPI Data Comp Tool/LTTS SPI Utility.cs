@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Diagnostics;
+using System.Threading;
+using Microsoft.Identity.Client;
 
 namespace SPI_Data_Comp_Tool
 {
     public partial class LTTS_Data_Comparison : Form
     {
         private Exception MyException;
+        private Button btn_EntraLogin;
+
         public LTTS_Data_Comparison()
         {
             InitializeComponent();
@@ -15,9 +18,36 @@ namespace SPI_Data_Comp_Tool
 
             MyException = new Exception();
 
-            this.Size = new Size(350, 350);
+            this.Size = new Size(400, 340);
             gb_logincredentials.Location = new Point(16, 28);
-            panel_control.Location = new Point(8, 180);
+            gb_logincredentials.Size = new Size(350, 155);
+            gb_logincredentials.Text = "Choose your sign-in method";
+            panel_control.Location = new Point(16, 190);
+
+            // The former shared user name and password must never be an entry point.
+            tb_username.Visible = false;
+            tb_password.Visible = false;
+            tb_username.Clear();
+            tb_password.Clear();
+            label1.Visible = false;
+            label4.Visible = false;
+
+            btn_Login.Text = "A  Sign in with Windows / Active Directory";
+            btn_Login.SetBounds(15, 32, 320, 42);
+            btn_EntraLogin = new Button
+            {
+                Name = "btn_EntraLogin",
+                Text = "B  Sign in with Microsoft Entra ID",
+                UseVisualStyleBackColor = true
+            };
+            btn_EntraLogin.SetBounds(15, 88, 320, 42);
+            btn_EntraLogin.Click += btn_EntraLogin_Click;
+            gb_logincredentials.Controls.Add(btn_EntraLogin);
+
+            lbl_LoginStatus.AutoSize = false;
+            lbl_LoginStatus.SetBounds(5, 34, 335, 44);
+            lbl_LoginStatus.Text = "Select a sign-in method to continue.";
+            ToggleMenuStripForms(false);
 
             btn_Open_DB_Comparison.Enabled = false;
             btn_Open_DB_Comparison.Visible = false;
@@ -25,15 +55,7 @@ namespace SPI_Data_Comp_Tool
             btn_Excel_Comparison.Enabled = false;
             btn_Excel_Comparison.Visible = false;
 
-            tb_username.Text = "LTTS";
-
-            if (Debugger.IsAttached || Environment.UserName.ToString() == "40009708" || Environment.MachineName.ToString() == "BRTSP00375" || Environment.UserName.ToString() == "CXUKC")
-            {
-                tb_username.Text = "LTTS";
-                tb_password.Text = "P@ssw0rd";
-            }
-
-            tb_password.Select();
+            btn_Login.Select();
         }
 
         private void MyInitialization()
@@ -95,29 +117,60 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (tb_username.Text == "LTTS" & tb_password.Text == "P@ssw0rd")
-                {
-                    ToggleMenuStripForms(true);
-                    gb_logincredentials.Hide();
-                    gb_LTTSDetails.Show();
-                    panel_control.Location = new Point(8, 393);
-                    this.Size = new Size(400, 530);
-                    // Developer mode now comes only from an attached debugger or SPI_DATA_COMP_DEBUG=1.
-                    // (A second hidden "developer" user name and password used to be hard-coded here.)
-                    lbl_LoginStatus.Text = GlobalDebug.ISGlobalDebug(tb_username.Text.Trim(), string.Empty)
-                        ? "Logged in debugging mode"
-                        : "Logged in successfully";
-                }
-                else
-                {
-                    ToggleMenuStripForms(false);
-                    lbl_LoginStatus.Text = "Username or Password is incorrect";
-                }
+                ApplySignInResult(AuthenticationService.SignInWithWindows());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                lbl_LoginStatus.Text = ex.Message.ToString();
+                ApplySignInResult(SignInResult.Denied("Unable to verify the Windows account. Contact your administrator."));
             }
+        }
+
+        private async void btn_EntraLogin_Click(object sender, EventArgs e)
+        {
+            btn_Login.Enabled = false;
+            btn_EntraLogin.Enabled = false;
+            lbl_LoginStatus.Text = "Waiting for Microsoft Entra ID sign-in...";
+            try
+            {
+                using (var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
+                {
+                    ApplySignInResult(await AuthenticationService.SignInWithEntraAsync(this, timeout.Token));
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                ApplySignInResult(SignInResult.Denied("Entra ID sign-in was cancelled or timed out."));
+            }
+            catch (MsalException)
+            {
+                ApplySignInResult(SignInResult.Denied("Entra ID sign-in failed. Contact your administrator."));
+            }
+            catch (Exception)
+            {
+                ApplySignInResult(SignInResult.Denied("Unable to complete Entra ID sign-in. Contact your administrator."));
+            }
+            finally
+            {
+                btn_Login.Enabled = gb_logincredentials.Visible;
+                btn_EntraLogin.Enabled = gb_logincredentials.Visible;
+            }
+        }
+
+        private void ApplySignInResult(SignInResult result)
+        {
+            lbl_LoginStatus.ForeColor = result.Authorized ? Color.DarkGreen : Color.DarkRed;
+            lbl_LoginStatus.Text = result.Message;
+            if (!result.Authorized)
+            {
+                ToggleMenuStripForms(false);
+                return;
+            }
+
+            ToggleMenuStripForms(true);
+            gb_logincredentials.Hide();
+            gb_LTTSDetails.Show();
+            panel_control.Location = new Point(8, 393);
+            this.Size = new Size(400, 530);
         }
 
         private void ToggleMenuStripForms(bool boolEnableStatus)
@@ -137,6 +190,7 @@ namespace SPI_Data_Comp_Tool
                 preMergingToolToolStripMenuItem.Enabled = boolEnableStatus;
                 preMergingDuplicacyCheckToolStripMenuItem.Enabled = boolEnableStatus;
                 userProfileToolStripMenuItem.Enabled = boolEnableStatus;
+                userSettingsToolStripMenuItem.Enabled = boolEnableStatus;
                 configurationToolStripMenuItem.Enabled = boolEnableStatus;
                 sPIDeltaChangeLegacyIDToolStripMenuItem.Enabled = boolEnableStatus;
                 generateInsertScriptsToolStripMenuItem.Enabled = boolEnableStatus;

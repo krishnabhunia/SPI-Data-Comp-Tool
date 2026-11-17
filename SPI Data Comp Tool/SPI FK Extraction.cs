@@ -67,7 +67,7 @@ namespace SPI_Data_Comp_Tool
                     dtResult.Columns.Add(new DataColumn(s, typeof(string)));
                 }
 
-                if(Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
+                if(GlobalDebug.IsDeveloperDiagnosticsEnabled || GlobalDebug.boolIsGlobalDebug)
                 {
                     cb_UserProfileList.Visible = true;
                     cb_UserProfileList = common_Data.ReadUserProfile(cb_UserProfileList);

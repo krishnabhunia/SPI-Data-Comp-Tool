@@ -227,7 +227,7 @@ namespace SPI_Data_Comp_Tool
                 if (cb_UserProfileList.Items.Count > 0)
                 {
                     cb_UserProfileList.SelectedIndex = 0;
-                    if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                    if (GlobalDebug.boolIsGlobalDebug || GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         if (cb_UserProfileList.Items.Count >= 7)
                         {
@@ -244,12 +244,12 @@ namespace SPI_Data_Comp_Tool
 
                 colorPairsMultiSheet = new List<ColorPairMultiSheet>();
 
-                if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName) || Debugger.IsAttached)
+                if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName) || GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     gb_Debug.Visible = true;
                 }
 
-                if (Debugger.IsAttached)
+                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     boolLinkLabel = true;
                     dateTimePicker_Date.Value = new DateTime(2020, 03, 03);
@@ -1163,7 +1163,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (true)//Debugger.IsAttached)
+                if (true)//GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     switch (comboBox1.SelectedIndex + 1)
                     {
@@ -1559,7 +1559,7 @@ namespace SPI_Data_Comp_Tool
         //{
         //    try
         //    {
-        //        if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+        //        if (GlobalDebug.boolIsGlobalDebug || GlobalDebug.IsDeveloperDiagnosticsEnabled)
         //        {
         //            //DisplayMessage(v, true);
         //            //lblExpressionStatus.Text = $"Debug Mode : {v}";
@@ -2113,7 +2113,7 @@ namespace SPI_Data_Comp_Tool
         //        {
         //            
         //            lblExpressionStatus.ForeColor = Color.Red;
-        //            if (Debugger.IsAttached)
+        //            if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
         //            {
         //                lblExpressionStatus.Text = ex.ToString();
         //            }
@@ -2474,7 +2474,7 @@ namespace SPI_Data_Comp_Tool
                 int int_TotalRowCount = dtSRC.Rows.Count;
                 backgroundWorker2.ReportProgress(0, new BackGroundWorkerUserObjectForReport(0, 1, "Comparison process started !!!"));
 
-                //if (!(Debugger.IsAttached))
+                //if (!(GlobalDebug.IsDeveloperDiagnosticsEnabled))
                 //{
                 int int_sheet = 1;
                 foreach (DataRow dr in dtSRC.Rows.Cast<DataRow>().ToArray())
@@ -3042,7 +3042,7 @@ namespace SPI_Data_Comp_Tool
         {
             //try
             //{
-            //    if (Debugger.IsAttached)
+            //    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
             //    {
             //        Random random = new Random(500);
             //        tb_ProfileName.Text = random.Next(100, 10000).ToString();
@@ -3097,7 +3097,7 @@ namespace SPI_Data_Comp_Tool
         //        if (ex != null)
         //        {
         //            control.Text = ex.Message.ToString();
-        //            if (Debugger.IsAttached)
+        //            if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
         //            {
         //                control.Text = ex.ToString();
         //            }

@@ -134,7 +134,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 DisplayMessage(ex.Message.ToString(), true);
-                if (Debugger.IsAttached)
+                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     DisplayMessage(ex.ToString(), true);
                 }
@@ -142,7 +142,7 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex1)
             {
                 DisplayMessage(ex1.Message.ToString(), true);
-                if (Debugger.IsAttached)
+                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     DisplayMessage(ex1.ToString(), true);
                 }
