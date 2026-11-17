@@ -63,9 +63,9 @@ namespace SPI_Data_Comp_Tool
                     tb_SRC_UserName.Text = "sa";
                     tb_SRC_Password.Text = "";
                 }
-                else if (Environment.MachineName.ToString() == "BRTSP00375")
+                else if (Environment.MachineName.ToString() == "localhost")
                 {
-                    tb_SRC_DataSource.Text = @"IESWKCT247";
+                    tb_SRC_DataSource.Text = @"localhost";
                     tb_SRC_DBName.Text = "training_p";
                     tb_SRC_UserName.Text = "sa";
                     tb_SRC_Password.Text = "";
@@ -378,7 +378,7 @@ namespace SPI_Data_Comp_Tool
 
                 if (Debugger.IsAttached)
                 {
-                    tb_SRC_DataSource.Text = "IESWKCT670";
+                    tb_SRC_DataSource.Text = "localhost";
                     tb_SRC_DBName.Text = "SPEL11G";
                     tb_SRC_UserName.Text = "system";
                     tb_SRC_Password.Text = "";
@@ -411,7 +411,7 @@ namespace SPI_Data_Comp_Tool
 
                 if (Debugger.IsAttached)
                 {
-                    tb_SRC_DataSource.Text = @"IESWKCT247";
+                    tb_SRC_DataSource.Text = @"localhost";
                     tb_SRC_DBName.Text = "training_p";
                     tb_SRC_UserName.Text = "sa";
                     tb_SRC_Password.Text = "";

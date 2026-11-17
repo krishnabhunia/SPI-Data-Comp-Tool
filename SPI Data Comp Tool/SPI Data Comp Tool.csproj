@@ -31,7 +31,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>false</MapFileExtensions>
     <ProductName>SPI_SPEL_SPPID %28Oracle and SQL Compare%29 Utility</ProductName>
-    <PublisherName>LTTS %28Larsen &amp; Toubro Technological Services%29</PublisherName>
+    <PublisherName>SPI Data Comparison Tool</PublisherName>
     <ApplicationRevision>15</ApplicationRevision>
     <ApplicationVersion>7.5.4.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
@@ -71,7 +71,7 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>logo1.ico</ApplicationIcon>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup />
   <PropertyGroup />
@@ -290,11 +290,11 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="LTTS SPI Utility.cs">
+    <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="LTTS SPI Utility.Designer.cs">
-      <DependentUpon>LTTS SPI Utility.cs</DependentUpon>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="SPIDeltaChangeLegacyID.cs">
       <SubType>Form</SubType>
@@ -423,8 +423,8 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="LTTS SPI Utility.resx">
-      <DependentUpon>LTTS SPI Utility.cs</DependentUpon>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="SPIDeltaChangeLegacyID.resx">
       <DependentUpon>SPIDeltaChangeLegacyID.cs</DependentUpon>
@@ -496,14 +496,14 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\logo.jpg" />
+    <None Include="Resources\app_banner.png" />
+    <None Include="Resources\compare_diagram.png" />
+    <None Include="Resources\about_side.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\utility logo.png" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="logo.ico" />
-    <Content Include="logo1.ico" />
+    <Content Include="app.ico" />
     <Content Include="PNID_Reports\Source\drawing.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

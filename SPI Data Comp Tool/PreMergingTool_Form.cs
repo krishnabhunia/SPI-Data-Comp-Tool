@@ -897,7 +897,7 @@ namespace SPI_Data_Comp_Tool
                         case 1:
                             rb_SRC_oracle.Checked = true;
                             rb_SRC_SQL.Checked = false;
-                            tb_SRC_DataSource.Text = "BRTSP00278";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "SBM12";
                             tb_SRC_UserName.Text = "SBM";
                             tb_SRC_Password.Text = "";
@@ -906,7 +906,7 @@ namespace SPI_Data_Comp_Tool
 
                         case 2:
                             rb_SRC_SQL.Checked = true;
-                            tb_SRC_DataSource.Text = "IESWKCT247";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "SPI2016";
                             tb_SRC_UserName.Text = "sa";
                             tb_SRC_Password.Text = "";
@@ -924,7 +924,7 @@ namespace SPI_Data_Comp_Tool
 
                         case 4:
                             rb_SRC_oracle.Checked = true;
-                            tb_SRC_DataSource.Text = "IESWKCT670";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
                             tb_SRC_Password.Text = "";
@@ -933,7 +933,7 @@ namespace SPI_Data_Comp_Tool
 
                         case 5:
                             rb_SRC_oracle.Checked = true;
-                            tb_SRC_DataSource.Text = "IESWKCT670";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
                             tb_SRC_Password.Text = "";
@@ -942,7 +942,7 @@ namespace SPI_Data_Comp_Tool
 
                         case 6:
                             rb_SRC_oracle.Checked = true;
-                            tb_SRC_DataSource.Text = "IESWKCT670";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
                             tb_SRC_Password.Text = "";
@@ -950,7 +950,7 @@ namespace SPI_Data_Comp_Tool
                             break;
                         case 7:
                             rb_SRC_oracle.Checked = true;
-                            tb_SRC_DataSource.Text = "IESWKCT670";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
                             tb_SRC_Password.Text = "";
@@ -967,7 +967,7 @@ namespace SPI_Data_Comp_Tool
 
                         case 9:
                             rb_SRC_oracle.Checked = true;
-                            tb_SRC_DataSource.Text = "IESWKCT670";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
                             tb_SRC_Password.Text = "";
@@ -977,7 +977,7 @@ namespace SPI_Data_Comp_Tool
                             rb_SRC_oracle.Checked = true;
                             tb_SRC_DataSource.Text = "DSGPY3002.dcap.glpoly.net";
                             tb_SRC_DBName.Text = "MSPIAS";
-                            tb_SRC_UserName.Text = "COV_LTTS_VIEW";
+                            tb_SRC_UserName.Text = "";
                             tb_SRC_Password.Text = "";
 
                             break;
@@ -985,7 +985,7 @@ namespace SPI_Data_Comp_Tool
                         case 11:
                             rb_SRC_oracle.Checked = false;
                             rb_SRC_SQL.Checked = true;
-                            tb_SRC_DataSource.Text = "IESWKCT247";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "db_krishna";
                             tb_SRC_UserName.Text = "sa";
                             tb_SRC_Password.Text = "";
@@ -994,7 +994,7 @@ namespace SPI_Data_Comp_Tool
 
                         case 12:
                             rb_SRC_oracle.Checked = true;
-                            tb_SRC_DataSource.Text = "IESWKCT670";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
                             tb_SRC_Password.Text = "";
@@ -1003,7 +1003,7 @@ namespace SPI_Data_Comp_Tool
 
                         case 13:
                             rb_SRC_SQL.Checked = true;
-                            tb_SRC_DataSource.Text = "IESWKCT247";
+                            tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "db_SPELSQL";
                             tb_SRC_UserName.Text = "sa";
                             tb_SRC_Password.Text = "";
