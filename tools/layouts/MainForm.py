@@ -14,6 +14,8 @@ DROP = ["gb_logincredentials", "btn_Login", "tb_username", "tb_password", "label
 
 TEXTS = {
     "btn_Exit_Logout": "Exit",
+    "btn_Open_DB_Comparison": "Compare databases",
+    "btn_Excel_Comparison": "Compare Excel files",
     "lbl_LoginStatus": "Ready",
 }
 
@@ -30,14 +32,12 @@ LAYOUT = T("tlp_Root", cols=["50%", "50%"], rows=["100%", "auto"], padding=(16, 
         (C("pictureBox1", dock="Fill", margin=(0, 0, 0, 8)), 0, 0),
         (C("pictureBox2", dock="Fill", margin=0), 0, 1),
     ], margin=(0, 0, 16, 0)), 0, 0),
-    (T("tlp_About", cols=["100%"], rows=["auto", "auto", "100%", "auto"], cells=[
+    (T("tlp_About", cols=["100%"], rows=["auto", "auto", "auto", "auto", "100%", "auto"], cells=[
         (C("label2", anchor="Left, Right", autosize=True, margin=(0, 4, 0, 12)), 0, 0),
-        (C("label3", anchor="Left, Right", autosize=True, margin=0), 0, 1),
-        (F("flp_Actions", [
-            C("btn_Open_DB_Comparison", size=(150, 32), margin=(0, 0, 8, 0)),
-            C("btn_Excel_Comparison", size=(150, 32), margin=(0, 0, 8, 0)),
-            C("btn_Exit_Logout", size=(100, 32), margin=0),
-        ], direction="RightToLeft", anchor="Right"), 0, 3),
+        (C("label3", anchor="Left, Right", autosize=True, margin=(0, 0, 0, 20)), 0, 1),
+        (C("btn_Open_DB_Comparison", anchor="Left, Right", size=(200, 36), margin=(0, 0, 0, 8)), 0, 2),
+        (C("btn_Excel_Comparison", anchor="Left, Right", size=(200, 36), margin=0), 0, 3),
+        (C("btn_Exit_Logout", anchor="Right", size=(100, 32), margin=0), 0, 5),
     ]), 1, 0),
     (F("flp_Status", [
         C("lbl_LoginStatus", autosize=True, margin=(0, 0, 16, 0)),

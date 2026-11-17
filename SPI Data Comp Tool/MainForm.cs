@@ -15,17 +15,11 @@ namespace SPI_Data_Comp_Tool
 
             MyException = new Exception();
 
-            btn_Open_DB_Comparison.Enabled = false;
-            btn_Open_DB_Comparison.Visible = false;
-
-            btn_Excel_Comparison.Enabled = false;
-            btn_Excel_Comparison.Visible = false;
-
             // The login screen was removed: its user name and password were hard-coded in this
             // source, so it protected nothing. The main window now opens ready to use.
             UnlockMainWindow();
             lbl_Version.Text = AppVersion.Display;
-            UiTheme.Apply(this);
+            UiTheme.Apply(this, btn_Open_DB_Comparison);
         }
 
         private void MyInitialization()

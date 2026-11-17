@@ -73,7 +73,6 @@
             this.tlp_Root = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Pictures = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_About = new System.Windows.Forms.TableLayoutPanel();
-            this.flp_Actions = new System.Windows.Forms.FlowLayoutPanel();
             this.flp_Status = new System.Windows.Forms.FlowLayoutPanel();
             this.lbl_Version = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
@@ -81,7 +80,6 @@
             this.tlp_Root.SuspendLayout();
             this.tlp_Pictures.SuspendLayout();
             this.tlp_About.SuspendLayout();
-            this.flp_Actions.SuspendLayout();
             this.flp_Status.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -143,14 +141,18 @@
             this.tlp_About.Name = "tlp_About";
             this.tlp_About.ColumnCount = 1;
             this.tlp_About.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_About.RowCount = 4;
+            this.tlp_About.RowCount = 6;
+            this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_About.Controls.Add(this.label2, 0, 0);
             this.tlp_About.Controls.Add(this.label3, 0, 1);
-            this.tlp_About.Controls.Add(this.flp_Actions, 0, 3);
+            this.tlp_About.Controls.Add(this.btn_Open_DB_Comparison, 0, 2);
+            this.tlp_About.Controls.Add(this.btn_Excel_Comparison, 0, 3);
+            this.tlp_About.Controls.Add(this.btn_Exit_Logout, 0, 5);
             this.tlp_About.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_About.AutoSize = false;
             this.tlp_About.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
@@ -171,43 +173,31 @@
             this.label3.Text = "label3";
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.label3.AutoSize = true;
-            this.label3.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.label3.Margin = new System.Windows.Forms.Padding(0, 0, 0, 20);
             this.label3.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
             this.label3.TabIndex = 6;
-            // 
-            // flp_Actions
-            // 
-            this.flp_Actions.Name = "flp_Actions";
-            this.flp_Actions.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.flp_Actions.WrapContents = false;
-            this.flp_Actions.Controls.Add(this.btn_Open_DB_Comparison);
-            this.flp_Actions.Controls.Add(this.btn_Excel_Comparison);
-            this.flp_Actions.Controls.Add(this.btn_Exit_Logout);
-            this.flp_Actions.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
-            this.flp_Actions.AutoSize = true;
-            this.flp_Actions.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flp_Actions.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.flp_Actions.TabIndex = 7;
             // 
             // btn_Open_DB_Comparison
             // 
             this.btn_Open_DB_Comparison.Name = "btn_Open_DB_Comparison";
-            this.btn_Open_DB_Comparison.Text = "Open DB Comparison";
             this.btn_Open_DB_Comparison.UseVisualStyleBackColor = true;
             this.btn_Open_DB_Comparison.Click += new System.EventHandler(this.btn_Open_DB_Comparison_Click);
-            this.btn_Open_DB_Comparison.Margin = new System.Windows.Forms.Padding(0, 0, 8, 0);
-            this.btn_Open_DB_Comparison.Size = new System.Drawing.Size(150, 32);
-            this.btn_Open_DB_Comparison.TabIndex = 8;
+            this.btn_Open_DB_Comparison.Text = "Compare databases";
+            this.btn_Open_DB_Comparison.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
+            this.btn_Open_DB_Comparison.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
+            this.btn_Open_DB_Comparison.Size = new System.Drawing.Size(200, 36);
+            this.btn_Open_DB_Comparison.TabIndex = 7;
             // 
             // btn_Excel_Comparison
             // 
             this.btn_Excel_Comparison.Name = "btn_Excel_Comparison";
-            this.btn_Excel_Comparison.Text = "Open Excel Comparison";
             this.btn_Excel_Comparison.UseVisualStyleBackColor = true;
             this.btn_Excel_Comparison.Click += new System.EventHandler(this.btn_Excel_Comparison_Click);
-            this.btn_Excel_Comparison.Margin = new System.Windows.Forms.Padding(0, 0, 8, 0);
-            this.btn_Excel_Comparison.Size = new System.Drawing.Size(150, 32);
-            this.btn_Excel_Comparison.TabIndex = 9;
+            this.btn_Excel_Comparison.Text = "Compare Excel files";
+            this.btn_Excel_Comparison.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
+            this.btn_Excel_Comparison.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.btn_Excel_Comparison.Size = new System.Drawing.Size(200, 36);
+            this.btn_Excel_Comparison.TabIndex = 8;
             // 
             // btn_Exit_Logout
             // 
@@ -215,9 +205,10 @@
             this.btn_Exit_Logout.UseVisualStyleBackColor = true;
             this.btn_Exit_Logout.Click += new System.EventHandler(this.btn_Exit_Logout_Click);
             this.btn_Exit_Logout.Text = "Exit";
+            this.btn_Exit_Logout.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
             this.btn_Exit_Logout.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_Exit_Logout.Size = new System.Drawing.Size(100, 32);
-            this.btn_Exit_Logout.TabIndex = 10;
+            this.btn_Exit_Logout.TabIndex = 9;
             // 
             // flp_Status
             // 
@@ -230,7 +221,7 @@
             this.flp_Status.AutoSize = true;
             this.flp_Status.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flp_Status.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
-            this.flp_Status.TabIndex = 11;
+            this.flp_Status.TabIndex = 10;
             // 
             // lbl_LoginStatus
             // 
@@ -239,7 +230,7 @@
             this.lbl_LoginStatus.AutoSize = true;
             this.lbl_LoginStatus.Margin = new System.Windows.Forms.Padding(0, 0, 16, 0);
             this.lbl_LoginStatus.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
-            this.lbl_LoginStatus.TabIndex = 12;
+            this.lbl_LoginStatus.TabIndex = 11;
             // 
             // lbl_Version
             // 
@@ -248,7 +239,7 @@
             this.lbl_Version.AutoSize = true;
             this.lbl_Version.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.lbl_Version.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
-            this.lbl_Version.TabIndex = 13;
+            this.lbl_Version.TabIndex = 12;
             // 
             // menuStrip1
             // 
@@ -552,8 +543,6 @@
             this.tlp_Pictures.PerformLayout();
             this.tlp_About.ResumeLayout(false);
             this.tlp_About.PerformLayout();
-            this.flp_Actions.ResumeLayout(false);
-            this.flp_Actions.PerformLayout();
             this.flp_Status.ResumeLayout(false);
             this.flp_Status.PerformLayout();
             this.ResumeLayout(false);
@@ -566,7 +555,6 @@
         private System.Windows.Forms.TableLayoutPanel tlp_Root;
         private System.Windows.Forms.TableLayoutPanel tlp_Pictures;
         private System.Windows.Forms.TableLayoutPanel tlp_About;
-        private System.Windows.Forms.FlowLayoutPanel flp_Actions;
         private System.Windows.Forms.FlowLayoutPanel flp_Status;
         private System.Windows.Forms.Label lbl_Version;
 

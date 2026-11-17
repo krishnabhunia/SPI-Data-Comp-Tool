@@ -1329,10 +1329,10 @@
             // 
             this.tlp_Progress.Name = "tlp_Progress";
             this.tlp_Progress.ColumnCount = 4;
-            this.tlp_Progress.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 320F));
-            this.tlp_Progress.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_Progress.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Progress.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Progress.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Progress.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Progress.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Progress.RowCount = 1;
             this.tlp_Progress.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Progress.Controls.Add(this.progressBar1, 0, 0);
@@ -1378,6 +1378,7 @@
             this.lblTimer.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lblTimer.AutoSize = true;
             this.lblTimer.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.lblTimer.MinimumSize = new System.Drawing.Size(80, 0);
             this.lblTimer.TabIndex = 98;
             // 
             // dataGridView1

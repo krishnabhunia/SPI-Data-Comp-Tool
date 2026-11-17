@@ -103,11 +103,11 @@ VIEW = T("tlp_View", cols=["20%"] * 5 + ["240"], rows=["100%"], cells=[
     ]), margin=(3, 0, 0, 0)), 5, 0),
 ])
 
-PROGRESS = T("tlp_Progress", cols=["320", "auto", "auto", "100%"], rows=["auto"], autosize=True, cells=[
+PROGRESS = T("tlp_Progress", cols=["100%", "auto", "auto", "auto"], rows=["auto"], autosize=True, cells=[
     (C("progressBar1", anchor="Left, Right", size=(300, 14), margin=(0, 4, 16, 4)), 0, 0),
     (C("lbl_PercentageShow", autosize=True, anchor="Left", margin=(0, 0, 24, 0)), 1, 0),
     (C("label1", autosize=True, anchor="Left", margin=(0, 0, 6, 0)), 2, 0),
-    (C("lblTimer", autosize=True, anchor="Left", margin=0), 3, 0),
+    (C("lblTimer", autosize=True, anchor="Left", minsize=(80, 0), margin=0), 3, 0),
 ])
 
 LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "100%", "auto"], cells=[
