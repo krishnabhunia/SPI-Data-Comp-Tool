@@ -7,6 +7,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  # one release at a time per branch / PR; never cancel a run that may be publishing
+  group: build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 jobs:
   documentation:
     runs-on: ubuntu-latest
@@ -73,20 +77,49 @@ jobs:
           print(f'Secrets guard passed ({len(tracked)} tracked files checked)')
           PY
 
+  version:
+    # Works out x.y.z (x major, y minor, z fix) - see tools/release.py and docs/PROJECT_GUIDE.md
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # reserves the beta tag on the PR commit
+      pull-requests: read    # finds the merged PR of a push to master
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      tag: ${{ steps.plan.outputs.tag }}
+      prerelease: ${{ steps.plan.outputs.prerelease }}
+      head: ${{ steps.plan.outputs.head }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git fetch --tags --force origin
+      - name: Version unit tests
+        run: python3 -m unittest discover -s tests -p 'test_release.py' -v
+      - name: Plan version
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/release.py plan --reserve
+
   windows-build:
+    needs: version
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       - uses: NuGet/setup-nuget@v2
       - uses: microsoft/setup-msbuild@v2
-      - name: Resolve version (x.y.z, beta on pull requests)
+      - name: Stamp version ${{ needs.version.outputs.version }}
         id: ver
         shell: pwsh
         run: |
-          $info = Get-Content "SPI Data Comp Tool/Properties/AssemblyInfo.cs" -Raw
-          if ($info -notmatch 'AssemblyFileVersion\("(\d+)\.(\d+)\.(\d+)') { throw 'AssemblyFileVersion not found' }
-          $v = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
-          if ('${{ github.event_name }}' -eq 'pull_request') { $v = "$v-beta{0:D3}" -f [int]'${{ github.run_number }}' }
+          $v = '${{ needs.version.outputs.version }}'
+          python tools/release.py stamp $v
+          if ($LASTEXITCODE -ne 0) { throw 'stamp failed' }
           "version=$v" >> $env:GITHUB_OUTPUT
           Write-Host "Version: $v"
       - run: nuget restore "SPI Data Comp Tool.sln" -NonInteractive
@@ -118,3 +151,40 @@ jobs:
           name: SPI_Data_Comp_Tool_${{ steps.ver.outputs.version }}
           path: dist/
           if-no-files-found: error
+
+  release:
+    # PR -> GitHub pre-release vX.Y.Z-betaNNN; merge to master -> GitHub release vX.Y.Z (latest)
+    needs: [version, windows-build, documentation, secrets-guard]
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: SPI_Data_Comp_Tool_${{ needs.version.outputs.version }}
+          path: dist
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.version.outputs.version }}
+          TAG: ${{ needs.version.outputs.tag }}
+          PRE: ${{ needs.version.outputs.prerelease }}
+          SHA: ${{ needs.version.outputs.head }}
+        run: |
+          set -euo pipefail
+          zip_name="SPI_Data_Comp_Tool_${VERSION}.zip"
+          (cd dist && zip -qr "../${zip_name}" .)
+          sha256sum "${zip_name}" > "${zip_name}.sha256"
+          cat "${zip_name}.sha256"
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${zip_name}" "${zip_name}.sha256" --clobber
+          else
+            flags=(--title "SPI Data Comparison Tool ${VERSION}" --generate-notes --target "${SHA}")
+            if [ "${PRE}" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
+            gh release create "${TAG}" "${zip_name}" "${zip_name}.sha256" "${flags[@]}"
+          fi
+          echo "### Released ${TAG}" >> "$GITHUB_STEP_SUMMARY"

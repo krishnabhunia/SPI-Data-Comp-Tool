@@ -72,8 +72,26 @@ flowchart TD
 - CI fails if any other image file is committed or if former-employer names reappear in source, settings or docs.
 
 ## Versioning and CI artifacts
-- The version is `x.y.z` from `AssemblyFileVersion` in `Properties/AssemblyInfo.cs` (x = major, y = minor, z = fix).
-- Pull-request builds are tagged `x.y.z-betaNNN` (NNN = CI run number); pushes to `master` build the plain `x.y.z`.
+Versions are automatic - nobody edits a version number by hand. `tools/release.py` works it out in CI:
+
+| SrNo. | When | Version | Published as |
+|---|---|---|---|
+| 1 | Every push to a pull request | `x.y.z-betaNNN`, e.g. `2.4.0-beta003` | GitHub **pre-release** (beta) with the zip and its SHA-256 |
+| 2 | The PR is merged to `master` | `x.y.z`, e.g. `2.4.0` | GitHub **release**, marked latest |
+| 3 | Manual run (Actions > Run workflow) | `x.y.z-manual` | Artifact only, nothing published |
+
+`x.y.z` = the latest stable tag `vX.Y.Z` bumped by the kind of change (with no stable tag yet, the `2.3.0` in `Properties/AssemblyInfo.cs` counts as the last release):
+
+| SrNo. | Kind | Bumps | How it is recognised (first match wins) |
+|---|---|---|---|
+| 1 | Override | as given | PR label `release:major`, `release:minor` or `release:patch`, or `[major]` / `[minor]` / `[patch]` in the PR title |
+| 2 | Major (x) | `2.4.1` → `3.0.0` | `BREAKING CHANGE` in the title or body, a type ending in `!` (`feat!:`), or type `Breaking` |
+| 3 | Minor (y) | `2.4.1` → `2.5.0` | Type `Feature` / `feat` (e.g. `Claude : Feature: ...`, `feat(ui): ...`) |
+| 4 | Patch (z) | `2.4.1` → `2.4.2` | Everything else: `Fix`, `Docs`, `CI`, `Refactor`, titles with no type |
+
+- `NNN` starts at `001` for each `x.y.z` and counts up across all PRs for that version; each new commit pushed to a PR gets the next number, re-running the same commit keeps its number. CI reserves the number by tagging the PR's head commit, so a number used by a failed build is skipped.
+- Updaters rank `x.y.z-betaNNN` below `x.y.z`.
+- CI writes the version into the exe (`AssemblyVersion` / `AssemblyFileVersion` `x.y.z.0`, `AssemblyInformationalVersion` = the full name, e.g. `2.4.0-beta003`).
 - Each Windows build uploads one artifact, `SPI_Data_Comp_Tool_<version>`, which downloads as a zip containing `portable/` with `SPI_Data_Comp_Tool_<version>.exe`, its `.exe.config`, the required DLLs and the `PNID_Reports/Source` and `PNID_Reports/Target_IPEP` SQL templates (read at runtime by **Execute Excel Scripts > PNID Reports**; the project copies them to the build output).
 
 ## Supported workflows vs. assumptions

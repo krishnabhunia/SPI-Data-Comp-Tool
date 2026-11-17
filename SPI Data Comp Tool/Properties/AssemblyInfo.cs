@@ -33,6 +33,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
+// Set automatically by CI (tools/release.py stamp). 2.3.0 is only the starting point used before the first v*.*.* tag.
 [assembly: AssemblyVersion("2.3.0.0")]
 [assembly: AssemblyFileVersion("2.3.0.0")]
 [assembly: NeutralResourcesLanguage("en-IN")]
