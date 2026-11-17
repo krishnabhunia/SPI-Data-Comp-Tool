@@ -15,25 +15,15 @@ namespace SPI_Data_Comp_Tool
 
             MyException = new Exception();
 
-            this.Size = new Size(350, 350);
-            gb_logincredentials.Location = new Point(16, 28);
-            panel_control.Location = new Point(8, 180);
-
             btn_Open_DB_Comparison.Enabled = false;
             btn_Open_DB_Comparison.Visible = false;
 
             btn_Excel_Comparison.Enabled = false;
             btn_Excel_Comparison.Visible = false;
 
-            tb_username.Text = "LTTS";
-
-            if (Debugger.IsAttached || Environment.UserName.ToString() == "40009708" || Environment.MachineName.ToString() == "BRTSP00375" || Environment.UserName.ToString() == "CXUKC")
-            {
-                tb_username.Text = "LTTS";
-                tb_password.Text = "P@ssw0rd";
-            }
-
-            tb_password.Select();
+            // The login screen was removed: its user name and password were hard-coded in this
+            // source, so it protected nothing. The main window now opens ready to use.
+            UnlockMainWindow();
         }
 
         private void MyInitialization()
@@ -91,33 +81,30 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void btn_Login_Click(object sender, EventArgs e)
+        private void UnlockMainWindow()
         {
             try
             {
-                if (tb_username.Text == "LTTS" & tb_password.Text == "P@ssw0rd")
-                {
-                    ToggleMenuStripForms(true);
-                    gb_logincredentials.Hide();
-                    gb_LTTSDetails.Show();
-                    panel_control.Location = new Point(8, 393);
-                    this.Size = new Size(400, 530);
-                    // Developer mode now comes only from an attached debugger or SPI_DATA_COMP_DEBUG=1.
-                    // (A second hidden "developer" user name and password used to be hard-coded here.)
-                    lbl_LoginStatus.Text = GlobalDebug.ISGlobalDebug(tb_username.Text.Trim(), string.Empty)
-                        ? "Logged in debugging mode"
-                        : "Logged in successfully";
-                }
-                else
-                {
-                    ToggleMenuStripForms(false);
-                    lbl_LoginStatus.Text = "Username or Password is incorrect";
-                }
+                ToggleMenuStripForms(true);
+                gb_logincredentials.Hide();
+                gb_LTTSDetails.Show();
+                panel_control.Location = new Point(8, 393);
+                this.Size = new Size(400, 530);
+                // Developer mode comes only from an attached debugger or SPI_DATA_COMP_DEBUG=1.
+                lbl_LoginStatus.Text = GlobalDebug.ISGlobalDebug(Environment.UserName, string.Empty)
+                    ? "Developer mode"
+                    : "Ready";
             }
             catch (Exception ex)
             {
                 lbl_LoginStatus.Text = ex.Message.ToString();
             }
+        }
+
+        // Kept only because the designer still wires the (now hidden) Login button to it.
+        private void btn_Login_Click(object sender, EventArgs e)
+        {
+            UnlockMainWindow();
         }
 
         private void ToggleMenuStripForms(bool boolEnableStatus)

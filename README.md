@@ -10,5 +10,5 @@ Windows Forms (.NET Framework 4.6.2) desktop utility for database and Excel comp
 
 ## Quick start
 1. Open `SPI Data Comp Tool.sln` in Visual Studio (with the **.NET desktop development** workload) and restore NuGet packages.
-2. Build `Release | Any CPU` and run.
+2. Build `Release | Any CPU` and run. The main window opens ready to use; there is no login screen (since 2.2.0).
 3. Create your own connection profile from **File > User Profile** (or copy `userProfile.example.json` to `userProfile.json` and fill it in). `userProfile.json` is git-ignored — never commit it.

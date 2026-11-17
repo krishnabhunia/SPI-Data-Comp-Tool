@@ -1603,7 +1603,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     strFilePathChangeSave = llbl_Folder_path.Text + @"\" + tb_FileName.Text + @".xlsx";
 
-                    if (Debugger.IsAttached || Environment.UserName == "40009708")
+                    if (Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
                     {
                         tb_FileName.Text = $"{common_Data.RemoveSpecialCharacters(cb_SRC_TableName.Text)}_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}";
                     }

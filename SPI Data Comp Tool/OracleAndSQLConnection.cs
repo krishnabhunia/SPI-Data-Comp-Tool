@@ -409,13 +409,13 @@ SPEC_FORM.SPEC_FORM_CNUM";
                 //            tb_oracle_dsource.Text = "IESWKCT670";
                 //            tb_oracle_dbName.Text = "SPEL11G";
                 //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "SPEL11G";
+                //            tb_oracle_pwd.Text = "";
                 //            tb_Source_tableName.Text = "tb_compare1";
 
                 //            tb_sql_dsource.Text = "IESWKCT247";
                 //            tb_sql_dbName.Text = "db_SPELSQL";
                 //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "abcde@1234567";
+                //            tb_sql_pwd.Text = "";
                 //            tb_destination_tableName.Text = "tb_compare1";
 
                 //            break;
@@ -425,13 +425,13 @@ SPEC_FORM.SPEC_FORM_CNUM";
                 //            tb_oracle_dsource.Text = "IESWKCT247";
                 //            tb_oracle_dbName.Text = "db_SPELSQL";
                 //            tb_oracle_username.Text = "sa";
-                //            tb_oracle_pwd.Text = "abcde@1234567";
+                //            tb_oracle_pwd.Text = "";
                 //            tb_Source_tableName.Text = "tb_compare1";
 
                 //            tb_sql_dsource.Text = "IESWKCT247";
                 //            tb_sql_dbName.Text = "db_SPELSQL";
                 //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "abcde@1234567";
+                //            tb_sql_pwd.Text = "";
                 //            tb_destination_tableName.Text = "tb_compare1";
 
                 //            break;
@@ -441,13 +441,13 @@ SPEC_FORM.SPEC_FORM_CNUM";
                 //            tb_oracle_dsource.Text = "IESWKCT247";
                 //            tb_oracle_dbName.Text = "SPELOLDP";
                 //            tb_oracle_username.Text = "sa";
-                //            tb_oracle_pwd.Text = "abcde@1234567";
+                //            tb_oracle_pwd.Text = "";
                 //            tb_Source_tableName.Text = "plant1el.t_plantitem";
 
                 //            tb_sql_dsource.Text = "IESWKCT247";
                 //            tb_sql_dbName.Text = "SPELOLDP_new";
                 //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "abcde@1234567";
+                //            tb_sql_pwd.Text = "";
                 //            tb_destination_tableName.Text = "plant1el.t_plantitem";
 
                 //            break;
@@ -457,13 +457,13 @@ SPEC_FORM.SPEC_FORM_CNUM";
                 //            tb_oracle_dsource.Text = "IESWKCT670";
                 //            tb_oracle_dbName.Text = "SPEL11G";
                 //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "SPEL11G";
+                //            tb_oracle_pwd.Text = "";
                 //            tb_Source_tableName.Text = "DASISLANDEL.T_motor";
 
                 //            tb_sql_dsource.Text = "IESWKCT247";
                 //            tb_sql_dbName.Text = "JK1703_P";
                 //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "abcde@1234567";
+                //            tb_sql_pwd.Text = "";
                 //            tb_destination_tableName.Text = "Plant789el.T_Motor";
 
                 //            break;
@@ -473,13 +473,13 @@ SPEC_FORM.SPEC_FORM_CNUM";
                 //            tb_oracle_dsource.Text = "IESWKCT670";
                 //            tb_oracle_dbName.Text = "SPEL11G";
                 //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "SPEL11G";
+                //            tb_oracle_pwd.Text = "";
                 //            tb_Source_tableName.Text = "DASISLANDEL.T_Plantitem";
 
                 //            tb_sql_dsource.Text = "IESWKCT247";
                 //            tb_sql_dbName.Text = "JK1703_P";
                 //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "abcde@1234567";
+                //            tb_sql_pwd.Text = "";
                 //            tb_destination_tableName.Text = "plant789elp1.t_Plantitem";
 
                 //            break;
@@ -489,13 +489,13 @@ SPEC_FORM.SPEC_FORM_CNUM";
                 //            tb_oracle_dsource.Text = "IESWKCT670";
                 //            tb_oracle_dbName.Text = "SPEL11G";
                 //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "SPEL11G";
+                //            tb_oracle_pwd.Text = "";
                 //            tb_Source_tableName.Text = "tb_loop";
 
                 //            tb_sql_dsource.Text = "IESWKCT247";
                 //            tb_sql_dbName.Text = "db_SPELSQL";
                 //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "abcde@1234567";
+                //            tb_sql_pwd.Text = "";
                 //            tb_destination_tableName.Text = "loop";
 
                 //            break;
@@ -504,13 +504,13 @@ SPEC_FORM.SPEC_FORM_CNUM";
                 //            tb_oracle_dsource.Text = "IESWKCT670";
                 //            tb_oracle_dbName.Text = "SPEL11G";
                 //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "SPEL11G";
+                //            tb_oracle_pwd.Text = "";
                 //            tb_Source_tableName.Text = "tb_loop_2k";
 
                 //            tb_sql_dsource.Text = "IESWKCT247";
                 //            tb_sql_dbName.Text = "db_SPELSQL";
                 //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "abcde@1234567";
+                //            tb_sql_pwd.Text = "";
                 //            tb_destination_tableName.Text = "tb_loop_2k";
 
                 //            break;
@@ -519,13 +519,13 @@ SPEC_FORM.SPEC_FORM_CNUM";
                 //            tb_oracle_dsource.Text = "IESWKCT670";
                 //            tb_oracle_dbName.Text = "SPEL11G";
                 //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "SPEL11G";
+                //            tb_oracle_pwd.Text = "";
                 //            tb_Source_tableName.Text = "tb_loop_2k";
 
                 //            tb_sql_dsource.Text = "IESWKCT247";
                 //            tb_sql_dbName.Text = "db_SPELSQL";
                 //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "abcde@1234567";
+                //            tb_sql_pwd.Text = "";
                 //            tb_destination_tableName.Text = "tb_loop_2k";
 
                 //            break;

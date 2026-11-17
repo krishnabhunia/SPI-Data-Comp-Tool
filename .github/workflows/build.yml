@@ -47,11 +47,15 @@ jobs:
           src = [f for f in tracked if f.endswith('.cs')]
           for f in src:
               text = open(f, encoding='utf-8-sig', errors='ignore').read()
-              if 'DebugKrishnaDebug' in text:
-                  bad.append(f'{f}: hard-coded debug password')
-              for m in re.finditer(r'(?:Password|Pwd|PassWord)\w*\.Text\s*=\s*@?"[^"]+"', text):
+              for m in re.finditer(r'(?i)(?:password|pwd)\w*\.Text\s*=\s*@?"[^"]+"', text):
                   line = text.count('\n', 0, m.start()) + 1
                   bad.append(f'{f}:{line}: password text box pre-filled with a literal')
+              for m in re.finditer(r'(?i)(?:password|pwd)\w*\.Text\s*==\s*@?"[^"]+"', text):
+                  line = text.count('\n', 0, m.start()) + 1
+                  bad.append(f'{f}:{line}: password compared with a hard-coded literal')
+              for m in re.finditer(r'Environment\.UserName(?:\.ToString\(\))?\s*==\s*"(?:\d{5,}|REDACTED[^"]*)"', text):
+                  line = text.count('\n', 0, m.start()) + 1
+                  bad.append(f'{f}:{line}: access tied to a hard-coded user id')
           if bad:
               print('\n'.join(bad)); sys.exit(1)
           print(f'Secrets guard passed ({len(tracked)} tracked files checked)')
