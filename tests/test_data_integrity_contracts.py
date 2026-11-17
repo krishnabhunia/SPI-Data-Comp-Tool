@@ -4,6 +4,7 @@ These checks do not execute the desktop UI or connect to live databases.
 """
 
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -15,6 +16,19 @@ def source(name: str) -> str:
 
 
 class DataIntegrityContracts(unittest.TestCase):
+    def test_oracle_reference_matches_nuget_restore_version(self) -> None:
+        packages = ET.fromstring(source("packages.config"))
+        versions = [package.get("version") for package in packages.findall("package")
+                    if package.get("id") == "Oracle.ManagedDataAccess"]
+        self.assertEqual(len(versions), 1)
+        project = ET.fromstring(source("SPI Data Comp Tool.csproj"))
+        ns = {"msbuild": "http://schemas.microsoft.com/developer/msbuild/2003"}
+        references = [reference.findtext("msbuild:HintPath", namespaces=ns)
+                      for reference in project.findall(".//msbuild:Reference", namespaces=ns)
+                      if reference.get("Include", "").startswith("Oracle.ManagedDataAccess,")]
+        self.assertEqual(len(references), 1)
+        self.assertIn(f"Oracle.ManagedDataAccess.{versions[0]}", references[0])
+
     def test_target_connection_uses_target_windows_authentication(self) -> None:
         source_code = source("UserControlDataBase.cs")
         connect = source_code.split("private void ConnectDB()", 1)[1]

@@ -4,7 +4,7 @@
 
 ## Automated checks
 
-`python -m unittest discover -s tests -p "test_*.py" -v` checks selected source contracts for independent source/target authentication, Oracle target selection, blank passwords in exported profiles, and log redaction. It does **not** validate runtime data correctness.
+`python -m unittest discover -s tests -p "test_*.py" -v` checks selected source contracts for independent source/target authentication, Oracle target selection, restored Oracle package references, blank passwords in exported profiles, and log redaction. It does **not** validate runtime data correctness.
 
 ## Manual Windows acceptance matrix
 
