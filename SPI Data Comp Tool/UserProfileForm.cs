@@ -863,7 +863,8 @@ namespace SPI_Data_Comp_Tool
                         str_SchemaName = cb_SRC_TableName.Text,
                         str_TableName = cb_SRC_TableName.Text,
                         str_UserName = tb_SRC_UserName.Text,
-                        str_Password = GlobalDebug.boolIsGlobalDebug ? tb_SRC_Password.Text : ""
+                        // Never persist database passwords in an exportable JSON profile.
+                        str_Password = ""
                     };
                 }
                 else if (strFor.ToUpper() == "TRG")
@@ -881,7 +882,8 @@ namespace SPI_Data_Comp_Tool
                         str_SchemaName = cb_TRG_TableName.Text,
                         str_TableName = cb_TRG_TableName.Text,
                         str_UserName = tb_TRG_UserName.Text,
-                        str_Password = GlobalDebug.boolIsGlobalDebug ? tb_TRG_Password.Text : ""
+                        // Always require the password to be entered again when needed.
+                        str_Password = ""
                     };
                 }
                 return dBConnectionDetailsProfile;

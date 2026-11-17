@@ -334,12 +334,12 @@ namespace SPI_Data_Comp_Tool
                         strQuery = $"select {columnNames} from {str_SRCTableName} Where {cb_DateCol.Text} >= '{dateTimePicker_Date.Value.ToString("yyyy-MM-dd")}'";
                     }
                     Common_Data.DisplayMessage(rtb_Log, strQuery);
-                    if (cb_WindowAuthentication_TRG.CheckState == CheckState.Checked)
+                    if (cb_WindowAuthentication_SRC.CheckState == CheckState.Checked)
                     {
                         strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
                     + "; Integrated Security = true ";
                     }
-                    else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
+                    else if (cb_WindowAuthentication_SRC.CheckState == CheckState.Unchecked)
                     {
                         strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
                     + "; User ID = " + tb_SRC_UserName.Text + "; " + "Password = " + tb_SRC_Password.Text + ";";
@@ -374,12 +374,12 @@ namespace SPI_Data_Comp_Tool
                 if (rb_TRG_Oracle.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Connecting Oracle");
-                    strSQLConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
+                    string targetOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
                         "(HOST = " + tb_TRG_DataSource.Text + " )(PORT = " + tb_TRG_DefaultPort.Text + "))"
                         + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_TRG_DBName.Text + ")));"
                         + "User Id=" + tb_TRG_UserName.Text + ";Password=" + tb_TRG_Password.Text + ";";
-                    Common_Data.DisplayMessage(rtb_Log, strSQLConnection);
-                    oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
+                    Common_Data.DisplayMessage(rtb_Log, "Connecting to target Oracle database");
+                    oracleDA = new OracleDataAdapter(strQuery, targetOracleConnection);
                     dt_Target = new DataTable();
                     oracleDA.Fill(dt_Target);
                     strTargetName = "Target Oracle 11G";
