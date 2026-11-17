@@ -85,7 +85,7 @@ Versions are automatic - nobody edits a version number by hand. `tools/release.p
 | SrNo. | Kind | Bumps | How it is recognised (first match wins) |
 |---|---|---|---|
 | 1 | Override | as given | PR label `release:major`, `release:minor` or `release:patch`, or `[major]` / `[minor]` / `[patch]` in the PR title |
-| 2 | Major (x) | `2.4.1` → `3.0.0` | `BREAKING CHANGE` in the title or body, a type ending in `!` (`feat!:`), or type `Breaking` |
+| 2 | Major (x) | `2.4.1` → `3.0.0` | A line starting `BREAKING CHANGE:` in the title or body, a type ending in `!` (`feat!:`), or type `Breaking` |
 | 3 | Minor (y) | `2.4.1` → `2.5.0` | Type `Feature` / `feat` (e.g. `Claude : Feature: ...`, `feat(ui): ...`) |
 | 4 | Patch (z) | `2.4.1` → `2.4.2` | Everything else: `Fix`, `Docs`, `CI`, `Refactor`, titles with no type |
 

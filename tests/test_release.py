@@ -22,6 +22,11 @@ class BumpKind(unittest.TestCase):
         self.assertEqual(release.bump_kind("feat!: drop .NET 4.6.2"), "major")
         self.assertEqual(release.bump_kind("refactor: tidy", body="BREAKING CHANGE: config file renamed"), "major")
 
+    def test_mentioning_breaking_change_is_not_a_breaking_change(self):
+        body = "| 2 | Major | breaking/`!`/BREAKING CHANGE -> major |\nNothing breaks here."
+        self.assertEqual(release.bump_kind("Claude : CI: automatic versioning (#21)", body=body), "patch")
+        self.assertEqual(release.bump_kind("fix: x", body="Notes\n  BREAKING CHANGE: removed option"), "major")
+
     def test_titles_without_a_type_are_patches(self):
         self.assertEqual(release.bump_kind("ChatGPT-SPI-SQL-Script-Execution-Safety (#18)"), "patch")
         self.assertEqual(release.bump_kind(""), "patch")

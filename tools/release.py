@@ -14,7 +14,7 @@ Properties/AssemblyInfo.cs counts as the last release.
 Change type (first match wins):
   1. PR label  release:major | release:minor | release:patch
   2. "[major]" / "[minor]" / "[patch]" in the PR title
-  3. "BREAKING CHANGE" in title/body, or a type ending in "!" (feat!: ...)  -> major
+  3. A line starting "BREAKING CHANGE:" in title/body, or a type ending in "!" -> major
   4. Type Feature / feat                                                  -> minor
   5. Anything else (Fix, Docs, CI, Refactor, Chore, no type ...)          -> patch
 
@@ -62,7 +62,9 @@ def bump_kind(title, body="", labels=()):
     for kind in ("major", "minor", "patch"):
         if f"[{kind}]" in low:
             return kind
-    if "breaking change" in low or "breaking change" in (body or "").lower():
+    # a breaking-change note is a line that starts with "BREAKING CHANGE:" (Conventional Commits footer);
+    # merely mentioning the words, e.g. in a PR description that explains these rules, does not count
+    if re.search(r"^\s*BREAKING[ -]CHANGE\s*:", (title or "") + "\n" + (body or ""), re.MULTILINE):
         return "major"
     m = TYPE_RE.match(title or "")
     if m:
