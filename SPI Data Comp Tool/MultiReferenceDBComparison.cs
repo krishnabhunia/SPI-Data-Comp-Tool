@@ -150,7 +150,7 @@ namespace SPI_Data_Comp_Tool
             boolCompareResult = false;
             boolRulesCheck = false;
 
-            if (Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
+            if (GlobalDebug.IsDeveloperDiagnosticsEnabled || GlobalDebug.boolIsGlobalDebug)
             {
                 comboBox1.Visible = true;
                 comboBox1.SelectedIndex = 8;
@@ -161,7 +161,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if ((Debugger.IsAttached) || (intExplicitCall == 1) || (Environment.UserName == ""))
+                if ((GlobalDebug.IsDeveloperDiagnosticsEnabled) || (intExplicitCall == 1) || (Environment.UserName == ""))
                 {
                     comboBox1.Visible = true;
                 }
@@ -640,7 +640,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (true)//Debugger.IsAttached)
+                if (true)//GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     switch (comboBox1.SelectedIndex + 1)
                     {
@@ -1410,7 +1410,7 @@ namespace SPI_Data_Comp_Tool
                 if (ex != null)
                 {
                     lblExpressionStatus.Text = ex.Message.ToString();
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         lblExpressionStatus.Text = ex.ToString();
                     }

@@ -90,7 +90,7 @@ namespace SPI_Data_Comp_Tool
                 dsExcel = new DataSet();
                 dtExcel = new DataTable();
 
-                if (GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword) || Debugger.IsAttached)
+                if (GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword) || GlobalDebug.IsDeveloperDiagnosticsEnabled)
                 {
                     int userProfileMembersCount = 11;
                     if (cb_UserProfileList.Items.Count > userProfileMembersCount)
@@ -499,7 +499,7 @@ namespace SPI_Data_Comp_Tool
 
                     boolFolderBrowserDialog = false;
 
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         folderBrowserDialog.SelectedPath = @"D:\Krishna\Projects\SPI\INPUT FILES\Old Versus New\Prasad K\Output";
                         boolFolderBrowserDialog = true;
@@ -581,7 +581,7 @@ namespace SPI_Data_Comp_Tool
 
                         boolFolderBrowserDialog = false;
 
-                        if (Debugger.IsAttached)
+                        if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                         {
                             folderBrowserDialog.SelectedPath = @"D:\Krishna\Projects\SPI\INPUT FILES\Old Versus New\Prasad K\Output";
                             boolFolderBrowserDialog = true;
@@ -930,7 +930,7 @@ namespace SPI_Data_Comp_Tool
 
                     boolFolderBrowserDialog = false;
 
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         folderBrowserDialog.SelectedPath = @"D:\Krishna\Projects\SPI\INPUT FILES\Old Versus New\Prasad K\Output";
                         boolFolderBrowserDialog = true;
@@ -1642,7 +1642,7 @@ namespace SPI_Data_Comp_Tool
                     folderBrowserDialog = Common_Data.browserDialogInitialisation("Select Folder To Save Excel For Table Extraction after Delta", $@"{openFileDialogData.PathName_withoutFileName}\Output");
                     //folderBrowserDialog.SelectedPath = openFileDialogData.PathName_withoutFileName;
 
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         folderBrowserDialog.SelectedPath = @"D:\Krishna\Projects\SPI\INPUT FILES\Table Extraction After Delta\Prasad K\Output";
                     }

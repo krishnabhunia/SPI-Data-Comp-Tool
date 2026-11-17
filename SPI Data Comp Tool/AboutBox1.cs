@@ -75,7 +75,7 @@ namespace SPI_Data_Comp_Tool
             {
                 try
                 {
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
                     {
                         return Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
