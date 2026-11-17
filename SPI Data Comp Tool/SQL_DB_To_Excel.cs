@@ -54,7 +54,7 @@ namespace SPI_Data_Comp_Tool
 
             cb_UserProfileList = common_Data.ReadUserProfile(cb_UserProfileList);
 
-            if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+            if (Debugger.IsAttached)
             {
                 if (Environment.UserName.ToString() == "KRISHNA")
                 {
@@ -341,7 +341,7 @@ namespace SPI_Data_Comp_Tool
         private void DisplayError(Exception ex)
         {
             lbl_Status.Text = ex.Message.ToString();
-            if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+            if (Debugger.IsAttached)
             {
                 lbl_Status.Text = ex.ToString();
             }
@@ -376,7 +376,7 @@ namespace SPI_Data_Comp_Tool
 
                 }
 
-                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (Debugger.IsAttached)
                 {
                     tb_SRC_DataSource.Text = "localhost";
                     tb_SRC_DBName.Text = "SPEL11G";
@@ -409,7 +409,7 @@ namespace SPI_Data_Comp_Tool
                     tb_DefaultPort.ReadOnly = false;
                 }
 
-                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (Debugger.IsAttached)
                 {
                     tb_SRC_DataSource.Text = @"localhost";
                     tb_SRC_DBName.Text = "training_p";
@@ -469,7 +469,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     strQuery = $"select * from all_tables where {TableToExclude()} ORDER BY OWNER, TABLE_NAME";
 
-                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                    if (Debugger.IsAttached)
                     {
                         strQuery = $"select * from all_tables where {TableToExclude()} AND ROWNUM <= 50 ORDER BY OWNER, TABLE_NAME";
                     }

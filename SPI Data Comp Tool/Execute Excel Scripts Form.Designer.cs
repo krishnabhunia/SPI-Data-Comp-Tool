@@ -236,9 +236,9 @@
             // 
             this.btn_Execute.Location = new System.Drawing.Point(243, 297);
             this.btn_Execute.Name = "btn_Execute";
-            this.btn_Execute.Size = new System.Drawing.Size(115, 23);
+            this.btn_Execute.Size = new System.Drawing.Size(75, 23);
             this.btn_Execute.TabIndex = 43;
-            this.btn_Execute.Text = "Preview / Execute";
+            this.btn_Execute.Text = "Execute";
             this.btn_Execute.UseVisualStyleBackColor = true;
             this.btn_Execute.Click += new System.EventHandler(this.btn_Execute_Click);
             // 

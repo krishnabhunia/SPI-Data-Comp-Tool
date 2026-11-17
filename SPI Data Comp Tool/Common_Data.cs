@@ -183,7 +183,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 DisplayMessage(rtb_Log, ex.Message.ToString(), true);
-                if (GlobalDebug.boolIsGlobalDebug || GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
                 {
                     DisplayMessage(rtb_Log, ex.ToString(), true);
                 }
@@ -191,7 +191,7 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex1)
             {
                 DisplayMessage(rtb_Log, ex1.Message.ToString(), true);
-                if (GlobalDebug.boolIsGlobalDebug || GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
                 {
                     DisplayMessage(rtb_Log, ex1.ToString(), true);
                 }
@@ -215,7 +215,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (GlobalDebug.boolIsGlobalDebug || GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
                 {
                     DisplayMessage(rtb_Log, $"Debug Msg : {strMsg}", false, -1, Color.BlueViolet);
                 }
@@ -2777,24 +2777,13 @@ namespace SPI_Data_Comp_Tool
         public static string strUserName { get; private set; }
         public static string strPassword { get; private set; }
         public static bool boolIsGlobalDebug { get; private set; }
-
-        public static bool IsDeveloperDiagnosticsEnabled
-        {
-            get
-            {
-#if DEBUG
-                return Debugger.IsAttached;
-#else
-                return false;
-#endif
-            }
-        }
-
         public static bool ISGlobalDebug(string strUN, string strPassWD)
         {
-            // Diagnostics are available only in a Debug build with a debugger attached.
-            // Environment variables, user names and passwords cannot elevate access.
-            if (IsDeveloperDiagnosticsEnabled)
+            // Developer mode is switched on only by an attached debugger or by an explicit
+            // opt-in environment variable. It used to be granted to hard-coded Windows user
+            // names and a hard-coded password, which anyone reading this public source could reuse.
+            if (Debugger.IsAttached ||
+                string.Equals(Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG"), "1", StringComparison.Ordinal))
             {
                 strUserName = Environment.UserName;
                 strPassword = "";

@@ -195,7 +195,7 @@ namespace SPI_Data_Comp_Tool
             //    if (ex != null)
             //    {
             //        lblExpressionStatus.Text = ex.Message.ToString();
-            //        if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+            //        if (Debugger.IsAttached)
             //        {
             //            lblExpressionStatus.Text = ex.ToString();
             //        }

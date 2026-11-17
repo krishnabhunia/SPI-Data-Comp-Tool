@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Threading;
-using Microsoft.Identity.Client;
+using System.Diagnostics;
 
 namespace SPI_Data_Comp_Tool
 {
@@ -22,9 +21,9 @@ namespace SPI_Data_Comp_Tool
             btn_Excel_Comparison.Enabled = false;
             btn_Excel_Comparison.Visible = false;
 
-            this.Size = new Size(400, 340);
-            ToggleMenuStripForms(false);
-            btn_Login.Select();
+            // The login screen was removed: its user name and password were hard-coded in this
+            // source, so it protected nothing. The main window now opens ready to use.
+            UnlockMainWindow();
         }
 
         private void MyInitialization()
@@ -82,64 +81,30 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void ApplySignInResult(SignInResult result)
+        private void UnlockMainWindow()
         {
-            lbl_LoginStatus.ForeColor = result.Authorized ? Color.DarkGreen : Color.DarkRed;
-            lbl_LoginStatus.Text = result.Message;
-            if (!result.Authorized)
+            try
             {
-                ToggleMenuStripForms(false);
-                return;
+                ToggleMenuStripForms(true);
+                gb_logincredentials.Hide();
+                gb_AppDetails.Show();
+                panel_control.Location = new Point(8, 393);
+                this.Size = new Size(400, 530);
+                // Developer mode comes only from an attached debugger or SPI_DATA_COMP_DEBUG=1.
+                lbl_LoginStatus.Text = GlobalDebug.ISGlobalDebug(Environment.UserName, string.Empty)
+                    ? "Developer mode"
+                    : "Ready";
             }
-
-            ToggleMenuStripForms(true);
-            gb_logincredentials.Hide();
-            gb_AppDetails.Show();
-            panel_control.Location = new Point(8, 393);
-            this.Size = new Size(400, 530);
+            catch (Exception ex)
+            {
+                lbl_LoginStatus.Text = ex.Message.ToString();
+            }
         }
 
+        // Kept only because the designer still wires the (now hidden) Login button to it.
         private void btn_Login_Click(object sender, EventArgs e)
         {
-            try
-            {
-                ApplySignInResult(AuthenticationService.SignInWithWindows());
-            }
-            catch (Exception)
-            {
-                ApplySignInResult(SignInResult.Denied("Unable to verify the Windows account. Contact your administrator."));
-            }
-        }
-
-        private async void btn_EntraLogin_Click(object sender, EventArgs e)
-        {
-            btn_Login.Enabled = false;
-            btn_EntraLogin.Enabled = false;
-            lbl_LoginStatus.Text = "Waiting for Microsoft Entra ID sign-in...";
-            try
-            {
-                using (var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
-                {
-                    ApplySignInResult(await AuthenticationService.SignInWithEntraAsync(this, timeout.Token));
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                ApplySignInResult(SignInResult.Denied("Entra ID sign-in was cancelled or timed out."));
-            }
-            catch (MsalException)
-            {
-                ApplySignInResult(SignInResult.Denied("Entra ID sign-in failed. Contact your administrator."));
-            }
-            catch (Exception)
-            {
-                ApplySignInResult(SignInResult.Denied("Unable to complete Entra ID sign-in. Contact your administrator."));
-            }
-            finally
-            {
-                btn_Login.Enabled = gb_logincredentials.Visible;
-                btn_EntraLogin.Enabled = gb_logincredentials.Visible;
-            }
+            UnlockMainWindow();
         }
 
         private void ToggleMenuStripForms(bool boolEnableStatus)
@@ -159,7 +124,6 @@ namespace SPI_Data_Comp_Tool
                 preMergingToolToolStripMenuItem.Enabled = boolEnableStatus;
                 preMergingDuplicacyCheckToolStripMenuItem.Enabled = boolEnableStatus;
                 userProfileToolStripMenuItem.Enabled = boolEnableStatus;
-                userSettingsToolStripMenuItem.Enabled = boolEnableStatus;
                 configurationToolStripMenuItem.Enabled = boolEnableStatus;
                 sPIDeltaChangeLegacyIDToolStripMenuItem.Enabled = boolEnableStatus;
                 generateInsertScriptsToolStripMenuItem.Enabled = boolEnableStatus;

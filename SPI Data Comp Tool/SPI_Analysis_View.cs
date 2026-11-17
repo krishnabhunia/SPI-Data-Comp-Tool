@@ -513,7 +513,7 @@ namespace SPI_Data_Comp_Tool
 
                 lbl_Status.Text = "All arranged successfully";
 
-                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (Debugger.IsAttached)
                 {
                     lbl_Status.Text = "All arranged " + count + "   " + dt_1.Rows.Count + "   " + dt_2.Rows.Count + "   |   " +
                     dt_Merge.Rows.Count;

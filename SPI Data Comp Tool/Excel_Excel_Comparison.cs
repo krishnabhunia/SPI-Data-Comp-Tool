@@ -191,7 +191,7 @@ namespace SPI_Data_Comp_Tool
 
             saveFileDialogFile = new SaveFileDialogFile();
 
-            if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+            if (Debugger.IsAttached)
             {
                 btnLoad.Visible = true;
 
@@ -208,7 +208,7 @@ namespace SPI_Data_Comp_Tool
 
             lbl_InstrumentText.Text = "The Below Button will generate Required Item Tag and Short Item Tag for specific Input Source File which doesn't have any Unique reference ID other that Item Tag which get matched with Target Input File. Pls use this in old datasets.";
 
-            if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+            if (Debugger.IsAttached)
             {
                 button1.Visible = true;
                 btn_TestSystemMemoryOutException.Visible = true;
@@ -742,7 +742,7 @@ namespace SPI_Data_Comp_Tool
 
                     boolSelectedBothFile = true;
 
-                    //if (GlobalDebug.IsDeveloperDiagnosticsEnabled & false)
+                    //if (Debugger.IsAttached & false)
                     //{
                     //    checkRules.PNIDVariousRuleChecks(ds.Tables[0], ds.Tables[1]);
                     //}
@@ -912,7 +912,7 @@ namespace SPI_Data_Comp_Tool
 
                 DisplayMessage("Saving Output File !!!");
 
-                if (!(GlobalDebug.IsDeveloperDiagnosticsEnabled))
+                if (!(Debugger.IsAttached))
                 {
                     saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Output File", $"{firstExcelData.SimpleFileName_WithoutExt}_{secondExcelData.SimpleFileName_WithoutExt}_{common_Data.AppendDateInOutputFileName(DateTime.Now).ToString()}");
                 }
@@ -2057,7 +2057,7 @@ namespace SPI_Data_Comp_Tool
                     llbl_filePath.Visible = true;
                     label1.Visible = true;
 
-                    if (!(GlobalDebug.IsDeveloperDiagnosticsEnabled))
+                    if (!(Debugger.IsAttached))
                     {
                         Process.Start(saveFileDialogFile.Str_saveFileNameWithPath);
                     }
@@ -2786,7 +2786,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     lblError.Visible = true;
                     lblError.ForeColor = Color.Red;
-                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                    if (Debugger.IsAttached)
                     {
                         lblError.Text = ex.ToString();
                     }

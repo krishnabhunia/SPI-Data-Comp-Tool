@@ -155,7 +155,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 Common_Data.DisplayMessage(rtb_Log, ex.Message.ToString(), true);
-                if (GlobalDebug.IsDeveloperDiagnosticsEnabled || GlobalDebug.boolIsGlobalDebug)
+                if (Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
                 {
                     Common_Data.DisplayMessage(rtb_Log, ex.ToString(), true);
                 }
@@ -163,7 +163,7 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex1)
             {
                 Common_Data.DisplayMessage(rtb_Log, ex1.Message.ToString(), true);
-                if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                if (Debugger.IsAttached)
                 {
                     Common_Data.DisplayMessage(rtb_Log, ex1.ToString(), true);
                 }

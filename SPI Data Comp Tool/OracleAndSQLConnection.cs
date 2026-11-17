@@ -50,7 +50,7 @@ namespace SPI_Data_Comp_Tool
 
         public void LoadDebuggingInformation()
         {
-            if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+            if (Debugger.IsAttached)
             {
                 cb_UserProfileList.SelectedIndex = 0;
                 cb_query.CheckState = CheckState.Checked;
@@ -227,7 +227,7 @@ namespace SPI_Data_Comp_Tool
                 if (ex != null)
                 {
                     control.Text = ex.Message.ToString();
-                    if (GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                    if (Debugger.IsAttached)
                     {
                         control.Text = ex.ToString();
                     }
@@ -400,7 +400,7 @@ SPEC_FORM.SPEC_FORM_CNUM";
 
                 //DisplayMessage(lblStatus, $"User Profile :{cb_UserProfileList.SelectedItem}, Loaded Successfully");
 
-                //if (true)//GlobalDebug.IsDeveloperDiagnosticsEnabled)
+                //if (true)//Debugger.IsAttached)
                 //{
                 //    switch (comboBox1.SelectedIndex + 1)
                 //    {

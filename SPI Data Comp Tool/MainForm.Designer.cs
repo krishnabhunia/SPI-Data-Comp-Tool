@@ -72,7 +72,10 @@
             this.gb_AppDetails = new System.Windows.Forms.GroupBox();
             this.gb_logincredentials = new System.Windows.Forms.GroupBox();
             this.btn_Login = new System.Windows.Forms.Button();
-            this.btn_EntraLogin = new System.Windows.Forms.Button();
+            this.tb_password = new System.Windows.Forms.TextBox();
+            this.tb_username = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
             this.lbl_LoginStatus = new System.Windows.Forms.Label();
             this.panel_control = new System.Windows.Forms.Panel();
             this.menuStrip1.SuspendLayout();
@@ -444,41 +447,68 @@
             // gb_logincredentials
             // 
             this.gb_logincredentials.Controls.Add(this.btn_Login);
-            this.gb_logincredentials.Controls.Add(this.btn_EntraLogin);
-            this.gb_logincredentials.Location = new System.Drawing.Point(16, 28);
+            this.gb_logincredentials.Controls.Add(this.tb_password);
+            this.gb_logincredentials.Controls.Add(this.tb_username);
+            this.gb_logincredentials.Controls.Add(this.label4);
+            this.gb_logincredentials.Controls.Add(this.label1);
+            this.gb_logincredentials.Location = new System.Drawing.Point(372, 118);
             this.gb_logincredentials.Name = "gb_logincredentials";
-            this.gb_logincredentials.Size = new System.Drawing.Size(350, 155);
+            this.gb_logincredentials.Size = new System.Drawing.Size(280, 144);
             this.gb_logincredentials.TabIndex = 10;
             this.gb_logincredentials.TabStop = false;
-            this.gb_logincredentials.Text = "Choose your sign-in method";
+            this.gb_logincredentials.Text = "Login Details";
             // 
             // btn_Login
             // 
-            this.btn_Login.Location = new System.Drawing.Point(15, 32);
+            this.btn_Login.Location = new System.Drawing.Point(95, 105);
             this.btn_Login.Name = "btn_Login";
-            this.btn_Login.Size = new System.Drawing.Size(320, 42);
-            this.btn_Login.TabIndex = 0;
-            this.btn_Login.Text = "A  Sign in with Windows / Active Directory";
+            this.btn_Login.Size = new System.Drawing.Size(75, 23);
+            this.btn_Login.TabIndex = 4;
+            this.btn_Login.Text = "Submit";
             this.btn_Login.UseVisualStyleBackColor = true;
             this.btn_Login.Click += new System.EventHandler(this.btn_Login_Click);
             // 
-            // btn_EntraLogin
+            // tb_password
             // 
-            this.btn_EntraLogin.Location = new System.Drawing.Point(15, 88);
-            this.btn_EntraLogin.Name = "btn_EntraLogin";
-            this.btn_EntraLogin.Size = new System.Drawing.Size(320, 42);
-            this.btn_EntraLogin.TabIndex = 1;
-            this.btn_EntraLogin.Text = "B  Sign in with Microsoft Entra ID";
-            this.btn_EntraLogin.UseVisualStyleBackColor = true;
-            this.btn_EntraLogin.Click += new System.EventHandler(this.btn_EntraLogin_Click);
+            this.tb_password.Location = new System.Drawing.Point(95, 69);
+            this.tb_password.Name = "tb_password";
+            this.tb_password.PasswordChar = '*';
+            this.tb_password.Size = new System.Drawing.Size(168, 20);
+            this.tb_password.TabIndex = 3;
+            // 
+            // tb_username
+            // 
+            this.tb_username.Location = new System.Drawing.Point(95, 38);
+            this.tb_username.Name = "tb_username";
+            this.tb_username.Size = new System.Drawing.Size(168, 20);
+            this.tb_username.TabIndex = 2;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(15, 72);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(62, 13);
+            this.label4.TabIndex = 1;
+            this.label4.Text = "Password : ";
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(13, 41);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(64, 13);
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Username : ";
             // 
             // lbl_LoginStatus
             // 
-            this.lbl_LoginStatus.Location = new System.Drawing.Point(5, 34);
+            this.lbl_LoginStatus.AutoSize = true;
+            this.lbl_LoginStatus.Location = new System.Drawing.Point(5, 45);
             this.lbl_LoginStatus.Name = "lbl_LoginStatus";
-            this.lbl_LoginStatus.Size = new System.Drawing.Size(335, 44);
+            this.lbl_LoginStatus.Size = new System.Drawing.Size(68, 13);
             this.lbl_LoginStatus.TabIndex = 11;
-            this.lbl_LoginStatus.Text = "Select a sign-in method to continue.";
+            this.lbl_LoginStatus.Text = "Please Login";
             // 
             // panel_control
             // 
@@ -487,7 +517,7 @@
             this.panel_control.Controls.Add(this.btn_Exit_Logout);
             this.panel_control.Controls.Add(this.label3);
             this.panel_control.Controls.Add(this.btn_Excel_Comparison);
-            this.panel_control.Location = new System.Drawing.Point(16, 190);
+            this.panel_control.Location = new System.Drawing.Point(16, 393);
             this.panel_control.Name = "panel_control";
             this.panel_control.Size = new System.Drawing.Size(350, 90);
             this.panel_control.TabIndex = 12;
@@ -543,8 +573,11 @@
         private System.Windows.Forms.PictureBox pictureBox2;
         private System.Windows.Forms.GroupBox gb_AppDetails;
         private System.Windows.Forms.GroupBox gb_logincredentials;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button btn_Login;
-        private System.Windows.Forms.Button btn_EntraLogin;
+        private System.Windows.Forms.TextBox tb_password;
+        private System.Windows.Forms.TextBox tb_username;
         private System.Windows.Forms.Label lbl_LoginStatus;
         private System.Windows.Forms.Panel panel_control;
         private System.Windows.Forms.ToolStripMenuItem sPISpecNoteCreationUtilityToolStripMenuItem;
