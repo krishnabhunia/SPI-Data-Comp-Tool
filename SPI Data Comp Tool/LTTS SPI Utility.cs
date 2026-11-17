@@ -102,17 +102,11 @@ namespace SPI_Data_Comp_Tool
                     gb_LTTSDetails.Show();
                     panel_control.Location = new Point(8, 393);
                     this.Size = new Size(400, 530);
-                    lbl_LoginStatus.Text = "Logged in successfully";
-                }
-                else if(tb_username.Text == "Krishna" & tb_password.Text == "DebugKrishnaDebug")
-                {
-                    ToggleMenuStripForms(true);
-                    gb_logincredentials.Hide();
-                    gb_LTTSDetails.Show();
-                    panel_control.Location = new Point(8, 393);
-                    this.Size = new Size(400, 530);
-                    lbl_LoginStatus.Text = "Logged in debugging mode";
-                    GlobalDebug.ISGlobalDebug(tb_username.Text.Trim(), tb_password.Text.Trim());
+                    // Developer mode now comes only from an attached debugger or SPI_DATA_COMP_DEBUG=1.
+                    // (A second hidden "developer" user name and password used to be hard-coded here.)
+                    lbl_LoginStatus.Text = GlobalDebug.ISGlobalDebug(tb_username.Text.Trim(), string.Empty)
+                        ? "Logged in debugging mode"
+                        : "Logged in successfully";
                 }
                 else
                 {

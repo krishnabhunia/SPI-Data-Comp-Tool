@@ -120,7 +120,7 @@
       <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Oracle.ManagedDataAccess, Version=4.122.21.1, Culture=neutral, PublicKeyToken=89b483f429c47342, processorArchitecture=MSIL">
-      <HintPath>..\packages\Oracle.ManagedDataAccess.21.3.0\lib\net462\Oracle.ManagedDataAccess.dll</HintPath>
+      <HintPath>..\packages\Oracle.ManagedDataAccess.21.9.0\lib\net462\Oracle.ManagedDataAccess.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
@@ -478,7 +478,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <None Include="SPI Data Comp Tool_TemporaryKey.pfx" />
-    <None Include="UserProfile\userProfile.json" />
+    <None Include="UserProfile\userProfile.example.json" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -504,25 +504,63 @@
   <ItemGroup>
     <Content Include="logo.ico" />
     <Content Include="logo1.ico" />
-    <Content Include="PNID_Reports\Source\drawing.txt" />
-    <Content Include="PNID_Reports\Source\equipment.txt" />
-    <Content Include="PNID_Reports\Source\instrument.txt" />
-    <Content Include="PNID_Reports\Source\nozzle.txt" />
-    <Content Include="PNID_Reports\Source\opc.txt" />
-    <Content Include="PNID_Reports\Source\piperun.txt" />
-    <Content Include="PNID_Reports\Source\piping_component.txt" />
-    <Content Include="PNID_Reports\Source\PlantItem.txt" />
-    <Content Include="PNID_Reports\Source\PlantItem_Antwerp.txt" />
-    <Content Include="PNID_Reports\Source\representation.txt" />
-    <Content Include="PNID_Reports\Target_IPEP\drawing.txt" />
-    <Content Include="PNID_Reports\Target_IPEP\equipment.txt" />
-    <Content Include="PNID_Reports\Target_IPEP\instrument.txt" />
-    <Content Include="PNID_Reports\Target_IPEP\nozzle.txt" />
-    <Content Include="PNID_Reports\Target_IPEP\opc.txt" />
-    <Content Include="PNID_Reports\Target_IPEP\piperun.txt" />
-    <Content Include="PNID_Reports\Target_IPEP\piping_component.txt" />
-    <Content Include="PNID_Reports\Target_IPEP\PlantItem.txt" />
-    <Content Include="PNID_Reports\Target_IPEP\representation.txt" />
+    <Content Include="PNID_Reports\Source\drawing.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Source\equipment.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Source\instrument.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Source\nozzle.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Source\opc.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Source\piperun.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Source\piping_component.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Source\PlantItem.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Source\PlantItem_Antwerp.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Source\representation.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Target_IPEP\drawing.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Target_IPEP\equipment.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Target_IPEP\instrument.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Target_IPEP\nozzle.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Target_IPEP\opc.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Target_IPEP\piperun.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Target_IPEP\piping_component.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Target_IPEP\PlantItem.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PNID_Reports\Target_IPEP\representation.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

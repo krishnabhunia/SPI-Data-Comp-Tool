@@ -1,0 +1,104 @@
+name: Build and checks
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify project documentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('docs/PROJECT_GUIDE.md').read_text()
+          assert s.count('~~~') % 2 == 0
+          assert s.count('~~~mermaid') >= 3
+          assert 'docs/PROJECT_GUIDE.md' in Path('README.md').read_text()
+          print('Guide checks passed')
+          PY
+
+  secrets-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if connection profiles or passwords are committed
+        run: |
+          python - <<'PY'
+          import json, re, subprocess, sys
+          tracked = subprocess.run(['git', 'ls-files'], capture_output=True, text=True, check=True).stdout.splitlines()
+          bad = []
+          for f in tracked:
+              low = f.lower()
+              if low.endswith('userprofile/userprofile.json'):
+                  bad.append(f'{f}: real profile file is tracked (use userProfile.example.json)')
+              if low.endswith('.pfx') or low.endswith('.snk'):
+                  bad.append(f'{f}: signing key is tracked')
+              if low.endswith('.json'):
+                  text = open(f, encoding='utf-8-sig', errors='ignore').read()
+                  for m in re.finditer(r'"str_Password"\s*:\s*"([^"]*)"', text):
+                      if m.group(1):
+                          bad.append(f'{f}: non-empty str_Password')
+          src = [f for f in tracked if f.endswith('.cs')]
+          for f in src:
+              text = open(f, encoding='utf-8-sig', errors='ignore').read()
+              if 'DebugKrishnaDebug' in text:
+                  bad.append(f'{f}: hard-coded debug password')
+              for m in re.finditer(r'(?:Password|Pwd|PassWord)\w*\.Text\s*=\s*@?"[^"]+"', text):
+                  line = text.count('\n', 0, m.start()) + 1
+                  bad.append(f'{f}:{line}: password text box pre-filled with a literal')
+          if bad:
+              print('\n'.join(bad)); sys.exit(1)
+          print(f'Secrets guard passed ({len(tracked)} tracked files checked)')
+          PY
+
+  windows-build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: NuGet/setup-nuget@v2
+      - uses: microsoft/setup-msbuild@v2
+      - name: Resolve version (x.y.z, beta on pull requests)
+        id: ver
+        shell: pwsh
+        run: |
+          $info = Get-Content "SPI Data Comp Tool/Properties/AssemblyInfo.cs" -Raw
+          if ($info -notmatch 'AssemblyFileVersion\("(\d+)\.(\d+)\.(\d+)') { throw 'AssemblyFileVersion not found' }
+          $v = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
+          if ('${{ github.event_name }}' -eq 'pull_request') { $v = "$v-beta{0:D3}" -f [int]'${{ github.run_number }}' }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $v"
+      - run: nuget restore "SPI Data Comp Tool.sln" -NonInteractive
+      - name: Build desktop application
+        shell: pwsh
+        run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release '/p:Platform=Any CPU' /warnaserror:MSB3245
+      - name: Package portable build
+        shell: pwsh
+        run: |
+          $ver = '${{ steps.ver.outputs.version }}'
+          $name = "SPI_Data_Comp_Tool_$ver"
+          $src = "SPI Data Comp Tool/bin/Release"
+          $dst = "dist/portable"
+          New-Item -ItemType Directory -Force $dst | Out-Null
+          # Portable copy only: skip debug symbols, XML docs and ClickOnce publish output/manifests
+          Get-ChildItem $src -File | Where-Object { $_.Extension -notin '.pdb','.xml','.application','.manifest' } |
+            Copy-Item -Destination $dst
+          # PNID report SQL templates are read at runtime from <exe folder>\PNID_Reports\Source|Target_IPEP
+          Copy-Item "$src/PNID_Reports" "$dst/PNID_Reports" -Recurse
+          foreach ($t in 'Source/instrument.txt','Target_IPEP/instrument.txt') {
+            if (-not (Test-Path "$dst/PNID_Reports/$t")) { throw "PNID template missing from portable/: $t" }
+          }
+          Rename-Item "$dst/SPI Data Comp Tool.exe" "$name.exe"
+          Rename-Item "$dst/SPI Data Comp Tool.exe.config" "$name.exe.config"
+          if (Test-Path "$dst/app.publish") { throw 'ClickOnce output leaked into portable/' }
+          Get-ChildItem dist -Recurse | ForEach-Object { $_.FullName }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SPI_Data_Comp_Tool_${{ steps.ver.outputs.version }}
+          path: dist/
+          if-no-files-found: error

@@ -1524,11 +1524,19 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                string strJsonFileName = @"D:\Krishna\Projects\SPI\SPI Data Comp Tool\SPI Data Comp Tool\UserProfile\userProfile.json";
-                //JObject jObject = JObject.Parse(File.ReadAllText(strJsonFileName));
+                // Use the profile chosen in File > User Profile; fall back to the copy next to the exe.
+                // (Previously a developer's own D:\ path was hard-coded here, and two readers were
+                // opened and never closed, which kept the file locked.)
+                string strJsonFileName = Common_Data.StringNotNullOrEmpty(Properties.Settings.Default.ProfilePathUser, ".json", false, true)
+                    ? Properties.Settings.Default.ProfilePathUser
+                    : Path.Combine(Application.StartupPath, "UserProfile", "userProfile.json");
 
-                StreamReader streamReader = new StreamReader(strJsonFileName);
-                JsonTextReader jsonTextReader = new JsonTextReader(streamReader);
+                if (!File.Exists(strJsonFileName))
+                {
+                    MessageBox.Show($"User profile file not found:\n{strJsonFileName}\n\nCreate one from File > User Profile (see UserProfile\\userProfile.example.json).",
+                        "User profile", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
 
                 using (StreamReader r = new StreamReader(strJsonFileName))
                 {

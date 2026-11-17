@@ -57,7 +57,7 @@ namespace SPI_Data_Comp_Tool
                 dtDelta = new DataTable();
 
                 common_Data = new Common_Data();
-                str_excelFileName = "D:\\Output.xlsx";
+                str_excelFileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Output.xlsx"); // was a hard-coded D:\ drive path
 
                 boolSavedFileOnce = false;
 
@@ -900,7 +900,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "BRTSP00278";
                             tb_SRC_DBName.Text = "SBM12";
                             tb_SRC_UserName.Text = "SBM";
-                            tb_SRC_Password.Text = "SBM";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
@@ -909,7 +909,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "IESWKCT247";
                             tb_SRC_DBName.Text = "SPI2016";
                             tb_SRC_UserName.Text = "sa";
-                            tb_SRC_Password.Text = "abcde@1234567";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
@@ -918,7 +918,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = @"DFFMZ08SORA01\TOOLS_QAQC";
                             tb_SRC_DBName.Text = "Q_SPI_MDITRAIN_MERGE";
                             tb_SRC_UserName.Text = "CAOPIC_M";
-                            tb_SRC_Password.Text = "CAOPIC_M1";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
@@ -927,7 +927,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "IESWKCT670";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
-                            tb_SRC_Password.Text = "SPEL11G";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
@@ -936,7 +936,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "IESWKCT670";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
-                            tb_SRC_Password.Text = "SPEL11G";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
@@ -945,7 +945,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "IESWKCT670";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
-                            tb_SRC_Password.Text = "SPEL11G";
+                            tb_SRC_Password.Text = "";
 
                             break;
                         case 7:
@@ -953,7 +953,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "IESWKCT670";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
-                            tb_SRC_Password.Text = "SPEL11G";
+                            tb_SRC_Password.Text = "";
 
                             break;
                         case 8:
@@ -961,7 +961,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "localhost";
                             tb_SRC_DBName.Text = "orcl";
                             tb_SRC_UserName.Text = "system";
-                            tb_SRC_Password.Text = "1234";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
@@ -970,7 +970,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "IESWKCT670";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
-                            tb_SRC_Password.Text = "SPEL11G";
+                            tb_SRC_Password.Text = "";
 
                             break;
                         case 10:
@@ -978,7 +978,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "DSGPY3002.dcap.glpoly.net";
                             tb_SRC_DBName.Text = "MSPIAS";
                             tb_SRC_UserName.Text = "COV_LTTS_VIEW";
-                            tb_SRC_Password.Text = "SP14LTTS";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
@@ -988,7 +988,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "IESWKCT247";
                             tb_SRC_DBName.Text = "db_krishna";
                             tb_SRC_UserName.Text = "sa";
-                            tb_SRC_Password.Text = "abcde@1234567";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
@@ -997,7 +997,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "IESWKCT670";
                             tb_SRC_DBName.Text = "SPEL11G";
                             tb_SRC_UserName.Text = "system";
-                            tb_SRC_Password.Text = "SPEL11G";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
@@ -1006,7 +1006,7 @@ namespace SPI_Data_Comp_Tool
                             tb_SRC_DataSource.Text = "IESWKCT247";
                             tb_SRC_DBName.Text = "db_SPELSQL";
                             tb_SRC_UserName.Text = "sa";
-                            tb_SRC_Password.Text = "abcde@1234567";
+                            tb_SRC_Password.Text = "";
 
                             break;
 
