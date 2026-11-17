@@ -27,7 +27,7 @@ namespace SPI_Data_Comp_Tool
 
             if (Debugger.IsAttached)// && false)
             {
-                //Application.Run(new LTTS_Data_Comparison()); // This is the main GUI of the utility
+                //Application.Run(new MainForm()); // This is the main GUI of the utility
 
                 //File Menu
                 //Application.Run(new UserProfileForm());
@@ -70,7 +70,7 @@ namespace SPI_Data_Comp_Tool
             }
             else
             {
-                Application.Run(new LTTS_Data_Comparison());
+                Application.Run(new MainForm());
             }
 
             Logs.EnterLogs($"\n**************** Logs Ended at {Common_Data.AppendDateInOutputFileName()} ***************************************\n");

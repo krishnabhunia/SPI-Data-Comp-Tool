@@ -1218,14 +1218,14 @@ namespace SPI_Data_Comp_Tool
             //    {
             //        case 1:
             //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "IESWKCT670";
+            //            tb_SRC_DataSource.Text = "localhost";
             //            tb_SRC_DBName.Text = "SPEL11G";
             //            tb_SRC_UserName.Text = "system";
             //            tb_SRC_Password.Text = "";
             //            cb_SRC_TableName.Text = "tb_compare1";
 
             //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "IESWKCT247";
+            //            tb_TRG_DataSource.Text = "localhost";
             //            tb_TRG_DBName.Text = "db_SPELSQL";
             //            tb_TRG_UserName.Text = "sa";
             //            tb_TRG_Password.Text = "";
@@ -1235,7 +1235,7 @@ namespace SPI_Data_Comp_Tool
 
             //        case 2:
             //            rb_SRC_SQL.Checked = true;
-            //            tb_SRC_DataSource.Text = "IESWKCT247";
+            //            tb_SRC_DataSource.Text = "localhost";
             //            tb_SRC_DBName.Text = "db_krishna";
             //            tb_SRC_UserName.Text = "sa";
             //            tb_SRC_Password.Text = "";
@@ -1243,7 +1243,7 @@ namespace SPI_Data_Comp_Tool
             //            cb_SRC_TableName.Text = "component";
 
             //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "IESWKCT247";
+            //            tb_TRG_DataSource.Text = "localhost";
             //            tb_TRG_DBName.Text = "db_krishna";
             //            tb_TRG_UserName.Text = "sa";
             //            tb_TRG_Password.Text = "";
@@ -1253,14 +1253,14 @@ namespace SPI_Data_Comp_Tool
 
             //        case 3:
             //            rb_SRC_SQL.Checked = true;
-            //            tb_SRC_DataSource.Text = "IESWKCT247";
+            //            tb_SRC_DataSource.Text = "localhost";
             //            tb_SRC_DBName.Text = "SPELOLDP";
             //            tb_SRC_UserName.Text = "sa";
             //            tb_SRC_Password.Text = "";
             //            cb_SRC_TableName.Text = "plant1el.t_plantitem";
 
             //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "IESWKCT247";
+            //            tb_TRG_DataSource.Text = "localhost";
             //            tb_TRG_DBName.Text = "SPELOLDP_new";
             //            tb_TRG_UserName.Text = "sa";
             //            tb_TRG_Password.Text = "";
@@ -1270,14 +1270,14 @@ namespace SPI_Data_Comp_Tool
 
             //        case 4:
             //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "IESWKCT670";
+            //            tb_SRC_DataSource.Text = "localhost";
             //            tb_SRC_DBName.Text = "SPEL11G";
             //            tb_SRC_UserName.Text = "system";
             //            tb_SRC_Password.Text = "";
             //            cb_SRC_TableName.Text = "DASISLANDEL.T_motor";
 
             //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "IESWKCT247";
+            //            tb_TRG_DataSource.Text = "localhost";
             //            tb_TRG_DBName.Text = "JK1703_P";
             //            tb_TRG_UserName.Text = "sa";
             //            tb_TRG_Password.Text = "";
@@ -1287,14 +1287,14 @@ namespace SPI_Data_Comp_Tool
 
             //        case 5:
             //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "IESWKCT670";
+            //            tb_SRC_DataSource.Text = "localhost";
             //            tb_SRC_DBName.Text = "SPEL11G";
             //            tb_SRC_UserName.Text = "system";
             //            tb_SRC_Password.Text = "";
             //            cb_SRC_TableName.Text = "DASISLANDEL.T_Plantitem";
 
             //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "IESWKCT247";
+            //            tb_TRG_DataSource.Text = "localhost";
             //            tb_TRG_DBName.Text = "JK1703_P";
             //            tb_TRG_UserName.Text = "sa";
             //            tb_TRG_Password.Text = "";
@@ -1304,14 +1304,14 @@ namespace SPI_Data_Comp_Tool
 
             //        case 6:
             //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "IESWKCT670";
+            //            tb_SRC_DataSource.Text = "localhost";
             //            tb_SRC_DBName.Text = "SPEL11G";
             //            tb_SRC_UserName.Text = "system";
             //            tb_SRC_Password.Text = "";
             //            cb_SRC_TableName.Text = "tb_loop";
 
             //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "IESWKCT247";
+            //            tb_TRG_DataSource.Text = "localhost";
             //            tb_TRG_DBName.Text = "db_SPELSQL";
             //            tb_TRG_UserName.Text = "sa";
             //            tb_TRG_Password.Text = "";
@@ -1320,13 +1320,13 @@ namespace SPI_Data_Comp_Tool
             //            break;
             //        case 7:
             //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "IESWKCT670";
+            //            tb_SRC_DataSource.Text = "localhost";
             //            tb_SRC_DBName.Text = "SPEL11G";
             //            tb_SRC_UserName.Text = "system";
             //            tb_SRC_Password.Text = "";
             //            cb_SRC_TableName.Text = "tb_loop_2k";
 
-            //            tb_TRG_DataSource.Text = "IESWKCT247";
+            //            tb_TRG_DataSource.Text = "localhost";
             //            tb_TRG_DBName.Text = "db_SPELSQL";
             //            tb_TRG_UserName.Text = "sa";
             //            tb_TRG_Password.Text = "";
@@ -1352,14 +1352,14 @@ namespace SPI_Data_Comp_Tool
 
             //        case 9:
             //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "IESWKCT670";
+            //            tb_SRC_DataSource.Text = "localhost";
             //            tb_SRC_DBName.Text = "SPEL11G";
             //            tb_SRC_UserName.Text = "system";
             //            tb_SRC_Password.Text = "";
             //            cb_SRC_TableName.Text = "DASISLANdEL.T_MOTOR";
 
             //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "IESWKCT247";
+            //            tb_TRG_DataSource.Text = "localhost";
             //            tb_TRG_DBName.Text = "JK1703_P";
             //            tb_TRG_UserName.Text = "sa";
             //            tb_TRG_Password.Text = "";
@@ -1370,7 +1370,7 @@ namespace SPI_Data_Comp_Tool
             //            rb_SRC_oracle.Checked = true;
             //            tb_SRC_DataSource.Text = "DSGPY3002.dcap.glpoly.net";
             //            tb_SRC_DBName.Text = "MSPIAS";
-            //            tb_SRC_UserName.Text = "COV_LTTS_VIEW";
+            //            tb_SRC_UserName.Text = "";
             //            tb_SRC_Password.Text = "";
             //            cb_SRC_TableName.Text = "MDITRAIN.FLUID_PROPERTY";
 

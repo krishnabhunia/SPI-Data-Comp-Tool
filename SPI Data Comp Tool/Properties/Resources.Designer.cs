@@ -63,9 +63,9 @@ namespace SPI_Data_Comp_Tool.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap logo {
+        internal static System.Drawing.Bitmap app_banner {
             get {
-                object obj = ResourceManager.GetObject("logo", resourceCulture);
+                object obj = ResourceManager.GetObject("app_banner", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -73,9 +73,19 @@ namespace SPI_Data_Comp_Tool.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap utility_logo {
+        internal static System.Drawing.Bitmap compare_diagram {
             get {
-                object obj = ResourceManager.GetObject("utility logo", resourceCulture);
+                object obj = ResourceManager.GetObject("compare_diagram", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap about_side {
+            get {
+                object obj = ResourceManager.GetObject("about_side", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

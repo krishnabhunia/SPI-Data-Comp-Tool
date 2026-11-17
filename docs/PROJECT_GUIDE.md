@@ -7,6 +7,7 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 | Source | Responsibility |
 |---|---|
 | `SPI Data Comp Tool/Program.cs` | Startup; chooses main or debug-specific forms |
+| `SPI Data Comp Tool/MainForm.cs` | Main window (menus, About, exit) |
 | `SPI Data Comp Tool/DB Comparison.cs` | Database-comparison UI |
 | `SPI Data Comp Tool/Excel_Excel_Comparison.cs` | Excel comparison |
 | `SPI Data Comp Tool/SPIDeltaChangeTracker.cs` | Delta tracking form |
@@ -14,7 +15,8 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 | `SPI Data Comp Tool/Common_Data.cs` | Shared helpers: DB connections, Excel I/O, profiles, developer mode (`GlobalDebug`) |
 | `SPI Data Comp Tool/UserProfile/userProfile.example.json` | Template for a local connection profile |
 | `SPI Data Comp Tool.sln` | Visual Studio solution |
-| `.github/workflows/build.yml` | CI: docs check, secrets guard, Windows build, portable zip artifact |
+| `.github/workflows/build.yml` | CI: docs check, secrets and branding guard, Windows build, portable zip artifact |
+| `tools/make_app_images.py` | Draws the app icon and pictures (original artwork) |
 
 ## Architecture
 ~~~mermaid
@@ -62,6 +64,12 @@ flowchart TD
 | 3 | Developer mode | On when a debugger is attached, or when the environment variable `SPI_DATA_COMP_DEBUG=1` is set. It is no longer tied to specific Windows user names or a built-in password. In developer mode the profile form keeps passwords in the saved JSON, so keep such files local. |
 | 4 | Default output file (pre-merging tool) | `Documents\Output.xlsx` until you pick another location. |
 | 5 | Logs | `Desktop\LogFolder\Log_dd_MM_yyyy*.log` |
+
+## Branding and images
+- The tool is generic: no company names, logos or trademarks.
+- Every image is original and drawn by `tools/make_app_images.py` (Python + Pillow): `app.ico` (exe and all window icons, 16-256 px), `Resources/app_banner.png` and `Resources/compare_diagram.png` (main window), `Resources/about_side.png` (About box).
+- To change the look, edit the script, run `python tools/make_app_images.py` from the repository root (it also refreshes the embedded window icon of every form), and rebuild.
+- CI fails if any other image file is committed or if former-employer names reappear in source, settings or docs.
 
 ## Versioning and CI artifacts
 - The version is `x.y.z` from `AssemblyFileVersion` in `Properties/AssemblyInfo.cs` (x = major, y = minor, z = fix).

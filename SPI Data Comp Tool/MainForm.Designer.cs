@@ -1,6 +1,6 @@
 ﻿namespace SPI_Data_Comp_Tool
 {
-    partial class LTTS_Data_Comparison
+    partial class MainForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LTTS_Data_Comparison));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.userProfileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -69,7 +69,7 @@
             this.btn_Excel_Comparison = new System.Windows.Forms.Button();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.gb_LTTSDetails = new System.Windows.Forms.GroupBox();
+            this.gb_AppDetails = new System.Windows.Forms.GroupBox();
             this.gb_logincredentials = new System.Windows.Forms.GroupBox();
             this.btn_Login = new System.Windows.Forms.Button();
             this.tb_password = new System.Windows.Forms.TextBox();
@@ -81,7 +81,7 @@
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            this.gb_LTTSDetails.SuspendLayout();
+            this.gb_AppDetails.SuspendLayout();
             this.gb_logincredentials.SuspendLayout();
             this.panel_control.SuspendLayout();
             this.SuspendLayout();
@@ -414,8 +414,7 @@
             // 
             // pictureBox2
             // 
-            this.pictureBox2.ErrorImage = ((System.Drawing.Image)(resources.GetObject("pictureBox2.ErrorImage")));
-            this.pictureBox2.Image = global::SPI_Data_Comp_Tool.Properties.Resources.utility_logo;
+            this.pictureBox2.Image = global::SPI_Data_Comp_Tool.Properties.Resources.compare_diagram;
             this.pictureBox2.Location = new System.Drawing.Point(9, 150);
             this.pictureBox2.Name = "pictureBox2";
             this.pictureBox2.Size = new System.Drawing.Size(239, 101);
@@ -425,8 +424,7 @@
             // 
             // pictureBox1
             // 
-            this.pictureBox1.ErrorImage = ((System.Drawing.Image)(resources.GetObject("pictureBox1.ErrorImage")));
-            this.pictureBox1.Image = global::SPI_Data_Comp_Tool.Properties.Resources.logo;
+            this.pictureBox1.Image = global::SPI_Data_Comp_Tool.Properties.Resources.app_banner;
             this.pictureBox1.Location = new System.Drawing.Point(9, 25);
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.Size = new System.Drawing.Size(239, 119);
@@ -434,17 +432,17 @@
             this.pictureBox1.TabIndex = 7;
             this.pictureBox1.TabStop = false;
             // 
-            // gb_LTTSDetails
+            // gb_AppDetails
             // 
-            this.gb_LTTSDetails.Controls.Add(this.label2);
-            this.gb_LTTSDetails.Controls.Add(this.pictureBox2);
-            this.gb_LTTSDetails.Controls.Add(this.pictureBox1);
-            this.gb_LTTSDetails.Location = new System.Drawing.Point(16, 28);
-            this.gb_LTTSDetails.Name = "gb_LTTSDetails";
-            this.gb_LTTSDetails.Size = new System.Drawing.Size(350, 359);
-            this.gb_LTTSDetails.TabIndex = 9;
-            this.gb_LTTSDetails.TabStop = false;
-            this.gb_LTTSDetails.Visible = false;
+            this.gb_AppDetails.Controls.Add(this.label2);
+            this.gb_AppDetails.Controls.Add(this.pictureBox2);
+            this.gb_AppDetails.Controls.Add(this.pictureBox1);
+            this.gb_AppDetails.Location = new System.Drawing.Point(16, 28);
+            this.gb_AppDetails.Name = "gb_AppDetails";
+            this.gb_AppDetails.Size = new System.Drawing.Size(350, 359);
+            this.gb_AppDetails.TabIndex = 9;
+            this.gb_AppDetails.TabStop = false;
+            this.gb_AppDetails.Visible = false;
             // 
             // gb_logincredentials
             // 
@@ -524,7 +522,7 @@
             this.panel_control.Size = new System.Drawing.Size(350, 90);
             this.panel_control.TabIndex = 12;
             // 
-            // LTTS_Data_Comparison
+            // MainForm
             // 
             this.AcceptButton = this.btn_Login;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -532,19 +530,19 @@
             this.ClientSize = new System.Drawing.Size(664, 494);
             this.Controls.Add(this.panel_control);
             this.Controls.Add(this.gb_logincredentials);
-            this.Controls.Add(this.gb_LTTSDetails);
+            this.Controls.Add(this.gb_AppDetails);
             this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.MaximizeBox = false;
-            this.Name = "LTTS_Data_Comparison";
-            this.Text = "LTTS Data Comparison";
+            this.Name = "MainForm";
+            this.Text = "SPI Data Comparison Tool";
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            this.gb_LTTSDetails.ResumeLayout(false);
+            this.gb_AppDetails.ResumeLayout(false);
             this.gb_logincredentials.ResumeLayout(false);
             this.gb_logincredentials.PerformLayout();
             this.panel_control.ResumeLayout(false);
@@ -573,7 +571,7 @@
         private System.Windows.Forms.ToolStripMenuItem sPIAnalysisToolStripMenuItem;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.PictureBox pictureBox2;
-        private System.Windows.Forms.GroupBox gb_LTTSDetails;
+        private System.Windows.Forms.GroupBox gb_AppDetails;
         private System.Windows.Forms.GroupBox gb_logincredentials;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label1;

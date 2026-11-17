@@ -5,10 +5,10 @@ using System.Diagnostics;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class LTTS_Data_Comparison : Form
+    public partial class MainForm : Form
     {
         private Exception MyException;
-        public LTTS_Data_Comparison()
+        public MainForm()
         {
             InitializeComponent();
             MyInitialization();
@@ -28,8 +28,8 @@ namespace SPI_Data_Comp_Tool
 
         private void MyInitialization()
         {
-            label2.Text = "Automation Tool is developed by LTTS for analysis and comparison of two databases or excel files. (For Internal Purpose Only)";
-            label3.Text = "Unauthorized use is strictly prohibited";
+            label2.Text = "Compares two databases (Oracle or SQL Server) or two Excel files and reports the differences, for SPI data analysis.";
+            label3.Text = "Use only on data you are allowed to access.";
         }
 
         private void aboutUsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -87,7 +87,7 @@ namespace SPI_Data_Comp_Tool
             {
                 ToggleMenuStripForms(true);
                 gb_logincredentials.Hide();
-                gb_LTTSDetails.Show();
+                gb_AppDetails.Show();
                 panel_control.Location = new Point(8, 393);
                 this.Size = new Size(400, 530);
                 // Developer mode comes only from an attached debugger or SPI_DATA_COMP_DEBUG=1.
