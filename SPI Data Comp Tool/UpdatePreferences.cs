@@ -228,7 +228,7 @@ namespace SPI_Data_Comp_Tool
         internal static void WriteSnapshot(string path, UpdatePreferenceSnapshot snapshot)
         {
             ValidateSnapshot(snapshot);
-            string json = JsonConvert.SerializeObject(snapshot, Formatting.Indented);
+            string json = JsonConvert.SerializeObject(snapshot, Newtonsoft.Json.Formatting.Indented);
             if (Encoding.UTF8.GetByteCount(json) > 131072)
                 throw new InvalidDataException("The preference snapshot exceeds its safe size limit; the previous file was retained.");
             AtomicWrite(path, json);
@@ -305,7 +305,7 @@ namespace SPI_Data_Comp_Tool
                 setting.SetAttributeValue("serializeAs", "String");
                 setting.ReplaceNodes(new XElement("value", values[i]));
             }
-            AtomicWrite(Path.Combine(backupDirectory, "previous-target-preferences.json"), JsonConvert.SerializeObject(previous, Formatting.Indented));
+            AtomicWrite(Path.Combine(backupDirectory, "previous-target-preferences.json"), JsonConvert.SerializeObject(previous, Newtonsoft.Json.Formatting.Indented));
             return new UpdateSettingsMigration(destination, original, xml.ToString());
         }
 

@@ -58,6 +58,12 @@ class UpdateIntegrationTests(unittest.TestCase):
         self.assertIn("x64-ui-workflow-checks.txt", workflow)
         self.assertIn("64-bit UI workflow checks failed", workflow)
 
+    def test_json_formatting_is_unambiguous_alongside_xml(self):
+        source = (APP / "UpdatePreferences.cs").read_text()
+        self.assertIn("using System.Xml;", source)
+        self.assertEqual(source.count("Newtonsoft.Json.Formatting.Indented"), 2)
+        self.assertNotIn(", Formatting.Indented", source)
+
 
 if __name__ == "__main__":
     unittest.main()
