@@ -7,13 +7,11 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class MainForm : Form
     {
-        private Exception MyException;
+        private readonly WindowNavigator windows = new WindowNavigator();
         public MainForm()
         {
             InitializeComponent();
             MyInitialization();
-
-            MyException = new Exception();
 
             // The login screen was removed: its user name and password were hard-coded in this
             // source, so it protected nothing. The main window now opens ready to use.
@@ -25,15 +23,31 @@ namespace SPI_Data_Comp_Tool
         private void MyInitialization()
         {
             label2.Text = "Compares two databases (Oracle or SQL Server) or two Excel files and reports the differences, for SPI data analysis.";
-            label3.Text = "Use only on data you are allowed to access.";
+            label3.Text = "Use only on data you are allowed to access. Opening a tool again returns to its active window. Hold Ctrl when opening a tool for a separate session.";
+        }
+
+        private void OpenWindow<T>(Func<T> create, string mode = "", bool allowSeparateSession = true) where T : Form
+        {
+            try
+            {
+                bool separate = allowSeparateSession && (ModifierKeys & Keys.Control) == Keys.Control;
+                windows.Open(this, create, mode, separate);
+            }
+            catch (Exception ex)
+            {
+                lbl_LoginStatus.Text = "Unable to open window";
+                MessageBox.Show(this, ex.Message, "Unable to open window", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void aboutUsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            AboutBox1 abu = new AboutBox1();
-            abu.ShowInTaskbar = false;
-            abu.ShowIcon = false;
-            abu.ShowDialog();
+            using (AboutBox1 abu = new AboutBox1())
+            {
+                abu.ShowInTaskbar = false;
+                abu.ShowIcon = false;
+                abu.ShowDialog(this);
+            }
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -48,33 +62,22 @@ namespace SPI_Data_Comp_Tool
 
         private void compareExcelToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Excel_Excel_Comparison eec = new Excel_Excel_Comparison();
-            eec.Show();
+            OpenWindow(() => new Excel_Excel_Comparison());
         }
 
         private void btn_Open_DB_Comparison_Click(object sender, EventArgs e)
         {
-            DB_Comparison_Form db_comparison = new DB_Comparison_Form();
-            db_comparison.Show();
+            OpenWindow(() => new DB_Comparison_Form());
         }
 
         private void btn_Excel_Comparison_Click(object sender, EventArgs e)
         {
-            Excel_Excel_Comparison eec = new Excel_Excel_Comparison();
-            eec.Show();
+            OpenWindow(() => new Excel_Excel_Comparison());
         }
 
         private void sPIAnalysisToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            try
-            {
-                SPI_Analysis sPI_Analysis = new SPI_Analysis();
-                sPI_Analysis.Show();
-            }
-            catch (Exception ex)
-            {
-                MyException = ex;
-            }
+            OpenWindow(() => new SPI_Analysis());
         }
 
         private void UnlockMainWindow()
@@ -118,8 +121,6 @@ namespace SPI_Data_Comp_Tool
                 sPIFKExtractionToolStripMenuItem.Enabled = boolEnableStatus;
 
 
-                //hidden explicitly as other mode of forms are available
-
             }
             catch (Exception ex)
             {
@@ -129,112 +130,87 @@ namespace SPI_Data_Comp_Tool
 
         private void sPISpecNoteCreationUtilityToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            try
-            {
-                SPI_Spec_Note_Creation_Utility sPI_Spec_Note_Creation_Utility_Form = new SPI_Spec_Note_Creation_Utility();
-                sPI_Spec_Note_Creation_Utility_Form.Show();
-            }
-            catch (Exception ex)
-            {
-                MyException = ex;
-            }
+            OpenWindow(() => new SPI_Spec_Note_Creation_Utility());
         }
 
         private void compareDBToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            DB_Comparison_Form frm_ora_sql_compare = new DB_Comparison_Form();
-            frm_ora_sql_compare.Show();
+            OpenWindow(() => new DB_Comparison_Form());
         }
 
         private void customisedExcelToolStripMenuItem_Click_1(object sender, EventArgs e)
         {
-            CustomisedExcel customisedExcel = new CustomisedExcel();
-            customisedExcel.Show();
+            OpenWindow(() => new CustomisedExcel());
         }
 
         private void sQLDBToExcelToolStripMenuItem_Click_1(object sender, EventArgs e)
         {
-            SQL_DB_To_Excel sQL_DB_To_Excel = new SQL_DB_To_Excel();
-            sQL_DB_To_Excel.Show();
+            OpenWindow(() => new SQL_DB_To_Excel());
         }
 
         private void compareListTablesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Compare_Multiples_List_Tables_Forms compare_Multiples_List_Tables_Forms = new Compare_Multiples_List_Tables_Forms();
-            compare_Multiples_List_Tables_Forms.Show();
+            OpenWindow(() => new Compare_Multiples_List_Tables_Forms());
         }
 
         private void preMergingToolToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            PreMergingTool_Form preMergingTool_Form = new PreMergingTool_Form();
-            preMergingTool_Form.Show();
+            OpenWindow(() => new PreMergingTool_Form());
         }
 
         private void preMergingDuplicacyCheckToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Pre_Merging_Duplicacy_Form pre_Merging_Duplicacy_Form = new Pre_Merging_Duplicacy_Form();
-            pre_Merging_Duplicacy_Form.Show();
+            OpenWindow(() => new Pre_Merging_Duplicacy_Form(), "check");
         }
 
         private void userProfileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            UserProfileForm userProfileForm = new UserProfileForm();
-            userProfileForm.Show();
+            OpenWindow(() => new UserProfileForm(), allowSeparateSession: false);
         }
 
         private void configurationToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //This calls the pre merging duplicacy form in configuration mode
-            Pre_Merging_Duplicacy_Form pre_Merging_Duplicacy_Form = new Pre_Merging_Duplicacy_Form(true);// boolConfigurationMode = true
-            pre_Merging_Duplicacy_Form.Show();
+            OpenWindow(() => new Pre_Merging_Duplicacy_Form(true), "configuration", false);
         }
 
         private void generateInsertScriptsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Generate_IUD_Script_Form generate_IUD_Script_Form = new Generate_IUD_Script_Form();
-            generate_IUD_Script_Form.Show();
+            OpenWindow(() => new Generate_IUD_Script_Form());
         }
 
         private void executeScriptsFromExcelToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Execute_Excel_Scripts_Form execute_Excel_Scripts_Form = new Execute_Excel_Scripts_Form();
-            execute_Excel_Scripts_Form.Show();
+            OpenWindow(() => new Execute_Excel_Scripts_Form());
         }
 
         private void tableExtractionAfterDeltaToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Table_Extraction_After_Delta_Form table_Extraction_After_Delta_Form = new Table_Extraction_After_Delta_Form();
-            table_Extraction_After_Delta_Form.Show();
+            OpenWindow(() => new Table_Extraction_After_Delta_Form());
         }
 
         private void mergeLogsExportToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MergeLogsExport mergeLogsExport = new MergeLogsExport();
-            mergeLogsExport.Show();
+            OpenWindow(() => new MergeLogsExport());
         }
 
         private void sPIDeltaChangeLegacyIDToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SPIDeltaChangeLegacyID sPIDeltaChangeLegacyID = new SPIDeltaChangeLegacyID();
-            sPIDeltaChangeLegacyID.Show();
+            OpenWindow(() => new SPIDeltaChangeLegacyID());
         }
 
         private void sPIDeltaChangeTrackerOptimisedToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SPIDeltaChangeTrackerOptimised spIDeltaChangeTrackerOptimised = new SPIDeltaChangeTrackerOptimised();
-            spIDeltaChangeTrackerOptimised.Show();
+            OpenWindow(() => new SPIDeltaChangeTrackerOptimised());
         }
 
         private void userSettingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            User_Settings user_Settings = new User_Settings();
-            user_Settings.Show();
+            OpenWindow(() => new User_Settings(), allowSeparateSession: false);
         }
 
         private void sPIFKExtractionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SPI_FK_Extraction sPI_FK_Extraction = new SPI_FK_Extraction();
-            sPI_FK_Extraction.Show();
+            OpenWindow(() => new SPI_FK_Extraction());
         }
     }
 }

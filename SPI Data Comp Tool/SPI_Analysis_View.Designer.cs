@@ -13,6 +13,11 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
+            if (disposing && dataSnapshot != null)
+            {
+                dataSnapshot.Dispose();
+                dataSnapshot = null;
+            }
             if (disposing && (components != null))
             {
                 components.Dispose();
@@ -33,7 +38,6 @@
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SPI_Analysis_View));
             this.cb_Source = new System.Windows.Forms.ComboBox();
             this.cb_Target = new System.Windows.Forms.ComboBox();
             this.gb_Source = new System.Windows.Forms.GroupBox();
@@ -248,16 +252,13 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
-            this.ClientSize = new System.Drawing.Size(1370, 749);
+            this.Size = new System.Drawing.Size(1370, 749);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.gb_Target);
             this.Controls.Add(this.gb_Source);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SPI_Analysis_View";
             this.Text = "SPI Spec Form Gap Analysis";
-            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
-            this.Load += new System.EventHandler(this.SPI_Analysis_View_Load);
             this.gb_Source.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgv_Source)).EndInit();
             this.gb_Target.ResumeLayout(false);

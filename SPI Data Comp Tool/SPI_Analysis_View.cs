@@ -16,13 +16,13 @@ using OfficeOpenXml;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class SPI_Analysis_View : Form
+    public partial class SPI_Analysis_View : UserControl
     {
         private string str_filterExpression;
-        private DataView dv_unique_source, dv_unique_target, dv_1, dv_2;
+        private DataView dv_unique_source, dv_unique_target;
         private DataView dv_source, dv_target;
         private DataTable dt_unique_source, dt_unique_target, dt_source, dt_target;
-        private DataTable dt, dt_target_arranged, dt_source_arranged, dt_source_spec, dt_target_spec;
+        private DataTable dt_target_arranged, dt_source_arranged, dt_source_spec, dt_target_spec;
 
         private DataTable dt_target_arranged_all, dt_source_arranged_all, dt_remarks_all;
 
@@ -30,78 +30,131 @@ namespace SPI_Data_Comp_Tool
         private bool boolFormLoad;
 
         private DataTable dt_remarks, dt_Merge;// = new DataTable();
-        private DataSet ds_Merge;
 
-        public SPI_Analysis_View(DataSet ds)
+        private DataSet dataSnapshot;
+
+        public SPI_Analysis_View(DataSet ds) : this()
         {
             try
             {
-                InitializeComponent();
-                ds_Merge = new DataSet();
-                dt_remarks = new DataTable();
+                ValidateInput(ds);
+                // Reloading the connection data must not change the results currently being reviewed.
+                dataSnapshot = ds.Copy();
+                dt_remarks = new DataTable("Remarks");
                 dt_remarks.Columns.Add("Remarks");
-                dt_remarks.TableName = "Remarks";
+                dt_Merge = new DataTable("Merged Tables");
 
-                dt_Merge = new DataTable();
-                dt_Merge.TableName = "Merged Tables";
-
-                boolFormLoad = false;
-                dt = new DataTable();
-                //boolStatus = false;
-
-                dv_1 = new DataView();
-                dv_2 = new DataView();
-
-                dv_unique_source = new DataView(ds.Tables[0]);
-                dv_unique_target = new DataView(ds.Tables[1]);
-
+                dt_source = dataSnapshot.Tables[0];
+                dt_target = dataSnapshot.Tables[1];
+                dv_unique_source = new DataView(dt_source);
+                dv_unique_target = new DataView(dt_target);
                 dt_unique_source = dv_unique_source.ToTable(true, "SPEC_FORM_CNUM");
                 dt_unique_target = dv_unique_target.ToTable(true, "SPEC_FORM_CNUM");
-
-                dgv_Source.DataSource = ds.Tables[0];
-                dgv_Target.DataSource = ds.Tables[1];
-
-                dt_source = ds.Tables[0];
-
                 dt_source_arranged_all = new DataTable();
                 dt_target_arranged_all = new DataTable();
                 dt_remarks_all = new DataTable();
-
-                dt_target = ds.Tables[1];
                 dv_source = new DataView();
                 dv_target = new DataView();
 
-                if (ds.Tables[0].Columns.Count > 0)
-                {
-                    dgv_Source.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-                    cb_Source.Items.Clear();
-
-                    cb_Source.ValueMember = "SPEC_FORM_CNUM";
-                    cb_Source.DisplayMember = "SPEC_FORM_CNUM";
-                    cb_Source.DataSource = dt_unique_source;
-                    //cb_Source.Items.Insert(0, new ListViewItem("Select SPEC_FORM_CNUM"));
-                    //cb_Source.SelectedIndex = 0;
-                }
-                if (ds.Tables[1].Columns.Count > 0)
-                {
-                    dgv_Target.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-                    cb_Target.Items.Clear();
-                    //cb_Target.Items.Add("Select SPEC_FORM_CNUM");
-                    cb_Target.ValueMember = "SPEC_FORM_CNUM";
-                    cb_Target.DisplayMember = "SPEC_FORM_CNUM";
-                    cb_Target.DataSource = dt_unique_target;
-                    //cb_Target.SelectedIndex = 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                lbl_Status.Text = ex.Message.ToString();
-                lbl_Status.ForeColor = Color.Red;
-            }
-            finally
-            {
+                dgv_Source.DataSource = dt_source;
+                dgv_Target.DataSource = dt_target;
+                dgv_Source.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+                dgv_Target.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+                cb_Source.ValueMember = cb_Source.DisplayMember = "SPEC_FORM_CNUM";
+                cb_Target.ValueMember = cb_Target.DisplayMember = "SPEC_FORM_CNUM";
+                cb_Source.BindingContext = new BindingContext();
+                cb_Target.BindingContext = new BindingContext();
+                cb_Source.DataSource = dt_unique_source;
+                cb_Target.DataSource = dt_unique_target;
                 boolFormLoad = true;
+                // A control may be populated before it is attached to its parent. Initialize the
+                // selections explicitly instead of relying only on WinForms binding events.
+                dt_source_spec = LoadDataGridView(cb_Source.Text, dt_source, dv_source, dgv_Source, dt_source_spec);
+                dt_target_spec = LoadDataGridView(cb_Target.Text, dt_target, dv_target, dgv_Target, dt_target_spec);
+                UpdateSelectionAvailability();
+                lbl_Status.Text = "Select source and target specification forms, then Arrange.";
             }
+            catch
+            {
+                Dispose();
+                throw;
+            }
+        }
+
+        private static void ValidateInput(DataSet dataSet)
+        {
+            if (dataSet == null || dataSet.Tables.Count < 2)
+                throw new ArgumentException("Load both source and target data before showing results.");
+            string[] required = { "SPEC_FORM_CNUM", "COLUMN_NAME", "HEADER_TEXT" };
+            for (int side = 0; side < 2; side++)
+                foreach (string column in required)
+                    if (!dataSet.Tables[side].Columns.Contains(column))
+                        throw new ArgumentException((side == 0 ? "Source" : "Target") +
+                            " data is missing the required column " + column + ".");
+        }
+
+        private void ConfigureResponsiveLayout()
+        {
+            SuspendLayout();
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2,
+                MinimumSize = new Size(840, 400), Padding = new Padding(0),
+            };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42F));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42F));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16F));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            ConfigureGridGroup(gb_Source, dgv_Source, cb_Source);
+            ConfigureGridGroup(gb_Target, dgv_Target, cb_Target);
+            ConfigureGridGroup(groupBox2, dgv_Remarks, null);
+            groupBox2.Text = "Remarks";
+
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = true };
+            btn_Arrange_target.AutoSize = btn_SaveInExcel.AutoSize = true;
+            btn_Arrange_target.MinimumSize = new Size(100, 32);
+            btn_SaveInExcel.MinimumSize = new Size(130, 32);
+            btn_SaveInExcel.Text = "Export to Excel";
+            lbl_Status.AutoSize = lbl_Error.AutoSize = true;
+            lbl_Status.MaximumSize = lbl_Error.MaximumSize = new Size(650, 0);
+            lbl_Status.Margin = lbl_Error.Margin = new Padding(12, 10, 3, 3);
+            actions.Controls.Add(btn_Arrange_target);
+            actions.Controls.Add(btn_SaveInExcel);
+            actions.Controls.Add(lbl_Status);
+            actions.Controls.Add(lbl_Error);
+            groupBox1.Controls.Clear();
+            groupBox1.AutoSize = true;
+            groupBox1.Dock = DockStyle.Fill;
+            groupBox1.Controls.Add(actions);
+            layout.Controls.Add(gb_Source, 0, 0);
+            layout.Controls.Add(gb_Target, 1, 0);
+            layout.Controls.Add(groupBox2, 2, 0);
+            layout.Controls.Add(groupBox1, 0, 1);
+            layout.SetColumnSpan(groupBox1, 3);
+            Controls.Add(layout);
+            Font = new Font("Segoe UI", 9F);
+            ResumeLayout(true);
+        }
+
+        private static void ConfigureGridGroup(GroupBox group, DataGridView grid, ComboBox filter)
+        {
+            group.Controls.Clear();
+            group.Dock = DockStyle.Fill;
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            if (filter != null)
+            {
+                filter.Dock = DockStyle.Fill;
+                filter.AccessibleName = group.Text + " specification form";
+                layout.Controls.Add(filter, 0, 0);
+            }
+            grid.Dock = DockStyle.Fill;
+            grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.DisplayedCells;
+            layout.Controls.Add(grid, 0, 1);
+            group.Controls.Add(layout);
         }
 
 
@@ -255,53 +308,40 @@ namespace SPI_Data_Comp_Tool
 
         //    }
         //}
-        private void SPI_Analysis_View_Load(object sender, EventArgs e)
-        {
-            try
-            {
-
-
-            }
-            catch (Exception ex)
-            {
-                lbl_Status.Text = ex.Message.ToString();
-            }
-        }
-
         private DataTable LoadDataGridView(string str_expression, DataTable dt_Load, DataView dv_Load, DataGridView dgv, DataTable dt_ToBeLoaded)
         {
+            // Always replace the selected table, including empty/invalid filters. Otherwise an
+            // unknown form number can leave the previous form's rows ready for Arrangement.
+            DataTable selected = dt_Load == null ? new DataTable() : dt_Load.Clone();
             try
             {
                 dgv_Remarks.DataSource = null;
-                str_filterExpression = "SPEC_FORM_CNUM = '" + str_expression + "'";
-                dv_Load = new DataView(dt_Load);
-                dv_Load.RowFilter = str_filterExpression;
-                dt = dv_Load.ToTable();
-                if (dt.Rows.Count > 0)
+                if (dt_Load != null && !string.IsNullOrWhiteSpace(str_expression))
                 {
-                    dgv.DataSource = dt.Copy();
-                    dt_ToBeLoaded = dt;
-                    lbl_Status.Text = str_expression + " Loaded successfully with row(s) = " + dt.Rows.Count;
-                    //boolStatus = true;
+                    str_filterExpression = "SPEC_FORM_CNUM = '" + str_expression.Replace("'", "''") + "'";
+                    using (var filtered = new DataView(dt_Load))
+                    {
+                        filtered.RowFilter = str_filterExpression;
+                        selected = filtered.ToTable();
+                    }
                 }
-                else
-                {
-                    lbl_Status.Text = str_expression + " is not available";
-                    //boolStatus = false;
-                }
-
-
-
-                //str_filterExpression = "SPEC_FORM_CNUM = '" + cb_Source.Text + "'";
-                //dv_source = new DataView(dt_source);
-                //dv_source.RowFilter = str_filterExpression;
-                //dataGridView1.DataSource = dv_source.ToTable();
+                dgv.DataSource = selected;
+                lbl_Status.Text = selected.Rows.Count > 0
+                    ? str_expression + " Loaded successfully with row(s) = " + selected.Rows.Count
+                    : "No rows match the selected specification form.";
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                dgv.DataSource = selected;
+                lbl_Status.Text = ex.Message;
             }
-            return dt_ToBeLoaded;
+            return selected;
+        }
+
+        private void UpdateSelectionAvailability()
+        {
+            btn_Arrange_target.Enabled = dt_source_spec != null && dt_target_spec != null &&
+                dt_source_spec.Rows.Count > 0 && dt_target_spec.Rows.Count > 0;
         }
 
         private void cb_Source_SelectedIndexChanged(object sender, EventArgs e)
@@ -309,6 +349,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 dt_source_spec = LoadDataGridView(cb_Source.Text, dt_source, dv_source, dgv_Source, dt_source_spec);
+                UpdateSelectionAvailability();
             }
             catch (Exception ex)
             {
@@ -319,6 +360,7 @@ namespace SPI_Data_Comp_Tool
         private void cb_Source_TextChanged(object sender, EventArgs e)
         {
             dt_source_spec = LoadDataGridView(cb_Source.Text, dt_source, dv_source, dgv_Source, dt_source_spec);
+            UpdateSelectionAvailability();
         }
 
         private void cb_Target_TextChanged(object sender, EventArgs e)
@@ -326,6 +368,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 dt_target_spec = LoadDataGridView(cb_Target.Text, dt_target, dv_target, dgv_Target, dt_target_spec);
+                UpdateSelectionAvailability();
 
                 //LoadTargetArranged(cb_Target.Text, dt_target_spec, dv_target, dgv_Target);
 
@@ -342,6 +385,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 dt_target_spec = LoadDataGridView(cb_Target.Text, dt_target, dv_target, dgv_Target, dt_target_spec);
+                UpdateSelectionAvailability();
 
                 //LoadTargetArranged(cb_Target.Text, dt_target_spec, dv_target, dgv_Target);
 
@@ -526,18 +570,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void Process_Arrangement_Task()
-        {
-            try
-            {
-
-            }
-            catch (Exception ex)
-            {
-                lbl_Status.Text = ex.Message.ToString();
-            }
-        }
-
         private void Scroll_Sync(DataGridView dgv_first, DataGridView dgv_second)
         {
             try
@@ -598,8 +630,10 @@ namespace SPI_Data_Comp_Tool
         public SPI_Analysis_View()
         {
             InitializeComponent();
-
-            //dv_unique = new DataView();
+            ConfigureResponsiveLayout();
+            btn_Arrange_target.Enabled = btn_SaveInExcel.Enabled = false;
+            lbl_Status.Text = "No analysis results loaded.";
+            lbl_Error.Text = string.Empty;
         }
 
         private void btn_Arrange_target_Click(object sender, EventArgs e)
@@ -615,6 +649,7 @@ namespace SPI_Data_Comp_Tool
                 //dgv_Target.DataSource = dt_target_arranged_all;
                 //dgv_Remarks.DataSource = dt_remarks_all;
 
+                btn_SaveInExcel.Enabled = dt_source_arranged_all != null && dt_source_arranged_all.Rows.Count > 0;
                 lbl_Status.Text = "Arranged Successfully";
             }
             catch (Exception ex)

@@ -16,6 +16,7 @@ namespace SPI_Data_Comp_Tool
     ///   "SPI Data Comp Tool.exe" --check-assemblies OUT_FILE   loads every library the app uses (embedded in the
     ///                                                          .exe by Costura) and writes ok / FAIL per library;
     ///                                                          exit code 1 if any fails
+    ///   "SPI Data Comp Tool.exe" --check-ui OUT_FILE           runs synthetic UI/profile regressions without databases
     /// </summary>
     internal static class SelfTest
     {
@@ -30,6 +31,11 @@ namespace SPI_Data_Comp_Tool
             if (args[0] == "--check-assemblies" && args.Length >= 2)
             {
                 Environment.ExitCode = CheckAssemblies(args[1]);
+                return true;
+            }
+            if (args[0] == "--check-ui" && args.Length >= 2)
+            {
+                Environment.ExitCode = UiWorkflowChecks.Run(args[1]);
                 return true;
             }
             if (args[0] == "--open-form" && args.Length >= 3)

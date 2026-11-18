@@ -54,19 +54,14 @@
             this.label5 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.btn_Connect_Reference_ID = new System.Windows.Forms.Button();
-            this.cb_UserProfileList = new System.Windows.Forms.ComboBox();
             this.lbl_Oracle_SQL_Connection = new System.Windows.Forms.Label();
-            this.btn_Save = new System.Windows.Forms.Button();
-            this.btn_Delete = new System.Windows.Forms.Button();
             this.cb_query = new System.Windows.Forms.CheckBox();
             this.tb_querybox = new System.Windows.Forms.TextBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.groupBox8.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox3.SuspendLayout();
-            this.groupBox4.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBox8
@@ -315,27 +310,6 @@
             this.btn_Connect_Reference_ID.UseVisualStyleBackColor = true;
             this.btn_Connect_Reference_ID.Click += new System.EventHandler(this.btn_Connect_Reference_ID_Click);
             // 
-            // cb_UserProfileList
-            // 
-            this.cb_UserProfileList.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cb_UserProfileList.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.cb_UserProfileList.FormattingEnabled = true;
-            this.cb_UserProfileList.ItemHeight = 13;
-            this.cb_UserProfileList.Items.AddRange(new object[] {
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8"});
-            this.cb_UserProfileList.Location = new System.Drawing.Point(6, 19);
-            this.cb_UserProfileList.Name = "cb_UserProfileList";
-            this.cb_UserProfileList.Size = new System.Drawing.Size(181, 21);
-            this.cb_UserProfileList.TabIndex = 29;
-            this.cb_UserProfileList.SelectedIndexChanged += new System.EventHandler(this.cb_UserProfileList_SelectedIndexChanged);
-            // 
             // lbl_Oracle_SQL_Connection
             // 
             this.lbl_Oracle_SQL_Connection.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -344,26 +318,6 @@
             this.lbl_Oracle_SQL_Connection.Size = new System.Drawing.Size(450, 65);
             this.lbl_Oracle_SQL_Connection.TabIndex = 29;
             this.lbl_Oracle_SQL_Connection.Text = "lbl_Oracle_SQL_Connection";
-            // 
-            // btn_Save
-            // 
-            this.btn_Save.Location = new System.Drawing.Point(6, 60);
-            this.btn_Save.Name = "btn_Save";
-            this.btn_Save.Size = new System.Drawing.Size(75, 23);
-            this.btn_Save.TabIndex = 30;
-            this.btn_Save.Text = "Save Profile";
-            this.btn_Save.UseVisualStyleBackColor = true;
-            this.btn_Save.Click += new System.EventHandler(this.btn_Save_Click);
-            // 
-            // btn_Delete
-            // 
-            this.btn_Delete.Location = new System.Drawing.Point(112, 60);
-            this.btn_Delete.Name = "btn_Delete";
-            this.btn_Delete.Size = new System.Drawing.Size(75, 23);
-            this.btn_Delete.TabIndex = 31;
-            this.btn_Delete.Text = "Delete";
-            this.btn_Delete.UseVisualStyleBackColor = true;
-            this.btn_Delete.Click += new System.EventHandler(this.btn_Delete_Click);
             // 
             // cb_query
             // 
@@ -395,25 +349,12 @@
             this.groupBox3.Size = new System.Drawing.Size(517, 392);
             this.groupBox3.TabIndex = 34;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Confiuration of table name";
-            // 
-            // groupBox4
-            // 
-            this.groupBox4.Controls.Add(this.cb_UserProfileList);
-            this.groupBox4.Controls.Add(this.btn_Save);
-            this.groupBox4.Controls.Add(this.btn_Delete);
-            this.groupBox4.Location = new System.Drawing.Point(15, 296);
-            this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(350, 98);
-            this.groupBox4.TabIndex = 35;
-            this.groupBox4.TabStop = false;
-            this.groupBox4.Text = "Profile";
+            this.groupBox3.Text = "Tables and query";
             // 
             // OracleAndSQLConnection
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox8);
             this.Controls.Add(this.groupBox2);
@@ -428,7 +369,6 @@
             this.groupBox1.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
-            this.groupBox4.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -461,13 +401,9 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button btn_Connect_Reference_ID;
-        private System.Windows.Forms.ComboBox cb_UserProfileList;
         private System.Windows.Forms.Label lbl_Oracle_SQL_Connection;
-        private System.Windows.Forms.Button btn_Save;
-        private System.Windows.Forms.Button btn_Delete;
         private System.Windows.Forms.CheckBox cb_query;
         private System.Windows.Forms.TextBox tb_querybox;
         private System.Windows.Forms.GroupBox groupBox3;
-        private System.Windows.Forms.GroupBox groupBox4;
     }
 }

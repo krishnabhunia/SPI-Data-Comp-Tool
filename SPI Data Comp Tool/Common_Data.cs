@@ -21,8 +21,6 @@ namespace SPI_Data_Comp_Tool
 {
     class Common_Data
     {
-        Form_Rules form_Rules;
-
         private DataTable dt_transpose;
         private Exception myExceptionData;
         private readonly string cellValue;
@@ -1000,21 +998,14 @@ namespace SPI_Data_Comp_Tool
             return dsResult;
         }
 
-        public delegate void SetDsRules(DataSet ds, string str_TableName);
-
-        private event SetDsRules SetDsRulesEvent;
         public void OpenRuleForm()
         {
-            try
+            // Keep every comparison's Import Rules entry point, but use the common Settings window.
+            using (var settings = new User_Settings(true))
             {
-                form_Rules = new Form_Rules();
-                SetDsRulesEvent += new SetDsRules(SetDsRulesCall);
-                form_Rules.SetDsRules = SetDsRulesEvent;
-                form_Rules.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+                settings.ShowDialog(Form.ActiveForm);
+                if (settings.ImportedRules != null)
+                    SetDsRulesCall(settings.ImportedRules, settings.ImportedRules.Tables[0].TableName);
             }
         }
 

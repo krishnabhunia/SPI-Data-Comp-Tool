@@ -16,6 +16,7 @@ namespace SPI_Data_Comp_Tool
         private readonly FlowLayoutPanel copyButtons;
         private readonly FlowLayoutPanel profileRow;
         private ConnectionMode mode = ConnectionMode.SourceAndTarget;
+        private bool refreshingProfiles;
 
         public ComboBox ProfileList { get; }
         /// <summary>Space to the right of the profile picker for a window's own options.</summary>
@@ -77,6 +78,7 @@ namespace SPI_Data_Comp_Tool
             CopyToTarget.Click += (s, e) => Run(() => Target.CopyFrom(Source));
             CopyToSource.Click += (s, e) => Run(() => Source.CopyFrom(Target));
             ProfileList.SelectedIndexChanged += (s, e) => Run(ApplySelectedProfile);
+            ProfileList.DropDown += (s, e) => Run(RefreshAvailableProfiles);
 
             Source.ApplyPlatform();
             Target.ApplyPlatform();
@@ -127,7 +129,27 @@ namespace SPI_Data_Comp_Tool
         /// <summary>Puts the selected saved profile into both halves.</summary>
         public void ApplySelectedProfile()
         {
-            DBConnectionDetails d = new DBConnectionDetails(ProfileList.SelectedIndex);
+            // Typing a new name (or rebuilding the list) raises SelectedIndexChanged with -1.
+            // That is not a request to replace the connection fields with empty defaults.
+            if (refreshingProfiles || ProfileList.SelectedIndex < 0)
+                return;
+
+            // Another window may have imported/deleted profiles since this picker was populated.
+            // Resolve the displayed name, not its now potentially stale position in the shared list.
+            string selectedName = ProfileList.SelectedItem as string;
+            int profileIndex = Profile.ProfileList == null ? -1 : Profile.ProfileList.FindIndex(p => p != null &&
+                string.Equals(p.profileName, selectedName, StringComparison.Ordinal));
+            if (profileIndex < 0)
+            {
+                // Do not leave a missing saved name above unrelated, manually entered fields.
+                PopulateProfileNames(null, false, null);
+                var error = new InvalidOperationException($"Saved profile '{selectedName}' is no longer available. Select another profile; your connection fields have not been changed.");
+                if (Failed != null) Failed(this, error);
+                else throw error;
+                return;
+            }
+
+            DBConnectionDetails d = new DBConnectionDetails(profileIndex);
             if (mode == ConnectionMode.SourceOnly && ProfileHalf == ProfileHalf.Target)
             {
                 Source.Apply(d.bool_Rb_TRG_Oracle, d.bool_Rb_TRG_SQL, d.bool_TRG_SQL_WA, d.bool_TRG_Oracle_DefaultPort,
@@ -143,6 +165,63 @@ namespace SPI_Data_Comp_Tool
                              d.int_TRG_Oracle_DefaultPort, d.str_TRG_DataSource, d.str_TRG_DBName, d.str_TRG_UserName, d.str_TRG_Password);
             }
             ProfileApplied?.Invoke(this, d);
+        }
+
+        /// <summary>
+        /// Reloads names without applying transient selections. A successful save keeps the entered
+        /// fields (including passwords, which are intentionally not exported) until the user chooses
+        /// another profile. Imports and deletions can explicitly apply the final selection.
+        /// </summary>
+        public void RefreshProfiles(string selectedName = null, bool applySelection = true)
+        {
+            PopulateProfileNames(selectedName, true, null);
+            if (applySelection) ApplySelectedProfile();
+        }
+
+        /// <summary>
+        /// An already-open tool sees profile changes when its picker is opened. Refresh names only:
+        /// the entered connection values and a manually typed new profile name are not reloaded.
+        /// </summary>
+        internal void RefreshAvailableProfiles()
+        {
+            string selectedName = ProfileList.SelectedItem as string;
+            string enteredName = AllowNewProfileName && selectedName == null ? ProfileList.Text : null;
+            PopulateProfileNames(selectedName, false, enteredName);
+        }
+
+        private void PopulateProfileNames(string selectedName, bool selectFirstWhenMissing, string enteredName)
+        {
+            refreshingProfiles = true;
+            ProfileList.BeginUpdate();
+            try
+            {
+                ProfileList.DataSource = null;
+                ProfileList.Items.Clear();
+                if (Profile.ProfileList != null)
+                {
+                    foreach (DBC profile in Profile.ProfileList)
+                        if (profile != null && !string.IsNullOrWhiteSpace(profile.profileName))
+                            ProfileList.Items.Add(profile.profileName);
+                }
+                int selectedIndex = -1;
+                for (int i = 0; i < ProfileList.Items.Count; i++)
+                {
+                    if (string.Equals(ProfileList.Items[i] as string, selectedName, StringComparison.Ordinal))
+                    {
+                        selectedIndex = i;
+                        break;
+                    }
+                }
+                ProfileList.SelectedIndex = selectedIndex >= 0 ? selectedIndex
+                    : selectFirstWhenMissing && ProfileList.Items.Count > 0 ? 0 : -1;
+                if (ProfileList.SelectedIndex < 0)
+                    ProfileList.Text = AllowNewProfileName && enteredName != null ? enteredName : string.Empty;
+            }
+            finally
+            {
+                ProfileList.EndUpdate();
+                refreshingProfiles = false;
+            }
         }
 
         private void Run(Action action)

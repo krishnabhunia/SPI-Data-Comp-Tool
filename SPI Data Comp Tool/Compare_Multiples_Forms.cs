@@ -855,7 +855,6 @@ namespace SPI_Data_Comp_Tool
         }
 
         private string strFilter;
-        private StringComparison stringComparisonTypeOrdincalCase;
 
         private void CompareTwoDataTable(DataTable dtSRC, DataTable dtTRG, string strPK, DoWorkEventArgs e)
         {
@@ -1737,15 +1736,6 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (cb_IgnoreCase.Checked)
-                {
-                    stringComparisonTypeOrdincalCase = StringComparison.OrdinalIgnoreCase;
-                }
-                else
-                {
-                    stringComparisonTypeOrdincalCase = StringComparison.Ordinal;
-                }
-
                 boolRules = common_Data.GetRulesStatus();
 
                 if (cb_IncludeRule.Checked && boolRules)

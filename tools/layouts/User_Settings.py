@@ -1,28 +1,55 @@
-"""User Settings - layout spec for tools/layout_gen.py."""
-from layout_gen import C, T, F, G
+"""One settings window for output preferences and comparison rules."""
+from layout_gen import C, T, F, G, TABS
 
 DESIGNER = "User_Settings.Designer.cs"
 FORM_NAME = "User_Settings"
-CLIENT = (680, 440)
-MINIMUM = (560, 380)
+TITLE = "Settings"
+CLIENT = (760, 540)
+MINIMUM = (640, 480)
 
 TEXTS = {
+    "tab_General": "General",
+    "tab_Rules": "Comparison rules",
     "gb_SaveExcel": "Save Excel files with",
     "rb_EPPlus": "EPPlus (recommended, no Excel needed)",
     "rb_XLSave": "Microsoft Excel (needs Excel installed)",
+    "lbl_RulesHelp": "Import the rules workbook used by database and Excel comparisons. A successful import is saved immediately.",
+    "lbl_RulesPath": "Rules file",
+    "btn_ImportRules": "&Import rules…",
+    "lbl_RulesStatus": "No comparison rules file selected.",
     "gb_Logs": "Log",
     "btn_ClearLogs": "Clear log",
     "lbl_Progress": "",
+    "btn_Close": "Close",
 }
 
-LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "100%"], cells=[
-    (G("gb_SaveExcel", T("tlp_SaveExcel", cols=["100%"], rows=["auto", "auto"], autosize=True, cells=[
-        (C("rb_EPPlus", autosize=True, anchor="Left"), 0, 0),
-        (C("rb_XLSave", autosize=True, anchor="Left"), 0, 1),
-    ]), dock="Fill", autosize=True, margin=(0, 0, 0, 12)), 0, 0),
+PROPS = {
+    "tb_RulesPath": {"ReadOnly": "true", "AccessibleName": '"Comparison rules file"'},
+    "btn_Close": {"DialogResult": "System.Windows.Forms.DialogResult.Cancel"},
+    "lbl_RulesStatus": {"AutoEllipsis": "true"},
+}
+
+LAYOUT = T("tlp_Root", cols=["100%"], rows=["200", "100%", "auto"], cells=[
+    (TABS("tabs_Settings", new="TabControl", pages=[
+        G("tab_General", new="TabPage", child=G("gb_SaveExcel", T(
+            "tlp_SaveExcel", cols=["100%"], rows=["auto", "auto"], autosize=True, cells=[
+                (C("rb_EPPlus", autosize=True, anchor="Left"), 0, 0),
+                (C("rb_XLSave", autosize=True, anchor="Left"), 0, 1),
+            ]), dock="Top", autosize=True, margin=0)),
+        G("tab_Rules", new="TabPage", child=T("tlp_Rules", cols=["auto", "100%"],
+            rows=["auto", "auto", "auto", "100%"], cells=[
+                (C("lbl_RulesHelp", new="Label", autosize=True, dock="Fill", margin=(0, 0, 0, 12)), 0, 0, 2),
+                (C("lbl_RulesPath", new="Label", autosize=True, anchor="Left", margin=(0, 0, 12, 0)), 0, 1),
+                (C("tb_RulesPath", new="TextBox", dock="Fill", margin=0), 1, 1),
+                (C("btn_ImportRules", new="Button", size=(136, 32), anchor="Left", margin=(0, 10, 0, 6)), 0, 2, 2),
+                (C("lbl_RulesStatus", new="Label", dock="Fill", margin=0), 0, 3, 2),
+            ])),
+    ]), 0, 0),
     (G("gb_Logs", T("tlp_Logs", cols=["auto", "100%"], rows=["100%", "auto"], cells=[
         (C("rtb_Log", dock="Fill", margin=(0, 0, 0, 8)), 0, 0, 2),
         (C("btn_ClearLogs", size=(110, 30), anchor="Left", margin=0), 0, 1),
         (C("lbl_Progress", autosize=True, anchor="Left", margin=(12, 0, 0, 0)), 1, 1),
     ])), 0, 1),
+    (F("flp_SettingsActions", items=[C("btn_Close", new="Button", size=(100, 32), margin=0)],
+       direction="RightToLeft", dock="Fill", margin=(0, 8, 0, 0)), 0, 2),
 ])

@@ -21,6 +21,8 @@ class ConnectionPanelContracts(unittest.TestCase):
     def test_profile_fills_source_from_src_and_target_from_trg(self) -> None:
         panel = source("ConnectionPanel.cs")
         apply = panel.split("public void ApplySelectedProfile()", 1)[1].split("private void Run(", 1)[0]
+        # Ignore the guards for list refreshes, typed names and stale selections.
+        apply = apply.split("DBConnectionDetails d =", 1)[1]
         # Source-only windows may take the profile's Target half; that branch must read TRG only
         half, rest = apply.split("return;", 1)
         self.assertIn("ProfileHalf == ProfileHalf.Target", half)

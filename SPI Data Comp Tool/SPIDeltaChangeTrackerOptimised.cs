@@ -1,5 +1,4 @@
-﻿using ClosedXML.Excel;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
@@ -49,8 +48,6 @@ namespace SPI_Data_Comp_Tool
         private string strFilePathChangeSave = string.Empty;
         private string strSourceName = string.Empty;
 
-        private string cellValue = string.Empty;
-
         private string str_to_fetch = string.Empty;
         private string strTargetName = string.Empty;
 
@@ -75,7 +72,6 @@ namespace SPI_Data_Comp_Tool
 
         private DataTable dt_Target;
 
-        private DataTable dt_transpose;
         private DataTable dt_LoadSRC, dt_LoadTRG;
         private DataTable dt_returnDataTable;
         private DataTable dt_CommonSRC;
@@ -94,21 +90,10 @@ namespace SPI_Data_Comp_Tool
 
 
 
-        private bool boolCellValueIntType;
         private bool boolCompareResult; //, boolTest;
         private bool boolCompare_List;
         //private bool boolIgnoreCase;
 
-
-        #endregion
-
-        #region Excel related variables
-
-        //private XLWorkbook xlworkBook;
-
-        //private _Application excel = new _Excel.Application();
-
-        private XLWorkbook wb;// = new XLWorkbook();
 
         #endregion
 
@@ -144,7 +129,6 @@ namespace SPI_Data_Comp_Tool
         private DataTable dtFetch;
         private string strSelectCol;
         private string str_DBName;
-        private bool boolToggle;
         private ExcelWorksheet worksheet;
         private List<ColorPair> colorPairs;
 
@@ -227,8 +211,6 @@ namespace SPI_Data_Comp_Tool
                 dbConnection = new DBConnectionStatus();
                 dbSRCConnection = new DBConnectionStatus();
                 dbTRGConnection = new DBConnectionStatus();
-                boolToggle = true;
-
                 colorPairsMultiSheet = new List<ColorPairMultiSheet>();
 
                 if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName) || Debugger.IsAttached)
@@ -400,158 +382,6 @@ namespace SPI_Data_Comp_Tool
                 Common_Data.DisplayError(rtb_Log, ex);
                 myException_BG = ex;
                 boolStatus = false;
-            }
-        }
-
-        private void deleteColumnInExcel(int int_sheet_no, int colNo)
-        {
-            try
-            {
-                wb.Worksheet(int_sheet_no).Column(colNo).Delete();
-            }
-            catch (Exception ex)
-            {
-                myException_BG = ex;
-            }
-        }
-
-        private void generateTransposeTable()
-        {
-            try
-            {
-                dt_transpose = FormHelpers.Transpose(dt_summarised_difference);
-            }
-            catch (Exception ex)
-            {
-                myException_BG = ex;
-            }
-        }
-
-        //private void transposeXML()
-        //{
-        //    try
-        //    {
-        //        var RangeTranspose = wb.Worksheet(4).Range("A1:F3");
-        //        RangeTranspose.Transpose(XLTransposeOptions.MoveCells);
-        //        wb.Worksheet(4).Columns().AdjustToContents();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        
-        //        
-        //    }
-
-        //}
-
-        private void formatExcelTable(int int_sheet_no, DataTable dt_calc)
-        {
-            try
-            {
-                FormHelpers.FormatTableSheet(wb.Worksheet(int_sheet_no), dt_calc);
-            }
-            catch (Exception ex)
-            {
-                myException_BG = ex;
-            }
-        }
-
-        private void formatExcelTableByDataGridView(int int_sheet_no, DataGridView dgv)
-        {
-            try
-            {
-                wb.Worksheet(1).Column(1).InsertColumnsBefore(1);
-                wb.Worksheet(int_sheet_no).Cell(1, 1).Value = "DBType";
-
-                for (int col = 0; col <= dt_Source.Columns.Count; col++)
-                {
-                    wb.Worksheet(int_sheet_no).Cell(1, col + 1).Style.Fill.SetBackgroundColor(XLColor.Transparent);
-                    wb.Worksheet(int_sheet_no).Cell(1, col + 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                    wb.Worksheet(int_sheet_no).Cell(1, col + 1).Style.Border.OutsideBorderColor = XLColor.RichBlack;
-                    wb.Worksheet(int_sheet_no).Cell(1, col + 1).Style.Font.SetFontColor(XLColor.RichBlack);
-                }
-
-                //wb.Worksheet(int_sheet_no).Cell(1, 1).Style.Fill.SetBackgroundColor(XLColor.Transparent);
-                //wb.Worksheet(int_sheet_no).Cell(1, 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                //wb.Worksheet(int_sheet_no).Cell(1, 1).Style.Border.OutsideBorderColor = XLColor.RichBlack;
-                //wb.Worksheet(int_sheet_no).Cell(1, 1).Style.Font.SetFontColor(XLColor.RichBlack);
-
-                for (int row = 1; row < dgv.RowCount; row++)
-                {
-                    wb.Worksheet(int_sheet_no).Cell(row + 1, 1).Style.Fill.BackgroundColor = XLColor.Transparent;
-                    wb.Worksheet(int_sheet_no).Cell(row + 1, 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                    wb.Worksheet(int_sheet_no).Cell(row + 1, 1).Style.Border.OutsideBorderColor = XLColor.Black;
-
-                    if (row % 2 == 0)
-                    {
-                        wb.Worksheet(int_sheet_no).Cell(row + 1, 1).Value = "Target";
-                    }
-                    else
-                    {
-                        wb.Worksheet(int_sheet_no).Cell(row + 1, 1).Value = "Source";
-                    }
-
-                }
-
-                wb.Worksheet(int_sheet_no).Tables.FirstOrDefault().SetShowAutoFilter(false);
-                wb.Worksheet(int_sheet_no).Columns().AdjustToContents();
-
-                //int colAdjust = 1;
-
-                for (int col = 1; col <= dgv.Columns.Count; col++)
-                {
-                    wb.Worksheet(int_sheet_no).Cell(1, col + 1).Style.Fill.SetBackgroundColor(XLColor.Transparent);
-                    wb.Worksheet(int_sheet_no).Cell(1, col + 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                    wb.Worksheet(int_sheet_no).Cell(1, col + 1).Style.Border.OutsideBorderColor = XLColor.RichBlack;
-                    wb.Worksheet(int_sheet_no).Cell(1, col + 1).Style.Font.SetFontColor(XLColor.RichBlack);
-                }
-
-                for (int row = 0; row < dgv.Rows.Count - 1; row++)
-                {
-                    for (int col = 0; col < dgv.Columns.Count; col++)
-                    {
-                        cellValue = wb.Worksheet(int_sheet_no).Cell(row + 2, col + 2).Value.ToString();
-                        boolCellValueIntType = int.TryParse(cellValue, out int res);
-                        if (boolCellValueIntType)
-                        {
-                            wb.Worksheet(int_sheet_no).Cell(row + 2, col + 2).SetDataType(XLDataType.Number);
-                        }
-
-
-                        if (dgv.Rows[row].Cells[col].Style.BackColor == Color.Yellow)
-                        {
-                            wb.Worksheet(1).Cell(row + 2, col + 2).Style.Fill.BackgroundColor = XLColor.Yellow;
-                        }
-                        else
-                        {
-                            wb.Worksheet(1).Cell(row + 2, col + 1 + 1).Style.Fill.BackgroundColor = XLColor.Transparent;
-                        }
-                        wb.Worksheet(int_sheet_no).Cell(row + 2, col + 2).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                        wb.Worksheet(int_sheet_no).Cell(row + 2, col + 2).Style.Border.OutsideBorderColor = XLColor.Black;
-
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                myException_BG = ex;
-            }
-        }
-
-        private void delete_current_row_from_sql_table()
-        {
-            try
-            {
-                DataRow[] rowsDel = dt_sql_only.Select(str_unique_reference_key);
-
-                foreach (DataRow dr in rowsDel)
-                {
-                    dr.Delete();
-                }
-                dt_sql_only.AcceptChanges();
-            }
-            catch (Exception ex)
-            {
-                myException_BG = ex;
             }
         }
 
@@ -2640,8 +2470,6 @@ namespace SPI_Data_Comp_Tool
         }
 
         private List<ColorPairMultiSheet> colorPairsMultiSheet;
-        private DataTable dt_summarised_difference;
-        private DataTable dt_sql_only;
 
         private void backgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {

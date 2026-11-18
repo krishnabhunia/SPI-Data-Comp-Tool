@@ -1265,7 +1265,7 @@ namespace SPI_Data_Comp_Tool
         private int int_Color_Row, totalProgress;
         private DataRow dataRows_TRG;
 
-        private bool boolANewRow, boolInclude;
+        private bool boolANewRow;
 
         private ExcelWorksheet worksheet;
         private IEnumerable<ColorPair> query;
@@ -1415,22 +1415,6 @@ namespace SPI_Data_Comp_Tool
                 //Common_Data.DisplayDebugMsg("Main Loop Comparison Done");
 
                 dtSummary = common_Data.GenerateTransposeTable(dtSummary);
-
-                if (boolInclude)
-                {
-                    foreach (DataRow dr in dtSummary.Rows.Cast<DataRow>().ToArray())
-                    {
-                        if (Convert.ToInt32(dr["Summarize Count"].ToString()) == 0 &&
-                            (!(strPKList.Any(a => string.Equals(a, dr["Column Names"].ToString(), StringComparison.OrdinalIgnoreCase)))))
-                        {
-                            if (dtUnmatched.Columns.Contains(dr["Column Names"].ToString()))
-                            {
-                                dtUnmatched.Columns.Remove(dr["Column Names"].ToString());
-                            }
-                            dr.Delete();
-                        }
-                    }
-                }
 
                 backgroundWorker1.ReportProgress(110);
                 //DisplayDebugMsg("Transpose of summary and initialisation is done");
