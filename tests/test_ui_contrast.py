@@ -8,7 +8,7 @@ THEME = (Path(__file__).resolve().parents[1] / "SPI Data Comp Tool" / "UiTheme.c
 
 
 def colour(name: str) -> tuple:
-    if name == "White":
+    if name == "White" or re.search(rf"\b{name} = Color\.White;", THEME):
         return (255, 255, 255)
     m = re.search(rf"\b{name} = Color\.FromArgb\((\d+), (\d+), (\d+)\)", THEME)
     if not m:
