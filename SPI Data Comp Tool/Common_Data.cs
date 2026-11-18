@@ -21,8 +21,6 @@ namespace SPI_Data_Comp_Tool
 {
     class Common_Data
     {
-        Form_Rules form_Rules;
-
         private DataTable dt_transpose;
         private Exception myExceptionData;
         private readonly string cellValue;
@@ -33,15 +31,26 @@ namespace SPI_Data_Comp_Tool
 
         private List<DBC> items;
         private static bool boolColorAlternate;
+        // A doubled quote is part of a quoted connection-string value, not its terminator.
+        // Consume unterminated quoted values to the end, and unquoted values through line breaks
+        // up to a semicolon, so a malformed/multiline diagnostic cannot reveal a password tail.
         private static readonly Regex ConnectionCredentialPattern = new Regex(
-            @"(\b(?:Password|Pwd)\s*=\s*)(?:""[^""]*""|'[^']*'|[^;\r\n]*)",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            @"(\b(?:Password|Pwd)\s*=\s*)(?:""(?:""""|[^""])*(?:""|\z)[^;\r\n]*|'(?:''|[^'])*(?:'|\z)[^;\r\n]*|[^;]*)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+            TimeSpan.FromSeconds(1));
 
         internal static string RedactConnectionCredentials(string message)
         {
-            return string.IsNullOrEmpty(message)
-                ? message
-                : ConnectionCredentialPattern.Replace(message, "$1[REDACTED]");
+            if (string.IsNullOrEmpty(message)) return message;
+            try
+            {
+                return ConnectionCredentialPattern.Replace(message, "$1[REDACTED]");
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Never return the original (potentially sensitive) message if filtering cannot finish.
+                return "[REDACTED: credential filtering timed out]";
+            }
         }
 
         private SqlDataAdapter sqlDA;
@@ -1000,21 +1009,14 @@ namespace SPI_Data_Comp_Tool
             return dsResult;
         }
 
-        public delegate void SetDsRules(DataSet ds, string str_TableName);
-
-        private event SetDsRules SetDsRulesEvent;
         public void OpenRuleForm()
         {
-            try
+            // Keep every comparison's Import Rules entry point, but use the common Settings window.
+            using (var settings = new User_Settings(true))
             {
-                form_Rules = new Form_Rules();
-                SetDsRulesEvent += new SetDsRules(SetDsRulesCall);
-                form_Rules.SetDsRules = SetDsRulesEvent;
-                form_Rules.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+                settings.ShowDialog(Form.ActiveForm);
+                if (settings.ImportedRules != null)
+                    SetDsRulesCall(settings.ImportedRules, settings.ImportedRules.Tables[0].TableName);
             }
         }
 

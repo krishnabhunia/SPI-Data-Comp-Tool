@@ -114,7 +114,6 @@ namespace SPI_Data_Comp_Tool
         private IQueryable<ColorPairMultiSheet> queryColorpairMS;
         private Exception myException_BG;
 
-        private StringComparison stringComparisonTypeOrdincalCase;
 
         private SaveFileDialogFile saveFileDialogFile;
 
@@ -995,7 +994,6 @@ namespace SPI_Data_Comp_Tool
 
                 if (cb_IgnoreCase.Checked)
                 {
-                    stringComparisonTypeOrdincalCase = StringComparison.OrdinalIgnoreCase;
                     if (GlobalDebug.boolIsGlobalDebug)
                     {
                         saveFileDialogFile.Str_saveFileNameWithPath = saveFileDialogFile.Str_saveFileNameWithPath.Replace("###C###", "_IgnoreCase");
@@ -1003,7 +1001,6 @@ namespace SPI_Data_Comp_Tool
                 }
                 else
                 {
-                    stringComparisonTypeOrdincalCase = StringComparison.Ordinal;
                     if (GlobalDebug.boolIsGlobalDebug)
                     {
                         saveFileDialogFile.Str_saveFileNameWithPath = saveFileDialogFile.Str_saveFileNameWithPath.Replace("###C###", "_Ordinal");

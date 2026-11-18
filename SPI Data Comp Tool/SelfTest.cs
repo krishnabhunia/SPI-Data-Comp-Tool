@@ -8,7 +8,8 @@ namespace SPI_Data_Comp_Tool
 {
     /// <summary>
     /// Test-only modes used by CI to check a finished build without opening the app by hand.
-    /// They never connect to a database or open a file, and do nothing in normal use.
+    /// They do not connect to databases. CI uses synthetic inputs, temporary test files and output logs;
+    /// these command-line modes do nothing in normal use.
     ///   "SPI Data Comp Tool.exe" --list-forms OUT_FILE         writes every window type to OUT_FILE, one per line
     ///   "SPI Data Comp Tool.exe" --open-form TYPE OUT_FILE     creates, shows and closes the window TYPE and adds
     ///                                                          "ok TYPE" or "FAIL TYPE: reason" to OUT_FILE;
@@ -16,6 +17,7 @@ namespace SPI_Data_Comp_Tool
     ///   "SPI Data Comp Tool.exe" --check-assemblies OUT_FILE   loads every library the app uses (embedded in the
     ///                                                          .exe by Costura) and writes ok / FAIL per library;
     ///                                                          exit code 1 if any fails
+    ///   "SPI Data Comp Tool.exe" --check-ui OUT_FILE           runs synthetic UI/profile regressions without databases
     /// </summary>
     internal static class SelfTest
     {
@@ -30,6 +32,11 @@ namespace SPI_Data_Comp_Tool
             if (args[0] == "--check-assemblies" && args.Length >= 2)
             {
                 Environment.ExitCode = CheckAssemblies(args[1]);
+                return true;
+            }
+            if (args[0] == "--check-ui" && args.Length >= 2)
+            {
+                Environment.ExitCode = UiWorkflowChecks.Run(args[1]);
                 return true;
             }
             if (args[0] == "--open-form" && args.Length >= 3)

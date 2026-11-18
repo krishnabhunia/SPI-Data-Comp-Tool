@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+      - name: Regression tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Designer files match their layout specs
         run: python3 tools/layout_gen.py --check tools/layouts/*.py
       - name: Fail if connection profiles or passwords are committed
@@ -129,7 +131,16 @@ jobs:
       - run: nuget restore "SPI Data Comp Tool.sln" -NonInteractive
       - name: Build desktop application
         shell: pwsh
-        run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release '/p:Platform=Any CPU' /warnaserror:MSB3245
+        run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release '/p:Platform=Any CPU' /warnaserror
+      - name: UI workflow regression checks
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
+          $log = Join-Path $PWD 'ui-workflow-checks.txt'
+          $p = Start-Process $exe -ArgumentList '--check-ui', "`"$log`"" -PassThru
+          if (-not $p.WaitForExit(60000)) { Stop-Process -Id $p.Id -Force; throw 'UI workflow checks timed out' }
+          if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_; "- $_" >> $env:GITHUB_STEP_SUMMARY } }
+          if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'UI workflow checks failed' }
       - name: Open every window
         shell: pwsh
         run: |
@@ -137,8 +148,9 @@ jobs:
           $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
           $list = Join-Path $env:RUNNER_TEMP "forms.txt"
           $log = Join-Path $env:RUNNER_TEMP "open-forms.txt"
-          Start-Process $exe -ArgumentList '--list-forms', "`"$list`"" -Wait
-          $forms = Get-Content $list
+          $listing = Start-Process $exe -ArgumentList '--list-forms', "`"$list`"" -Wait -PassThru
+          if ($listing.ExitCode -ne 0 -or -not (Test-Path $list)) { throw 'Cannot enumerate forms' }
+          $forms = @(Get-Content $list)
           if (-not $forms) { throw 'no window found to open' }
           $failed = @()
           foreach ($f in $forms) {
@@ -186,7 +198,7 @@ jobs:
           if ($p.ExitCode -ne 0) { throw 'a library failed to load from the portable exe' }
       - name: Build 64-bit application
         shell: pwsh
-        run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release /p:Platform=x64 /warnaserror:MSB3245
+        run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release /p:Platform=x64 /warnaserror
       - name: Build 64-bit installer
         shell: pwsh
         run: |

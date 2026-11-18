@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Oracle.ManagedDataAccess.Client;
+﻿using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -59,11 +57,8 @@ namespace SPI_Data_Comp_Tool
         private DataTable dt_sql;
         private string str_tableName;
 
-        private List<DBC> items;
-
         private SaveFileDialogFile saveFileDialogFile;
         private Common_Data common_Data;
-        private DBC dbc_AddNewUserProfile;
         public UserProfileForm()
         {
             InitializeComponent();
@@ -81,29 +76,20 @@ namespace SPI_Data_Comp_Tool
                 dBConnectionDetailsProfile = new DBConnectionDetailsProfile();
                 saveFileDialogFile = new SaveFileDialogFile();
                 common_Data = new Common_Data();
-                dbc_AddNewUserProfile = new DBC();
 
-                if(Properties.Settings.Default.ProfilePathUser != null & Properties.Settings.Default.ProfilePathUser != "")
+                string profilePath = Properties.Settings.Default.ProfilePathUser;
+                if (!string.IsNullOrWhiteSpace(profilePath) && File.Exists(profilePath))
                 {
-                    Common_Data.DisplayMessage(rtb_Log, $"User Profile Loaded from path : {Properties.Settings.Default.ProfilePathUser}");
+                    Profile.ProfileList = ReadProfileFile(profilePath);
+                    connection.RefreshProfiles();
+                    l_lb_ReadProfile.Text = Path.GetFileName(profilePath);
+                    Common_Data.DisplayMessage(rtb_Log, $"User profile loaded from: {profilePath}");
                 }
-
-                common_Data.ReadUserProfile(cb_UserProfileList);
-
-                if (GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword))
+                else
                 {
-                    
+                    connection.RefreshProfiles();
                 }
-
-                if (cb_UserProfileList.Items.Count > 0)
-                {
-                    if(items == null || items != Profile.ProfileList)
-                    {
-                        items = Profile.ProfileList;
-                    }
-                    cb_UserProfileList.SelectedIndex = 0;
-                }
-
+                GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword);
             }
             catch (Exception ex)
             {
@@ -143,6 +129,7 @@ namespace SPI_Data_Comp_Tool
 
         private void DisplayMessage(string strMsg, bool boolError = false, int overwriteText = -1, Color? color = null)
         {
+            strMsg = Common_Data.RedactConnectionCredentials(strMsg);
             try
             {
                 rtb_Log.SelectionStart = rtb_Log.TextLength;
@@ -439,42 +426,18 @@ namespace SPI_Data_Comp_Tool
                 if (openFileDialogData.boolFileSelected)
                 {
                     DisplayMessage($"Reading json file : '{openFileDialogData.strFileNameWithPath}'");
-                    //StreamReader streamReader = new StreamReader(openFileDialogData.strFileNameWithPath);
-                    //JsonTextReader jsonTextReader = new JsonTextReader(streamReader);
-                    using (StreamReader r = new StreamReader(openFileDialogData.strFileNameWithPath))
-                    {
-                        string json = r.ReadToEnd();
-                        items = JsonConvert.DeserializeObject<List<DBC>>(json);
-                    }
-
-                    Profile.ProfileList = items;
-
-                    Properties.Settings.Default.ProfilePathUser = $@"{openFileDialogData.strFileNameWithPath}";
-                    Properties.Settings.Default.Save();
-
-                    //string str = Properties.Settings.Default.ProfilePathUser;
-
-                    cb_UserProfileList.Items.Clear();
-
-                    foreach (var i in items)
-                    {
-                        if (i.profileName != null)
-                        {
-                            cb_UserProfileList.Items.Add(i.profileName.ToString());
-                        }
-                    }
-                    if (cb_UserProfileList.Items.Count > 0)
-                    {
-                        cb_UserProfileList.SelectedIndex = 0;
-                    }
+                    // Reject an incomplete file before replacing the currently usable catalog.
+                    List<DBC> imported = ReadProfileFile(openFileDialogData.strFileNameWithPath);
+                    SetProfilePath(openFileDialogData.strFileNameWithPath);
+                    Profile.ProfileList = imported;
+                    connection.RefreshProfiles();
 
                     l_lb_ReadProfile.Text = openFileDialogData.SimpleFileName;
                     DisplayMessage($"Profile list loaded successfully from : {openFileDialogData.strFileNameWithPath}", false, -1, Color.DarkBlue);
                 }
                 else
                 {
-                    DisplayMessage($"No File Selected To Load User Profile", true);
-                    l_lb_ReadProfile.Text = "No File Selected To Load User Profile, Pls click again to load User Profile";
+                    DisplayMessage("Profile import cancelled; current profiles are unchanged.");
                 }
 
             }
@@ -502,30 +465,26 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                string profileName = cb_UserProfileList.Text.Trim();
+                if (string.IsNullOrWhiteSpace(profileName))
+                {
+                    DisplayMessage("Enter a profile name before saving.", true);
+                    cb_UserProfileList.Focus();
+                    return;
+                }
                 ConnectToDB();
 
                 if (GlobalDebug.boolIsGlobalDebug || (dBConnectionStatus_SRC.boolConnection && dBConnectionStatus_TRG.boolConnection))
                 {
-                    dbc_AddNewUserProfile.profileName = cb_UserProfileList.Text;
-                    dbc_AddNewUserProfile.dbSRC = GetDBConnectionDetailsProfile("SRC");
-                    dbc_AddNewUserProfile.dbTRG = GetDBConnectionDetailsProfile("TRG");
-
-                    if (items != null)
+                    // Each save gets a new object. Reusing one instance mutates the profile saved
+                    // by the previous click when a second profile is entered.
+                    var replacement = new DBC
                     {
-                        foreach (var item in items.ToArray())
-                        {
-                            if (item.profileName == dbc_AddNewUserProfile.profileName)
-                            {
-                                items.Remove(item);
-                            }
-                        }
-                        items.Add(dbc_AddNewUserProfile);
-                    }
-                    else
-                    {
-                        items = new List<DBC>();
-                        items.Add(dbc_AddNewUserProfile);
-                    }
+                        profileName = profileName,
+                        dbSRC = GetDBConnectionDetailsProfile("SRC"),
+                        dbTRG = GetDBConnectionDetailsProfile("TRG"),
+                    };
+                    List<DBC> candidate = ProfileStore.Upsert(Profile.ProfileList, replacement);
 
                     DisplayMessage($"Saving Profile, Pls wait !!!");
 
@@ -533,16 +492,26 @@ namespace SPI_Data_Comp_Tool
 
                     if (saveFileDialogFile.BoolFileSaveStatus)
                     {
-                        File.WriteAllText(saveFileDialogFile.Str_saveFileNameWithPath, JsonConvert.SerializeObject(items, Formatting.Indented));
-
-                        Properties.Settings.Default.ProfilePathUser = $@"{saveFileDialogFile.Str_saveFileNameWithPath}";
-                        Properties.Settings.Default.Save();
-
-                        DisplayMessage($"Profile Saved Successfully :{saveFileDialogFile.Str_saveFileNameWithPath},Profile Name as : {dbc_AddNewUserProfile.profileName}");
+                        ProfileStore.WriteAtomic(saveFileDialogFile.Str_saveFileNameWithPath,
+                            ProfileStore.SerializeForExport(candidate));
+                        try
+                        {
+                            SetProfilePath(saveFileDialogFile.Str_saveFileNameWithPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            DisplayMessage("The profile file was saved, but its path could not be remembered. The active profiles are unchanged; use Load profile to open the saved file. " + ex.Message, true);
+                            return;
+                        }
+                        // The dialog was accepted and persistence succeeded: publish the new list.
+                        Profile.ProfileList = candidate;
+                        connection.RefreshProfiles(profileName, false);
+                        l_lb_ReadProfile.Text = Path.GetFileName(saveFileDialogFile.Str_saveFileNameWithPath);
+                        DisplayMessage($"Profile saved successfully: {saveFileDialogFile.Str_saveFileNameWithPath}; profile name: {profileName}");
                     }
                     else
                     {
-                        DisplayMessage($"File Not Saved By User", true);
+                        DisplayMessage("Save cancelled; current profiles and the existing file are unchanged.");
                     }
                 }
                 else
@@ -611,50 +580,59 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                string strDeleteProfileName = Common_Data.GetComboBoxValue(cb_UserProfileList);
-                DisplayMessage($"Deleting Profile :{strDeleteProfileName}");
-                foreach (var item in items.ToArray())
+                string selectedName = cb_UserProfileList.SelectedItem as string;
+                if (selectedName == null || Profile.ProfileList == null ||
+                    !Profile.ProfileList.Any(p => p != null && string.Equals(p.profileName, selectedName, StringComparison.Ordinal)))
                 {
-                    if (item.profileName.Trim() == strDeleteProfileName)
-                    {
-                        items.Remove(item);
-                        DisplayMessage($"Profile Deleted SuccessFully : {strDeleteProfileName}", false, -1, Color.DarkBlue);
-                    }
+                    DisplayMessage("Select a saved profile to delete.", true);
+                    return;
+                }
+                string profilePath = Properties.Settings.Default.ProfilePathUser;
+                if (string.IsNullOrWhiteSpace(profilePath) || !File.Exists(profilePath))
+                {
+                    DisplayMessage("Load or save a profile file before deleting a profile.", true);
+                    return;
+                }
+                if (MessageBox.Show(this,
+                    $"Delete profile '{selectedName}' from the saved profile file?\n\nThis cannot be undone in the application.",
+                    "Delete saved profile", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+                {
+                    DisplayMessage("Deletion cancelled; current profiles are unchanged.");
+                    return;
                 }
 
-                cb_UserProfileList.Items.Clear();
-
-                foreach (var i in items)
-                {
-                    if (i.profileName != null)
-                    {
-                        cb_UserProfileList.Items.Add(i.profileName.ToString());
-                    }
-                }
-                if (cb_UserProfileList.Items.Count > 0)
-                {
-                    cb_UserProfileList.SelectedIndex = 0;
-                }
-
-                DisplayMessage($"Profile reloaded after deletion");
-
-                if (Common_Data.StringNotNullOrEmpty(Properties.Settings.Default.ProfilePathUser, ".json"))
-                {
-                    DisplayMessage($"Saving Profile in {Properties.Settings.Default.ProfilePathUser}");
-                    Profile.ProfileList = items;
-                    File.WriteAllText(Properties.Settings.Default.ProfilePathUser, JsonConvert.SerializeObject(items, Formatting.Indented));
-                    DisplayMessage($"Profile saved after deletion", false, -1, Color.DarkBlue);
-                }
-                else
-                {
-                    DisplayMessage($"Some problem in saving the profile", true);
-                }
-
+                List<DBC> candidate = ProfileStore.Remove(Profile.ProfileList, selectedName);
+                ProfileStore.WriteAtomic(profilePath, ProfileStore.SerializeForExport(candidate));
+                Profile.ProfileList = candidate;
+                connection.RefreshProfiles();
+                DisplayMessage($"Profile deleted successfully: {selectedName}", false, -1, Color.DarkBlue);
             }
             catch (Exception ex)
             {
                 DisplayError(ex);
             }
+        }
+
+        private static void SetProfilePath(string path)
+        {
+            string previousPath = Properties.Settings.Default.ProfilePathUser;
+            if (string.Equals(previousPath, path, StringComparison.Ordinal)) return;
+            try
+            {
+                Properties.Settings.Default.ProfilePathUser = path;
+                Properties.Settings.Default.Save();
+            }
+            catch
+            {
+                Properties.Settings.Default.ProfilePathUser = previousPath;
+                throw;
+            }
+        }
+
+        private static List<DBC> ReadProfileFile(string path)
+        {
+            return ProfileStore.ParseJson(File.ReadAllText(path));
         }
 
         private void btn_Connect_Reference_ID_Click(object sender, EventArgs e)

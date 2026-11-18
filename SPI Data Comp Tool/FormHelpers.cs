@@ -19,7 +19,7 @@ namespace SPI_Data_Comp_Tool
         /// <summary>Shows text in a label or status control and repaints it at once.</summary>
         internal static void ShowText(Control control, string text, Color? color = null)
         {
-            control.Text = text;
+            control.Text = Common_Data.RedactConnectionCredentials(text);
             if (color.HasValue)
             {
                 control.ForeColor = color.Value;
@@ -34,10 +34,10 @@ namespace SPI_Data_Comp_Tool
             {
                 if (ex != null)
                 {
-                    control.Text = ex.Message.ToString();
+                    control.Text = Common_Data.RedactConnectionCredentials(ex.Message);
                     if (Debugger.IsAttached)
                     {
-                        control.Text = ex.ToString();
+                        control.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }
                 }
                 else
@@ -48,7 +48,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex1)
             {
-                control.Text = ex1.Message.ToString();
+                control.Text = Common_Data.RedactConnectionCredentials(ex1.Message);
             }
         }
 

@@ -29,6 +29,9 @@ namespace SPI_Data_Comp_Tool
         private Exception myException;
         private DataSet ds;
 
+        public bool HasLoadedData { get { return boolStatus && ds.Tables.Count == 2; } }
+        public event EventHandler DataLoadStateChanged;
+
         public OracleAndSQLConnection()
         {
             InitializeComponent();
@@ -48,15 +51,7 @@ namespace SPI_Data_Comp_Tool
             return dt_oracle;
         }
 
-        public void LoadDebuggingInformation()
-        {
-            if (Debugger.IsAttached)
-            {
-                cb_UserProfileList.SelectedIndex = 0;
-                cb_query.CheckState = CheckState.Checked;
-                Load_DB_Oracle_SQL();
-            }
-        }
+
         public DataSet FetchDataSet()
         {
             return ds;
@@ -127,9 +122,6 @@ namespace SPI_Data_Comp_Tool
             rb_SRC_oracle.Enabled = boolEnabledCase;
             rb_SRC_SQL.Enabled = boolEnabledCase;
 
-            cb_UserProfileList.Enabled = boolEnabledCase;
-            btn_Save.Enabled = boolEnabledCase;
-            btn_Delete.Enabled = boolEnabledCase;
 
             btn_Connect_Reference_ID.Enabled = boolEnabledCase;
             if (!(boolEnabledCase))
@@ -142,6 +134,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                boolStatus = false;
+                DataLoadStateChanged?.Invoke(this, EventArgs.Empty);
                 controlEnableToggle(false);
                 lbl_Oracle_SQL_Connection.Text = string.Empty;
                 lbl_Oracle_SQL_Connection.Text = string.Empty;
@@ -188,6 +182,7 @@ namespace SPI_Data_Comp_Tool
             finally
             {
                 controlEnableToggle(true);
+                DataLoadStateChanged?.Invoke(this, EventArgs.Empty);
             }
         }
         private void btn_Connect_Reference_ID_Click(object sender, EventArgs e)
@@ -203,26 +198,7 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            
-        }
 
-        private void DisplayMessage(Control control, string str_Msg)
-        {
-            try
-            {
-                FormHelpers.ShowText(control, str_Msg);
-            }
-            catch (Exception ex)
-            {
-                DisplayError(control, ex);
-            }
-        }
-        private void DisplayError(Control control, Exception ex = null)
-        {
-            FormHelpers.ShowError(control, ex);
-        }
         private DataTable connect_SQL_DB(string columnNames = " * ")
         {
             try
@@ -333,189 +309,6 @@ SPEC_FORM.SPEC_FORM_CNUM";
             }
         }
 
-        private void btn_Save_Click(object sender, EventArgs e)
-        {
 
-        }
-
-        private void btn_Delete_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        //private DBConnectionDetails dBConnectionDetails;
-        private void cb_UserProfileList_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                //DisplayMessage(lbl_Oracle_SQL_Connection, $"User Profile Selected : {cb_UserProfileList.SelectedItem}");
-
-                //dBConnectionDetails = new DBConnectionDetails(cb_UserProfileList.SelectedIndex);
-
-                //rb_SRC_oracle.Checked = dBConnectionDetails.bool_Rb_SRC_Oracle;
-                //rb_SRC_SQL.Checked = dBConnectionDetails.bool_Rb_SRC_SQL;
-
-                //cb_WindowAuthentication_SRC.Checked = dBConnectionDetails.bool_SRC_SQL_WA;
-                //cb_SRC_DefaultPort.Checked = dBConnectionDetails.bool_SRC_Oracle_DefaultPort;
-                //tb_SRC_DefaultPort.Text = dBConnectionDetails.bool_Rb_SRC_Oracle ? dBConnectionDetails.int_SRC_Oracle_DefaultPort.ToString() : string.Empty;
-
-                //tb_SRC_DataSource.Text = dBConnectionDetails.str_SRC_DataSource;
-                //tb_SRC_DBName.Text = dBConnectionDetails.str_SRC_DBName;
-                //tb_SRC_UserName.Text = dBConnectionDetails.str_SRC_UserName;
-                //tb_SRC_Password.Text = dBConnectionDetails.str_SRC_Password;
-                //cb_SRC_TableName.Text = dBConnectionDetails.str_SRC_TableName;
-
-                //rb_TRG_Oracle.Checked = dBConnectionDetails.bool_Rb_TRG_Oracle;
-                //rb_TRG_SQL.Checked = dBConnectionDetails.bool_Rb_TRG_SQL;
-
-                //cb_WindowAuthentication_TRG.Checked = dBConnectionDetails.bool_TRG_SQL_WA;
-                //cb_TRG_DefaultPort.Checked = dBConnectionDetails.bool_TRG_Oracle_DefaultPort;
-                //tb_TRG_DefaultPort.Text = dBConnectionDetails.int_TRG_Oracle_DefaultPort == 0 ? "1521" : dBConnectionDetails.int_TRG_Oracle_DefaultPort.ToString();
-
-                //tb_TRG_DataSource.Text = dBConnectionDetails.str_TRG_DataSource;
-                //tb_TRG_DBName.Text = dBConnectionDetails.str_TRG_DBName;
-                //tb_TRG_UserName.Text = dBConnectionDetails.str_TRG_UserName;
-                //tb_TRG_Password.Text = dBConnectionDetails.str_TRG_Password;
-                //cb_TRG_TableName.Text = dBConnectionDetails.str_TRG_TableName;
-
-                //DisplayMessage(lblStatus, $"User Profile :{cb_UserProfileList.SelectedItem}, Loaded Successfully");
-
-                //if (true)//Debugger.IsAttached)
-                //{
-                //    switch (comboBox1.SelectedIndex + 1)
-                //    {
-                //        case 1:
-                //            rb_oracle.Checked = true;
-                //            tb_oracle_dsource.Text = "localhost";
-                //            tb_oracle_dbName.Text = "SPEL11G";
-                //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "";
-                //            tb_Source_tableName.Text = "tb_compare1";
-
-                //            tb_sql_dsource.Text = "localhost";
-                //            tb_sql_dbName.Text = "db_SPELSQL";
-                //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "";
-                //            tb_destination_tableName.Text = "tb_compare1";
-
-                //            break;
-
-                //        case 2:
-                //            rb_sql.Checked = true;
-                //            tb_oracle_dsource.Text = "localhost";
-                //            tb_oracle_dbName.Text = "db_SPELSQL";
-                //            tb_oracle_username.Text = "sa";
-                //            tb_oracle_pwd.Text = "";
-                //            tb_Source_tableName.Text = "tb_compare1";
-
-                //            tb_sql_dsource.Text = "localhost";
-                //            tb_sql_dbName.Text = "db_SPELSQL";
-                //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "";
-                //            tb_destination_tableName.Text = "tb_compare1";
-
-                //            break;
-
-                //        case 3:
-                //            rb_sql.Checked = true;
-                //            tb_oracle_dsource.Text = "localhost";
-                //            tb_oracle_dbName.Text = "SPELOLDP";
-                //            tb_oracle_username.Text = "sa";
-                //            tb_oracle_pwd.Text = "";
-                //            tb_Source_tableName.Text = "plant1el.t_plantitem";
-
-                //            tb_sql_dsource.Text = "localhost";
-                //            tb_sql_dbName.Text = "SPELOLDP_new";
-                //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "";
-                //            tb_destination_tableName.Text = "plant1el.t_plantitem";
-
-                //            break;
-
-                //        case 4:
-                //            rb_oracle.Checked = true;
-                //            tb_oracle_dsource.Text = "localhost";
-                //            tb_oracle_dbName.Text = "SPEL11G";
-                //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "";
-                //            tb_Source_tableName.Text = "DASISLANDEL.T_motor";
-
-                //            tb_sql_dsource.Text = "localhost";
-                //            tb_sql_dbName.Text = "JK1703_P";
-                //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "";
-                //            tb_destination_tableName.Text = "Plant789el.T_Motor";
-
-                //            break;
-
-                //        case 5:
-                //            rb_oracle.Checked = true;
-                //            tb_oracle_dsource.Text = "localhost";
-                //            tb_oracle_dbName.Text = "SPEL11G";
-                //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "";
-                //            tb_Source_tableName.Text = "DASISLANDEL.T_Plantitem";
-
-                //            tb_sql_dsource.Text = "localhost";
-                //            tb_sql_dbName.Text = "JK1703_P";
-                //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "";
-                //            tb_destination_tableName.Text = "plant789elp1.t_Plantitem";
-
-                //            break;
-
-                //        case 6:
-                //            rb_oracle.Checked = true;
-                //            tb_oracle_dsource.Text = "localhost";
-                //            tb_oracle_dbName.Text = "SPEL11G";
-                //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "";
-                //            tb_Source_tableName.Text = "tb_loop";
-
-                //            tb_sql_dsource.Text = "localhost";
-                //            tb_sql_dbName.Text = "db_SPELSQL";
-                //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "";
-                //            tb_destination_tableName.Text = "loop";
-
-                //            break;
-                //        case 7:
-                //            rb_oracle.Checked = true;
-                //            tb_oracle_dsource.Text = "localhost";
-                //            tb_oracle_dbName.Text = "SPEL11G";
-                //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "";
-                //            tb_Source_tableName.Text = "tb_loop_2k";
-
-                //            tb_sql_dsource.Text = "localhost";
-                //            tb_sql_dbName.Text = "db_SPELSQL";
-                //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "";
-                //            tb_destination_tableName.Text = "tb_loop_2k";
-
-                //            break;
-                //        case 8:
-                //            rb_oracle.Checked = true;
-                //            tb_oracle_dsource.Text = "localhost";
-                //            tb_oracle_dbName.Text = "SPEL11G";
-                //            tb_oracle_username.Text = "system";
-                //            tb_oracle_pwd.Text = "";
-                //            tb_Source_tableName.Text = "tb_loop_2k";
-
-                //            tb_sql_dsource.Text = "localhost";
-                //            tb_sql_dbName.Text = "db_SPELSQL";
-                //            tb_sql_username.Text = "sa";
-                //            tb_sql_pwd.Text = "";
-                //            tb_destination_tableName.Text = "tb_loop_2k";
-
-                //            break;
-                //    }
-                //}
-            }
-            catch (Exception ex)
-            {
-                lbl_Oracle_SQL_Connection.Text = ex.Message.ToString();
-            }
-        }
     }
 }

@@ -18,7 +18,6 @@ namespace SPI_Data_Comp_Tool
         private DataSet ds;
         private Common_Data common_Data;
 
-        private bool boolFileSelected;
         public Delegate GetExcelData;
 
         public ExcelFileReadCustomControl()
@@ -27,7 +26,6 @@ namespace SPI_Data_Comp_Tool
             customException = new Exception();
             dt = new DataTable();
             openFileDialogData = new OpenFileDialogData();
-            boolFileSelected = false;
             ds = new DataSet();
             common_Data = new Common_Data();
         }
