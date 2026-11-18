@@ -90,6 +90,7 @@ jobs:
       tag: ${{ steps.plan.outputs.tag }}
       prerelease: ${{ steps.plan.outputs.prerelease }}
       head: ${{ steps.plan.outputs.head }}
+      pr: ${{ steps.plan.outputs.pr }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -104,6 +105,7 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/release.py plan --reserve
@@ -232,7 +234,9 @@ jobs:
           if-no-files-found: error
 
   release:
-    # PR -> GitHub pre-release vX.Y.Z-betaNNN; merge to master -> GitHub release vX.Y.Z (latest)
+    # PR -> GitHub pre-release vX.Y.Z-betaNNN; merge to master -> GitHub release vX.Y.Z (latest).
+    # The version is shown in this check's name and in one comment on the PR - never typed into a PR title.
+    name: Publish ${{ needs.version.outputs.version }}
     needs: [version, windows-build, documentation, secrets-guard]
     if: >-
       github.event_name == 'push' ||
@@ -240,12 +244,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write   # keeps the version comment on the PR up to date
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: SPI_Data_Comp_Tool_${{ needs.version.outputs.version }}
           path: dist
       - name: Publish release
+        id: publish
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -255,6 +262,20 @@ jobs:
           SHA: ${{ needs.version.outputs.head }}
         run: |
           set -euo pipefail
+          if [ "${PRE}" = "true" ]; then
+            # A beta must not appear after the normal version with the same number (another PR was
+            # merged while this build ran): skip it, the next run gets the next number.
+            stable="v${VERSION%%-beta*}"
+            if gh api "repos/${GH_REPO}/git/ref/tags/${stable}" >/dev/null 2>&1; then
+              echo "state=outdated" >> "$GITHUB_OUTPUT"
+              echo "::warning::${stable} is already released, so ${TAG} was not published. Re-run all jobs or push a new commit for the next beta."
+              echo "### Not published: ${TAG} (${stable} is already released)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "state=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "state=stable" >> "$GITHUB_OUTPUT"
+          fi
           zip_name="SPI_Data_Comp_Tool_${VERSION}.zip"
           shots_name="SPI_Data_Comp_Tool_${VERSION}_screenshots.zip"
           (cd dist && zip -qr "../${zip_name}" . -x 'screenshots/*')
@@ -273,3 +294,30 @@ jobs:
             gh release create "${TAG}" "${assets[@]}" "${flags[@]}"
           fi
           echo "### Released ${TAG}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Show the version on the pull request
+        if: needs.version.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ needs.version.outputs.pr }}
+          TAG: ${{ needs.version.outputs.tag }}
+          HEAD_SHA: ${{ needs.version.outputs.head }}
+          STATE: ${{ steps.publish.outputs.state }}
+        run: |
+          set -euo pipefail
+          # A PR run that ends (or is re-run) after the PR was merged must not replace "Released as ..."
+          # with a beta message: once merged, only the merge build writes the comment.
+          if [ "${STATE}" != "stable" ] && [ "$(gh api "repos/${GH_REPO}/pulls/${PR}" --jq .merged)" = "true" ]; then
+            echo "PR #${PR} is already merged: its comment is left to the merge build."
+            exit 0
+          fi
+          python3 tools/release.py comment "${STATE}" > "${RUNNER_TEMP}/version-comment.md"
+          cat "${RUNNER_TEMP}/version-comment.md" >> "$GITHUB_STEP_SUMMARY"
+          # one comment per PR, found by its hidden first line and replaced on every run
+          id="$(gh api "repos/${GH_REPO}/issues/${PR}/comments" --paginate \
+                --jq '.[] | select(.body | startswith("<!-- spi-version -->")) | .id' | sed -n 1p)"
+          if [ -n "${id}" ]; then
+            gh api -X PATCH "repos/${GH_REPO}/issues/comments/${id}" -F "body=@${RUNNER_TEMP}/version-comment.md" --jq .html_url
+          else
+            gh api -X POST "repos/${GH_REPO}/issues/${PR}/comments" -F "body=@${RUNNER_TEMP}/version-comment.md" --jq .html_url
+          fi
