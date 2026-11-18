@@ -40,9 +40,9 @@ namespace SPI_Data_Comp_Tool
             // The radio text is passed on as the database type ("Oracle" / "SQL"), so it must stay as is.
             Oracle = new RadioButton { Text = "Oracle", AutoSize = true, Checked = true, Margin = new Padding(0, 3, 16, 3) };
             Sql = new RadioButton { Text = "SQL", AutoSize = true, Margin = new Padding(0, 3, 0, 3) };
-            WindowsLogin = new CheckBox { Text = "Windows authentication", AutoSize = true, Enabled = false, Margin = new Padding(0, 3, 16, 3) };
+            WindowsLogin = new CheckBox { Text = "Windows authentication", AutoSize = true, Enabled = false, Margin = new Padding(0, 3, 0, 3) };
             DefaultPort = new CheckBox { Text = "Default port", AutoSize = true, Checked = true, Margin = new Padding(0, 3, 0, 3) };
-            Port = new TextBox { Text = OracleDefaultPort, ReadOnly = true, Width = 90, Anchor = AnchorStyles.Left, Margin = new Padding(0, 3, 0, 3) };
+            Port = new TextBox { Text = OracleDefaultPort, ReadOnly = true, Width = 90, MinimumSize = new Size(90, 0), Anchor = AnchorStyles.Left, Margin = new Padding(0, 3, 16, 3) };
             DataSource = Field();
             Database = Field();
             User = Field();
@@ -62,10 +62,10 @@ namespace SPI_Data_Comp_Tool
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
             FlowLayoutPanel platform = Flow(Oracle, Sql);
-            FlowLayoutPanel options = Flow(WindowsLogin, DefaultPort);
+            FlowLayoutPanel port = Flow(Port, DefaultPort);
             AddRow(grid, Caption("Platform"), platform);
-            AddRow(grid, new Label { AutoSize = true, Margin = new Padding(0) }, options);
-            AddRow(grid, Caption("Port"), Port);
+            AddRow(grid, Caption("Login"), WindowsLogin);
+            AddRow(grid, Caption("Port"), port);
             AddRow(grid, Caption("Data source"), DataSource);
             AddRow(grid, Caption("Database"), Database);
             AddRow(grid, Caption("Username"), User);
