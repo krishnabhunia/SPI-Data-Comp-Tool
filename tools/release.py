@@ -148,7 +148,6 @@ def release_assets(version):
         ("64-bit installer", f"SPI_Data_Comp_Tool_{version}_x64_setup.exe"),
         ("Portable + installer (zip)", f"SPI_Data_Comp_Tool_{version}.zip"),
         ("Checksums (SHA-256)", f"SPI_Data_Comp_Tool_{version}.zip.sha256"),
-        ("Screenshots of every window", f"SPI_Data_Comp_Tool_{version}_screenshots.zip"),
     ]
 
 
