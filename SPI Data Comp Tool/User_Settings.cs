@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.IO;
@@ -25,6 +25,7 @@ namespace SPI_Data_Comp_Tool
             btn_ClearLogs.Click += (sender, e) => rtb_Log.Clear();
             btn_Close.Click += (sender, e) => Close();
             CancelButton = btn_Close;
+            tabs_Settings.TabPages.Add(new UpdateSettingsPage());
             tabs_Settings.SelectedIndexChanged += (sender, e) => UpdateAcceptButton();
             UiTheme.Apply(this, btn_ImportRules);
 

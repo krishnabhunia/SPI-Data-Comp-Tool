@@ -92,6 +92,18 @@ There are now **21 Form classes** (23 on the base branch after #44). The retired
 
 Profile edits build independent candidate lists. Cancelling a save does not change active profiles; JSON is written to a same-directory temporary file and atomically replaced before publishing a changed list. Deletion requires confirmation. If the file is saved but its path cannot be remembered, the UI explicitly reports the partial outcome and retains the active catalog. Shared pickers resolve names rather than stale list positions, and typing a new name preserves entered fields.
 
+## Updates in the app
+- **Check.** Every start, the main window asks GitHub for this repository's releases in the background (`UpdateService.FindUpdate`). Offline or a GitHub error stays silent. Build checks (`--open-form`, `--check-…`) never go online.
+- **Channels.** *Stable* (default): normal releases only. *Beta* (optional): also pre-releases built from open pull requests. Chosen in **Settings › Updates**; the status line of the main window shows the version and the channel.
+- **What is offered.** The highest version above the running one. A beta ranks below the normal version with the same number; a beta published before the newest normal release is not offered (it was built on older code); a release without its `.zip.sha256` file is not offered. Never a downgrade.
+- **Where it shows.** An **Update to v…** entry appears at the right end of the menu bar only when an update exists. It opens the Update window: release notes, **Update now**, **Install when I close the app**, **Later**.
+- **Download and check.** An installed copy (it has `unins000.exe` beside it) downloads `…_x64_setup.exe`; a portable copy downloads the zip. The file's SHA-256 must equal the one in the release's `.zip.sha256`, otherwise it is deleted and nothing is installed.
+- **Install.** Installed copy: the installer runs silently (Windows asks for permission) and starts the app again (`/RELAUNCH=1`). Portable copy: the zip's `portable/` files are put beside the running exe - the new exe has the new version in its name, existing files are never overwritten, and the old exe stays as the way back.
+- **Silent option.** With "Download updates in the background and install them when I close the app" on, the download happens at start-up and the install when the main window closes.
+- **Choices are kept** in `%AppData%\SPI Data Comparison Tool\updates.json`, outside the app folder.
+- **Needs a public repository.** The app reads releases without signing in. If this repository is made private, the updater finds nothing until releases are published somewhere public and `UpdateService.Repository` points there.
+- Code: `UpdateService.cs` (logic), `UpdateDialog.cs`, `UpdateSettingsPage.cs`, `MainForm.Updates.cs`. Checks: `tests/UpdateChecks.cs`, run in CI as `--check-updates`.
+
 ## Versioning and CI artifacts
 Versions are automatic - nobody edits a version number by hand. `tools/release.py` works it out in CI:
 
