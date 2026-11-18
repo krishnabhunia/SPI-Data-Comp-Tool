@@ -7,7 +7,7 @@ Generic Windows Forms (.NET Framework 4.6.2) desktop utility for database and Ex
 | 1 | Architecture, feature inventory, diagrams, setup, testing, limitations | [docs/PROJECT_GUIDE.md](docs/PROJECT_GUIDE.md) |
 | 2 | Connection-profile template (no real servers or passwords) | `SPI Data Comp Tool/UserProfile/userProfile.example.json` |
 | 3 | App icon and pictures (original, regenerate with `python tools/make_app_images.py`) | `SPI Data Comp Tool/app.ico`, `SPI Data Comp Tool/Resources/*.png` |
-| 4 | CI build and downloadable portable zip | `.github/workflows/build.yml` → Actions → artifact `SPI_Data_Comp_Tool_<version>` |
+| 4 | CI build: portable exe and 64-bit installer (one exe each, libraries embedded) | `.github/workflows/build.yml` → Actions → artifact `SPI_Data_Comp_Tool_<version>`, or the release page (`…_x64_setup.exe`) |
 
 ## Quick start
 1. Open `SPI Data Comp Tool.sln` in Visual Studio (with the **.NET desktop development** workload) and restore NuGet packages.

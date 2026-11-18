@@ -15,7 +15,8 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 | `SPI Data Comp Tool/Common_Data.cs` | Shared helpers: DB connections, Excel I/O, profiles, developer mode (`GlobalDebug`) |
 | `SPI Data Comp Tool/UserProfile/userProfile.example.json` | Template for a local connection profile |
 | `SPI Data Comp Tool.sln` | Visual Studio solution |
-| `.github/workflows/build.yml` | CI: docs check, secrets and branding guard, Windows build, portable zip artifact |
+| `.github/workflows/build.yml` | CI: docs check, secrets and branding guard, Windows build, portable exe + 64-bit installer in one zip artifact |
+| `windows/installer/SPI_Data_Comp_Tool.iss` | Inno Setup script for the 64-bit installer |
 | `tools/make_app_images.py` | Draws the app icon and pictures (original artwork) |
 
 ## Architecture
@@ -100,13 +101,17 @@ Versions are automatic - nobody edits a version number by hand. `tools/release.p
 - Updaters rank `x.y.z-betaNNN` below `x.y.z`.
 - CI writes the version into the exe (`AssemblyVersion` / `AssemblyFileVersion` `x.y.z.0`, `AssemblyInformationalVersion` = the full name, e.g. `2.4.0-beta003`).
 - Every build also takes a picture of every window: `"SPI Data Comp Tool.exe" --screenshot <FormType> <folder>` saves `<FormType>.png` at its designed size and `<FormType>_large.png` stretched to 1920 × 1040 (what a maximised window on a 1080p screen shows). CI runs it for every form (`--list-forms <file>`), lists any form it could not open in the run summary, and attaches the pictures to each GitHub release as `SPI_Data_Comp_Tool_<version>_screenshots.zip`. The mode never connects to a database. Pictures come from a 96-DPI build machine, so text can look smaller than on a laptop set to 125 % or 150 %.
-- Each Windows build uploads one artifact, `SPI_Data_Comp_Tool_<version>`, which downloads as a zip containing `portable/` with `SPI_Data_Comp_Tool_<version>.exe`, its `.exe.config`, the required DLLs and the `PNID_Reports/Source` and `PNID_Reports/Target_IPEP` SQL templates (read at runtime by **Execute Excel Scripts > PNID Reports**; the project copies them to the build output).
+- Each Windows build uploads one artifact, `SPI_Data_Comp_Tool_<version>`, which downloads as a zip containing:
+  - `portable/` — `SPI_Data_Comp_Tool_<version>.exe` (Any CPU), its `.exe.config` and the `PNID_Reports/Source` and `PNID_Reports/Target_IPEP` SQL templates (read at runtime by **Execute Excel Scripts > PNID Reports**). Unzip and run; nothing is installed.
+  - `windows-x64/` — `SPI_Data_Comp_Tool_<version>.exe`, the **64-bit installer** (Inno Setup, `windows/installer/SPI_Data_Comp_Tool.iss`) built from the `Release|x64` output. It installs to `C:\Program Files\SPI Data Comparison Tool` (or, without admin rights, just for the current user under `%LocalAppData%\Programs`), adds a Start-menu shortcut (desktop shortcut optional), checks for .NET Framework 4.6.2+, upgrades an older install in place and has an uninstaller in *Apps & features*. Silent install: `/VERYSILENT /SUPPRESSMSGBOXES [/CURRENTUSER] [/DIR="..."]`.
+- **No DLL files ship.** Costura (via Fody, `FodyWeavers.xml`) embeds every referenced library into the `.exe`, compressed, and loads it from there at start-up; only the `.exe.config` and the PNID templates sit beside it. CI fails if a `.dll` appears next to either exe, and runs `"SPI Data Comp Tool.exe" --check-assemblies <file>` on the portable exe and on the installed 64-bit exe to prove every library loads from the exe. The installer is also smoke-tested in CI: silent install, 64-bit check, uninstall.
+- Releases also carry the installer on its own as `SPI_Data_Comp_Tool_<version>_x64_setup.exe`; `SPI_Data_Comp_Tool_<version>.zip.sha256` lists the checksums of the zip and the installer. The installer is not code-signed, so Windows SmartScreen may ask to confirm the first run.
 
 ## Supported workflows vs. assumptions
 The source has forms for database comparison, Excel comparison, delta change tracking and database-to-Excel export. Exact connection strings, supported server versions, data-size limits and complete workflows must be validated manually: the repository does not supply safe integration fixtures for all operations.
 
 ## Verification
-The GitHub Actions workflow (`build.yml`) runs on pull requests, pushes to `master` and on demand. It checks this guide, fails if a real connection profile, a non-empty profile password, a password text box pre-filled with or compared to a literal, access tied to a hard-coded user id, or a signing key is committed, builds the solution on a Windows runner (an unresolved assembly reference fails the build) and uploads the portable zip. **Read CI results** rather than assuming success. Desktop GUI interactions, live database connectivity and correctness of comparison results require manual acceptance tests.
+The GitHub Actions workflow (`build.yml`) runs on pull requests, pushes to `master` and on demand. It checks this guide, fails if a real connection profile, a non-empty profile password, a password text box pre-filled with or compared to a literal, access tied to a hard-coded user id, or a signing key is committed, builds the solution on a Windows runner for Any CPU and x64 (an unresolved assembly reference fails the build), builds and tests the 64-bit installer and uploads the zip with the portable exe and the installer. **Read CI results** rather than assuming success. Desktop GUI interactions, live database connectivity and correctness of comparison results require manual acceptance tests.
 
 ## Limitations and security
 - Some screens may update data; test in isolated environments, never on production by default.
