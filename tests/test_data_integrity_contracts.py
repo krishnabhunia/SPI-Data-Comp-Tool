@@ -30,12 +30,18 @@ class DataIntegrityContracts(unittest.TestCase):
         self.assertIn(f"Oracle.ManagedDataAccess.{versions[0]}", references[0])
 
     def test_target_connection_uses_target_windows_authentication(self) -> None:
-        source_code = source("UserControlDataBase.cs")
-        connect = source_code.split("private void ConnectDB()", 1)[1]
-        connect = connect.split("private void cb_UserProfileList_SelectedIndexChanged", 1)[0]
-        target = connect.split('"Trying to connect to Target Oracle', 1)[1]
-        self.assertEqual(target.count("cb_WindowAuthentication_TRG.Checked"), 2)
-        self.assertNotIn("cb_WindowAuthentication_SRC.Checked", target)
+        # Every window that connects Source and Target this way: the Target connection must read
+        # the Target "Windows authentication" box, never the Source one. (This contract first
+        # covered UserControlDataBase.cs, an unused copy removed in the duplication clean-up;
+        # the same bug was still live in these windows.)
+        for name in ("Table Extraction After Delta.cs", "Pre_Merging_Duplicacy_Form.cs",
+                     "SPIDeltaChangeLegacyID.cs"):
+            with self.subTest(window=name):
+                source_code = source(name)
+                target = source_code.split('"Trying to connect to Target Oracle', 1)[1]
+                target = target.split("\n        private ", 1)[0]
+                self.assertEqual(target.count("cb_WindowAuthentication_TRG.Checked"), 2)
+                self.assertNotIn("cb_WindowAuthentication_SRC.Checked", target)
 
     def test_optimized_tracker_source_uses_source_windows_authentication(self) -> None:
         tracker = source("SPIDeltaChangeTrackerOptimised.cs")

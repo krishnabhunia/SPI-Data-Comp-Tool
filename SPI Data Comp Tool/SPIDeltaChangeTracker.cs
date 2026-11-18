@@ -572,31 +572,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                dt_transpose = new DataTable();
-                dt_transpose.Columns.Add(dt_summarised_difference.Columns[0].ColumnName.ToString());
-
-                foreach (DataRow dr in dt_summarised_difference.Rows)
-                {
-                    string str_newColName = dr[0].ToString();
-                    dt_transpose.Columns.Add(str_newColName);
-                }
-
-                for (int rCount = 1; rCount <= dt_summarised_difference.Columns.Count - 1; rCount++)
-                {
-                    DataRow dr = dt_transpose.NewRow();
-
-                    dr[0] = dt_summarised_difference.Columns[rCount].ColumnName.ToString();
-
-                    for (int cCount = 0; cCount <= dt_summarised_difference.Rows.Count - 1; cCount++)
-                    {
-                        string str_colValue = dt_summarised_difference.Rows[cCount][rCount].ToString();
-                        dr[cCount + 1] = str_colValue;
-                    }
-                    dt_transpose.Rows.Add(dr);
-                }
-                dt_transpose.Columns[0].ColumnName = "Column Names";
-                dt_transpose.Columns[1].ColumnName = "Summarize Count";
-
+                dt_transpose = FormHelpers.Transpose(dt_summarised_difference);
             }
             catch (Exception ex)
             {
@@ -622,35 +598,9 @@ namespace SPI_Data_Comp_Tool
 
         private void formatExcelTable(int int_sheet_no, DataTable dt_calc)
         {
-
             try
             {
-                wb.Worksheet(int_sheet_no).Tables.FirstOrDefault().SetShowAutoFilter(false);
-                wb.Worksheet(int_sheet_no).Columns().AdjustToContents();
-
-                for (int col = 1; col <= dt_calc.Columns.Count; col++)
-                {
-                    wb.Worksheet(int_sheet_no).Cell(1, col).Style.Fill.SetBackgroundColor(XLColor.Transparent);
-                    wb.Worksheet(int_sheet_no).Cell(1, col).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                    wb.Worksheet(int_sheet_no).Cell(1, col).Style.Border.OutsideBorderColor = XLColor.RichBlack;
-                    wb.Worksheet(int_sheet_no).Cell(1, col).Style.Font.SetFontColor(XLColor.RichBlack);
-                }
-
-                for (int row = 2; row <= dt_calc.Rows.Count + 1; row++)
-                {
-                    for (int col = 1; col < dt_calc.Columns.Count + 1; col++)
-                    {
-                        wb.Worksheet(int_sheet_no).Cell(row, col).Style.Fill.BackgroundColor = XLColor.Transparent;
-                        wb.Worksheet(int_sheet_no).Cell(row, col).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                        wb.Worksheet(int_sheet_no).Cell(row, col).Style.Border.OutsideBorderColor = XLColor.Black;
-                        cellValue = wb.Worksheet(int_sheet_no).Cell(row, col).Value.ToString();
-                        boolCellValueIntType = int.TryParse(cellValue, out int res);
-                        if (boolCellValueIntType)
-                        {
-                            wb.Worksheet(int_sheet_no).Cell(row, col).SetDataType(XLDataType.Number);
-                        }
-                    }
-                }
+                FormHelpers.FormatTableSheet(wb.Worksheet(int_sheet_no), dt_calc);
             }
             catch (Exception ex)
             {
@@ -1118,13 +1068,11 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                control.Text = str_Msg;
-                control.Update();
+                FormHelpers.ShowText(control, str_Msg);
             }
             catch (Exception ex)
             {
-                DisplayLog(ex);
-                DisplayError(ex);
+                DisplayLog(ex); DisplayError(ex);
             }
         }
 
@@ -2372,15 +2320,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 time_to_execute = DateTime.Now.Subtract(start_Time);
-                if (time_to_execute.Hours == 0)
-                {
-                    lblTimer.Text = time_to_execute.Minutes.ToString() + " min(s) " + time_to_execute.Seconds.ToString() + " second(s) ";
-                }
-                else
-                {
-                    lblTimer.Text = time_to_execute.Hours.ToString() + " hour(s) " +
-                        time_to_execute.Minutes.ToString() + " min(s) " + time_to_execute.Seconds.ToString() + " second(s) ";
-                }
+                lblTimer.Text = FormHelpers.FormatElapsed(time_to_execute);
                 lblTimer.Update();
             }
             catch (Exception ex)

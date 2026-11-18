@@ -191,12 +191,6 @@
     <Compile Include="Compare_Multiples_Forms.Designer.cs">
       <DependentUpon>Compare_Multiples_Forms.cs</DependentUpon>
     </Compile>
-    <Compile Include="ComparisonProcessWindow.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ComparisonProcessWindow.Designer.cs">
-      <DependentUpon>ComparisonProcessWindow.cs</DependentUpon>
-    </Compile>
     <Compile Include="CustomisedExcel.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -227,12 +221,6 @@
     </Compile>
     <Compile Include="SPIDeltaChangeTrackerOptimised.Designer.cs">
       <DependentUpon>SPIDeltaChangeTrackerOptimised.cs</DependentUpon>
-    </Compile>
-    <Compile Include="UserControlDataBase.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="UserControlDataBase.Designer.cs">
-      <DependentUpon>UserControlDataBase.cs</DependentUpon>
     </Compile>
     <Compile Include="ExcelFileReadCustomControl.cs">
       <SubType>UserControl</SubType>
@@ -283,6 +271,7 @@
       <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
     </Compile>
     <Compile Include="AppVersion.cs" />
+    <Compile Include="FormHelpers.cs" />
     <Compile Include="FormScreenshots.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="UiTheme.cs" />
@@ -359,9 +348,6 @@
     <EmbeddedResource Include="Compare_Multiples_Forms.resx">
       <DependentUpon>Compare_Multiples_Forms.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="ComparisonProcessWindow.resx">
-      <DependentUpon>ComparisonProcessWindow.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="CustomisedExcel.resx">
       <DependentUpon>CustomisedExcel.cs</DependentUpon>
     </EmbeddedResource>
@@ -376,9 +362,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="SPIDeltaChangeTrackerOptimised.resx">
       <DependentUpon>SPIDeltaChangeTrackerOptimised.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="UserControlDataBase.resx">
-      <DependentUpon>UserControlDataBase.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ExcelFileReadCustomControl.resx">
       <DependentUpon>ExcelFileReadCustomControl.cs</DependentUpon>

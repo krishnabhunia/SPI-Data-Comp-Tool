@@ -465,37 +465,11 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (!(dataTable.Columns.Contains("CompleteName")))
+                string str_lastName = FormHelpers.FillTableNames(comboBox, dataTable, str_dbType);
+                if (str_lastName != null)
                 {
-                    dataTable.Columns.Add("CompleteName");
+                    str_tableName = str_lastName;
                 }
-                List<string> lst_str_fill = new List<string>();
-
-                if (str_dbType == "oracle")
-                {
-                    foreach (DataRow dr in dataTable.Rows)
-                    {
-                        str_tableName = $"{dr["OWNER"].ToString()}.{dr["TABLE_NAME"].ToString()}";
-                        lst_str_fill.Add(str_tableName);
-                        dr["CompleteName"] = str_tableName;
-                    }
-                }
-                else if (str_dbType == "sql")
-                {
-                    foreach (DataRow dr in dataTable.Rows)
-                    {
-                        str_tableName = $"{dr["TABLE_CATALOG"].ToString()}.{dr["TABLE_SCHEMA"].ToString()}.{dr["TABLE_NAME"].ToString()}";
-                        lst_str_fill.Add(str_tableName);
-                        dr["CompleteName"] = str_tableName;
-                    }
-                }
-
-                AutoCompleteStringCollection autoCompleteStringCollection = new AutoCompleteStringCollection();
-                autoCompleteStringCollection.AddRange(lst_str_fill.ToArray());
-                comboBox.AutoCompleteCustomSource = autoCompleteStringCollection;
-                comboBox.AutoCompleteSource = AutoCompleteSource.CustomSource;
-                comboBox.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-                comboBox.DataSource = dataTable;
                 DisplayMemberInComboBox();
             }
             catch (Exception ex)
@@ -1685,12 +1659,12 @@ namespace SPI_Data_Comp_Tool
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target Oracle...");
 
-                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
                 }
                 else if (rb_TRG_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target SQL...");
-                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
                 }
                 Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_TRG.strConnectionMSG, (!dBConnectionStatus_TRG.boolConnection), -1, Color.DarkBlue);
 

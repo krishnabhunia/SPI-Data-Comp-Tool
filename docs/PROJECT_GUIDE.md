@@ -75,6 +75,7 @@ flowchart TD
 - Layout is generated: each window has a short description in `tools/layouts/<Form>.py`, and `python tools/layout_gen.py tools/layouts/<Form>.py` rewrites its `*.Designer.cs`. Controls sit in `TableLayoutPanel` / `FlowLayoutPanel` cells, so they are evenly spread and grow with the window; every control keeps its name, events and settings, so no logic changes. CI fails if a designer file no longer matches its description (`--check`).
 - Look: `UiTheme.Apply(this, mainButton)` at the end of each constructor gives the Windows 11 style - Segoe UI 9, light-grey window, white group boxes, flat buttons, one blue main button and the app icon. `UiTheme.SetIcon(this)` only sets the icon.
 - Converted so far: main window (shows the version in its status line), Compare DB (template for the Source/Target windows), User Settings. The rest follow in batches.
+- Shared code: `FormHelpers` holds the helpers several windows used to copy (status text and errors, elapsed time, summary transpose, Excel table formatting, table pickers). A window keeps a short wrapper with its own error handling and calls the helper; add new shared logic there instead of copying it.
 
 ## Versioning and CI artifacts
 Versions are automatic - nobody edits a version number by hand. `tools/release.py` works it out in CI:

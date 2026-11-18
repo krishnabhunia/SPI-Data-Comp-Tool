@@ -256,8 +256,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                control.Text = str_Msg;
-                control.Update();
+                FormHelpers.ShowText(control, str_Msg);
             }
             catch (Exception ex)
             {
@@ -269,9 +268,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                control.Text = str_Msg;
-                control.ForeColor = color;
-                control.Update();
+                FormHelpers.ShowText(control, str_Msg, color);
             }
             catch (Exception ex)
             {

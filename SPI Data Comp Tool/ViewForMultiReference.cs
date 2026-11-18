@@ -193,31 +193,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                dt_transpose = new DataTable();
-                dt_transpose.Columns.Add(dt_summarised_difference.Columns[0].ColumnName.ToString());
-
-                foreach (DataRow dr in dt_summarised_difference.Rows)
-                {
-                    string str_newColName = dr[0].ToString();
-                    dt_transpose.Columns.Add(str_newColName);
-                }
-
-                for (int rCount = 1; rCount <= dt_summarised_difference.Columns.Count - 1; rCount++)
-                {
-                    DataRow dr = dt_transpose.NewRow();
-
-                    dr[0] = dt_summarised_difference.Columns[rCount].ColumnName.ToString();
-
-                    for (int cCount = 0; cCount <= dt_summarised_difference.Rows.Count - 1; cCount++)
-                    {
-                        string str_colValue = dt_summarised_difference.Rows[cCount][rCount].ToString();
-                        dr[cCount + 1] = str_colValue;
-                    }
-                    dt_transpose.Rows.Add(dr);
-                }
-                dt_transpose.Columns[0].ColumnName = "Column Names";
-                dt_transpose.Columns[1].ColumnName = "Summarize Count";
-
+                dt_transpose = FormHelpers.Transpose(dt_summarised_difference);
             }
             catch (Exception ex)
             {
