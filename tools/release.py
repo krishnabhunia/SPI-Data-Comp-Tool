@@ -21,8 +21,15 @@ Change type (first match wins):
 Commands (run from the repository root):
   python tools/release.py plan [--reserve]    writes version, tag, prerelease, bump to $GITHUB_OUTPUT
   python tools/release.py stamp VERSION       writes the version into Properties/AssemblyInfo.cs
-Environment for plan: EVENT_NAME, PR_TITLE, PR_BODY, PR_LABELS (comma list), HEAD_SHA,
+  python tools/release.py comment STATE       prints the text CI keeps on the PR; STATE is beta, stable
+                                              or outdated (a normal version of the same number came out
+                                              while the beta was building, so the beta is not published)
+Environment for plan: EVENT_NAME, PR_TITLE, PR_BODY, PR_LABELS (comma list), PR_NUMBER, HEAD_SHA,
   GITHUB_REPOSITORY, GH_TOKEN (to find the merged PR of a push).
+Environment for comment: GITHUB_REPOSITORY, TAG, HEAD_SHA.
+
+The version is never typed into a PR title: CI writes it on the PR (one comment, kept up to date)
+and in the name of the Publish check.
 """
 import json
 import os
@@ -132,6 +139,55 @@ def stamp_text(text, version):
     return text
 
 
+COMMENT_MARKER = "<!-- spi-version -->"
+
+
+def release_assets(version):
+    """(what it is, file name) of the files CI puts on a release page."""
+    return [
+        ("64-bit installer", f"SPI_Data_Comp_Tool_{version}_x64_setup.exe"),
+        ("Portable + installer (zip)", f"SPI_Data_Comp_Tool_{version}.zip"),
+        ("Checksums (SHA-256)", f"SPI_Data_Comp_Tool_{version}.zip.sha256"),
+        ("Screenshots of every window", f"SPI_Data_Comp_Tool_{version}_screenshots.zip"),
+    ]
+
+
+def comment_body(state, repo, tag, sha):
+    """The text CI keeps on the pull request, so the version is read there and not typed into the title."""
+    p = parse_tag(tag)
+    if not p:
+        raise SystemExit(f"bad tag {tag}")
+    version, stable, short = tag[1:], "v" + fmt(p[:3]), sha[:7]
+    base = f"https://github.com/{repo}/releases"
+    lines = [COMMENT_MARKER]
+    if state == "outdated":
+        lines += [
+            f"### No beta for commit `{short}`",
+            "",
+            f"`{stable}` was released while this build was running, so `{tag}` was **not published** "
+            "(a beta must not appear after the normal version with the same number).",
+            "",
+            "Re-run the workflow (Re-run all jobs) or push a new commit to get the next beta.",
+        ]
+        return "\n".join(lines) + "\n"
+    if state == "beta":
+        lines += [f"### Beta version: `{tag}`", "", f"Built from commit `{short}` · pre-release · [release page]({base}/tag/{tag})"]
+    elif state == "stable":
+        lines += [f"### Released as `{tag}`", "", f"Merged to master as commit `{short}` · latest release · [release page]({base}/tag/{tag})"]
+    else:
+        raise SystemExit(f"unknown comment state {state}")
+    lines += ["", "| SrNo. | Download | File |", "|---|---|---|"]
+    for i, (what, name) in enumerate(release_assets(version), 1):
+        lines.append(f"| {i} | {what} | [{name}]({base}/download/{tag}/{name}) |")
+    if state == "beta":
+        lines += [
+            "",
+            "The normal version is generated when this PR is merged to master. Its number is worked out "
+            "at merge time, so it can differ from this beta's number if another PR is merged first.",
+        ]
+    return "\n".join(lines) + "\n"
+
+
 # ---------- git / GitHub ----------
 
 def git(*args):
@@ -159,9 +215,11 @@ def plan(reserve):
     head = os.environ.get("HEAD_SHA") or git("rev-parse", "HEAD").strip()
     title, body = os.environ.get("PR_TITLE", ""), os.environ.get("PR_BODY", "")
     labels = os.environ.get("PR_LABELS", "").split(",")
+    pr_number = os.environ.get("PR_NUMBER", "") if event == "pull_request" else ""
     if event == "push":
         pr = merged_pr(head)
         if pr:
+            pr_number = str(pr.get("number", ""))
             title, body = pr.get("title", ""), pr.get("body") or ""
             labels = [l["name"] for l in pr.get("labels", [])]
         else:
@@ -194,7 +252,7 @@ def plan(reserve):
         full, pre = fmt(version), "false"
     else:  # manual run: show what the next release would be, publish nothing
         full, pre = fmt(version) + "-manual", "true"
-    out = {"version": full, "tag": "v" + full, "prerelease": pre, "bump": kind, "base": fmt(base), "head": head}
+    out = {"version": full, "tag": "v" + full, "prerelease": pre, "bump": kind, "base": fmt(base), "head": head, "pr": pr_number}
     print(json.dumps(out, indent=1))
     gh_out = os.environ.get("GITHUB_OUTPUT")
     if gh_out:
@@ -210,6 +268,8 @@ def main(argv):
         text = ASSEMBLY_INFO.read_text(encoding="utf-8-sig")
         ASSEMBLY_INFO.write_text(stamp_text(text, argv[2].replace("-manual", "")), encoding="utf-8-sig")
         print(f"stamped {argv[2]}")
+    elif len(argv) == 3 and argv[1] == "comment":
+        sys.stdout.write(comment_body(argv[2], os.environ["GITHUB_REPOSITORY"], os.environ["TAG"], os.environ["HEAD_SHA"]))
     else:
         print(__doc__)
         return 2
