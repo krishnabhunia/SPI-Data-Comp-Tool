@@ -9,6 +9,32 @@ PROJ = ROOT / "SPI Data Comp Tool"
 
 
 class WorkflowGuards(unittest.TestCase):
+    def test_windows_build_keeps_checks_and_logs_without_custom_summary(self):
+        workflow = (ROOT / ".github/workflows/build.yml").read_text()
+        windows = workflow.split("  windows-build:\n", 1)[1].split("\n  release:\n", 1)[0]
+        self.assertNotIn("GITHUB_STEP_SUMMARY", windows)
+        for step in ("Build desktop application", "UI workflow regression checks", "Open every window",
+                     "Package portable build", "Portable build is one exe (libraries embedded)",
+                     "Build 64-bit application", "Build 64-bit installer",
+                     "Test the installer (silent install, check, uninstall)"):
+            with self.subTest(step=step):
+                self.assertIn("- name: " + step, windows)
+        self.assertIn("Get-Content $log | ForEach-Object { Write-Host $_ }", windows)
+        self.assertIn('Write-Host "Opened $ok of $($forms.Count) windows"', windows)
+        self.assertIn('Write-Host "::error::window did not open: $x"', windows)
+        self.assertIn("if ($failed) { throw", windows)
+        self.assertIn('Write-Host "64-bit installer: installed, 64-bit exe, no DLL files, libraries load, uninstalled cleanly"', windows)
+        self.assertIn("actions/upload-artifact@v6", windows)
+
+    def test_release_and_version_summaries_are_preserved(self):
+        workflow = (ROOT / ".github/workflows/build.yml").read_text()
+        release = workflow.split("\n  release:\n", 1)[1]
+        self.assertEqual(release.count("GITHUB_STEP_SUMMARY"), 3)
+        self.assertIn('echo "### Not published: ${TAG}', release)
+        self.assertIn('echo "### Released ${TAG}"', release)
+        self.assertIn('cat "${RUNNER_TEMP}/version-comment.md" >> "$GITHUB_STEP_SUMMARY"', release)
+        self.assertIn("needs: [version, windows-build, documentation, secrets-guard]", release)
+
     def test_actions_keep_the_reviewed_major_version_policy(self):
         workflow = (ROOT / ".github/workflows/build.yml").read_text()
         actions = re.findall(r"uses:\s+([^\s]+)", workflow)

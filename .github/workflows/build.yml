@@ -139,7 +139,7 @@ jobs:
           $log = Join-Path $PWD 'ui-workflow-checks.txt'
           $p = Start-Process $exe -ArgumentList '--check-ui', "`"$log`"" -PassThru
           if (-not $p.WaitForExit(60000)) { Stop-Process -Id $p.Id -Force; throw 'UI workflow checks timed out' }
-          if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_; "- $_" >> $env:GITHUB_STEP_SUMMARY } }
+          if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
           if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'UI workflow checks failed' }
       - name: Open every window
         shell: pwsh
@@ -161,8 +161,7 @@ jobs:
           if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
           $ok = $forms.Count - $failed.Count
           Write-Host "Opened $ok of $($forms.Count) windows"
-          "### Windows opened: $ok of $($forms.Count)" >> $env:GITHUB_STEP_SUMMARY
-          foreach ($x in $failed) { Write-Host "::error::window did not open: $x"; "- did not open: $x" >> $env:GITHUB_STEP_SUMMARY }
+          foreach ($x in $failed) { Write-Host "::error::window did not open: $x" }
           if ($failed) { throw "$($failed.Count) window(s) did not open" }
       - name: Package portable build
         shell: pwsh
@@ -193,8 +192,6 @@ jobs:
           $log = Join-Path $env:RUNNER_TEMP 'portable-assemblies.txt'
           $p = Start-Process $exe -ArgumentList '--check-assemblies', "`"$log`"" -Wait -PassThru
           Get-Content $log | ForEach-Object { Write-Host $_ }
-          "### Portable: libraries load from the exe" >> $env:GITHUB_STEP_SUMMARY
-          Get-Content $log | ForEach-Object { "- $_" } >> $env:GITHUB_STEP_SUMMARY
           if ($p.ExitCode -ne 0) { throw 'a library failed to load from the portable exe' }
       - name: Build 64-bit application
         shell: pwsh
@@ -235,7 +232,7 @@ jobs:
           Start-Process (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
           for ($i = 0; $i -lt 30 -and (Test-Path $exe); $i++) { Start-Sleep 1 }
           if (Test-Path $exe) { throw 'uninstall left the exe behind' }
-          "### 64-bit installer: installed, 64-bit exe, no DLL files, libraries load, uninstalled cleanly" >> $env:GITHUB_STEP_SUMMARY
+          Write-Host "64-bit installer: installed, 64-bit exe, no DLL files, libraries load, uninstalled cleanly"
       - uses: actions/upload-artifact@v6
         with:
           name: SPI_Data_Comp_Tool_${{ steps.ver.outputs.version }}
