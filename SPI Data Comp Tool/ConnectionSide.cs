@@ -55,6 +55,7 @@ namespace SPI_Data_Comp_Tool
             User = Field();
             Password = Field();
             Password.UseSystemPasswordChar = true;
+            NameFields();
 
             TableLayoutPanel grid = new TableLayoutPanel
             {
@@ -90,7 +91,7 @@ namespace SPI_Data_Comp_Tool
         public string Title
         {
             get { return title; }
-            set { title = value; ApplyPlatform(); }
+            set { title = value; NameFields(); ApplyPlatform(); }
         }
 
         private bool sqlServerOnly;
@@ -195,6 +196,25 @@ namespace SPI_Data_Comp_Tool
             Database.Text = database;
             User.Text = user;
             Password.Text = password;
+        }
+
+        /// <summary>
+        /// Names the text boxes after their half and caption ("Source data source"), so the
+        /// "… is not validated" messages and screen readers say which box is meant.
+        /// </summary>
+        private void NameFields()
+        {
+            NameField(Port, "port");
+            NameField(DataSource, "data source");
+            NameField(Database, "database");
+            NameField(User, "username");
+            NameField(Password, "password");
+        }
+
+        private void NameField(TextBox box, string caption)
+        {
+            box.Name = title + " " + caption;
+            box.AccessibleName = box.Name;
         }
 
         private static TextBox Field()

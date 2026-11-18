@@ -1489,18 +1489,13 @@ namespace SPI_Data_Comp_Tool
         public string str_RuleSource { get; private set; }
         public string str_RuleTarget { get; private set; }
 
-        private DataView dv;
 
         private DataRow[] dR_array;
 
-        private Common_Data common_Data;
 
-        private string str_SRC_end;
-        private string str_TRG_end;
         private string str_SRC;
         private string str_TRG;
         private int int_no_of_Character;
-        private DataTable dt_src;
 
         private bool boolCheckWithoutEndCharacters(string str_char, string str_Source, string str_Target)
         {
@@ -2548,11 +2543,8 @@ namespace SPI_Data_Comp_Tool
 
     public class WriteExcel
     {
-        private static int progress = 0;
         private static int totalProgress;
-        private static int percentage;
         private static int int_low = 0;
-        private static int int_high = 0;
         public static bool ExportToExcel(DataTable dataTable, string strSheetName, string strPathFileName)
         {
             try
@@ -2650,7 +2642,6 @@ namespace SPI_Data_Comp_Tool
                     ++int_low;
                     qCP = queryColorpairMS.AsQueryable<ColorPairMultiSheet>().Where(x => x.int_sheet_no == int_low);
 
-                    progress = 0;
                     foreach (var cell in worksheet.Cells[1, 1, 1, worksheet.Dimension.End.Column])
                     {
                         IQueryable<ColorPairMultiSheet> queryIqueryable = qCP.Where(cp => cp.str_Col_Name.ToLower() == cell.Value.ToString().ToLower());

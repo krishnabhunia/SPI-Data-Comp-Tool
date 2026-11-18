@@ -50,7 +50,6 @@ namespace SPI_Data_Comp_Tool
         private OleDbDataAdapter oda;// = new OleDbDataAdapter(Query, Econ);
         private DataTable dt_firstTable;
         private DataTable dt_secondTable;
-        private DataTable dt_returnDataTable;
         private OpenFileDialogData ofdd;
         private DataTable dt_firstTableOnly;
         private DataTable dt_secondTableOnly;
@@ -66,7 +65,7 @@ namespace SPI_Data_Comp_Tool
         DateTime dateTime1;// = new DateTime();
 
         private bool boolValidate, boolInstrumentFileGenerationStatus;
-        private bool boolFileSelected, boolCompareResult, boolRules, boolRulesCheck, boolInclude;
+        private bool boolRules, boolInclude;
 
         private Exception myException;
         private TimeSpan timerDuration;
@@ -110,11 +109,9 @@ namespace SPI_Data_Comp_Tool
         private List<ColorPair> colorPairs;
         private List<ColorPairMultiSheet> colorPairsMultiSheet;
         private ExcelWorksheet worksheet;
-        private IEnumerable<ColorPair> queryIenumerable;
         private IQueryable<ColorPair> queryIqueryable;
         private IQueryable<ColorPair> queryColorpair;
         private IQueryable<ColorPairMultiSheet> queryColorpairMS;
-        private string strFileName, strFolderPath;
         private Exception myException_BG;
 
         private StringComparison stringComparisonTypeOrdincalCase;
@@ -142,8 +139,6 @@ namespace SPI_Data_Comp_Tool
 
             Econ = new OleDbConnection();
             ds = new DataSet();
-
-            excelApp = new _Excel.Application();
 
             ofdd = new OpenFileDialogData();
             openFileDialogData = new OpenFileDialogData();
@@ -375,6 +370,24 @@ namespace SPI_Data_Comp_Tool
             return dsResult.Tables[0];
         }
 
+        // Close the workbook and quit Excel so no EXCEL.EXE is left running.
+        private void ReleaseExcel()
+        {
+            if (excelWorksheet != null) { System.Runtime.InteropServices.Marshal.ReleaseComObject(excelWorksheet); excelWorksheet = null; }
+            if (excelWorkbook != null)
+            {
+                excelWorkbook.Close(false);
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(excelWorkbook);
+                excelWorkbook = null;
+            }
+            if (excelApp != null)
+            {
+                excelApp.Quit();
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(excelApp);
+                excelApp = null;
+            }
+        }
+
         private DataSet LoadExcel(string str_file_to_load_path, string dataTableName)
         {
             try
@@ -385,9 +398,16 @@ namespace SPI_Data_Comp_Tool
                 #region add select query to select the data from this Excel sheet and open this Excel connection
 
                 excelApp = new _Excel.Application();
-                excelWorkbook = excelApp.Workbooks.Open(str_file_to_load_path, 0, true, 5, "", "", true, _Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
-                excelWorksheet = (_Excel.Worksheet)excelWorkbook.Sheets[1];
-                str_wsName = excelWorksheet.Name;
+                try
+                {
+                    excelWorkbook = excelApp.Workbooks.Open(str_file_to_load_path, 0, true, 5, "", "", true, _Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
+                    excelWorksheet = (_Excel.Worksheet)excelWorkbook.Sheets[1];
+                    str_wsName = excelWorksheet.Name;
+                }
+                finally
+                {
+                    ReleaseExcel();
+                }
 
                 strQuery = string.Format("Select * FROM [{0}]", str_wsName + "$");
 
@@ -2189,31 +2209,6 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                int test = 0;
-                for (int i = 0; i < 100; i++)
-                {
-                    if (i > 50)
-                    {
-                        continue;
-                        test = i;
-                    }
-                    test = i;
-                }
-
-                Console.WriteLine(test);
-
-                int test1 = 0;
-                for (int i = 0; i < 100; i++)
-                {
-                    if (i > 50)
-                    {
-                        test1 = i;
-                        break;
-                    }
-                    test1 = i;
-                }
-
-                Console.WriteLine(test1);
 
                 //changeEnabledStatus(false);
                 //dateTime1 = DateTime.Now;
