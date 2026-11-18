@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -19,6 +19,11 @@ namespace SPI_Data_Comp_Tool
         public static readonly Color AccentHover = Color.FromArgb(0, 84, 163);
         public static readonly Color TextColor = Color.FromArgb(26, 26, 26);
         public static readonly Color MutedText = Color.FromArgb(90, 90, 90);
+        public static readonly Color AccentPressed = Color.FromArgb(0, 70, 140);
+        // Disabled buttons: Windows would draw their text light grey (unreadable, worst on the blue
+        // main button), so every button paints its own disabled look: dark grey on light grey (6:1).
+        public static readonly Color DisabledBack = Color.FromArgb(232, 232, 232);
+        public static readonly Color DisabledText = Color.FromArgb(96, 96, 96);
 
         private static Icon appIcon;
 
@@ -45,12 +50,37 @@ namespace SPI_Data_Comp_Tool
             foreach (var b in mainButtons)
             {
                 if (b == null) continue;
-                b.BackColor = Accent;
-                b.ForeColor = Color.White;
-                b.FlatAppearance.BorderColor = Accent;
-                b.FlatAppearance.MouseOverBackColor = AccentHover;
                 b.Font = new Font(b.Font, FontStyle.Bold);
+                b.FlatAppearance.MouseOverBackColor = AccentHover;
+                b.FlatAppearance.MouseDownBackColor = AccentPressed;
+                ColorMainButton(b);
+                b.EnabledChanged += (s, e) => ColorMainButton((Button)s);
             }
+        }
+
+        /// <summary>Main button: white on blue while it can be clicked; the plain disabled look otherwise.</summary>
+        private static void ColorMainButton(Button b)
+        {
+            b.BackColor = b.Enabled ? Accent : DisabledBack;
+            b.ForeColor = b.Enabled ? Color.White : DisabledText;
+            b.FlatAppearance.BorderColor = b.Enabled ? Accent : Border;
+        }
+
+        /// <summary>Draws a disabled button with readable text instead of Windows' light-grey text.</summary>
+        private static void PaintDisabled(object sender, PaintEventArgs e)
+        {
+            var b = (Button)sender;
+            if (b.Enabled) return;
+            var area = b.ClientRectangle;
+            using (var back = new SolidBrush(DisabledBack))
+            using (var border = new Pen(Border))
+            {
+                e.Graphics.FillRectangle(back, area);
+                e.Graphics.DrawRectangle(border, area.X, area.Y, area.Width - 1, area.Height - 1);
+            }
+            TextRenderer.DrawText(e.Graphics, b.Text, b.Font, area, DisabledText, DisabledBack,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak |
+                TextFormatFlags.EndEllipsis);
         }
 
         private static void Style(Control.ControlCollection controls)
@@ -69,7 +99,10 @@ namespace SPI_Data_Comp_Tool
                         b.ForeColor = TextColor;
                         b.FlatAppearance.BorderColor = Border;
                         b.FlatAppearance.MouseOverBackColor = Color.FromArgb(235, 243, 252);
+                        b.FlatAppearance.MouseDownBackColor = Color.FromArgb(215, 230, 247);
                         b.Cursor = Cursors.Hand;
+                        b.Paint -= PaintDisabled;
+                        b.Paint += PaintDisabled;
                         break;
                     case TextBox t:
                         t.BorderStyle = BorderStyle.FixedSingle;
