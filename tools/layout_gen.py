@@ -96,6 +96,11 @@ FORM_DROP = {"ClientSize", "AutoScroll", "Font", "AutoScaleDimensions", "AutoSca
              "MaximumSize", "StartPosition", "AutoScrollMinSize", "Padding"}
 
 
+def qualify(tp):
+    """WinForms type names get their namespace; our own controls (new="SPI_Data_Comp_Tool.X") stay as given."""
+    return tp if "." in tp else WF + tp
+
+
 def cs(text):
     return text.replace("\\", "\\\\").replace('"', '\\"')
 
@@ -201,6 +206,9 @@ def generate(spec_path):
         return any(re.search(rf"this\.{re.escape(d)}\b", stmt) for d in drop)
 
     form_stmts = [x for x in form_stmts if not mentions_dropped(x)]
+    if getattr(spec, "TITLE", None) is not None:  # window title bar text
+        form_stmts = [x for x in form_stmts if not re.match(r"^\s*this\.Text = ", x)]
+        form_stmts.append(f'            this.Text = "{cs(spec.TITLE)}";')
     for k in list(per_ctrl):
         per_ctrl[k] = [x for x in per_ctrl[k] if not (mentions_dropped(x) and not x.strip().startswith(f"this.{k}."))
                        or not mentions_dropped(x.replace(f"this.{k}.", "", 1))]
@@ -218,7 +226,7 @@ def generate(spec_path):
     for n in managed:
         nd = info[n][0]
         tp = {"table": "TableLayoutPanel", "flow": "FlowLayoutPanel"}.get(nd.kind) or nd.o["new"]
-        out.append(f"{I}this.{n} = new {WF}{tp}();")
+        out.append(f"{I}this.{n} = new {qualify(tp)}();")
     containers = [n for n in order if info[n][0].kind in ("table", "flow", "group")]
     frozen_containers = [n for n, tp in field_types.items() if frozen(n) and tp.split(".")[-1] in CONTAINERS]
     for n in init_begin:
@@ -370,7 +378,7 @@ def generate(spec_path):
     new_tail = tail
     for n in drop:
         new_tail = re.sub(rf"^\s*private [\w\.]+ {n};\s*\n", "", new_tail, flags=re.M)
-    decl = "".join(f"        private {WF}{ {'table': 'TableLayoutPanel', 'flow': 'FlowLayoutPanel'}.get(info[n][0].kind) or info[n][0].o['new']} {n};\n"
+    decl = "".join(f"        private {qualify({'table': 'TableLayoutPanel', 'flow': 'FlowLayoutPanel'}.get(info[n][0].kind) or info[n][0].o['new'])} {n};\n"
                    for n in new_nodes)
     if decl and "#endregion" in new_tail:
         new_tail = new_tail.replace("        #endregion\n", "        #endregion\n\n" + decl, 1)

@@ -6,17 +6,19 @@ FORM_NAME = "DB_Comparison_Form"
 CLIENT = (1180, 700)
 MINIMUM = (980, 620)
 FROZEN = ["groupBox15", "groupBox16"]          # hidden helper boxes the code still uses; left untouched
-DROP = ["groupBox12", "groupBox13", "gb_Source", "gb_Target"]   # empty wrappers, not used by the code
+DROP = ["groupBox12", "groupBox13", "gb_Source", "gb_Target",   # empty wrappers, not used by the code
+        # now inside the shared ConnectionPanel (the window reaches them through properties of the same names)
+        "gb_Source1", "gb_Target1", "rb_SRC_oracle", "rb_SRC_SQL", "cb_WindowAuthentication_SRC", "cb_SRC_DefaultPort",
+        "tb_SRC_DefaultPort", "tb_SRC_DataSource", "tb_SRC_DBName", "tb_SRC_UserName", "tb_SRC_Password", "rb_TRG_Oracle",
+        "rb_TRG_SQL", "cb_WindowAuthentication_TRG", "cb_TRG_DefaultPort", "tb_TRG_DefaultPort", "tb_TRG_DataSource", "tb_TRG_DBName",
+        "tb_TRG_UserName", "tb_TRG_Password", "btn_Copy_SRC_TRG", "btn_TRG_SRC", "cb_UserProfileList", "label15",
+        "label3", "label5", "label7", "label9", "label2", "label4",
+        "label6", "label8", "lbl_SRC_Platform", "lbl_SRC_Port", "lbl_TRG_Platform", "lbl_TRG_Port"]
 
 TEXTS = {
-    "groupBox14": "Connection", "label15": "User profile", "cb_FullName": "Show full names in lists",
-    "gb_Source1": "Source · Oracle", "gb_Target1": "Target · Oracle",
-    "cb_WindowAuthentication_SRC": "Windows authentication", "cb_SRC_DefaultPort": "Default port",
-    "cb_WindowAuthentication_TRG": "Windows authentication", "cb_TRG_DefaultPort": "Default port",
-    "label3": "Data source", "label5": "Database", "label7": "Username", "label9": "Password", "label16": "Schema / table",
-    "label2": "Data source", "label4": "Database", "label6": "Username", "label8": "Password", "label17": "Schema / table",
-    "btn_Load_SRC_Table": "Load tables", "btn_Copy_SRC_TRG": "Copy to Target ›",
-    "btn_Load_TRG_Table": "Load tables", "btn_TRG_SRC": "‹ Copy to Source",
+    "groupBox14": "Connection", "cb_FullName": "Show full names in lists",
+    "label16": "Source table", "label17": "Target table",
+    "btn_Load_SRC_Table": "Load tables", "btn_Load_TRG_Table": "Load tables",
     "groupBox3": "Compare", "cb_ColumnMapping": "Different column names / RefID comparison",
     "cb_IncludeRule": "Include rules", "btn_RuleForm": "Open rules…", "cb_IgnoreCase": "Ignore case",
     "btn_Connect_Reference_ID": "1   Connect and load", "btn_Set": "2   Set and validate",
@@ -38,35 +40,20 @@ LABEL = dict(autosize=True, anchor="Left", margin=(0, 3, 12, 3))
 FIELD = dict(anchor="Left, Right", margin=(0, 3, 0, 3))
 
 
-def connection(side, rb_oracle, rb_sql, cb_auth, cb_port, tb_port, rows, buttons):
-    cells = [
-        (C(f"lbl_{side}_Platform", new="Label", text="Platform", **LABEL), 0, 0),
-        (F(f"flp_{side}_Platform", [C(rb_oracle, autosize=True, margin=(0, 3, 16, 3)),
-                                     C(rb_sql, autosize=True, margin=(0, 3, 0, 3))], margin=0), 1, 0),
-        (F(f"flp_{side}_Options", [C(cb_auth, autosize=True, margin=(0, 3, 16, 3)),
-                                    C(cb_port, autosize=True, margin=(0, 3, 0, 3))], margin=0), 1, 1),
-        (C(f"lbl_{side}_Port", new="Label", text="Port", **LABEL), 0, 2),
-        (C(tb_port, anchor="Left", size=(90, 23), margin=(0, 3, 0, 3)), 1, 2),
-    ]
-    r = 3
-    for label, field in rows:
-        cells += [(C(label, **LABEL), 0, r), (C(field, **FIELD), 1, r)]
-        r += 1
-    cells.append((F(f"flp_{side}_Buttons", [C(b, size=(w, 30), margin=(8, 8, 0, 0)) for b, w in buttons],
-                    anchor="Right", margin=0), 0, r, 2))
-    return T(f"tlp_{side}", cols=["auto", "100%"], rows=["auto"] * (r + 1), autosize=True, cells=cells)
+def table_picker(name, label, combo, button):
+    return T(name, cols=["auto", "100%", "auto"], rows=["auto"], autosize=True, cells=[
+        (C(label, **LABEL), 0, 0),
+        (C(combo, **FIELD), 1, 0),
+        (C(button, size=(110, 30), margin=(8, 0, 0, 0)), 2, 0),
+    ])
 
 
-SOURCE = connection("SRC", "rb_SRC_oracle", "rb_SRC_SQL", "cb_WindowAuthentication_SRC", "cb_SRC_DefaultPort",
-                    "tb_SRC_DefaultPort",
-                    [("label3", "tb_SRC_DataSource"), ("label5", "tb_SRC_DBName"), ("label7", "tb_SRC_UserName"),
-                     ("label9", "tb_SRC_Password"), ("label16", "cb_SRC_TableName")],
-                    [("btn_Load_SRC_Table", 110), ("btn_Copy_SRC_TRG", 130)])
-TARGET = connection("TRG", "rb_TRG_Oracle", "rb_TRG_SQL", "cb_WindowAuthentication_TRG", "cb_TRG_DefaultPort",
-                    "tb_TRG_DefaultPort",
-                    [("label2", "tb_TRG_DataSource"), ("label4", "tb_TRG_DBName"), ("label6", "tb_TRG_UserName"),
-                     ("label8", "tb_TRG_Password"), ("label17", "cb_TRG_TableName")],
-                    [("btn_TRG_SRC", 130), ("btn_Load_TRG_Table", 110)])
+# the Source and Target pickers line up under the panel's two halves (its Copy column is 100 px)
+TABLES = T("tlp_Tables", cols=["50%", "100", "50%"], rows=["auto", "auto"], autosize=True, cells=[
+    (table_picker("tlp_SRC_Table", "label16", "cb_SRC_TableName", "btn_Load_SRC_Table"), 0, 0),
+    (table_picker("tlp_TRG_Table", "label17", "cb_TRG_TableName", "btn_Load_TRG_Table"), 2, 0),
+    (C("cb_FullName", autosize=True, anchor="Left", margin=(0, 6, 0, 0)), 0, 1, 3),
+], margin=(0, 8, 0, 0))
 
 COMPARE = T("tlp_Compare", cols=["50%", "50%"], rows=["auto"] * 7 + ["100%", "auto", "auto"], cells=[
     (C("cb_ColumnMapping", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 0, 2),
@@ -112,12 +99,9 @@ PROGRESS = T("tlp_Progress", cols=["100%", "auto", "auto", "auto"], rows=["auto"
 
 LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "100%", "auto"], cells=[
     (T("tlp_Top", cols=["100%", "320"], rows=["auto"], autosize=True, dock="Fill", cells=[
-        (G("groupBox14", T("tlp_Connection", cols=["50%", "50%"], rows=["auto", "auto"], autosize=True, cells=[
-            (F("flp_Profile", [C("label15", autosize=True, margin=(0, 6, 8, 0)),
-                               C("cb_UserProfileList", size=(320, 23), margin=(0, 2, 0, 2)),
-                               C("cb_FullName", autosize=True, margin=(16, 5, 0, 0))], margin=(0, 0, 0, 6)), 0, 0, 2),
-            (G("gb_Source1", SOURCE, autosize=True, margin=(0, 0, 6, 0)), 0, 1),
-            (G("gb_Target1", TARGET, autosize=True, margin=(6, 0, 0, 0)), 1, 1),
+        (G("groupBox14", T("tlp_Connection", cols=["100%"], rows=["auto", "auto"], autosize=True, cells=[
+            (C("connection", new="SPI_Data_Comp_Tool.ConnectionPanel", anchor="Left, Right", autosize=True, margin=0), 0, 0),
+            (TABLES, 0, 1),
         ]), autosize=True, margin=(0, 0, 12, 0)), 0, 0),
         (G("groupBox3", COMPARE, margin=0), 1, 0),
     ]), 0, 0),

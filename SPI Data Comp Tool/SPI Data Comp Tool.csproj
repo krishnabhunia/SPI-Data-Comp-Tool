@@ -271,6 +271,10 @@
       <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
     </Compile>
     <Compile Include="AppVersion.cs" />
+    <Compile Include="ConnectionPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ConnectionSide.cs" />
     <Compile Include="FormHelpers.cs" />
     <Compile Include="FormScreenshots.cs" />
     <Compile Include="Program.cs" />
