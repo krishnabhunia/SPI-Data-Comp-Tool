@@ -263,37 +263,11 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (!(dataTable.Columns.Contains("CompleteName")))
+                string str_lastName = FormHelpers.FillTableNames(comboBox, dataTable, str_dbType);
+                if (str_lastName != null)
                 {
-                    dataTable.Columns.Add("CompleteName");
+                    str_tableName = str_lastName;
                 }
-                List<string> lst_str_fill = new List<string>();
-
-                if (str_dbType == "oracle")
-                {
-                    foreach (DataRow dr in dataTable.Rows)
-                    {
-                        str_tableName = $"{dr["OWNER"].ToString()}.{dr["TABLE_NAME"].ToString()}";
-                        lst_str_fill.Add(str_tableName);
-                        dr["CompleteName"] = str_tableName;
-                    }
-                }
-                else if (str_dbType == "sql")
-                {
-                    foreach (DataRow dr in dataTable.Rows)
-                    {
-                        str_tableName = $"{dr["TABLE_CATALOG"].ToString()}.{dr["TABLE_SCHEMA"].ToString()}.{dr["TABLE_NAME"].ToString()}";
-                        lst_str_fill.Add(str_tableName);
-                        dr["CompleteName"] = str_tableName;
-                    }
-                }
-
-                AutoCompleteStringCollection autoCompleteStringCollection = new AutoCompleteStringCollection();
-                autoCompleteStringCollection.AddRange(lst_str_fill.ToArray());
-                comboBox.AutoCompleteCustomSource = autoCompleteStringCollection;
-                comboBox.AutoCompleteSource = AutoCompleteSource.CustomSource;
-                comboBox.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-                comboBox.DataSource = dataTable;
                 DisplayMemberInComboBox();
             }
             catch (Exception ex)

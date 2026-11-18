@@ -40,8 +40,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                control.Text = str_Msg;
-                control.Update();
+                FormHelpers.ShowText(control, str_Msg);
             }
             catch (Exception ex)
             {
@@ -50,26 +49,7 @@ namespace SPI_Data_Comp_Tool
         }
         private void DisplayError(Control control, Exception ex = null)
         {
-            try
-            {
-                if (ex != null)
-                {
-                    control.Text = ex.Message.ToString();
-                    if (Debugger.IsAttached)
-                    {
-                        control.Text = ex.ToString();
-                    }
-                }
-                else
-                {
-                    control.Text = string.Empty;
-                }
-                control.Update();
-            }
-            catch (Exception ex1)
-            {
-                control.Text = ex1.Message.ToString();
-            }
+            FormHelpers.ShowError(control, ex);
         }
 
         private void oracleAndSQLConnection1_Load(object sender, EventArgs e)
