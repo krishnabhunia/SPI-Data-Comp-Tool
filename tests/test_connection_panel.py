@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "SPI Data Comp Tool"
-CONVERTED = ("DB Comparison.cs", "UserProfileForm.cs")
+CONVERTED = ("DB Comparison.cs", "UserProfileForm.cs", "Table Extraction After Delta.cs",
+             "Pre_Merging_Duplicacy_Form.cs", "SPIDeltaChangeLegacyID.cs", "Compare_Multiples_Forms.cs")
 # handlers that the panel now owns; a converted window must not grow its own copy again
 COPIED = ("CheckChangeRadioButton", "btn_Copy_SRC_TRG_Click", "btn_TRG_SRC_Click",
           "cb_WindowAuthentication_SRC_CheckedChanged", "cb_UserProfileList_SelectedIndexChanged")

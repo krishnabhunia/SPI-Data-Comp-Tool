@@ -55,6 +55,13 @@ def G(name, child, **o):
     return n
 
 
+def TABS(name, pages, **o):
+    """Existing TabControl; pages are G(tabPage, child) nodes, in tab order."""
+    n = Node(name, "tabs", **o)
+    n.children = [(p, {}) for p in pages]
+    return n
+
+
 # ---------------- designer parsing ----------------
 
 STMT_THIS_PROP = re.compile(r"^this\.(\w+)\.(\w+)")
@@ -155,11 +162,16 @@ def generate(spec_path):
         if mm:
             parent_of[mm.group(2)] = mm.group(1)
 
+    keep_inside = set(getattr(spec, "KEEP", []))   # placed by the spec, but their contents stay as designed
+
     def frozen(n):
-        while n:
-            if n in keep_frozen:
+        if n in keep_frozen:
+            return True
+        p = parent_of.get(n)
+        while p:
+            if p in keep_frozen or p in keep_inside:
                 return True
-            n = parent_of.get(n)
+            p = parent_of.get(p)
         return False
 
     # panels/labels that no longer appear in the spec are removed
@@ -170,7 +182,7 @@ def generate(spec_path):
     new_nodes = [n for n in managed if n not in field_types]  # created on an earlier run are reused
     for n in order:
         nd = info[n][0]
-        if nd.kind in ("ctrl", "group") and not nd.o.get("new") and n not in field_types:
+        if nd.kind in ("ctrl", "group", "tabs") and not nd.o.get("new") and n not in field_types:
             raise SystemExit(f"{spec.DESIGNER}: unknown control in spec: {n}")
 
     pre, inst, init_begin, per_ctrl, form_stmts, other = [], {}, [], {}, [], []
@@ -227,7 +239,7 @@ def generate(spec_path):
         nd = info[n][0]
         tp = {"table": "TableLayoutPanel", "flow": "FlowLayoutPanel"}.get(nd.kind) or nd.o["new"]
         out.append(f"{I}this.{n} = new {qualify(tp)}();")
-    containers = [n for n in order if info[n][0].kind in ("table", "flow", "group")]
+    containers = [n for n in order if info[n][0].kind in ("table", "flow", "group", "tabs")]
     frozen_containers = [n for n, tp in field_types.items() if frozen(n) and tp.split(".")[-1] in CONTAINERS]
     for n in init_begin:
         if n not in drop:
@@ -249,7 +261,7 @@ def generate(spec_path):
         own = [] if n in managed else per_ctrl.get(n, [])  # spec-made panels/labels are rebuilt from scratch
         for s in own:
             prop = STMT_THIS_PROP.match(s.strip()).group(2)
-            if prop == "Controls":
+            if prop == "Controls" and n not in keep_inside:
                 continue
             if prop in (CONTAINER_PROPS if nd.kind == "group" else LAYOUT_PROPS):
                 continue
@@ -279,17 +291,18 @@ def generate(spec_path):
                     lines.append(f"{I}this.{n}.SetColumnSpan(this.{ch.name}, {c['span']});")
                 if c["rspan"] > 1:
                     lines.append(f"{I}this.{n}.SetRowSpan(this.{ch.name}, {c['rspan']});")
-        elif nd.kind in ("flow", "group"):
+        elif nd.kind in ("flow", "group", "tabs"):
             if nd.kind == "flow":
                 lines.append(f"{I}this.{n}.FlowDirection = {WF}FlowDirection.{o['direction']};")
                 lines.append(f"{I}this.{n}.WrapContents = {'true' if o.get('wrap') else 'false'};")
             for ch, _ in nd.children:
                 lines.append(f"{I}this.{n}.Controls.Add(this.{ch.name});")
         # layout properties
-        default_dock = "Fill" if nd.kind in ("table", "group") and parent is not None else None
+        default_dock = "Fill" if nd.kind in ("table", "group", "tabs") and parent is not None else None
+        in_tabs = parent is not None and parent.kind == "tabs"   # a tab page: its TabControl places it
         if parent is None:
             default_dock = "Fill"
-        dock, anchor = o.get("dock", default_dock), o.get("anchor")
+        dock, anchor = (None, None) if in_tabs else (o.get("dock", default_dock), o.get("anchor"))
         if nd.kind == "flow" and "dock" not in o and "anchor" not in o:
             anchor = "Left"
         if anchor:
@@ -302,11 +315,13 @@ def generate(spec_path):
             autosize = o.get("autosize", False)
         else:
             autosize = o.get("autosize")
-        if autosize is not None:
+        if autosize is not None and not in_tabs:
             lines.append(f"{I}this.{n}.AutoSize = {'true' if autosize else 'false'};")
             if autosize and nd.kind in ("table", "flow", "group"):
                 lines.append(f"{I}this.{n}.AutoSizeMode = {WF}AutoSizeMode.GrowAndShrink;")
-        if "margin" in o:
+        if in_tabs:
+            pass
+        elif "margin" in o:
             lines.append(f"{I}this.{n}.Margin = {pad(o['margin'])};")
         elif nd.kind in ("table", "flow") and parent is not None and parent.kind != "group":
             lines.append(f"{I}this.{n}.Margin = {pad(0)};")
@@ -322,7 +337,7 @@ def generate(spec_path):
             lines.append(f"{I}this.{n}.MinimumSize = new System.Drawing.Size({w}, {h});")
         for k, v in extra.get(n, {}).items():
             lines.append(f"{I}this.{n}.{k} = {v};")
-        if nd.kind == "ctrl" or nd.kind == "group":
+        if nd.kind in ("ctrl", "group", "tabs"):
             lines.append(f"{I}this.{n}.TabIndex = {tab[0]};")
             tab[0] += 1
         elif nd.kind in ("table", "flow"):
@@ -400,13 +415,17 @@ def load_spec(path):
     s = importlib.util.spec_from_file_location("layout_spec", path)
     mod = importlib.util.module_from_spec(s)
     sys.modules["layout_gen"] = sys.modules[__name__]
+    folder = str(Path(path).resolve().parent)   # specs may import shared parts (tools/layouts/_*.py)
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
     s.loader.exec_module(mod)
     return mod
 
 
 def main(argv):
     check = "--check" in argv
-    paths = [a for a in argv[1:] if not a.startswith("--")]
+    # files starting with "_" hold parts shared by several specs, not specs themselves
+    paths = [a for a in argv[1:] if not a.startswith("--") and not Path(a).name.startswith("_")]
     bad = 0
     for p in paths:
         designer, text = generate(Path(p))

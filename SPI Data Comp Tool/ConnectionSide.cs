@@ -78,6 +78,12 @@ namespace SPI_Data_Comp_Tool
             DefaultPort.CheckedChanged += (s, e) => ApplyDefaultPort();
         }
 
+        /// <summary>The selected database type as the connection code expects it: "Oracle" or "SQL".</summary>
+        public string DatabaseType
+        {
+            get { return Oracle.Checked ? Oracle.Text : Sql.Text; }
+        }
+
         /// <summary>Oracle: port options on, no Windows login. SQL Server: Windows login possible, no port.</summary>
         public void ApplyPlatform()
         {
