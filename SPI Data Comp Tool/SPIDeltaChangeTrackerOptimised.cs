@@ -89,22 +89,16 @@ namespace SPI_Data_Comp_Tool
         #region int and bool
 
         private bool boolStatus = true;
-        private bool newRow;
         private int count_match = 0;
         private int count_unmatched = 0;
 
-        private int progress, totalProgressCount;
-        private int percentage;
 
-        private int int_total_rows;
-        private int int_total_columns;
 
         private bool boolCellValueIntType;
-        private bool boolOracle, boolSQL, boolCompareResult;//, boolTest;
+        private bool boolCompareResult; //, boolTest;
         private bool boolCompare_List;
         //private bool boolIgnoreCase;
 
-        int headRow, alternateRow, cellCol;
 
         #endregion
 
@@ -140,25 +134,20 @@ namespace SPI_Data_Comp_Tool
         private OpenFileDialogData OpenFileDialogData_OBJ;
         private DataTable dt_SPIDeltaChangeTracker;
 
-        private CheckedListBox.CheckedItemCollection cic_oracleTB;// = cbL_columns.CheckedItems;
-        private CheckedListBox.CheckedItemCollection cic_reference;// = clb_ReferenceID.CheckedItems;
         private int int_Color_Row;
         private OpenFileDialogData openFileDialogData;
         private DataSet dsTableList;
-        private bool boolExcelFileList;
         private DBConnectionDetails dBConnectionDetails;
 
         private DBConnectionStatus dbConnection, dbSRCConnection, dbTRGConnection;
-        private string str_TableName, str_SRC_TableName, str_TRG_TableName;
+        private string str_SRC_TableName, str_TRG_TableName;
         private DataTable dtFetch;
         private string strSelectCol;
         private string str_DBName;
         private bool boolToggle;
-        private bool boolLinkLabel;
         private ExcelWorksheet worksheet;
         private List<ColorPair> colorPairs;
 
-        private IEnumerable<ColorPair> query;
         private int int_Table_Progress_Count;
         private DataTable dtSummaryForList;
         private List<string> strPKList;
@@ -169,7 +158,6 @@ namespace SPI_Data_Comp_Tool
         private DataTable dtSRCOnly;
         private DataTable dtSummary;
         private bool boolANewRow;
-        private string strFileName;
         private BackGroundWorkerUserObjectForReport backGroundWorkerObject;
 
         private DataTable dt_Var;
@@ -198,7 +186,6 @@ namespace SPI_Data_Comp_Tool
                 //checkRules = new CheckRules();
 
                 dsAllColumns = new DataSet();
-                boolLinkLabel = false;
 
                 toolTip = new ToolTip();
                 dt_LoadSRC = new DataTable();
@@ -251,7 +238,6 @@ namespace SPI_Data_Comp_Tool
 
                 if (Debugger.IsAttached)
                 {
-                    boolLinkLabel = true;
                     dateTimePicker_Date.Value = new DateTime(2020, 03, 03);
                 }
 
@@ -2275,20 +2261,17 @@ namespace SPI_Data_Comp_Tool
                     if (dsTableList != null && dsTableList.Tables.Count > 0 && dsTableList.Tables[0].Rows.Count > 0)
                     {
                         Common_Data.DisplayMessage(rtb_Log, $"Selected File {openFileDialogData.strFileNameWithPath}", false);
-                        boolExcelFileList = true;
                         Common_Data.DisplayMessage(rtb_Log, $"File Read Successfully", false, -1, Color.DarkBlue);
                         btnGenerateOutput.Enabled = true;
                     }
                     else
                     {
                         Common_Data.DisplayMessage(rtb_Log, $"File Not Selected", true);
-                        boolExcelFileList = false;
                     }
                 }
                 else
                 {
                     Common_Data.DisplayMessage(rtb_Log, $"File Not Selected", true);
-                    boolExcelFileList = false;
                 }
 
             }
@@ -2571,7 +2554,7 @@ namespace SPI_Data_Comp_Tool
 
                     foreach (var cell in worksheet.Cells[1, 1, 1, worksheet.Dimension.End.Column])
                     {
-                        query = colorPairs.Where(cp => cp.str_Col_Name.ToLower() == cell.Value.ToString().ToLower());
+                        var query = colorPairs.Where(cp => cp.str_Col_Name.ToLower() == cell.Value.ToString().ToLower());
 
                         foreach (var i in query)
                         {
