@@ -13,9 +13,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   documentation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Verify project documentation
         run: |
           python - <<'PY'
@@ -28,9 +28,9 @@ jobs:
           PY
 
   secrets-guard:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Designer files match their layout specs
         run: python3 tools/layout_gen.py --check tools/layouts/*.py
       - name: Fail if connection profiles or passwords are committed
@@ -81,7 +81,7 @@ jobs:
 
   version:
     # Works out x.y.z (x major, y minor, z fix) - see tools/release.py and docs/PROJECT_GUIDE.md
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write        # reserves the beta tag on the PR commit
       pull-requests: read    # finds the merged PR of a push to master
@@ -92,7 +92,7 @@ jobs:
       head: ${{ steps.plan.outputs.head }}
       pr: ${{ steps.plan.outputs.pr }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - run: git fetch --tags --force origin
@@ -114,9 +114,9 @@ jobs:
     needs: version
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
-      - uses: NuGet/setup-nuget@v2
-      - uses: microsoft/setup-msbuild@v2
+      - uses: actions/checkout@v6
+      - uses: NuGet/setup-nuget@v3
+      - uses: microsoft/setup-msbuild@v3
       - name: Stamp version ${{ needs.version.outputs.version }}
         id: ver
         shell: pwsh
@@ -227,7 +227,7 @@ jobs:
           for ($i = 0; $i -lt 30 -and (Test-Path $exe); $i++) { Start-Sleep 1 }
           if (Test-Path $exe) { throw 'uninstall left the exe behind' }
           "### 64-bit installer: installed, 64-bit exe, no DLL files, libraries load, uninstalled cleanly" >> $env:GITHUB_STEP_SUMMARY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: SPI_Data_Comp_Tool_${{ steps.ver.outputs.version }}
           path: dist/
@@ -241,13 +241,13 @@ jobs:
     if: >-
       github.event_name == 'push' ||
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write   # keeps the version comment on the PR up to date
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v7
         with:
           name: SPI_Data_Comp_Tool_${{ needs.version.outputs.version }}
           path: dist
