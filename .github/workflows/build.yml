@@ -126,6 +126,27 @@ jobs:
       - name: Build desktop application
         shell: pwsh
         run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release '/p:Platform=Any CPU' /warnaserror:MSB3245
+      - name: Screenshot every form
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
+          $out = Join-Path $PWD "screenshots"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $list = Join-Path $PWD "forms.txt"
+          Start-Process $exe -ArgumentList '--list-forms', "`"$list`"" -Wait
+          $forms = Get-Content $list
+          $failed = @()
+          foreach ($f in $forms) {
+            $p = Start-Process $exe -ArgumentList '--screenshot', $f, "`"$out`"" -PassThru
+            if (-not $p.WaitForExit(30000)) { Stop-Process -Id $p.Id -Force; $failed += "$f (timed out)"; continue }
+            $short = $f.Split('.')[-1]
+            if (-not (Test-Path (Join-Path $out "$short.png"))) { $failed += "$f (no picture, exit $($p.ExitCode))" }
+          }
+          $ok = (Get-ChildItem $out -Filter *.png | Where-Object { $_.Name -notlike '*_large.png' }).Count
+          Write-Host "Captured $ok of $($forms.Count) forms"
+          "### Form screenshots: $ok of $($forms.Count)" >> $env:GITHUB_STEP_SUMMARY
+          foreach ($x in $failed) { Write-Host "::warning::screenshot not taken: $x"; "- not taken: $x" >> $env:GITHUB_STEP_SUMMARY }
+          if ($ok -eq 0) { throw 'no form could be captured' }
       - name: Package portable build
         shell: pwsh
         run: |
@@ -145,6 +166,8 @@ jobs:
           Rename-Item "$dst/SPI Data Comp Tool.exe" "$name.exe"
           Rename-Item "$dst/SPI Data Comp Tool.exe.config" "$name.exe.config"
           if (Test-Path "$dst/app.publish") { throw 'ClickOnce output leaked into portable/' }
+          # screenshots ride along in the one artifact; the release job attaches them as a separate zip
+          Copy-Item screenshots dist/screenshots -Recurse
           Get-ChildItem dist -Recurse | ForEach-Object { $_.FullName }
       - uses: actions/upload-artifact@v4
         with:
@@ -177,14 +200,16 @@ jobs:
         run: |
           set -euo pipefail
           zip_name="SPI_Data_Comp_Tool_${VERSION}.zip"
-          (cd dist && zip -qr "../${zip_name}" .)
+          shots_name="SPI_Data_Comp_Tool_${VERSION}_screenshots.zip"
+          (cd dist && zip -qr "../${zip_name}" . -x 'screenshots/*')
+          (cd dist/screenshots && zip -qr "../../${shots_name}" .)
           sha256sum "${zip_name}" > "${zip_name}.sha256"
           cat "${zip_name}.sha256"
           if gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release upload "${TAG}" "${zip_name}" "${zip_name}.sha256" --clobber
+            gh release upload "${TAG}" "${zip_name}" "${zip_name}.sha256" "${shots_name}" --clobber
           else
             flags=(--title "SPI Data Comparison Tool ${VERSION}" --generate-notes --target "${SHA}")
             if [ "${PRE}" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
-            gh release create "${TAG}" "${zip_name}" "${zip_name}.sha256" "${flags[@]}"
+            gh release create "${TAG}" "${zip_name}" "${zip_name}.sha256" "${shots_name}" "${flags[@]}"
           fi
           echo "### Released ${TAG}" >> "$GITHUB_STEP_SUMMARY"

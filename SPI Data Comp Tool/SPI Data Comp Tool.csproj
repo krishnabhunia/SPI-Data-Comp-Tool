@@ -288,6 +288,7 @@
     <Compile Include="Pre_Merging_Duplicacy_Form.Designer.cs">
       <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
     </Compile>
+    <Compile Include="FormScreenshots.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MainForm.cs">
