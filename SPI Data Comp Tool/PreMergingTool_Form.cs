@@ -43,7 +43,7 @@ namespace SPI_Data_Comp_Tool
             connection.Source.Title = "Database";
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
-            UiTheme.Apply(this, btn_ListTableExcel);
+            UiTheme.Apply(this);   // its main button sits in a tab kept as designed; too small for the bold blue style
 
             try
             {
