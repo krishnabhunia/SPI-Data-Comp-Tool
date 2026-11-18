@@ -15,16 +15,16 @@ namespace SPI_Data_Comp_Tool
     {
         private OpenFileDialogData openFileDialogData;
         private SaveFileDialogFile saveFileDialogFile;
-        private DataSet dsTableList, dsContains, dsDelta;
+        private DataSet dsTableList, dsDelta;
         private Common_Data common_Data;
         private SaveFileDialog saveFileDialog;
 
-        private DataTable dtFK, dtPK, dtDelta, dtDuplicateCheck, dtCheck;
+        private DataTable dtFK, dtPK, dtDelta, dtDuplicateCheck;
         private string strConnection, str_DBName, str_SchemaName;
 
         //private string str_QueryFK, str_QueryPK;
 
-        private bool boolConnection, boolExcelFileList;
+        private bool boolConnection;
 
         private bool boolSavedFileOnce;
 
@@ -52,7 +52,6 @@ namespace SPI_Data_Comp_Tool
 
                 strConnection = string.Empty;
 
-                boolExcelFileList = false;
                 boolConnection = false;
 
                 dtFK = new DataTable();
@@ -419,18 +418,15 @@ namespace SPI_Data_Comp_Tool
                         {
                             Common_Data.DisplayMessage(rtb_Log, "Pls connect with DB", true);
                         }
-                        boolExcelFileList = true;
                     }
                     else
                     {
                         Common_Data.DisplayMessage(rtb_Log, $"File Not Selected", true);
-                        boolExcelFileList = false;
                     }
                 }
                 else
                 {
                     Common_Data.DisplayMessage(rtb_Log, $"File Not Selected", true);
-                    boolExcelFileList = false;
                 }
             }
             catch (Exception ex)
@@ -495,18 +491,15 @@ namespace SPI_Data_Comp_Tool
                         {
                             Common_Data.DisplayMessage(rtb_Log, "Pls connect with DB", true);
                         }
-                        boolExcelFileList = true;
                     }
                     else
                     {
                         Common_Data.DisplayMessage(rtb_Log, $"File Not Selected", true);
-                        boolExcelFileList = false;
                     }
                 }
                 else
                 {
                     Common_Data.DisplayMessage(rtb_Log, $"File Not Selected", true);
-                    boolExcelFileList = false;
                 }
 
             }

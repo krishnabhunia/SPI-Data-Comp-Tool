@@ -32,7 +32,7 @@ namespace SPI_Data_Comp_Tool
         private Common_Data common_Data;
         private DBConnectionStatus dbConnection, dbSRCConnection, dbTRGConnection;
 
-        private int int_percentage, int_Color_Row, int_object;
+        private int int_Color_Row, int_object;
         private bool boolLoadDataBase, boolExcelFileList, boolExcelFileForComparison, boolSRCConnection, boolTRGConnection;
         private bool boolANewRow;
         private bool boolFolderPathSelected, boolSRC_ExcelFile, boolTRG_ExcelFile;
@@ -87,13 +87,12 @@ namespace SPI_Data_Comp_Tool
 
         private static Point point_db, point_excel, point_logs;
 
-        private bool boolTableLoaded_SRC, boolTableLoaded_TRG;
         private int int_Table_Progress_Count, int_timer;
         private bool boolCompare_List;
         private BackGroundWorkerUserObjectForReport backGroundWorkerObject;
         private bool boolSelectTabDB, boolSelectTabExcel;
 
-        private bool boolRules, boolRulesCheck, boolCompareResult;
+        private bool boolRules;
         private DataSet dsRules;
         //private CheckRules checkRules;
         private DataSet dsAllColumns;
@@ -120,7 +119,6 @@ namespace SPI_Data_Comp_Tool
                 boolExcelFileList = false;
                 boolExcelFileForComparison = false;
 
-                int_percentage = 0;
 
                 RichTextBox_Retain = new RichTextBox();
                 Common_Data.DisplayMessage(rtb_Log, ("DB Selected"));
@@ -137,8 +135,6 @@ namespace SPI_Data_Comp_Tool
 
                 boolSRC_ExcelFile = false;
                 boolTRG_ExcelFile = false;
-                boolTableLoaded_SRC = false;
-                boolTableLoaded_TRG = false;
 
                 colorPairs = new List<ColorPair>();
                 ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
