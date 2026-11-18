@@ -16,11 +16,9 @@ namespace SPI_Data_Comp_Tool
         private OpenFileDialogData openFileDialogData;
         private DataSet dsGenerateScript;
         private Common_Data common_Data;
-        private bool boolColorAlternate, boolGenerate;
+        private bool boolGenerate;
         private DataTable dtGenerateScript;
         private string strInsertColName, strInsertValues, strTableName, strFullPathFileName;
-        private FolderBrowserDialog folderBrowserDialog;
-        private bool boolFolderPathSelected;
         private SaveFileDialogFile saveFileDialogFile;
 
         private List<DataColumn> ListCols;
@@ -37,7 +35,6 @@ namespace SPI_Data_Comp_Tool
                 dsGenerateScript = new DataSet();
                 openFileDialogData = new OpenFileDialogData();
                 saveFileDialogFile = new SaveFileDialogFile();
-                boolColorAlternate = false;
                 strScriptFor = string.Empty;
 
             }
@@ -56,7 +53,6 @@ namespace SPI_Data_Comp_Tool
                 boolGenerate = false;
                 strTableName = string.Empty;
                 strFullPathFileName = string.Empty;
-                boolFolderPathSelected = false;
 
                 openFileDialogData = openFileDialogData.openFileDialog(strOpenDialog);
 

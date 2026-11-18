@@ -116,7 +116,6 @@ namespace SPI_Data_Comp_Tool
         private int int_total_columns;
 
         private bool boolCellValueIntType;
-        private bool boolOracle, boolSQL, boolCompareResult;
         //private bool boolIgnoreCase;
 
         int headRow, alternateRow, cellCol;
@@ -150,7 +149,7 @@ namespace SPI_Data_Comp_Tool
         private DataSet dsAllColumns;
         #endregion
 
-        private bool boolRules, boolRulesCheck;
+        private bool boolRules;
         private ToolTip toolTip;// = new ToolTip();
 
         private OpenFileDialogData OpenFileDialogData_OBJ;
@@ -1265,7 +1264,6 @@ namespace SPI_Data_Comp_Tool
         private DataTable dtSummary;
         private int int_Color_Row, totalProgress;
         private DataRow dataRows_TRG;
-        private StringComparison stringComparisonTypeOrdincalCase;
 
         private bool boolANewRow, boolInclude;
 

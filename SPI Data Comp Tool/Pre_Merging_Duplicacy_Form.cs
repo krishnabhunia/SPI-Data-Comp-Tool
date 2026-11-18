@@ -39,18 +39,14 @@ namespace SPI_Data_Comp_Tool
         private OpenFileDialogData openFileDialogData;
         private SaveFileDialogFile saveFileDialogFile;
         private Common_Data common_Data;
-        private List<DBC> items;
 
         private string strQuery;
         private string strOracleConnection;
         private string str_tableName;
         private string strSQLConnection;
         private string str_excelFileName;
-        private string strSourceName;
 
-        private bool boolSavedFileOnce;
         //private bool boolConnection;
-        private bool boolExcelFileList;
         private string str_SelectQuery_SRC;
         private string str_SelectQuery_TRG;
 
@@ -263,7 +259,6 @@ namespace SPI_Data_Comp_Tool
                     sqlDA = new SqlDataAdapter(strQuery, strSQLConnection);
                     sqlDA.Fill(dt_sql);
 
-                    strSourceName = "Source SQL";
                     FillCheckListBox(cb_SRC_TableName, dt_sql, "sql");
                     dt_LoadSRC = dt_sql.Copy();
                 }
@@ -990,7 +985,6 @@ namespace SPI_Data_Comp_Tool
                     dt_PM_TrimData.TableName = "Trimming spaces removal list";
                     dt_PM_TrimData = common_Data.AddColumns(dt_PM_TrimData, str_PK);
                     dt_PM_TrimData = common_Data.AddColumns(dt_PM_TrimData, "TRIMMING_SPACES");
-                    int int_rowCount = 0;
                     foreach (DataRow drow in dt.Rows)
                     {
                         foreach (DataColumn dc in dt.Columns)
@@ -1219,7 +1213,6 @@ namespace SPI_Data_Comp_Tool
                 dtDelta = new DataTable();
                 dsDelta = new DataSet();
 
-                boolSavedFileOnce = false;
                 //throw new Exception ("test");
                 Common_Data.DisplayMessage(rtb_Log, "Reading Pre-Merging Excel File ... ");
                 openFileDialogData = openFileDialogData.openFileDialog("Select Excel File Contains Pre Merging Data Duplicacy");
@@ -1272,18 +1265,15 @@ namespace SPI_Data_Comp_Tool
                         {
                             Common_Data.DisplayMessage(rtb_Log, "Pls connect with DB", true);
                         }
-                        boolExcelFileList = true;
                     }
                     else
                     {
                         Common_Data.DisplayMessage(rtb_Log, $"File Not Selected", true);
-                        boolExcelFileList = false;
                     }
                 }
                 else
                 {
                     Common_Data.DisplayMessage(rtb_Log, $"File Not Selected", true);
-                    boolExcelFileList = false;
                 }
 
             }

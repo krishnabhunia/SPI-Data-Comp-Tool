@@ -21,7 +21,6 @@ namespace SPI_Data_Comp_Tool
         private string str_SRCTableName;
         private string strPK;
         private DataTable dtSRC;
-        private DataTable dtTRG;
         public List<DataColumn> ListCols;
         private DBConnectionDetails dBConnectionDetails;
 
@@ -33,23 +32,14 @@ namespace SPI_Data_Comp_Tool
         private System.Windows.Forms.TextBox tb_SRC_UserName => connection.Source.User;
         private System.Windows.Forms.TextBox tb_SRC_Password => connection.Source.Password;
         private string str_DBNameSRC;
-        private string str_DBNameTRG;
         private DBConnectionStatus dbConnection;
         private DBConnectionStatus dbSRCConnection;
         private bool boolSRCConnection;
-        private DBConnectionStatus dbTRGConnection;
-        private bool boolTRGConnection;
-        private bool boolLoadDataBase;
         private string strSelectCol;
         private DataTable dtFetch;
-        private DataSet dsTableList;
         private DataTable dtResult;
-        private DataColumn[] dcResult;
         private string[] strRes;
         private FolderBrowserDialog folderBrowserDialog1;
-        private string strFolderPath;
-        private bool boolFolderPathSelected;
-        private string strFileName;
         private SaveFileDialogFile saveFileDialogFile;
 
         public SPI_FK_Extraction()
@@ -106,7 +96,6 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                string[] str_IgnoreColName;
 
                 strSelectCol = $"SELECT * FROM {strTableName} WHERE 1 = 0";
 
@@ -389,11 +378,9 @@ namespace SPI_Data_Comp_Tool
 
                 if (boolSRCConnection)
                 {
-                    boolLoadDataBase = true;
                 }
                 else
                 {
-                    boolLoadDataBase = false;
                 }
 
             }

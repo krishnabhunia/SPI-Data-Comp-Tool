@@ -15,7 +15,6 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class Execute_Excel_Scripts_Form : Form
     {
-        private bool boolColorAlternate;
         private OpenFileDialogData openFileDialogData;
         private DataTable dtGenerateScript, dtExecute;
         private List<DataColumn> ListCols;
@@ -44,7 +43,6 @@ namespace SPI_Data_Comp_Tool
 
         private DirectoryInfo directoryInfo_SRC;
         private DirectoryInfo directoryInfo_TRG;
-        private SqlDataAdapter sqlDA;
 
         private string strQuery, str_FileNameWithPath, strFileName;
         private static Point point_gbTextFile;
@@ -65,7 +63,6 @@ namespace SPI_Data_Comp_Tool
 
             try
             {
-                boolColorAlternate = true;
                 openFileDialogData = new OpenFileDialogData();
                 dtGenerateScript = new DataTable();
                 dBConnectionDetails = new DBConnectionDetails();

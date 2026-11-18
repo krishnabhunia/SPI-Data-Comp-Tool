@@ -36,13 +36,11 @@ namespace SPI_Data_Comp_Tool
         private System.Windows.Forms.TextBox tb_TRG_Password => connection.Target.Password;
 
         private DBConnectionStatus dBConnectionStatus_SRC, dBConnectionStatus_TRG;
-        private bool boolSRCConnection, boolTRGConnection;
 
         private OpenFileDialogData openFileDialogData;
 
         private DataTable dtTableList, dtResult;
         private string str_SelectQuery;
-        private SqlDataAdapter sqlDA;
         private SaveFileDialogFile saveFileDialogFile;
 
         private string strSRC_TBName, strPK, strTableID;
@@ -50,7 +48,6 @@ namespace SPI_Data_Comp_Tool
 
         private FolderBrowserDialog folderBrowserDialog;
         private string strFolderPath, strFileNameWithPath;
-        private bool boolTRG_Folder;
 
         private DateTime start_Time;
         private TimeSpan time_to_execute;
@@ -68,7 +65,6 @@ namespace SPI_Data_Comp_Tool
 
         private bool boolTableChangeFlag;
         private int int_Count_Table;
-        private string strTable_List_TRG;
         private string strColNameSRC, strColNameTRG;
         private OpenFileDialogData openFileDialogDataExcel;
         private DataSet dsExcel;
@@ -87,8 +83,6 @@ namespace SPI_Data_Comp_Tool
                 common_Data = new Common_Data();
                 dBConnectionStatus_SRC = new DBConnectionStatus();
                 dBConnectionStatus_TRG = new DBConnectionStatus();
-                boolSRCConnection = false;
-                boolTRGConnection = false;
                 openFileDialogData = new OpenFileDialogData();
 
                 dtResult = new DataTable();
@@ -345,7 +339,6 @@ namespace SPI_Data_Comp_Tool
                     {
                         strFolderPath = string.Empty;
                         Common_Data.DisplayMessage(rtb_Log, $"To save folder path not set, aborting all operation", true);
-                        boolTRG_Folder = false;
                     }
                 }
                 else
@@ -427,7 +420,6 @@ namespace SPI_Data_Comp_Tool
                         {
                             strFolderPath = string.Empty;
                             Common_Data.DisplayMessage(rtb_Log, $"To save folder path not set, aborting all operation", true);
-                            boolTRG_Folder = false;
                         }
                     }
                     else
@@ -776,7 +768,6 @@ namespace SPI_Data_Comp_Tool
                     {
                         strFolderPath = string.Empty;
                         Common_Data.DisplayMessage(rtb_Log, $"To save folder path not set, aborting all operation", true);
-                        boolTRG_Folder = false;
                     }
                 }
                 else
@@ -1437,7 +1428,6 @@ namespace SPI_Data_Comp_Tool
                     {
                         strFolderPath = string.Empty;
                         Common_Data.DisplayMessage(rtb_Log, $"To save folder path not set, aborting all operation", true);
-                        boolTRG_Folder = false;
                     }
                 }
                 else

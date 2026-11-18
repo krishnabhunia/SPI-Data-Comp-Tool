@@ -114,7 +114,7 @@ namespace SPI_Data_Comp_Tool
         private int int_total_columns;
 
         private bool boolCellValueIntType;
-        private bool boolOracle, boolSQL, boolCompareResult;//, boolTest;
+        private bool boolOracle, boolSQL; //, boolTest;
         private bool boolCompare_List;
         //private bool boolIgnoreCase;
 
@@ -149,7 +149,7 @@ namespace SPI_Data_Comp_Tool
         private DataSet ds_CompleteSet, ds_Initial;
         #endregion
 
-        private bool boolRules, boolRulesCheck;
+        private bool boolRules;
         private ToolTip toolTip;// = new ToolTip();
 
         private OpenFileDialogData OpenFileDialogData_OBJ;
@@ -160,16 +160,14 @@ namespace SPI_Data_Comp_Tool
         private int int_Color_Row;
         private OpenFileDialogData openFileDialogData;
         private DataSet dsTableList;
-        private bool boolExcelFileList;
         private DBConnectionDetails dBConnectionDetails;
 
         private DBConnectionStatus dbConnection, dbSRCConnection, dbTRGConnection;
-        private string str_TableName, str_SRC_TableName, str_TRG_TableName;
+        private string str_SRC_TableName, str_TRG_TableName;
         private DataTable dtFetch;
         private string strSelectCol;
         private string str_DBName;
         private bool boolToggle;
-        private bool boolLinkLabel;
 
         private List<ColorPairMultiSheet> colorPairsMultiSheet;
         private int int_sheet;
@@ -198,7 +196,6 @@ namespace SPI_Data_Comp_Tool
                 //checkRules = new CheckRules();
 
                 //dsAllColumns = new DataSet();
-                boolLinkLabel = false;
 
                 toolTip = new ToolTip();
                 dt_LoadSRC = new DataTable();
@@ -246,7 +243,6 @@ namespace SPI_Data_Comp_Tool
 
                 if (Debugger.IsAttached)
                 {
-                    boolLinkLabel = true;
                 }
                 colorPairsMultiSheet = new List<ColorPairMultiSheet>();
                 tabControl1.TabPages.RemoveAt(1);
@@ -1958,7 +1954,6 @@ namespace SPI_Data_Comp_Tool
                                 str_Data_Source_To_Compare = dr[dc.ToString()].ToString().Trim();
                                 str_Data_Target_To_Compare = dv_sql[0][dc.ToString()].ToString().Trim();
 
-                                boolCompareResult = false;
 
                                 bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ToString(), dc.ToString(), dr, dr, dt_src.Columns, dt_trg.Columns);
 
@@ -2888,20 +2883,17 @@ namespace SPI_Data_Comp_Tool
                     if (dsTableList != null && dsTableList.Tables.Count > 0 && dsTableList.Tables[0].Rows.Count > 0)
                     {
                         DisplayMessage($"Selected File {openFileDialogData.strFileNameWithPath}", false);
-                        boolExcelFileList = true;
                         Common_Data.DisplayMessage(rtb, $"File Read Successfully", false, -1, Color.DarkBlue);
                         btnGenerateOutput.Enabled = true;
                     }
                     else
                     {
                         DisplayMessage($"File Not Selected", true);
-                        boolExcelFileList = false;
                     }
                 }
                 else
                 {
                     DisplayMessage($"File Not Selected", true);
-                    boolExcelFileList = false;
                 }
 
             }
