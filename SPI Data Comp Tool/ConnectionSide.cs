@@ -1,0 +1,190 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace SPI_Data_Comp_Tool
+{
+    /// <summary>Which halves of the Connection panel a window shows.</summary>
+    public enum ConnectionMode
+    {
+        SourceAndTarget,
+        SourceOnly,
+    }
+
+    /// <summary>
+    /// The Source or the Target half of the Connection panel: database type, login options,
+    /// port, server, database, user and password, and the behaviour that used to be copied
+    /// into every window (switching Oracle / SQL Server, Windows login, default port).
+    /// </summary>
+    public sealed class ConnectionSide
+    {
+        public const string OracleDefaultPort = "1521";
+
+        private readonly string title;
+
+        public GroupBox Group { get; }
+        public RadioButton Oracle { get; }
+        public RadioButton Sql { get; }
+        public CheckBox WindowsLogin { get; }
+        public CheckBox DefaultPort { get; }
+        public TextBox Port { get; }
+        public TextBox DataSource { get; }
+        public TextBox Database { get; }
+        public TextBox User { get; }
+        public TextBox Password { get; }
+
+        internal ConnectionSide(string title)
+        {
+            this.title = title;
+            Group = new GroupBox { Text = title, Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(8, 6, 8, 8), Margin = new Padding(0) };
+            // The radio text is passed on as the database type ("Oracle" / "SQL"), so it must stay as is.
+            Oracle = new RadioButton { Text = "Oracle", AutoSize = true, Checked = true, Margin = new Padding(0, 3, 16, 3) };
+            Sql = new RadioButton { Text = "SQL", AutoSize = true, Margin = new Padding(0, 3, 0, 3) };
+            WindowsLogin = new CheckBox { Text = "Windows authentication", AutoSize = true, Enabled = false, Margin = new Padding(0, 3, 16, 3) };
+            DefaultPort = new CheckBox { Text = "Default port", AutoSize = true, Checked = true, Margin = new Padding(0, 3, 0, 3) };
+            Port = new TextBox { Text = OracleDefaultPort, ReadOnly = true, Width = 90, Anchor = AnchorStyles.Left, Margin = new Padding(0, 3, 0, 3) };
+            DataSource = Field();
+            Database = Field();
+            User = Field();
+            Password = Field();
+            Password.UseSystemPasswordChar = true;
+
+            TableLayoutPanel grid = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0),
+            };
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+
+            FlowLayoutPanel platform = Flow(Oracle, Sql);
+            FlowLayoutPanel options = Flow(WindowsLogin, DefaultPort);
+            AddRow(grid, Caption("Platform"), platform);
+            AddRow(grid, new Label { AutoSize = true, Margin = new Padding(0) }, options);
+            AddRow(grid, Caption("Port"), Port);
+            AddRow(grid, Caption("Data source"), DataSource);
+            AddRow(grid, Caption("Database"), Database);
+            AddRow(grid, Caption("Username"), User);
+            AddRow(grid, Caption("Password"), Password);
+            Group.Controls.Add(grid);
+
+            Oracle.CheckedChanged += (s, e) => { if (Oracle.Checked) ApplyPlatform(); };
+            Sql.CheckedChanged += (s, e) => { if (Sql.Checked) ApplyPlatform(); };
+            WindowsLogin.CheckedChanged += (s, e) => ApplyWindowsLogin();
+            DefaultPort.CheckedChanged += (s, e) => ApplyDefaultPort();
+        }
+
+        /// <summary>Oracle: port options on, no Windows login. SQL Server: Windows login possible, no port.</summary>
+        public void ApplyPlatform()
+        {
+            if (Oracle.Checked)
+            {
+                Group.Text = title + " · Oracle";
+                WindowsLogin.Enabled = false;
+                WindowsLogin.Checked = false;
+                DefaultPort.Enabled = true;
+                DefaultPort.Checked = true;
+                Port.Enabled = true;
+                Port.ReadOnly = true;
+            }
+            else if (Sql.Checked)
+            {
+                Group.Text = title + " · SQL Server";
+                WindowsLogin.Enabled = true;
+                WindowsLogin.Checked = false;
+                DefaultPort.Enabled = false;
+                DefaultPort.Checked = false;
+                Port.Enabled = false;
+                Port.ReadOnly = true;
+            }
+        }
+
+        private void ApplyWindowsLogin()
+        {
+            User.Enabled = !WindowsLogin.Checked;
+            Password.Enabled = !WindowsLogin.Checked;
+        }
+
+        private void ApplyDefaultPort()
+        {
+            if (DefaultPort.Checked)
+            {
+                Port.Text = OracleDefaultPort;
+                Port.Enabled = true;
+                Port.ReadOnly = true;
+            }
+            else
+            {
+                Port.ResetText();
+                Port.Enabled = true;
+                Port.ReadOnly = false;
+            }
+        }
+
+        /// <summary>Takes every setting from the other half (the Copy buttons).</summary>
+        public void CopyFrom(ConnectionSide other)
+        {
+            Oracle.Checked = other.Oracle.Checked;
+            Sql.Checked = other.Sql.Checked;
+            WindowsLogin.Checked = other.WindowsLogin.Checked;
+            DefaultPort.Checked = other.DefaultPort.Checked;
+            Port.Text = other.Port.Text;
+            DataSource.Text = other.DataSource.Text;
+            Database.Text = other.Database.Text;
+            User.Text = other.User.Text;
+            Password.Text = other.Password.Text;
+        }
+
+        /// <summary>Fills this half from a saved profile.</summary>
+        internal void Apply(bool oracle, bool sql, bool windowsLogin, bool defaultPort, int port,
+                            string dataSource, string database, string user, string password)
+        {
+            Oracle.Checked = oracle;
+            Sql.Checked = sql;
+            WindowsLogin.Checked = windowsLogin;
+            DefaultPort.Checked = defaultPort;
+            Port.Text = oracle ? (port == 0 ? OracleDefaultPort : port.ToString()) : string.Empty;
+            DataSource.Text = dataSource;
+            Database.Text = database;
+            User.Text = user;
+            Password.Text = password;
+        }
+
+        private static TextBox Field()
+        {
+            return new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = new Padding(0, 3, 0, 3) };
+        }
+
+        private static Label Caption(string text)
+        {
+            return new Label { Text = text, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 3, 16, 3) };
+        }
+
+        private static FlowLayoutPanel Flow(params Control[] items)
+        {
+            FlowLayoutPanel flow = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0),
+            };
+            flow.Controls.AddRange(items);
+            return flow;
+        }
+
+        private static void AddRow(TableLayoutPanel grid, Control caption, Control field)
+        {
+            int row = grid.RowCount;
+            grid.RowCount = row + 1;
+            grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            grid.Controls.Add(caption, 0, row);
+            grid.Controls.Add(field, 1, row);
+        }
+    }
+}

@@ -74,8 +74,6 @@
             this.btn_Set = new System.Windows.Forms.Button();
             this.llbl_File_path = new System.Windows.Forms.LinkLabel();
             this.label13 = new System.Windows.Forms.Label();
-            this.label15 = new System.Windows.Forms.Label();
-            this.cb_UserProfileList = new System.Windows.Forms.ComboBox();
             this.label12 = new System.Windows.Forms.Label();
             this.btn_Delete = new System.Windows.Forms.Button();
             this.btn_Save = new System.Windows.Forms.Button();
@@ -107,61 +105,22 @@
             this.tb_ProfileName = new System.Windows.Forms.TextBox();
             this.btn_SaveProfile = new System.Windows.Forms.Button();
             this.btn_LoadProfile = new System.Windows.Forms.Button();
-            this.gb_Target1 = new System.Windows.Forms.GroupBox();
             this.cb_TRG_TableName = new System.Windows.Forms.ComboBox();
             this.btn_Load_TRG_Table = new System.Windows.Forms.Button();
-            this.tb_TRG_DefaultPort = new System.Windows.Forms.TextBox();
-            this.cb_TRG_DefaultPort = new System.Windows.Forms.CheckBox();
-            this.cb_WindowAuthentication_TRG = new System.Windows.Forms.CheckBox();
             this.label17 = new System.Windows.Forms.Label();
-            this.tb_TRG_Password = new System.Windows.Forms.TextBox();
-            this.tb_TRG_UserName = new System.Windows.Forms.TextBox();
-            this.tb_TRG_DBName = new System.Windows.Forms.TextBox();
-            this.tb_TRG_DataSource = new System.Windows.Forms.TextBox();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.btn_TRG_SRC = new System.Windows.Forms.Button();
-            this.rb_TRG_Oracle = new System.Windows.Forms.RadioButton();
-            this.rb_TRG_SQL = new System.Windows.Forms.RadioButton();
-            this.gb_Source1 = new System.Windows.Forms.GroupBox();
-            this.cb_WindowAuthentication_SRC = new System.Windows.Forms.CheckBox();
             this.btn_Load_SRC_Table = new System.Windows.Forms.Button();
             this.cb_SRC_TableName = new System.Windows.Forms.ComboBox();
-            this.tb_SRC_DefaultPort = new System.Windows.Forms.TextBox();
-            this.cb_SRC_DefaultPort = new System.Windows.Forms.CheckBox();
             this.label16 = new System.Windows.Forms.Label();
-            this.tb_SRC_Password = new System.Windows.Forms.TextBox();
-            this.tb_SRC_UserName = new System.Windows.Forms.TextBox();
-            this.tb_SRC_DBName = new System.Windows.Forms.TextBox();
-            this.tb_SRC_DataSource = new System.Windows.Forms.TextBox();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.rb_SRC_oracle = new System.Windows.Forms.RadioButton();
-            this.rb_SRC_SQL = new System.Windows.Forms.RadioButton();
-            this.btn_Copy_SRC_TRG = new System.Windows.Forms.Button();
             this.cb_FullName = new System.Windows.Forms.CheckBox();
             this.groupBox14 = new System.Windows.Forms.GroupBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.tlp_Root = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Top = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Connection = new System.Windows.Forms.TableLayoutPanel();
-            this.flp_Profile = new System.Windows.Forms.FlowLayoutPanel();
-            this.tlp_SRC = new System.Windows.Forms.TableLayoutPanel();
-            this.lbl_SRC_Platform = new System.Windows.Forms.Label();
-            this.flp_SRC_Platform = new System.Windows.Forms.FlowLayoutPanel();
-            this.flp_SRC_Options = new System.Windows.Forms.FlowLayoutPanel();
-            this.lbl_SRC_Port = new System.Windows.Forms.Label();
-            this.flp_SRC_Buttons = new System.Windows.Forms.FlowLayoutPanel();
-            this.tlp_TRG = new System.Windows.Forms.TableLayoutPanel();
-            this.lbl_TRG_Platform = new System.Windows.Forms.Label();
-            this.flp_TRG_Platform = new System.Windows.Forms.FlowLayoutPanel();
-            this.flp_TRG_Options = new System.Windows.Forms.FlowLayoutPanel();
-            this.lbl_TRG_Port = new System.Windows.Forms.Label();
-            this.flp_TRG_Buttons = new System.Windows.Forms.FlowLayoutPanel();
+            this.connection = new SPI_Data_Comp_Tool.ConnectionPanel();
+            this.tlp_Tables = new System.Windows.Forms.TableLayoutPanel();
+            this.tlp_SRC_Table = new System.Windows.Forms.TableLayoutPanel();
+            this.tlp_TRG_Table = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Compare = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_View = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_RefKey = new System.Windows.Forms.TableLayoutPanel();
@@ -176,17 +135,9 @@
             this.tlp_Top.SuspendLayout();
             this.groupBox14.SuspendLayout();
             this.tlp_Connection.SuspendLayout();
-            this.flp_Profile.SuspendLayout();
-            this.gb_Source1.SuspendLayout();
-            this.tlp_SRC.SuspendLayout();
-            this.flp_SRC_Platform.SuspendLayout();
-            this.flp_SRC_Options.SuspendLayout();
-            this.flp_SRC_Buttons.SuspendLayout();
-            this.gb_Target1.SuspendLayout();
-            this.tlp_TRG.SuspendLayout();
-            this.flp_TRG_Platform.SuspendLayout();
-            this.flp_TRG_Options.SuspendLayout();
-            this.flp_TRG_Buttons.SuspendLayout();
+            this.tlp_Tables.SuspendLayout();
+            this.tlp_SRC_Table.SuspendLayout();
+            this.tlp_TRG_Table.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.tlp_Compare.SuspendLayout();
             this.groupBox9.SuspendLayout();
@@ -257,292 +208,72 @@
             // tlp_Connection
             // 
             this.tlp_Connection.Name = "tlp_Connection";
-            this.tlp_Connection.ColumnCount = 2;
-            this.tlp_Connection.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tlp_Connection.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlp_Connection.ColumnCount = 1;
+            this.tlp_Connection.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlp_Connection.RowCount = 2;
             this.tlp_Connection.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Connection.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_Connection.Controls.Add(this.flp_Profile, 0, 0);
-            this.tlp_Connection.SetColumnSpan(this.flp_Profile, 2);
-            this.tlp_Connection.Controls.Add(this.gb_Source1, 0, 1);
-            this.tlp_Connection.Controls.Add(this.gb_Target1, 1, 1);
+            this.tlp_Connection.Controls.Add(this.connection, 0, 0);
+            this.tlp_Connection.Controls.Add(this.tlp_Tables, 0, 1);
             this.tlp_Connection.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Connection.AutoSize = true;
             this.tlp_Connection.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlp_Connection.TabIndex = 3;
             // 
-            // flp_Profile
+            // connection
             // 
-            this.flp_Profile.Name = "flp_Profile";
-            this.flp_Profile.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
-            this.flp_Profile.WrapContents = false;
-            this.flp_Profile.Controls.Add(this.label15);
-            this.flp_Profile.Controls.Add(this.cb_UserProfileList);
-            this.flp_Profile.Controls.Add(this.cb_FullName);
-            this.flp_Profile.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.flp_Profile.AutoSize = true;
-            this.flp_Profile.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flp_Profile.Margin = new System.Windows.Forms.Padding(0, 0, 0, 6);
-            this.flp_Profile.TabIndex = 4;
+            this.connection.Name = "connection";
+            this.connection.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
+            this.connection.AutoSize = true;
+            this.connection.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.connection.TabIndex = 4;
             // 
-            // label15
+            // tlp_Tables
             // 
-            this.label15.Name = "label15";
-            this.label15.Click += new System.EventHandler(this.label15_Click);
-            this.label15.Text = "User profile";
-            this.label15.AutoSize = true;
-            this.label15.Margin = new System.Windows.Forms.Padding(0, 6, 8, 0);
-            this.label15.TabIndex = 5;
+            this.tlp_Tables.Name = "tlp_Tables";
+            this.tlp_Tables.ColumnCount = 3;
+            this.tlp_Tables.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlp_Tables.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 100F));
+            this.tlp_Tables.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlp_Tables.RowCount = 2;
+            this.tlp_Tables.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Tables.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Tables.Controls.Add(this.tlp_SRC_Table, 0, 0);
+            this.tlp_Tables.Controls.Add(this.tlp_TRG_Table, 2, 0);
+            this.tlp_Tables.Controls.Add(this.cb_FullName, 0, 1);
+            this.tlp_Tables.SetColumnSpan(this.cb_FullName, 3);
+            this.tlp_Tables.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_Tables.AutoSize = true;
+            this.tlp_Tables.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tlp_Tables.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
+            this.tlp_Tables.TabIndex = 5;
             // 
-            // cb_UserProfileList
+            // tlp_SRC_Table
             // 
-            this.cb_UserProfileList.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cb_UserProfileList.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.cb_UserProfileList.FormattingEnabled = true;
-            this.cb_UserProfileList.ItemHeight = 13;
-            this.cb_UserProfileList.Name = "cb_UserProfileList";
-            this.cb_UserProfileList.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
-            this.cb_UserProfileList.Margin = new System.Windows.Forms.Padding(0, 2, 0, 2);
-            this.cb_UserProfileList.Size = new System.Drawing.Size(320, 23);
-            this.cb_UserProfileList.TabIndex = 6;
-            // 
-            // cb_FullName
-            // 
-            this.cb_FullName.Checked = true;
-            this.cb_FullName.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_FullName.Name = "cb_FullName";
-            this.cb_FullName.UseVisualStyleBackColor = true;
-            this.cb_FullName.CheckedChanged += new System.EventHandler(this.cb_FullName_CheckedChanged);
-            this.cb_FullName.Text = "Show full names in lists";
-            this.cb_FullName.AutoSize = true;
-            this.cb_FullName.Margin = new System.Windows.Forms.Padding(16, 5, 0, 0);
-            this.cb_FullName.TabIndex = 7;
-            // 
-            // gb_Source1
-            // 
-            this.gb_Source1.Name = "gb_Source1";
-            this.gb_Source1.TabStop = false;
-            this.gb_Source1.Text = "Source · Oracle";
-            this.gb_Source1.Controls.Add(this.tlp_SRC);
-            this.gb_Source1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.gb_Source1.AutoSize = true;
-            this.gb_Source1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.gb_Source1.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
-            this.gb_Source1.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_Source1.TabIndex = 8;
-            // 
-            // tlp_SRC
-            // 
-            this.tlp_SRC.Name = "tlp_SRC";
-            this.tlp_SRC.ColumnCount = 2;
-            this.tlp_SRC.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_SRC.RowCount = 9;
-            this.tlp_SRC.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_SRC.Controls.Add(this.lbl_SRC_Platform, 0, 0);
-            this.tlp_SRC.Controls.Add(this.flp_SRC_Platform, 1, 0);
-            this.tlp_SRC.Controls.Add(this.flp_SRC_Options, 1, 1);
-            this.tlp_SRC.Controls.Add(this.lbl_SRC_Port, 0, 2);
-            this.tlp_SRC.Controls.Add(this.tb_SRC_DefaultPort, 1, 2);
-            this.tlp_SRC.Controls.Add(this.label3, 0, 3);
-            this.tlp_SRC.Controls.Add(this.tb_SRC_DataSource, 1, 3);
-            this.tlp_SRC.Controls.Add(this.label5, 0, 4);
-            this.tlp_SRC.Controls.Add(this.tb_SRC_DBName, 1, 4);
-            this.tlp_SRC.Controls.Add(this.label7, 0, 5);
-            this.tlp_SRC.Controls.Add(this.tb_SRC_UserName, 1, 5);
-            this.tlp_SRC.Controls.Add(this.label9, 0, 6);
-            this.tlp_SRC.Controls.Add(this.tb_SRC_Password, 1, 6);
-            this.tlp_SRC.Controls.Add(this.label16, 0, 7);
-            this.tlp_SRC.Controls.Add(this.cb_SRC_TableName, 1, 7);
-            this.tlp_SRC.Controls.Add(this.flp_SRC_Buttons, 0, 8);
-            this.tlp_SRC.SetColumnSpan(this.flp_SRC_Buttons, 2);
-            this.tlp_SRC.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tlp_SRC.AutoSize = true;
-            this.tlp_SRC.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_SRC.TabIndex = 9;
-            // 
-            // lbl_SRC_Platform
-            // 
-            this.lbl_SRC_Platform.Name = "lbl_SRC_Platform";
-            this.lbl_SRC_Platform.Text = "Platform";
-            this.lbl_SRC_Platform.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.lbl_SRC_Platform.AutoSize = true;
-            this.lbl_SRC_Platform.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.lbl_SRC_Platform.TabIndex = 10;
-            // 
-            // flp_SRC_Platform
-            // 
-            this.flp_SRC_Platform.Name = "flp_SRC_Platform";
-            this.flp_SRC_Platform.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
-            this.flp_SRC_Platform.WrapContents = false;
-            this.flp_SRC_Platform.Controls.Add(this.rb_SRC_oracle);
-            this.flp_SRC_Platform.Controls.Add(this.rb_SRC_SQL);
-            this.flp_SRC_Platform.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.flp_SRC_Platform.AutoSize = true;
-            this.flp_SRC_Platform.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flp_SRC_Platform.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.flp_SRC_Platform.TabIndex = 11;
-            // 
-            // rb_SRC_oracle
-            // 
-            this.rb_SRC_oracle.Checked = true;
-            this.rb_SRC_oracle.Name = "rb_SRC_oracle";
-            this.rb_SRC_oracle.TabStop = true;
-            this.rb_SRC_oracle.Text = "Oracle";
-            this.rb_SRC_oracle.UseVisualStyleBackColor = true;
-            this.rb_SRC_oracle.CheckedChanged += new System.EventHandler(this.rb_oracle_CheckedChanged);
-            this.rb_SRC_oracle.AutoSize = true;
-            this.rb_SRC_oracle.Margin = new System.Windows.Forms.Padding(0, 3, 16, 3);
-            this.rb_SRC_oracle.TabIndex = 12;
-            // 
-            // rb_SRC_SQL
-            // 
-            this.rb_SRC_SQL.Name = "rb_SRC_SQL";
-            this.rb_SRC_SQL.TabStop = true;
-            this.rb_SRC_SQL.Text = "SQL";
-            this.rb_SRC_SQL.UseVisualStyleBackColor = true;
-            this.rb_SRC_SQL.CheckedChanged += new System.EventHandler(this.rb_sql_CheckedChanged);
-            this.rb_SRC_SQL.AutoSize = true;
-            this.rb_SRC_SQL.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.rb_SRC_SQL.TabIndex = 13;
-            // 
-            // flp_SRC_Options
-            // 
-            this.flp_SRC_Options.Name = "flp_SRC_Options";
-            this.flp_SRC_Options.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
-            this.flp_SRC_Options.WrapContents = false;
-            this.flp_SRC_Options.Controls.Add(this.cb_WindowAuthentication_SRC);
-            this.flp_SRC_Options.Controls.Add(this.cb_SRC_DefaultPort);
-            this.flp_SRC_Options.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.flp_SRC_Options.AutoSize = true;
-            this.flp_SRC_Options.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flp_SRC_Options.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.flp_SRC_Options.TabIndex = 14;
-            // 
-            // cb_WindowAuthentication_SRC
-            // 
-            this.cb_WindowAuthentication_SRC.Name = "cb_WindowAuthentication_SRC";
-            this.cb_WindowAuthentication_SRC.UseVisualStyleBackColor = true;
-            this.cb_WindowAuthentication_SRC.CheckedChanged += new System.EventHandler(this.cb_WindowAuthentication_SRC_CheckedChanged);
-            this.cb_WindowAuthentication_SRC.Text = "Windows authentication";
-            this.cb_WindowAuthentication_SRC.AutoSize = true;
-            this.cb_WindowAuthentication_SRC.Margin = new System.Windows.Forms.Padding(0, 3, 16, 3);
-            this.cb_WindowAuthentication_SRC.TabIndex = 15;
-            // 
-            // cb_SRC_DefaultPort
-            // 
-            this.cb_SRC_DefaultPort.Checked = true;
-            this.cb_SRC_DefaultPort.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_SRC_DefaultPort.Name = "cb_SRC_DefaultPort";
-            this.cb_SRC_DefaultPort.UseVisualStyleBackColor = true;
-            this.cb_SRC_DefaultPort.CheckedChanged += new System.EventHandler(this.cb_Default_Port_CheckedChanged);
-            this.cb_SRC_DefaultPort.Text = "Default port";
-            this.cb_SRC_DefaultPort.AutoSize = true;
-            this.cb_SRC_DefaultPort.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_SRC_DefaultPort.TabIndex = 16;
-            // 
-            // lbl_SRC_Port
-            // 
-            this.lbl_SRC_Port.Name = "lbl_SRC_Port";
-            this.lbl_SRC_Port.Text = "Port";
-            this.lbl_SRC_Port.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.lbl_SRC_Port.AutoSize = true;
-            this.lbl_SRC_Port.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.lbl_SRC_Port.TabIndex = 17;
-            // 
-            // tb_SRC_DefaultPort
-            // 
-            this.tb_SRC_DefaultPort.Enabled = false;
-            this.tb_SRC_DefaultPort.Name = "tb_SRC_DefaultPort";
-            this.tb_SRC_DefaultPort.Text = "1521";
-            this.tb_SRC_DefaultPort.TextChanged += new System.EventHandler(this.tb_Default_Port_TextChanged);
-            this.tb_SRC_DefaultPort.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.tb_SRC_DefaultPort.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_SRC_DefaultPort.Size = new System.Drawing.Size(90, 23);
-            this.tb_SRC_DefaultPort.TabIndex = 18;
-            // 
-            // label3
-            // 
-            this.label3.Name = "label3";
-            this.label3.Text = "Data source";
-            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.label3.AutoSize = true;
-            this.label3.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label3.TabIndex = 19;
-            // 
-            // tb_SRC_DataSource
-            // 
-            this.tb_SRC_DataSource.Name = "tb_SRC_DataSource";
-            this.tb_SRC_DataSource.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
-            this.tb_SRC_DataSource.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_SRC_DataSource.TabIndex = 20;
-            // 
-            // label5
-            // 
-            this.label5.Name = "label5";
-            this.label5.Text = "Database";
-            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.label5.AutoSize = true;
-            this.label5.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label5.TabIndex = 21;
-            // 
-            // tb_SRC_DBName
-            // 
-            this.tb_SRC_DBName.Name = "tb_SRC_DBName";
-            this.tb_SRC_DBName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
-            this.tb_SRC_DBName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_SRC_DBName.TabIndex = 22;
-            // 
-            // label7
-            // 
-            this.label7.Name = "label7";
-            this.label7.Text = "Username";
-            this.label7.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.label7.AutoSize = true;
-            this.label7.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label7.TabIndex = 23;
-            // 
-            // tb_SRC_UserName
-            // 
-            this.tb_SRC_UserName.Name = "tb_SRC_UserName";
-            this.tb_SRC_UserName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
-            this.tb_SRC_UserName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_SRC_UserName.TabIndex = 24;
-            // 
-            // label9
-            // 
-            this.label9.Name = "label9";
-            this.label9.Text = "Password";
-            this.label9.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.label9.AutoSize = true;
-            this.label9.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label9.TabIndex = 25;
-            // 
-            // tb_SRC_Password
-            // 
-            this.tb_SRC_Password.Name = "tb_SRC_Password";
-            this.tb_SRC_Password.PasswordChar = '*';
-            this.tb_SRC_Password.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
-            this.tb_SRC_Password.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_SRC_Password.TabIndex = 26;
+            this.tlp_SRC_Table.Name = "tlp_SRC_Table";
+            this.tlp_SRC_Table.ColumnCount = 3;
+            this.tlp_SRC_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_SRC_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_SRC_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_SRC_Table.RowCount = 1;
+            this.tlp_SRC_Table.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_SRC_Table.Controls.Add(this.label16, 0, 0);
+            this.tlp_SRC_Table.Controls.Add(this.cb_SRC_TableName, 1, 0);
+            this.tlp_SRC_Table.Controls.Add(this.btn_Load_SRC_Table, 2, 0);
+            this.tlp_SRC_Table.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_SRC_Table.AutoSize = true;
+            this.tlp_SRC_Table.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tlp_SRC_Table.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.tlp_SRC_Table.TabIndex = 6;
             // 
             // label16
             // 
             this.label16.Name = "label16";
-            this.label16.Text = "Schema / table";
+            this.label16.Text = "Source table";
             this.label16.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label16.AutoSize = true;
             this.label16.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label16.TabIndex = 27;
+            this.label16.TabIndex = 7;
             // 
             // cb_SRC_TableName
             // 
@@ -553,20 +284,7 @@
             this.cb_SRC_TableName.Name = "cb_SRC_TableName";
             this.cb_SRC_TableName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.cb_SRC_TableName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_SRC_TableName.TabIndex = 28;
-            // 
-            // flp_SRC_Buttons
-            // 
-            this.flp_SRC_Buttons.Name = "flp_SRC_Buttons";
-            this.flp_SRC_Buttons.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
-            this.flp_SRC_Buttons.WrapContents = false;
-            this.flp_SRC_Buttons.Controls.Add(this.btn_Load_SRC_Table);
-            this.flp_SRC_Buttons.Controls.Add(this.btn_Copy_SRC_TRG);
-            this.flp_SRC_Buttons.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
-            this.flp_SRC_Buttons.AutoSize = true;
-            this.flp_SRC_Buttons.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flp_SRC_Buttons.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.flp_SRC_Buttons.TabIndex = 29;
+            this.cb_SRC_TableName.TabIndex = 8;
             // 
             // btn_Load_SRC_Table
             // 
@@ -574,243 +292,36 @@
             this.btn_Load_SRC_Table.UseVisualStyleBackColor = true;
             this.btn_Load_SRC_Table.Click += new System.EventHandler(this.btn_Load_SRC_Table_Click);
             this.btn_Load_SRC_Table.Text = "Load tables";
-            this.btn_Load_SRC_Table.Margin = new System.Windows.Forms.Padding(8, 8, 0, 0);
+            this.btn_Load_SRC_Table.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
             this.btn_Load_SRC_Table.Size = new System.Drawing.Size(110, 30);
-            this.btn_Load_SRC_Table.TabIndex = 30;
+            this.btn_Load_SRC_Table.TabIndex = 9;
             // 
-            // btn_Copy_SRC_TRG
+            // tlp_TRG_Table
             // 
-            this.btn_Copy_SRC_TRG.Name = "btn_Copy_SRC_TRG";
-            this.btn_Copy_SRC_TRG.UseVisualStyleBackColor = true;
-            this.btn_Copy_SRC_TRG.Click += new System.EventHandler(this.btn_Copy_SRC_TRG_Click);
-            this.btn_Copy_SRC_TRG.Text = "Copy to Target ›";
-            this.btn_Copy_SRC_TRG.Margin = new System.Windows.Forms.Padding(8, 8, 0, 0);
-            this.btn_Copy_SRC_TRG.Size = new System.Drawing.Size(130, 30);
-            this.btn_Copy_SRC_TRG.TabIndex = 31;
-            // 
-            // gb_Target1
-            // 
-            this.gb_Target1.Name = "gb_Target1";
-            this.gb_Target1.TabStop = false;
-            this.gb_Target1.Text = "Target · Oracle";
-            this.gb_Target1.Controls.Add(this.tlp_TRG);
-            this.gb_Target1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.gb_Target1.AutoSize = true;
-            this.gb_Target1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.gb_Target1.Margin = new System.Windows.Forms.Padding(6, 0, 0, 0);
-            this.gb_Target1.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_Target1.TabIndex = 32;
-            // 
-            // tlp_TRG
-            // 
-            this.tlp_TRG.Name = "tlp_TRG";
-            this.tlp_TRG.ColumnCount = 2;
-            this.tlp_TRG.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_TRG.RowCount = 9;
-            this.tlp_TRG.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_TRG.Controls.Add(this.lbl_TRG_Platform, 0, 0);
-            this.tlp_TRG.Controls.Add(this.flp_TRG_Platform, 1, 0);
-            this.tlp_TRG.Controls.Add(this.flp_TRG_Options, 1, 1);
-            this.tlp_TRG.Controls.Add(this.lbl_TRG_Port, 0, 2);
-            this.tlp_TRG.Controls.Add(this.tb_TRG_DefaultPort, 1, 2);
-            this.tlp_TRG.Controls.Add(this.label2, 0, 3);
-            this.tlp_TRG.Controls.Add(this.tb_TRG_DataSource, 1, 3);
-            this.tlp_TRG.Controls.Add(this.label4, 0, 4);
-            this.tlp_TRG.Controls.Add(this.tb_TRG_DBName, 1, 4);
-            this.tlp_TRG.Controls.Add(this.label6, 0, 5);
-            this.tlp_TRG.Controls.Add(this.tb_TRG_UserName, 1, 5);
-            this.tlp_TRG.Controls.Add(this.label8, 0, 6);
-            this.tlp_TRG.Controls.Add(this.tb_TRG_Password, 1, 6);
-            this.tlp_TRG.Controls.Add(this.label17, 0, 7);
-            this.tlp_TRG.Controls.Add(this.cb_TRG_TableName, 1, 7);
-            this.tlp_TRG.Controls.Add(this.flp_TRG_Buttons, 0, 8);
-            this.tlp_TRG.SetColumnSpan(this.flp_TRG_Buttons, 2);
-            this.tlp_TRG.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tlp_TRG.AutoSize = true;
-            this.tlp_TRG.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_TRG.TabIndex = 33;
-            // 
-            // lbl_TRG_Platform
-            // 
-            this.lbl_TRG_Platform.Name = "lbl_TRG_Platform";
-            this.lbl_TRG_Platform.Text = "Platform";
-            this.lbl_TRG_Platform.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.lbl_TRG_Platform.AutoSize = true;
-            this.lbl_TRG_Platform.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.lbl_TRG_Platform.TabIndex = 34;
-            // 
-            // flp_TRG_Platform
-            // 
-            this.flp_TRG_Platform.Name = "flp_TRG_Platform";
-            this.flp_TRG_Platform.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
-            this.flp_TRG_Platform.WrapContents = false;
-            this.flp_TRG_Platform.Controls.Add(this.rb_TRG_Oracle);
-            this.flp_TRG_Platform.Controls.Add(this.rb_TRG_SQL);
-            this.flp_TRG_Platform.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.flp_TRG_Platform.AutoSize = true;
-            this.flp_TRG_Platform.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flp_TRG_Platform.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.flp_TRG_Platform.TabIndex = 35;
-            // 
-            // rb_TRG_Oracle
-            // 
-            this.rb_TRG_Oracle.Checked = true;
-            this.rb_TRG_Oracle.Name = "rb_TRG_Oracle";
-            this.rb_TRG_Oracle.TabStop = true;
-            this.rb_TRG_Oracle.Text = "Oracle";
-            this.rb_TRG_Oracle.UseVisualStyleBackColor = true;
-            this.rb_TRG_Oracle.CheckedChanged += new System.EventHandler(this.rb_Target_Oracle_CheckedChanged);
-            this.rb_TRG_Oracle.AutoSize = true;
-            this.rb_TRG_Oracle.Margin = new System.Windows.Forms.Padding(0, 3, 16, 3);
-            this.rb_TRG_Oracle.TabIndex = 36;
-            // 
-            // rb_TRG_SQL
-            // 
-            this.rb_TRG_SQL.Name = "rb_TRG_SQL";
-            this.rb_TRG_SQL.TabStop = true;
-            this.rb_TRG_SQL.Text = "SQL";
-            this.rb_TRG_SQL.UseVisualStyleBackColor = true;
-            this.rb_TRG_SQL.CheckedChanged += new System.EventHandler(this.rb_Target_SQL_CheckedChanged);
-            this.rb_TRG_SQL.AutoSize = true;
-            this.rb_TRG_SQL.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.rb_TRG_SQL.TabIndex = 37;
-            // 
-            // flp_TRG_Options
-            // 
-            this.flp_TRG_Options.Name = "flp_TRG_Options";
-            this.flp_TRG_Options.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
-            this.flp_TRG_Options.WrapContents = false;
-            this.flp_TRG_Options.Controls.Add(this.cb_WindowAuthentication_TRG);
-            this.flp_TRG_Options.Controls.Add(this.cb_TRG_DefaultPort);
-            this.flp_TRG_Options.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.flp_TRG_Options.AutoSize = true;
-            this.flp_TRG_Options.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flp_TRG_Options.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.flp_TRG_Options.TabIndex = 38;
-            // 
-            // cb_WindowAuthentication_TRG
-            // 
-            this.cb_WindowAuthentication_TRG.Name = "cb_WindowAuthentication_TRG";
-            this.cb_WindowAuthentication_TRG.UseVisualStyleBackColor = true;
-            this.cb_WindowAuthentication_TRG.CheckedChanged += new System.EventHandler(this.cb_windowsAuthentication_CheckedChanged);
-            this.cb_WindowAuthentication_TRG.Text = "Windows authentication";
-            this.cb_WindowAuthentication_TRG.AutoSize = true;
-            this.cb_WindowAuthentication_TRG.Margin = new System.Windows.Forms.Padding(0, 3, 16, 3);
-            this.cb_WindowAuthentication_TRG.TabIndex = 39;
-            // 
-            // cb_TRG_DefaultPort
-            // 
-            this.cb_TRG_DefaultPort.Checked = true;
-            this.cb_TRG_DefaultPort.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_TRG_DefaultPort.Name = "cb_TRG_DefaultPort";
-            this.cb_TRG_DefaultPort.UseVisualStyleBackColor = true;
-            this.cb_TRG_DefaultPort.CheckedChanged += new System.EventHandler(this.cb_Target_DefaultPort_CheckedChanged);
-            this.cb_TRG_DefaultPort.Text = "Default port";
-            this.cb_TRG_DefaultPort.AutoSize = true;
-            this.cb_TRG_DefaultPort.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_TRG_DefaultPort.TabIndex = 40;
-            // 
-            // lbl_TRG_Port
-            // 
-            this.lbl_TRG_Port.Name = "lbl_TRG_Port";
-            this.lbl_TRG_Port.Text = "Port";
-            this.lbl_TRG_Port.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.lbl_TRG_Port.AutoSize = true;
-            this.lbl_TRG_Port.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.lbl_TRG_Port.TabIndex = 41;
-            // 
-            // tb_TRG_DefaultPort
-            // 
-            this.tb_TRG_DefaultPort.Enabled = false;
-            this.tb_TRG_DefaultPort.Name = "tb_TRG_DefaultPort";
-            this.tb_TRG_DefaultPort.Text = "1521";
-            this.tb_TRG_DefaultPort.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.tb_TRG_DefaultPort.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_TRG_DefaultPort.Size = new System.Drawing.Size(90, 23);
-            this.tb_TRG_DefaultPort.TabIndex = 42;
-            // 
-            // label2
-            // 
-            this.label2.Name = "label2";
-            this.label2.Text = "Data source";
-            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.label2.AutoSize = true;
-            this.label2.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label2.TabIndex = 43;
-            // 
-            // tb_TRG_DataSource
-            // 
-            this.tb_TRG_DataSource.Name = "tb_TRG_DataSource";
-            this.tb_TRG_DataSource.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
-            this.tb_TRG_DataSource.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_TRG_DataSource.TabIndex = 44;
-            // 
-            // label4
-            // 
-            this.label4.Name = "label4";
-            this.label4.Text = "Database";
-            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.label4.AutoSize = true;
-            this.label4.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label4.TabIndex = 45;
-            // 
-            // tb_TRG_DBName
-            // 
-            this.tb_TRG_DBName.Name = "tb_TRG_DBName";
-            this.tb_TRG_DBName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
-            this.tb_TRG_DBName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_TRG_DBName.TabIndex = 46;
-            // 
-            // label6
-            // 
-            this.label6.Name = "label6";
-            this.label6.Text = "Username";
-            this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.label6.AutoSize = true;
-            this.label6.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label6.TabIndex = 47;
-            // 
-            // tb_TRG_UserName
-            // 
-            this.tb_TRG_UserName.Name = "tb_TRG_UserName";
-            this.tb_TRG_UserName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
-            this.tb_TRG_UserName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_TRG_UserName.TabIndex = 48;
-            // 
-            // label8
-            // 
-            this.label8.Name = "label8";
-            this.label8.Text = "Password";
-            this.label8.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
-            this.label8.AutoSize = true;
-            this.label8.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label8.TabIndex = 49;
-            // 
-            // tb_TRG_Password
-            // 
-            this.tb_TRG_Password.Name = "tb_TRG_Password";
-            this.tb_TRG_Password.PasswordChar = '*';
-            this.tb_TRG_Password.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
-            this.tb_TRG_Password.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.tb_TRG_Password.TabIndex = 50;
+            this.tlp_TRG_Table.Name = "tlp_TRG_Table";
+            this.tlp_TRG_Table.ColumnCount = 3;
+            this.tlp_TRG_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_TRG_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_TRG_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_TRG_Table.RowCount = 1;
+            this.tlp_TRG_Table.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_TRG_Table.Controls.Add(this.label17, 0, 0);
+            this.tlp_TRG_Table.Controls.Add(this.cb_TRG_TableName, 1, 0);
+            this.tlp_TRG_Table.Controls.Add(this.btn_Load_TRG_Table, 2, 0);
+            this.tlp_TRG_Table.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_TRG_Table.AutoSize = true;
+            this.tlp_TRG_Table.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tlp_TRG_Table.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.tlp_TRG_Table.TabIndex = 10;
             // 
             // label17
             // 
             this.label17.Name = "label17";
-            this.label17.Text = "Schema / table";
+            this.label17.Text = "Target table";
             this.label17.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label17.AutoSize = true;
             this.label17.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label17.TabIndex = 51;
+            this.label17.TabIndex = 11;
             // 
             // cb_TRG_TableName
             // 
@@ -820,30 +331,7 @@
             this.cb_TRG_TableName.Name = "cb_TRG_TableName";
             this.cb_TRG_TableName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.cb_TRG_TableName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_TRG_TableName.TabIndex = 52;
-            // 
-            // flp_TRG_Buttons
-            // 
-            this.flp_TRG_Buttons.Name = "flp_TRG_Buttons";
-            this.flp_TRG_Buttons.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
-            this.flp_TRG_Buttons.WrapContents = false;
-            this.flp_TRG_Buttons.Controls.Add(this.btn_TRG_SRC);
-            this.flp_TRG_Buttons.Controls.Add(this.btn_Load_TRG_Table);
-            this.flp_TRG_Buttons.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
-            this.flp_TRG_Buttons.AutoSize = true;
-            this.flp_TRG_Buttons.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flp_TRG_Buttons.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.flp_TRG_Buttons.TabIndex = 53;
-            // 
-            // btn_TRG_SRC
-            // 
-            this.btn_TRG_SRC.Name = "btn_TRG_SRC";
-            this.btn_TRG_SRC.UseVisualStyleBackColor = true;
-            this.btn_TRG_SRC.Click += new System.EventHandler(this.btn_TRG_SRC_Click);
-            this.btn_TRG_SRC.Text = "‹ Copy to Source";
-            this.btn_TRG_SRC.Margin = new System.Windows.Forms.Padding(8, 8, 0, 0);
-            this.btn_TRG_SRC.Size = new System.Drawing.Size(130, 30);
-            this.btn_TRG_SRC.TabIndex = 54;
+            this.cb_TRG_TableName.TabIndex = 12;
             // 
             // btn_Load_TRG_Table
             // 
@@ -851,9 +339,22 @@
             this.btn_Load_TRG_Table.UseVisualStyleBackColor = true;
             this.btn_Load_TRG_Table.Click += new System.EventHandler(this.btn_Load_TRG_Table_Click);
             this.btn_Load_TRG_Table.Text = "Load tables";
-            this.btn_Load_TRG_Table.Margin = new System.Windows.Forms.Padding(8, 8, 0, 0);
+            this.btn_Load_TRG_Table.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
             this.btn_Load_TRG_Table.Size = new System.Drawing.Size(110, 30);
-            this.btn_Load_TRG_Table.TabIndex = 55;
+            this.btn_Load_TRG_Table.TabIndex = 13;
+            // 
+            // cb_FullName
+            // 
+            this.cb_FullName.Checked = true;
+            this.cb_FullName.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cb_FullName.Name = "cb_FullName";
+            this.cb_FullName.UseVisualStyleBackColor = true;
+            this.cb_FullName.CheckedChanged += new System.EventHandler(this.cb_FullName_CheckedChanged);
+            this.cb_FullName.Text = "Show full names in lists";
+            this.cb_FullName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
+            this.cb_FullName.AutoSize = true;
+            this.cb_FullName.Margin = new System.Windows.Forms.Padding(0, 6, 0, 0);
+            this.cb_FullName.TabIndex = 14;
             // 
             // groupBox3
             // 
@@ -864,7 +365,7 @@
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.groupBox3.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox3.TabIndex = 56;
+            this.groupBox3.TabIndex = 15;
             // 
             // tlp_Compare
             // 
@@ -903,7 +404,7 @@
             this.tlp_Compare.SetColumnSpan(this.llbl_File_path, 2);
             this.tlp_Compare.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Compare.AutoSize = false;
-            this.tlp_Compare.TabIndex = 57;
+            this.tlp_Compare.TabIndex = 16;
             // 
             // cb_ColumnMapping
             // 
@@ -913,7 +414,7 @@
             this.cb_ColumnMapping.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_ColumnMapping.AutoSize = true;
             this.cb_ColumnMapping.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_ColumnMapping.TabIndex = 58;
+            this.cb_ColumnMapping.TabIndex = 17;
             // 
             // cb_IncludeRule
             // 
@@ -924,7 +425,7 @@
             this.cb_IncludeRule.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_IncludeRule.AutoSize = true;
             this.cb_IncludeRule.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_IncludeRule.TabIndex = 59;
+            this.cb_IncludeRule.TabIndex = 18;
             // 
             // btn_RuleForm
             // 
@@ -935,7 +436,7 @@
             this.btn_RuleForm.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
             this.btn_RuleForm.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.btn_RuleForm.Size = new System.Drawing.Size(110, 28);
-            this.btn_RuleForm.TabIndex = 60;
+            this.btn_RuleForm.TabIndex = 19;
             // 
             // cb_IgnoreCase
             // 
@@ -946,7 +447,7 @@
             this.cb_IgnoreCase.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_IgnoreCase.AutoSize = true;
             this.cb_IgnoreCase.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_IgnoreCase.TabIndex = 61;
+            this.cb_IgnoreCase.TabIndex = 20;
             // 
             // btn_Connect_Reference_ID
             // 
@@ -957,7 +458,7 @@
             this.btn_Connect_Reference_ID.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_Connect_Reference_ID.Margin = new System.Windows.Forms.Padding(0, 12, 0, 4);
             this.btn_Connect_Reference_ID.Size = new System.Drawing.Size(120, 34);
-            this.btn_Connect_Reference_ID.TabIndex = 62;
+            this.btn_Connect_Reference_ID.TabIndex = 21;
             // 
             // btn_Set
             // 
@@ -969,7 +470,7 @@
             this.btn_Set.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_Set.Margin = new System.Windows.Forms.Padding(0, 4, 0, 4);
             this.btn_Set.Size = new System.Drawing.Size(120, 34);
-            this.btn_Set.TabIndex = 63;
+            this.btn_Set.TabIndex = 22;
             // 
             // btnGenerateOutput
             // 
@@ -981,7 +482,7 @@
             this.btnGenerateOutput.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnGenerateOutput.Margin = new System.Windows.Forms.Padding(0, 4, 0, 8);
             this.btnGenerateOutput.Size = new System.Drawing.Size(120, 36);
-            this.btnGenerateOutput.TabIndex = 64;
+            this.btnGenerateOutput.TabIndex = 23;
             // 
             // btn_Cancel
             // 
@@ -993,7 +494,7 @@
             this.btn_Cancel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_Cancel.Margin = new System.Windows.Forms.Padding(0, 0, 4, 0);
             this.btn_Cancel.Size = new System.Drawing.Size(100, 30);
-            this.btn_Cancel.TabIndex = 65;
+            this.btn_Cancel.TabIndex = 24;
             // 
             // btn_Clear_Reset
             // 
@@ -1004,7 +505,7 @@
             this.btn_Clear_Reset.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_Clear_Reset.Margin = new System.Windows.Forms.Padding(4, 0, 0, 0);
             this.btn_Clear_Reset.Size = new System.Drawing.Size(100, 30);
-            this.btn_Clear_Reset.TabIndex = 66;
+            this.btn_Clear_Reset.TabIndex = 25;
             // 
             // label13
             // 
@@ -1013,7 +514,7 @@
             this.label13.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label13.AutoSize = true;
             this.label13.Margin = new System.Windows.Forms.Padding(0, 6, 0, 2);
-            this.label13.TabIndex = 67;
+            this.label13.TabIndex = 26;
             // 
             // llbl_File_path
             // 
@@ -1027,7 +528,7 @@
             this.llbl_File_path.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.llbl_File_path.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.llbl_File_path.Size = new System.Drawing.Size(100, 36);
-            this.llbl_File_path.TabIndex = 68;
+            this.llbl_File_path.TabIndex = 27;
             // 
             // groupBox9
             // 
@@ -1038,7 +539,7 @@
             this.groupBox9.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox9.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
             this.groupBox9.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox9.TabIndex = 69;
+            this.groupBox9.TabIndex = 28;
             // 
             // tlp_View
             // 
@@ -1060,7 +561,7 @@
             this.tlp_View.Controls.Add(this.groupBox10, 5, 0);
             this.tlp_View.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_View.AutoSize = false;
-            this.tlp_View.TabIndex = 70;
+            this.tlp_View.TabIndex = 29;
             // 
             // groupBox7
             // 
@@ -1071,7 +572,7 @@
             this.groupBox7.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox7.Margin = new System.Windows.Forms.Padding(0, 0, 3, 0);
             this.groupBox7.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox7.TabIndex = 71;
+            this.groupBox7.TabIndex = 30;
             // 
             // tlp_RefKey
             // 
@@ -1085,7 +586,7 @@
             this.tlp_RefKey.Controls.Add(this.clb_ReferenceID, 0, 1);
             this.tlp_RefKey.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_RefKey.AutoSize = false;
-            this.tlp_RefKey.TabIndex = 72;
+            this.tlp_RefKey.TabIndex = 31;
             // 
             // cb_PrimaryKey
             // 
@@ -1097,7 +598,7 @@
             this.cb_PrimaryKey.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_PrimaryKey.AutoSize = true;
             this.cb_PrimaryKey.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.cb_PrimaryKey.TabIndex = 73;
+            this.cb_PrimaryKey.TabIndex = 32;
             // 
             // clb_ReferenceID
             // 
@@ -1107,7 +608,7 @@
             this.clb_ReferenceID.Name = "clb_ReferenceID";
             this.clb_ReferenceID.Dock = System.Windows.Forms.DockStyle.Fill;
             this.clb_ReferenceID.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.clb_ReferenceID.TabIndex = 74;
+            this.clb_ReferenceID.TabIndex = 33;
             // 
             // groupBox5
             // 
@@ -1118,7 +619,7 @@
             this.groupBox5.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox5.Margin = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.groupBox5.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox5.TabIndex = 75;
+            this.groupBox5.TabIndex = 34;
             // 
             // tlp_SrcCols
             // 
@@ -1132,7 +633,7 @@
             this.tlp_SrcCols.Controls.Add(this.cbL_SRC_Cols, 0, 1);
             this.tlp_SrcCols.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_SrcCols.AutoSize = false;
-            this.tlp_SrcCols.TabIndex = 76;
+            this.tlp_SrcCols.TabIndex = 35;
             // 
             // cb_selectAll_toggle
             // 
@@ -1143,7 +644,7 @@
             this.cb_selectAll_toggle.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_selectAll_toggle.AutoSize = true;
             this.cb_selectAll_toggle.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.cb_selectAll_toggle.TabIndex = 77;
+            this.cb_selectAll_toggle.TabIndex = 36;
             // 
             // cbL_SRC_Cols
             // 
@@ -1153,7 +654,7 @@
             this.cbL_SRC_Cols.Name = "cbL_SRC_Cols";
             this.cbL_SRC_Cols.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cbL_SRC_Cols.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.cbL_SRC_Cols.TabIndex = 78;
+            this.cbL_SRC_Cols.TabIndex = 37;
             // 
             // groupBox6
             // 
@@ -1164,7 +665,7 @@
             this.groupBox6.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox6.Margin = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.groupBox6.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox6.TabIndex = 79;
+            this.groupBox6.TabIndex = 38;
             // 
             // tlp_TrgCols
             // 
@@ -1177,7 +678,7 @@
             this.tlp_TrgCols.Controls.Add(this.lb_TRG_Cols, 0, 1);
             this.tlp_TrgCols.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_TrgCols.AutoSize = false;
-            this.tlp_TrgCols.TabIndex = 80;
+            this.tlp_TrgCols.TabIndex = 39;
             // 
             // lb_TRG_Cols
             // 
@@ -1188,7 +689,7 @@
             this.lb_TRG_Cols.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.lb_TRG_Cols.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lb_TRG_Cols.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.lb_TRG_Cols.TabIndex = 81;
+            this.lb_TRG_Cols.TabIndex = 40;
             // 
             // groupBox1
             // 
@@ -1199,7 +700,7 @@
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox1.Margin = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.groupBox1.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox1.TabIndex = 82;
+            this.groupBox1.TabIndex = 41;
             // 
             // tlp_IgnSrc
             // 
@@ -1212,7 +713,7 @@
             this.tlp_IgnSrc.Controls.Add(this.lb_IgnoredCol_SRC, 0, 1);
             this.tlp_IgnSrc.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_IgnSrc.AutoSize = false;
-            this.tlp_IgnSrc.TabIndex = 83;
+            this.tlp_IgnSrc.TabIndex = 42;
             // 
             // lb_IgnoredCol_SRC
             // 
@@ -1223,7 +724,7 @@
             this.lb_IgnoredCol_SRC.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.lb_IgnoredCol_SRC.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lb_IgnoredCol_SRC.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.lb_IgnoredCol_SRC.TabIndex = 84;
+            this.lb_IgnoredCol_SRC.TabIndex = 43;
             // 
             // groupBox2
             // 
@@ -1234,7 +735,7 @@
             this.groupBox2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox2.Margin = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.groupBox2.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox2.TabIndex = 85;
+            this.groupBox2.TabIndex = 44;
             // 
             // tlp_IgnTrg
             // 
@@ -1247,7 +748,7 @@
             this.tlp_IgnTrg.Controls.Add(this.lb_IgnoredCol_TRG, 0, 1);
             this.tlp_IgnTrg.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_IgnTrg.AutoSize = false;
-            this.tlp_IgnTrg.TabIndex = 86;
+            this.tlp_IgnTrg.TabIndex = 45;
             // 
             // lb_IgnoredCol_TRG
             // 
@@ -1258,7 +759,7 @@
             this.lb_IgnoredCol_TRG.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.lb_IgnoredCol_TRG.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lb_IgnoredCol_TRG.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.lb_IgnoredCol_TRG.TabIndex = 87;
+            this.lb_IgnoredCol_TRG.TabIndex = 46;
             // 
             // groupBox10
             // 
@@ -1269,7 +770,7 @@
             this.groupBox10.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox10.Margin = new System.Windows.Forms.Padding(3, 0, 0, 0);
             this.groupBox10.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox10.TabIndex = 88;
+            this.groupBox10.TabIndex = 47;
             // 
             // tlp_Status
             // 
@@ -1285,7 +786,7 @@
             this.tlp_Status.Controls.Add(this.lblCal, 0, 2);
             this.tlp_Status.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Status.AutoSize = false;
-            this.tlp_Status.TabIndex = 89;
+            this.tlp_Status.TabIndex = 48;
             // 
             // lblStatus
             // 
@@ -1293,7 +794,7 @@
             this.lblStatus.Text = "Okay";
             this.lblStatus.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblStatus.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.lblStatus.TabIndex = 90;
+            this.lblStatus.TabIndex = 49;
             // 
             // lblExpressionStatus
             // 
@@ -1301,7 +802,7 @@
             this.lblExpressionStatus.Text = "";
             this.lblExpressionStatus.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblExpressionStatus.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.lblExpressionStatus.TabIndex = 91;
+            this.lblExpressionStatus.TabIndex = 50;
             // 
             // lblCal
             // 
@@ -1310,7 +811,7 @@
             this.lblCal.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblCal.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.lblCal.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
-            this.lblCal.TabIndex = 92;
+            this.lblCal.TabIndex = 51;
             // 
             // groupBox11
             // 
@@ -1323,7 +824,7 @@
             this.groupBox11.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.groupBox11.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
             this.groupBox11.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox11.TabIndex = 93;
+            this.groupBox11.TabIndex = 52;
             // 
             // tlp_Progress
             // 
@@ -1342,7 +843,7 @@
             this.tlp_Progress.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Progress.AutoSize = true;
             this.tlp_Progress.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Progress.TabIndex = 94;
+            this.tlp_Progress.TabIndex = 53;
             // 
             // progressBar1
             // 
@@ -1350,7 +851,7 @@
             this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.progressBar1.Margin = new System.Windows.Forms.Padding(0, 4, 16, 4);
             this.progressBar1.Size = new System.Drawing.Size(300, 14);
-            this.progressBar1.TabIndex = 95;
+            this.progressBar1.TabIndex = 54;
             // 
             // lbl_PercentageShow
             // 
@@ -1359,7 +860,7 @@
             this.lbl_PercentageShow.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_PercentageShow.AutoSize = true;
             this.lbl_PercentageShow.Margin = new System.Windows.Forms.Padding(0, 0, 24, 0);
-            this.lbl_PercentageShow.TabIndex = 96;
+            this.lbl_PercentageShow.TabIndex = 55;
             // 
             // label1
             // 
@@ -1369,7 +870,7 @@
             this.label1.AutoSize = true;
             this.label1.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
             this.label1.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
-            this.label1.TabIndex = 97;
+            this.label1.TabIndex = 56;
             // 
             // lblTimer
             // 
@@ -1379,7 +880,7 @@
             this.lblTimer.AutoSize = true;
             this.lblTimer.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.lblTimer.MinimumSize = new System.Drawing.Size(80, 0);
-            this.lblTimer.TabIndex = 98;
+            this.lblTimer.TabIndex = 57;
             // 
             // dataGridView1
             // 
@@ -1581,28 +1082,12 @@
             this.groupBox14.PerformLayout();
             this.tlp_Connection.ResumeLayout(false);
             this.tlp_Connection.PerformLayout();
-            this.flp_Profile.ResumeLayout(false);
-            this.flp_Profile.PerformLayout();
-            this.gb_Source1.ResumeLayout(false);
-            this.gb_Source1.PerformLayout();
-            this.tlp_SRC.ResumeLayout(false);
-            this.tlp_SRC.PerformLayout();
-            this.flp_SRC_Platform.ResumeLayout(false);
-            this.flp_SRC_Platform.PerformLayout();
-            this.flp_SRC_Options.ResumeLayout(false);
-            this.flp_SRC_Options.PerformLayout();
-            this.flp_SRC_Buttons.ResumeLayout(false);
-            this.flp_SRC_Buttons.PerformLayout();
-            this.gb_Target1.ResumeLayout(false);
-            this.gb_Target1.PerformLayout();
-            this.tlp_TRG.ResumeLayout(false);
-            this.tlp_TRG.PerformLayout();
-            this.flp_TRG_Platform.ResumeLayout(false);
-            this.flp_TRG_Platform.PerformLayout();
-            this.flp_TRG_Options.ResumeLayout(false);
-            this.flp_TRG_Options.PerformLayout();
-            this.flp_TRG_Buttons.ResumeLayout(false);
-            this.flp_TRG_Buttons.PerformLayout();
+            this.tlp_Tables.ResumeLayout(false);
+            this.tlp_Tables.PerformLayout();
+            this.tlp_SRC_Table.ResumeLayout(false);
+            this.tlp_SRC_Table.PerformLayout();
+            this.tlp_TRG_Table.ResumeLayout(false);
+            this.tlp_TRG_Table.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
             this.tlp_Compare.ResumeLayout(false);
@@ -1650,22 +1135,14 @@
 
         #endregion
 
+        private SPI_Data_Comp_Tool.ConnectionPanel connection;
+        private System.Windows.Forms.TableLayoutPanel tlp_Tables;
+        private System.Windows.Forms.TableLayoutPanel tlp_SRC_Table;
+        private System.Windows.Forms.TableLayoutPanel tlp_TRG_Table;
+
         private System.Windows.Forms.TableLayoutPanel tlp_Root;
         private System.Windows.Forms.TableLayoutPanel tlp_Top;
         private System.Windows.Forms.TableLayoutPanel tlp_Connection;
-        private System.Windows.Forms.FlowLayoutPanel flp_Profile;
-        private System.Windows.Forms.TableLayoutPanel tlp_SRC;
-        private System.Windows.Forms.Label lbl_SRC_Platform;
-        private System.Windows.Forms.FlowLayoutPanel flp_SRC_Platform;
-        private System.Windows.Forms.FlowLayoutPanel flp_SRC_Options;
-        private System.Windows.Forms.Label lbl_SRC_Port;
-        private System.Windows.Forms.FlowLayoutPanel flp_SRC_Buttons;
-        private System.Windows.Forms.TableLayoutPanel tlp_TRG;
-        private System.Windows.Forms.Label lbl_TRG_Platform;
-        private System.Windows.Forms.FlowLayoutPanel flp_TRG_Platform;
-        private System.Windows.Forms.FlowLayoutPanel flp_TRG_Options;
-        private System.Windows.Forms.Label lbl_TRG_Port;
-        private System.Windows.Forms.FlowLayoutPanel flp_TRG_Buttons;
         private System.Windows.Forms.TableLayoutPanel tlp_Compare;
         private System.Windows.Forms.TableLayoutPanel tlp_View;
         private System.Windows.Forms.TableLayoutPanel tlp_RefKey;
@@ -1726,46 +1203,14 @@
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.TextBox tb_ProfileName;
         private System.Windows.Forms.Label lbl_ProfileStatus;
-        private System.Windows.Forms.GroupBox gb_Target1;
         private System.Windows.Forms.ComboBox cb_TRG_TableName;
         private System.Windows.Forms.Button btn_Load_TRG_Table;
-        private System.Windows.Forms.TextBox tb_TRG_DefaultPort;
-        private System.Windows.Forms.CheckBox cb_TRG_DefaultPort;
-        private System.Windows.Forms.CheckBox cb_WindowAuthentication_TRG;
         private System.Windows.Forms.Label label17;
-        private System.Windows.Forms.TextBox tb_TRG_Password;
-        private System.Windows.Forms.TextBox tb_TRG_UserName;
-        private System.Windows.Forms.TextBox tb_TRG_DBName;
-        private System.Windows.Forms.TextBox tb_TRG_DataSource;
-        private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.RadioButton rb_TRG_Oracle;
-        private System.Windows.Forms.RadioButton rb_TRG_SQL;
-        private System.Windows.Forms.GroupBox gb_Source1;
-        private System.Windows.Forms.CheckBox cb_WindowAuthentication_SRC;
         private System.Windows.Forms.Button btn_Load_SRC_Table;
         private System.Windows.Forms.ComboBox cb_SRC_TableName;
-        private System.Windows.Forms.TextBox tb_SRC_DefaultPort;
-        private System.Windows.Forms.CheckBox cb_SRC_DefaultPort;
         private System.Windows.Forms.Label label16;
-        private System.Windows.Forms.TextBox tb_SRC_Password;
-        private System.Windows.Forms.TextBox tb_SRC_UserName;
-        private System.Windows.Forms.TextBox tb_SRC_DBName;
-        private System.Windows.Forms.TextBox tb_SRC_DataSource;
-        private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.RadioButton rb_SRC_oracle;
-        private System.Windows.Forms.RadioButton rb_SRC_SQL;
-        private System.Windows.Forms.ComboBox cb_UserProfileList;
         private System.Windows.Forms.CheckBox cb_FullName;
-        private System.Windows.Forms.Button btn_Copy_SRC_TRG;
-        private System.Windows.Forms.Button btn_TRG_SRC;
         private System.Windows.Forms.GroupBox groupBox14;
-        private System.Windows.Forms.Label label15;
         private System.Windows.Forms.CheckBox cb_PrimaryKey;
         private System.Windows.Forms.Timer timer1;
     }

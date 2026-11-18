@@ -76,6 +76,7 @@ flowchart TD
 - Look: `UiTheme.Apply(this, mainButton)` at the end of each constructor gives the Windows 11 style - Segoe UI 9, light-grey window, white group boxes, flat buttons, one blue main button and the app icon. `UiTheme.SetIcon(this)` only sets the icon.
 - Converted so far: main window (shows the version in its status line), Compare DB (template for the Source/Target windows), User Settings. The rest follow in batches.
 - Shared code: `FormHelpers` holds the helpers several windows used to copy (status text and errors, elapsed time, summary transpose, Excel table formatting, table pickers). A window keeps a short wrapper with its own error handling and calls the helper; add new shared logic there instead of copying it.
+- Connection panel: `ConnectionPanel` (a UserControl) holds the profile picker, the Source and Target halves (`ConnectionSide`) and the Copy buttons, with their Oracle / SQL Server, Windows-login and default-port behaviour. A window places it with `new="SPI_Data_Comp_Tool.ConnectionPanel"` in its layout spec, sets `Mode` (`SourceAndTarget` or `SourceOnly`), handles `ProfileApplied` for its own extras, and keeps its old control names as one-line properties (`private TextBox tb_SRC_DataSource => connection.Source.DataSource;`), so the rest of its code is unchanged. Converted so far: Compare DB and User profiles.
 
 ## Versioning and CI artifacts
 Versions are automatic - nobody edits a version number by hand. `tools/release.py` works it out in CI:

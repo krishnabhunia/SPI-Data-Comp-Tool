@@ -156,11 +156,35 @@ namespace SPI_Data_Comp_Tool
         private OpenFileDialogData OpenFileDialogData_OBJ;
         private DBConnectionDetails dBConnectionDetails;
 
+        // The connection fields live in the shared ConnectionPanel; these keep the names the code below uses.
+        private System.Windows.Forms.ComboBox cb_UserProfileList => connection.ProfileList;
+        private System.Windows.Forms.GroupBox gb_Source1 => connection.Source.Group;
+        private System.Windows.Forms.GroupBox gb_Target1 => connection.Target.Group;
+        private System.Windows.Forms.RadioButton rb_SRC_oracle => connection.Source.Oracle;
+        private System.Windows.Forms.RadioButton rb_SRC_SQL => connection.Source.Sql;
+        private System.Windows.Forms.CheckBox cb_WindowAuthentication_SRC => connection.Source.WindowsLogin;
+        private System.Windows.Forms.CheckBox cb_SRC_DefaultPort => connection.Source.DefaultPort;
+        private System.Windows.Forms.TextBox tb_SRC_DefaultPort => connection.Source.Port;
+        private System.Windows.Forms.TextBox tb_SRC_DataSource => connection.Source.DataSource;
+        private System.Windows.Forms.TextBox tb_SRC_DBName => connection.Source.Database;
+        private System.Windows.Forms.TextBox tb_SRC_UserName => connection.Source.User;
+        private System.Windows.Forms.TextBox tb_SRC_Password => connection.Source.Password;
+        private System.Windows.Forms.RadioButton rb_TRG_Oracle => connection.Target.Oracle;
+        private System.Windows.Forms.RadioButton rb_TRG_SQL => connection.Target.Sql;
+        private System.Windows.Forms.CheckBox cb_WindowAuthentication_TRG => connection.Target.WindowsLogin;
+        private System.Windows.Forms.TextBox tb_TRG_DefaultPort => connection.Target.Port;
+        private System.Windows.Forms.TextBox tb_TRG_DataSource => connection.Target.DataSource;
+        private System.Windows.Forms.TextBox tb_TRG_DBName => connection.Target.Database;
+        private System.Windows.Forms.TextBox tb_TRG_UserName => connection.Target.User;
+        private System.Windows.Forms.TextBox tb_TRG_Password => connection.Target.Password;
+
         private SaveFileDialogFile saveFileDialogFile;
 
         public DB_Comparison_Form()
         {
             InitializeComponent();
+            connection.ProfileApplied += Connection_ProfileApplied;
+            connection.Failed += (sender, error) => DisplayError(lblExpressionStatus, error);
             UiTheme.Apply(this, btnGenerateOutput);
 
             try
@@ -195,7 +219,7 @@ namespace SPI_Data_Comp_Tool
                 OpenFileDialogData_OBJ = new OpenFileDialogData();
                 int_Count_Comparison = 0;
 
-                cb_UserProfileList = common_Data.ReadUserProfile(cb_UserProfileList);
+                common_Data.ReadUserProfile(cb_UserProfileList);
                 //cb_UserProfileList = Common_Data.GetUserProfile(cb_UserProfileList);
 
                 if (Common_Data.StringNotNullOrEmpty(Properties.Settings.Default.ProfilePathUser, ".json", false, true))
@@ -215,6 +239,15 @@ namespace SPI_Data_Comp_Tool
                 DisplayError(ex);
             }
 
+        }
+
+        /// <summary>A saved profile was put into the Connection panel: take over its table names.</summary>
+        private void Connection_ProfileApplied(object sender, DBConnectionDetails details)
+        {
+            dBConnectionDetails = details;
+            cb_SRC_TableName.Text = details.str_SRC_TableName;
+            cb_TRG_TableName.Text = details.str_TRG_TableName;
+            DisplayMessage(lblStatus, $"User Profile :{cb_UserProfileList.SelectedItem}, Loaded Successfully");
         }
 
         private void DebugDataSet(int intExplicitCall)
@@ -1004,309 +1037,8 @@ namespace SPI_Data_Comp_Tool
             }
 
         }
-        private void rb_oracle_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rb_SRC_oracle.Checked)
-                {
-                    CheckChangeRadioButton(1);
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
-        private void rb_sql_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rb_SRC_SQL.Checked)
-                {
-                    CheckChangeRadioButton(1);
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
-        private void CheckChangeRadioButton(int int_Group)
-        {
-            try
-            {
-                if (int_Group == 1)
-                {
-                    if (rb_SRC_oracle.Checked)
-                    {
-                        gb_Source1.Text = "Source · Oracle";
-                        cb_WindowAuthentication_SRC.Enabled = false;
-                        cb_WindowAuthentication_SRC.Checked = false;
-                        cb_SRC_DefaultPort.Enabled = true;
-                        cb_SRC_DefaultPort.Checked = true;
-                        tb_SRC_DefaultPort.Enabled = true;
-                        tb_SRC_DefaultPort.ReadOnly = true;
-                    }
-                    else if (rb_SRC_SQL.Checked)
-                    {
-                        gb_Source1.Text = "Source · SQL Server";
-                        cb_WindowAuthentication_SRC.Enabled = true;
-                        cb_WindowAuthentication_SRC.Checked = false;
-                        cb_SRC_DefaultPort.Enabled = false;
-                        cb_SRC_DefaultPort.Checked = false;
-                        tb_SRC_DefaultPort.Enabled = false;
-                        tb_SRC_DefaultPort.ReadOnly = true;
-                    }
-                }
-                else if (int_Group == 2)
-                {
-                    if (rb_TRG_Oracle.Checked)
-                    {
-                        gb_Target1.Text = "Target · Oracle";
-                        cb_WindowAuthentication_TRG.Enabled = false;
-                        cb_WindowAuthentication_TRG.Checked = false;
-                        cb_TRG_DefaultPort.Enabled = true;
-                        cb_TRG_DefaultPort.Checked = true;
-                        tb_TRG_DefaultPort.Enabled = true;
-                        tb_TRG_DefaultPort.ReadOnly = true;
-
-                    }
-                    else if (rb_TRG_SQL.Checked)
-                    {
-                        gb_Target1.Text = "Target · SQL Server";
-                        cb_WindowAuthentication_TRG.Enabled = true;
-                        cb_WindowAuthentication_TRG.Checked = false;
-                        cb_TRG_DefaultPort.Enabled = false;
-                        cb_TRG_DefaultPort.Checked = false;
-                        tb_TRG_DefaultPort.Enabled = false;
-                        tb_TRG_DefaultPort.ReadOnly = true;
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                DisplayMessage(lblStatus, $"User Profile Selected : {cb_UserProfileList.SelectedItem}");
-
-                dBConnectionDetails = new DBConnectionDetails(cb_UserProfileList.SelectedIndex);
-
-                rb_SRC_oracle.Checked = dBConnectionDetails.bool_Rb_SRC_Oracle;
-                rb_SRC_SQL.Checked = dBConnectionDetails.bool_Rb_SRC_SQL;
-
-                cb_WindowAuthentication_SRC.Checked = dBConnectionDetails.bool_SRC_SQL_WA;
-                cb_SRC_DefaultPort.Checked = dBConnectionDetails.bool_SRC_Oracle_DefaultPort;
-                tb_SRC_DefaultPort.Text = dBConnectionDetails.bool_Rb_SRC_Oracle ? dBConnectionDetails.int_SRC_Oracle_DefaultPort.ToString() : string.Empty;
-
-                tb_SRC_DataSource.Text = dBConnectionDetails.str_SRC_DataSource;
-                tb_SRC_DBName.Text = dBConnectionDetails.str_SRC_DBName;
-                tb_SRC_UserName.Text = dBConnectionDetails.str_SRC_UserName;
-                tb_SRC_Password.Text = dBConnectionDetails.str_SRC_Password;
-                cb_SRC_TableName.Text = dBConnectionDetails.str_SRC_TableName;
-
-                rb_TRG_Oracle.Checked = dBConnectionDetails.bool_Rb_TRG_Oracle;
-                rb_TRG_SQL.Checked = dBConnectionDetails.bool_Rb_TRG_SQL;
-
-                cb_WindowAuthentication_TRG.Checked = dBConnectionDetails.bool_TRG_SQL_WA;
-                cb_TRG_DefaultPort.Checked = dBConnectionDetails.bool_TRG_Oracle_DefaultPort;
-                tb_TRG_DefaultPort.Text = dBConnectionDetails.int_TRG_Oracle_DefaultPort == 0 ? "1521" : dBConnectionDetails.int_TRG_Oracle_DefaultPort.ToString();
-
-                tb_TRG_DataSource.Text = dBConnectionDetails.str_TRG_DataSource;
-                tb_TRG_DBName.Text = dBConnectionDetails.str_TRG_DBName;
-                tb_TRG_UserName.Text = dBConnectionDetails.str_TRG_UserName;
-                tb_TRG_Password.Text = dBConnectionDetails.str_TRG_Password;
-                cb_TRG_TableName.Text = dBConnectionDetails.str_TRG_TableName;
-
-                DisplayMessage(lblStatus, $"User Profile :{cb_UserProfileList.SelectedItem}, Loaded Successfully");
-            }
-            catch (Exception ex)
-            {
-                DisplayError(lblExpressionStatus, ex);
-            }
-
-            //if (GlobalDebug.boolIsGlobalDebug)
-            //{
-            //    switch (cb_UserProfileList.SelectedIndex + 1)
-            //    {
-            //        case 1:
-            //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "localhost";
-            //            tb_SRC_DBName.Text = "SPEL11G";
-            //            tb_SRC_UserName.Text = "system";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "tb_compare1";
-
-            //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "localhost";
-            //            tb_TRG_DBName.Text = "db_SPELSQL";
-            //            tb_TRG_UserName.Text = "sa";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "tb_compare1";
-
-            //            break;
-
-            //        case 2:
-            //            rb_SRC_SQL.Checked = true;
-            //            tb_SRC_DataSource.Text = "localhost";
-            //            tb_SRC_DBName.Text = "db_krishna";
-            //            tb_SRC_UserName.Text = "sa";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "tb_compare1";
-            //            cb_SRC_TableName.Text = "component";
-
-            //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "localhost";
-            //            tb_TRG_DBName.Text = "db_krishna";
-            //            tb_TRG_UserName.Text = "sa";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "component";
-
-            //            break;
-
-            //        case 3:
-            //            rb_SRC_SQL.Checked = true;
-            //            tb_SRC_DataSource.Text = "localhost";
-            //            tb_SRC_DBName.Text = "SPELOLDP";
-            //            tb_SRC_UserName.Text = "sa";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "plant1el.t_plantitem";
-
-            //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "localhost";
-            //            tb_TRG_DBName.Text = "SPELOLDP_new";
-            //            tb_TRG_UserName.Text = "sa";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "plant1el.t_plantitem";
-
-            //            break;
-
-            //        case 4:
-            //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "localhost";
-            //            tb_SRC_DBName.Text = "SPEL11G";
-            //            tb_SRC_UserName.Text = "system";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "DASISLANDEL.T_motor";
-
-            //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "localhost";
-            //            tb_TRG_DBName.Text = "JK1703_P";
-            //            tb_TRG_UserName.Text = "sa";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "Plant789el.T_Motor";
-
-            //            break;
-
-            //        case 5:
-            //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "localhost";
-            //            tb_SRC_DBName.Text = "SPEL11G";
-            //            tb_SRC_UserName.Text = "system";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "DASISLANDEL.T_Plantitem";
-
-            //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "localhost";
-            //            tb_TRG_DBName.Text = "JK1703_P";
-            //            tb_TRG_UserName.Text = "sa";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "plant789elp1.t_Plantitem";
-
-            //            break;
-
-            //        case 6:
-            //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "localhost";
-            //            tb_SRC_DBName.Text = "SPEL11G";
-            //            tb_SRC_UserName.Text = "system";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "tb_loop";
-
-            //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "localhost";
-            //            tb_TRG_DBName.Text = "db_SPELSQL";
-            //            tb_TRG_UserName.Text = "sa";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "loop";
-
-            //            break;
-            //        case 7:
-            //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "localhost";
-            //            tb_SRC_DBName.Text = "SPEL11G";
-            //            tb_SRC_UserName.Text = "system";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "tb_loop_2k";
-
-            //            tb_TRG_DataSource.Text = "localhost";
-            //            tb_TRG_DBName.Text = "db_SPELSQL";
-            //            tb_TRG_UserName.Text = "sa";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "tb_loop_2k";
-
-            //            break;
-            //        case 8:
-            //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "localhost";
-            //            tb_SRC_DBName.Text = "orcl";
-            //            tb_SRC_UserName.Text = "system";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "test";
-
-            //            rb_TRG_Oracle.Checked = true;
-            //            tb_TRG_DataSource.Text = "localhost";
-            //            tb_TRG_DBName.Text = "orcl";
-            //            tb_TRG_UserName.Text = "system";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "test1";
-
-            //            break;
-
-            //        case 9:
-            //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "localhost";
-            //            tb_SRC_DBName.Text = "SPEL11G";
-            //            tb_SRC_UserName.Text = "system";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "DASISLANdEL.T_MOTOR";
-
-            //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = "localhost";
-            //            tb_TRG_DBName.Text = "JK1703_P";
-            //            tb_TRG_UserName.Text = "sa";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "Plant789el.T_Motor";
-
-            //            break;
-            //        case 10:
-            //            rb_SRC_oracle.Checked = true;
-            //            tb_SRC_DataSource.Text = "DSGPY3002.dcap.glpoly.net";
-            //            tb_SRC_DBName.Text = "MSPIAS";
-            //            tb_SRC_UserName.Text = "";
-            //            tb_SRC_Password.Text = "";
-            //            cb_SRC_TableName.Text = "MDITRAIN.FLUID_PROPERTY";
-
-            //            rb_TRG_SQL.Checked = true;
-            //            tb_TRG_DataSource.Text = @"DFFMZ08SOR01\TOOLS_QAQC";
-            //            tb_TRG_DBName.Text = "Q_SPI_MDITRAIN_2018";
-            //            tb_TRG_UserName.Text = "CAOJING";
-            //            tb_TRG_Password.Text = "";
-            //            cb_TRG_TableName.Text = "CAOJING.FLUID_PROPERTY";
-
-            //            break;
-            //    }
-            //}
-        }
 
         private void btn_Clear_Reset_Click(object sender, EventArgs e)
         {
@@ -2323,41 +2055,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void cb_windowsAuthentication_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (cb_WindowAuthentication_TRG.Checked)
-                {
-                    tb_TRG_UserName.Enabled = false;
-                    tb_TRG_Password.Enabled = false;
-                }
-                else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
-                {
-                    tb_TRG_UserName.Enabled = true;
-                    tb_TRG_Password.Enabled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void rb_Target_Oracle_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rb_TRG_Oracle.Checked)
-                {
-                    CheckChangeRadioButton(2);
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
         private void btn_RuleForm_Click(object sender, EventArgs e)
         {
@@ -2386,10 +2083,6 @@ namespace SPI_Data_Comp_Tool
             //test();
         }
 
-        private void tb_Default_Port_TextChanged(object sender, EventArgs e)
-        {
-
-        }
 
         private void UpdateLabel(Label lb, string str_msg = null)
         {
@@ -2824,45 +2517,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void btn_Copy_SRC_TRG_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                rb_TRG_Oracle.Checked = rb_SRC_oracle.Checked;
-                rb_TRG_SQL.Checked = rb_SRC_SQL.Checked;
-                cb_WindowAuthentication_TRG.Checked = cb_WindowAuthentication_SRC.Checked;
-                cb_TRG_DefaultPort.Checked = cb_SRC_DefaultPort.Checked;
-                tb_TRG_DefaultPort.Text = tb_SRC_DefaultPort.Text;
-                tb_TRG_DataSource.Text = tb_SRC_DataSource.Text;
-                tb_TRG_DBName.Text = tb_SRC_DBName.Text;
-                tb_TRG_UserName.Text = tb_SRC_UserName.Text;
-                tb_TRG_Password.Text = tb_SRC_Password.Text;
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void btn_TRG_SRC_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                rb_SRC_oracle.Checked = rb_TRG_Oracle.Checked;
-                rb_SRC_SQL.Checked = rb_TRG_SQL.Checked;
-                cb_WindowAuthentication_SRC.Checked = cb_WindowAuthentication_TRG.Checked;
-                cb_SRC_DefaultPort.Checked = cb_TRG_DefaultPort.Checked;
-                tb_SRC_DefaultPort.Text = tb_TRG_DefaultPort.Text;
-                tb_SRC_DataSource.Text = tb_TRG_DataSource.Text;
-                tb_SRC_DBName.Text = tb_TRG_DBName.Text;
-                tb_SRC_UserName.Text = tb_TRG_UserName.Text;
-                tb_SRC_Password.Text = tb_TRG_Password.Text;
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
         private void llbl_File_path_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
@@ -2908,97 +2562,14 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void cb_WindowAuthentication_SRC_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (cb_WindowAuthentication_SRC.Checked)
-                {
-                    tb_SRC_UserName.Enabled = false;
-                    tb_SRC_Password.Enabled = false;
-                }
-                else if (cb_WindowAuthentication_SRC.CheckState == CheckState.Unchecked)
-                {
-                    tb_SRC_UserName.Enabled = true;
-                    tb_SRC_Password.Enabled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void label15_Click(object sender, EventArgs e)
-        {
-
-        }
 
         private void DisplayError(Control control, Exception ex = null)
         {
             FormHelpers.ShowError(control, ex);
         }
 
-        private void rb_Target_SQL_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rb_TRG_SQL.Checked)
-                {
-                    CheckChangeRadioButton(2);
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
-        private void cb_Target_DefaultPort_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (cb_TRG_DefaultPort.Checked)
-                {
-                    tb_TRG_DefaultPort.Text = "1521";
-                    tb_TRG_DefaultPort.Enabled = true;
-                    tb_TRG_DefaultPort.ReadOnly = true;
-                }
-                else
-                {
-                    tb_TRG_DefaultPort.ResetText();
-                    tb_TRG_DefaultPort.Enabled = true;
-                    tb_TRG_DefaultPort.ReadOnly = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
-        private void cb_Default_Port_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (cb_SRC_DefaultPort.Checked)
-                {
-                    tb_SRC_DefaultPort.Text = "1521";
-                    tb_SRC_DefaultPort.Enabled = true;
-                    tb_SRC_DefaultPort.ReadOnly = true;
-                }
-                else
-                {
-                    tb_SRC_DefaultPort.ResetText();
-                    tb_SRC_DefaultPort.Enabled = true;
-                    tb_SRC_DefaultPort.ReadOnly = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
         private void btn_Cancel_Click(object sender, EventArgs e)
         {

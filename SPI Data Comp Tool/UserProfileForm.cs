@@ -27,6 +27,27 @@ namespace SPI_Data_Comp_Tool
 
         private DBConnectionStatus dBConnectionStatus_SRC, dBConnectionStatus_TRG;
         private DBConnectionDetails dBConnectionDetails;
+
+        // The connection fields live in the shared ConnectionPanel; these keep the names the code below uses.
+        private System.Windows.Forms.ComboBox cb_UserProfileList => connection.ProfileList;
+        private System.Windows.Forms.RadioButton rb_SRC_oracle => connection.Source.Oracle;
+        private System.Windows.Forms.RadioButton rb_SRC_SQL => connection.Source.Sql;
+        private System.Windows.Forms.CheckBox cb_WindowAuthentication_SRC => connection.Source.WindowsLogin;
+        private System.Windows.Forms.CheckBox cb_SRC_DefaultPort => connection.Source.DefaultPort;
+        private System.Windows.Forms.TextBox tb_SRC_DefaultPort => connection.Source.Port;
+        private System.Windows.Forms.TextBox tb_SRC_DataSource => connection.Source.DataSource;
+        private System.Windows.Forms.TextBox tb_SRC_DBName => connection.Source.Database;
+        private System.Windows.Forms.TextBox tb_SRC_UserName => connection.Source.User;
+        private System.Windows.Forms.TextBox tb_SRC_Password => connection.Source.Password;
+        private System.Windows.Forms.RadioButton rb_TRG_Oracle => connection.Target.Oracle;
+        private System.Windows.Forms.RadioButton rb_TRG_SQL => connection.Target.Sql;
+        private System.Windows.Forms.CheckBox cb_WindowAuthentication_TRG => connection.Target.WindowsLogin;
+        private System.Windows.Forms.CheckBox cb_TRG_DefaultPort => connection.Target.DefaultPort;
+        private System.Windows.Forms.TextBox tb_TRG_DefaultPort => connection.Target.Port;
+        private System.Windows.Forms.TextBox tb_TRG_DataSource => connection.Target.DataSource;
+        private System.Windows.Forms.TextBox tb_TRG_DBName => connection.Target.Database;
+        private System.Windows.Forms.TextBox tb_TRG_UserName => connection.Target.User;
+        private System.Windows.Forms.TextBox tb_TRG_Password => connection.Target.Password;
         private OpenFileDialogData openFileDialogData;
         private DBConnectionDetailsProfile dBConnectionDetailsProfile;
 
@@ -46,6 +67,9 @@ namespace SPI_Data_Comp_Tool
         public UserProfileForm()
         {
             InitializeComponent();
+            connection.ProfileApplied += Connection_ProfileApplied;
+            connection.Failed += (sender, error) => DisplayError(error);
+            UiTheme.Apply(this, btnSaveUserProfile);
 
             try
             {
@@ -63,7 +87,7 @@ namespace SPI_Data_Comp_Tool
                     Common_Data.DisplayMessage(rtb_Log, $"User Profile Loaded from path : {Properties.Settings.Default.ProfilePathUser}");
                 }
 
-                cb_UserProfileList = common_Data.ReadUserProfile(cb_UserProfileList);
+                common_Data.ReadUserProfile(cb_UserProfileList);
 
                 if (GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword))
                 {
@@ -86,48 +110,15 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void cb_UserProfileList_SelectedIndexChanged(object sender, EventArgs e)
+        /// <summary>A saved profile was put into the Connection panel: take over its table names.</summary>
+        private void Connection_ProfileApplied(object sender, DBConnectionDetails details)
         {
-            try
-            {
-                DisplayMessage($"User Profile Selected : {cb_UserProfileList.SelectedItem}", false);
-
-                dBConnectionDetails = new DBConnectionDetails(cb_UserProfileList.SelectedIndex);
-
-                rb_SRC_oracle.Checked = dBConnectionDetails.bool_Rb_SRC_Oracle;
-                rb_SRC_SQL.Checked = dBConnectionDetails.bool_Rb_SRC_SQL;
-
-                cb_WindowAuthentication_SRC.Checked = dBConnectionDetails.bool_SRC_SQL_WA;
-                cb_SRC_DefaultPort.Checked = dBConnectionDetails.bool_SRC_Oracle_DefaultPort;
-                tb_SRC_DefaultPort.Text = dBConnectionDetails.bool_Rb_SRC_Oracle ? dBConnectionDetails.int_SRC_Oracle_DefaultPort.ToString() : string.Empty;
-
-                tb_SRC_DataSource.Text = dBConnectionDetails.str_SRC_DataSource;
-                tb_SRC_DBName.Text = dBConnectionDetails.str_SRC_DBName;
-                tb_SRC_UserName.Text = dBConnectionDetails.str_SRC_UserName;
-                tb_SRC_Password.Text = dBConnectionDetails.str_SRC_Password;
-                cb_SRC_TableName.Text = dBConnectionDetails.str_SRC_TableName;
-
-                rb_TRG_Oracle.Checked = dBConnectionDetails.bool_Rb_TRG_Oracle;
-                rb_TRG_SQL.Checked = dBConnectionDetails.bool_Rb_TRG_SQL;
-
-                cb_WindowAuthentication_TRG.Checked = dBConnectionDetails.bool_TRG_SQL_WA;
-                cb_TRG_DefaultPort.Checked = dBConnectionDetails.bool_TRG_Oracle_DefaultPort;
-                tb_TRG_DefaultPort.Text = dBConnectionDetails.int_TRG_Oracle_DefaultPort == 0 ? "1521" : dBConnectionDetails.int_TRG_Oracle_DefaultPort.ToString(); ;
-
-                tb_TRG_DataSource.Text = dBConnectionDetails.str_TRG_DataSource;
-                tb_TRG_DBName.Text = dBConnectionDetails.str_TRG_DBName;
-                tb_TRG_UserName.Text = dBConnectionDetails.str_TRG_UserName;
-                tb_TRG_Password.Text = dBConnectionDetails.str_TRG_Password;
-                cb_TRG_TableName.Text = dBConnectionDetails.str_TRG_TableName;
-
-                DisplayMessage($"User Profile :{cb_UserProfileList.SelectedItem}, Loaded Successfully");
-
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
+            dBConnectionDetails = details;
+            cb_SRC_TableName.Text = details.str_SRC_TableName;
+            cb_TRG_TableName.Text = details.str_TRG_TableName;
+            DisplayMessage($"User Profile :{cb_UserProfileList.SelectedItem}, Loaded Successfully");
         }
+
 
         private void DisplayError(Exception ex)
         {
@@ -434,262 +425,9 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void btn_Copy_SRC_TRG_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                rb_TRG_Oracle.Checked = rb_SRC_oracle.Checked;
-                rb_TRG_SQL.Checked = rb_SRC_SQL.Checked;
-                cb_WindowAuthentication_TRG.Checked = cb_WindowAuthentication_SRC.Checked;
-                cb_TRG_DefaultPort.Checked = cb_SRC_DefaultPort.Checked;
-                tb_TRG_DefaultPort.Text = tb_SRC_DefaultPort.Text;
-                tb_TRG_DataSource.Text = tb_SRC_DataSource.Text;
-                tb_TRG_DBName.Text = tb_SRC_DBName.Text;
-                tb_TRG_UserName.Text = tb_SRC_UserName.Text;
-                tb_TRG_Password.Text = tb_SRC_Password.Text;
-                DisplayMessage($"Data copied from source to target");
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
-        private void btn_TRG_SRC_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                rb_SRC_oracle.Checked = rb_TRG_Oracle.Checked;
-                rb_SRC_SQL.Checked = rb_TRG_SQL.Checked;
-                cb_WindowAuthentication_SRC.Checked = cb_WindowAuthentication_TRG.Checked;
-                cb_SRC_DefaultPort.Checked = cb_TRG_DefaultPort.Checked;
-                tb_SRC_DefaultPort.Text = tb_TRG_DefaultPort.Text;
-                tb_SRC_DataSource.Text = tb_TRG_DataSource.Text;
-                tb_SRC_DBName.Text = tb_TRG_DBName.Text;
-                tb_SRC_UserName.Text = tb_TRG_UserName.Text;
-                tb_SRC_Password.Text = tb_TRG_Password.Text;
-                DisplayMessage($"Data copied from target to source");
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
-        private void rb_SRC_oracle_CheckedChanged(object sender, EventArgs e)
-        {
-            if (rb_SRC_oracle.Checked)
-            {
-                CheckChangeRadioButton(1);
-            }
-        }
 
-        private void CheckChangeRadioButton(int int_Group)
-        {
-            try
-            {
-                if (int_Group == 1)
-                {
-                    if (rb_SRC_oracle.Checked)
-                    {
-                        DisplayMessage($"Source Oracle Selected");
-                        gb_Source1.Text = "Source: Oracle Connection and Settings";
-                        cb_WindowAuthentication_SRC.Enabled = false;
-                        cb_WindowAuthentication_SRC.Checked = false;
-                        cb_SRC_DefaultPort.Enabled = true;
-                        cb_SRC_DefaultPort.Checked = true;
-                        tb_SRC_DefaultPort.Enabled = true;
-                        tb_SRC_DefaultPort.ReadOnly = true;
-                    }
-                    else if (rb_SRC_SQL.Checked)
-                    {
-                        DisplayMessage($"Source SQL Selected");
-                        gb_Source1.Text = "Source: SQL Connection and Settings";
-                        cb_WindowAuthentication_SRC.Enabled = true;
-                        cb_WindowAuthentication_SRC.Checked = false;
-                        cb_SRC_DefaultPort.Enabled = false;
-                        cb_SRC_DefaultPort.Checked = false;
-                        tb_SRC_DefaultPort.Enabled = false;
-                        tb_SRC_DefaultPort.ReadOnly = true;
-                    }
-                }
-                else if (int_Group == 2)
-                {
-                    if (rb_TRG_Oracle.Checked)
-                    {
-                        DisplayMessage($"Target Oracle Selected");
-                        gb_Target1.Text = "Target : Oracle Connection and Settings";
-                        cb_WindowAuthentication_TRG.Enabled = false;
-                        cb_WindowAuthentication_TRG.Checked = false;
-                        cb_TRG_DefaultPort.Enabled = true;
-                        cb_TRG_DefaultPort.Checked = true;
-                        tb_TRG_DefaultPort.Enabled = true;
-                        tb_TRG_DefaultPort.ReadOnly = true;
-
-                    }
-                    else if (rb_TRG_SQL.Checked)
-                    {
-                        DisplayMessage($"Target SQL Selected");
-                        gb_Target1.Text = "Target : SQL Connection and Settings";
-                        cb_WindowAuthentication_TRG.Enabled = true;
-                        cb_WindowAuthentication_TRG.Checked = false;
-                        cb_TRG_DefaultPort.Enabled = false;
-                        cb_TRG_DefaultPort.Checked = false;
-                        tb_TRG_DefaultPort.Enabled = false;
-                        tb_TRG_DefaultPort.ReadOnly = true;
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        private void rb_SRC_SQL_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rb_SRC_SQL.Checked)
-                {
-                    CheckChangeRadioButton(1);
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void rb_TRG_Oracle_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rb_TRG_Oracle.Checked)
-                {
-                    CheckChangeRadioButton(2);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void rb_TRG_SQL_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rb_TRG_SQL.Checked)
-                {
-                    CheckChangeRadioButton(2);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void cb_WindowAuthentication_SRC_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (cb_WindowAuthentication_SRC.Checked)
-                {
-                    DisplayMessage($"Source WA Selected");
-                    tb_SRC_UserName.Enabled = false;
-                    tb_SRC_Password.Enabled = false;
-                }
-                else if (cb_WindowAuthentication_SRC.CheckState == CheckState.Unchecked)
-                {
-                    DisplayMessage($"Source WA Not Selected");
-                    tb_SRC_UserName.Enabled = true;
-                    tb_SRC_Password.Enabled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void cb_WindowAuthentication_TRG_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (cb_WindowAuthentication_TRG.Checked)
-                {
-                    DisplayMessage($"Target WA Selected");
-                    tb_TRG_UserName.Enabled = false;
-                    tb_TRG_Password.Enabled = false;
-                }
-                else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
-                {
-                    DisplayMessage($"Target WA Not Selected");
-                    tb_TRG_UserName.Enabled = true;
-                    tb_TRG_Password.Enabled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void cb_SRC_DefaultPort_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (cb_SRC_DefaultPort.Checked)
-                {
-                    DisplayMessage($"Source DefaultPort Selected");
-                    tb_SRC_DefaultPort.Text = "1521";
-                    tb_SRC_DefaultPort.Enabled = true;
-                    tb_SRC_DefaultPort.ReadOnly = true;
-                }
-                else
-                {
-                    DisplayMessage($"Source DefaultPort Not Selected");
-                    tb_SRC_DefaultPort.ResetText();
-                    tb_SRC_DefaultPort.Enabled = true;
-                    tb_SRC_DefaultPort.ReadOnly = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void cb_TRG_DefaultPort_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (cb_TRG_DefaultPort.Checked)
-                {
-                    DisplayMessage($"Target DefaultPort Selected");
-                    tb_TRG_DefaultPort.Text = "1521";
-                    tb_TRG_DefaultPort.Enabled = true;
-                    tb_TRG_DefaultPort.ReadOnly = true;
-                }
-                else
-                {
-                    DisplayMessage($"Target DefaultPort Not Selected");
-                    tb_TRG_DefaultPort.ResetText();
-                    tb_TRG_DefaultPort.Enabled = true;
-                    tb_TRG_DefaultPort.ReadOnly = false;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
         private void l_lb_ReadProfile_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
