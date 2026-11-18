@@ -46,6 +46,8 @@ namespace SPI_Data_Comp_Tool
             if (IsDisposed || !IsHandleCreated) return;
             BeginInvoke((Action)(() =>
             {
+                // a beta queued for install must not survive a switch back to Stable
+                UpdateService.ClearPendingIfNotAllowed(UpdateSettings.Load().Channel);
                 ShowVersionAndChannel();
                 CheckForUpdate();
             }));
@@ -69,8 +71,10 @@ namespace SPI_Data_Comp_Tool
                 {
                     string file = await Task.Run(() => UpdateService.Download(found, null));
                     if (IsDisposed) return;
-                    UpdateService.PendingFile = file;
-                    updateMenuItem.ToolTipText = "Downloaded - installs when you close the app";
+                    // the choices may have changed while the download ran: ask again before queuing it
+                    UpdateSettings now = UpdateSettings.Load();
+                    if (now.InstallSilently && UpdateService.SetPending(found, file, now.Channel))
+                        updateMenuItem.ToolTipText = "Downloaded - installs when you close the app";
                 }
             }
             catch (Exception ex)
@@ -90,9 +94,10 @@ namespace SPI_Data_Comp_Tool
 
         private void InstallWaitingUpdate()
         {
+            UpdateService.ClearPendingIfNotAllowed(UpdateSettings.Load().Channel);
             string file = UpdateService.PendingFile;
             if (file == null) return;
-            UpdateService.PendingFile = null;
+            UpdateService.ClearPending();
             try
             {
                 UpdateService.Install(file, restartAfterwards: false);

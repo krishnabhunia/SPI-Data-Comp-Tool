@@ -125,8 +125,40 @@ namespace SPI_Data_Comp_Tool
     {
         public const string Repository = "krishnabhunia/SPI-Data-Comp-Tool";
 
-        /// <summary>A verified download waiting to be installed when the app closes.</summary>
-        public static string PendingFile;
+        /// <summary>A verified download waiting to be installed when the app closes (null = none).</summary>
+        public static string PendingFile { get; private set; }
+
+        /// <summary>The release <see cref="PendingFile"/> belongs to.</summary>
+        public static ReleaseInfo PendingRelease { get; private set; }
+
+        private static readonly object DownloadLock = new object();
+
+        /// <summary>Queues a verified download for install at exit - unless the channel no longer allows that release.</summary>
+        public static bool SetPending(ReleaseInfo release, string verifiedFile, UpdateChannel channel)
+        {
+            if (!AllowedOn(release, channel)) return false;
+            PendingRelease = release;
+            PendingFile = verifiedFile;
+            return true;
+        }
+
+        public static void ClearPending()
+        {
+            PendingRelease = null;
+            PendingFile = null;
+        }
+
+        /// <summary>Drops a queued update the chosen channel does not offer (a beta after switching back to Stable).</summary>
+        public static void ClearPendingIfNotAllowed(UpdateChannel channel)
+        {
+            if (PendingRelease != null && !AllowedOn(PendingRelease, channel)) ClearPending();
+        }
+
+        /// <summary>Stable takes normal releases only; Beta takes both.</summary>
+        public static bool AllowedOn(ReleaseInfo release, UpdateChannel channel)
+        {
+            return release != null && (!release.IsBeta || channel == UpdateChannel.Beta);
+        }
 
         /// <summary>Raised (on any thread) after the channel or silent-install choice was saved.</summary>
         public static event EventHandler SettingsChanged;
@@ -209,7 +241,7 @@ namespace SPI_Data_Comp_Tool
             ReleaseInfo best = null;
             foreach (ReleaseInfo release in all)
             {
-                if (release.IsBeta && channel != UpdateChannel.Beta) continue;
+                if (!AllowedOn(release, channel)) continue;
                 if (release.IsBeta && release.Published < newestNormal) continue;
                 if (release.Version.CompareTo(current) <= 0) continue;
                 // without its checksum file a download cannot be verified, so the release is not offered
@@ -272,11 +304,36 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
+        /// <summary>
+        /// Adds GitHub's "latest release" to a page of the release list if the page does not hold it.
+        /// Every PR build publishes a beta, so many betas can push the newest normal release off the first page.
+        /// </summary>
+        public static List<ReleaseInfo> WithLatest(List<ReleaseInfo> page, string latestReleaseJson)
+        {
+            var all = new List<ReleaseInfo>(page);
+            if (string.IsNullOrWhiteSpace(latestReleaseJson)) return all;
+            foreach (ReleaseInfo latest in ParseReleases("[" + latestReleaseJson + "]"))
+            {
+                if (!all.Any(r => string.Equals(r.Tag, latest.Tag, StringComparison.OrdinalIgnoreCase))) all.Add(latest);
+            }
+            return all;
+        }
+
         /// <summary>Asks GitHub for the releases and returns the update for this copy and channel, or null.</summary>
         public static ReleaseInfo FindUpdate(UpdateChannel channel)
         {
-            string json = GetText("https://api.github.com/repos/" + Repository + "/releases?per_page=40");
-            return PickUpdate(ParseReleases(json), Current, channel, IsInstalled);
+            string api = "https://api.github.com/repos/" + Repository + "/releases";
+            List<ReleaseInfo> page = ParseReleases(GetText(api + "?per_page=100"));
+            string latest = null;
+            try
+            {
+                latest = GetText(api + "/latest");
+            }
+            catch (WebException)
+            {
+                // no normal release published yet (404): the page alone decides
+            }
+            return PickUpdate(WithLatest(page, latest), Current, channel, IsInstalled);
         }
 
         /// <summary>
@@ -284,6 +341,16 @@ namespace SPI_Data_Comp_Tool
         /// release's SHA-256. Returns the verified file; throws if the check fails.
         /// </summary>
         public static string Download(ReleaseInfo release, Action<int> progress)
+        {
+            // One download at a time: the background download and the Update window can ask for the same file.
+            // The second caller waits, then finds the verified file already there and returns it.
+            lock (DownloadLock)
+            {
+                return DownloadLocked(release, progress);
+            }
+        }
+
+        private static string DownloadLocked(ReleaseInfo release, Action<int> progress)
         {
             bool installed = IsInstalled;
             string name = installed ? release.SetupName : release.ZipName;

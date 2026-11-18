@@ -118,12 +118,13 @@ namespace SPI_Data_Comp_Tool
                 lblProgress.Text = "Download checked (SHA-256 matches).";
                 if (!installNow)
                 {
-                    UpdateService.PendingFile = file;
+                    if (!UpdateService.SetPending(release, file, UpdateSettings.Load().Channel))
+                        throw new InvalidOperationException("The update channel was changed to Stable, so this beta was not queued.");
                     MessageBox.Show(this, "v" + release.Version + " is ready and will be installed when you close the app.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     DialogResult = DialogResult.OK;
                     return;
                 }
-                UpdateService.PendingFile = null;
+                UpdateService.ClearPending();
                 string newExe = UpdateService.Install(file, restartAfterwards: true);
                 if (newExe != null) Process.Start(newExe);
                 Application.Exit();

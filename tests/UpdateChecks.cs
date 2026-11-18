@@ -45,6 +45,7 @@ namespace SPI_Data_Comp_Tool
                 Picking(lines);
                 Checksums(lines);
                 PortableFiles(lines);
+                QueuedUpdates(lines);
                 File.WriteAllLines(outputFile, lines);
                 return 0;
             }
@@ -163,6 +164,42 @@ namespace SPI_Data_Comp_Tool
             {
                 Directory.Delete(work, true);
             }
+        }
+
+        private static void QueuedUpdates(List<string> lines)
+        {
+            List<ReleaseInfo> releases = UpdateService.ParseReleases(Releases);
+            ReleaseInfo beta = releases.First(r => r.Tag == "v2.6.0-beta002"), normal = releases.First(r => r.Tag == "v2.5.7");
+            try
+            {
+                Check(!UpdateService.SetPending(beta, "beta.exe", UpdateChannel.Stable) && UpdateService.PendingFile == null,
+                      "a beta is not queued for install while the channel is Stable", lines);
+                Check(UpdateService.SetPending(beta, "beta.exe", UpdateChannel.Beta) && UpdateService.PendingFile == "beta.exe", "a beta is queued on the Beta channel", lines);
+                UpdateService.ClearPendingIfNotAllowed(UpdateChannel.Beta);
+                Check(UpdateService.PendingFile == "beta.exe", "a queued beta stays while the channel is still Beta", lines);
+                UpdateService.ClearPendingIfNotAllowed(UpdateChannel.Stable);
+                Check(UpdateService.PendingFile == null && UpdateService.PendingRelease == null, "switching back to Stable drops a queued beta", lines);
+                Check(UpdateService.SetPending(normal, "normal.exe", UpdateChannel.Stable), "a normal release is queued on Stable", lines);
+                UpdateService.ClearPendingIfNotAllowed(UpdateChannel.Stable);
+                UpdateService.ClearPendingIfNotAllowed(UpdateChannel.Beta);
+                Check(UpdateService.PendingFile == "normal.exe", "a queued normal release survives a channel change", lines);
+            }
+            finally
+            {
+                UpdateService.ClearPending();
+            }
+
+            // only betas on the first page: the normal release comes from GitHub's "latest release"
+            List<ReleaseInfo> page = releases.Where(r => r.IsBeta).ToList();
+            const string latest = @"{""tag_name"":""v2.5.7"",""prerelease"":false,""draft"":false,""published_at"":""2026-11-19T08:00:00Z"",
+  ""assets"":[{""name"":""SPI_Data_Comp_Tool_2.5.7.zip"",""size"":1,""browser_download_url"":""https://example.invalid/257.zip""},
+             {""name"":""SPI_Data_Comp_Tool_2.5.7.zip.sha256"",""size"":1,""browser_download_url"":""https://example.invalid/257.sha""},
+             {""name"":""SPI_Data_Comp_Tool_2.5.7_x64_setup.exe"",""size"":1,""browser_download_url"":""https://example.invalid/257.exe""}]}";
+            Check(UpdateService.PickUpdate(page, V("2.5.6"), UpdateChannel.Stable, true) == null, "a page of betas alone offers Stable nothing", lines);
+            ReleaseInfo viaLatest = UpdateService.PickUpdate(UpdateService.WithLatest(page, latest), V("2.5.6"), UpdateChannel.Stable, true);
+            Check(viaLatest != null && viaLatest.Tag == "v2.5.7", "Stable still gets the newest normal release when betas fill the first page", lines);
+            Check(UpdateService.WithLatest(releases, latest).Count == releases.Count && UpdateService.WithLatest(page, null).Count == page.Count,
+                  "the latest release is not added twice, and a missing one changes nothing", lines);
         }
 
         private static void Add(ZipArchive archive, string name, string content)

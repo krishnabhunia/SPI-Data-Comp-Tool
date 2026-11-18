@@ -73,7 +73,7 @@ class Updater(unittest.TestCase):
         self.assertIn("'--check-updates'", workflow)
         self.assertIn('"--check-updates"', code("SelfTest.cs"))
         checks = text(REPO / "tests" / "UpdateChecks.cs")
-        self.assertGreaterEqual(checks.count("Check("), 20)
+        self.assertGreaterEqual(checks.count("Check("), 30)
         self.assertNotIn("github.com", checks)   # synthetic data only
 
 
