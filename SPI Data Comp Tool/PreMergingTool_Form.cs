@@ -105,6 +105,7 @@ namespace SPI_Data_Comp_Tool
         private void Connection_ProfileApplied(object sender, DBConnectionDetails details)
         {
             dBConnectionDetails = details;
+            tb_SchemaName.Text = details.str_SRC_TableName;   // the profile's table field holds this window's schema
             Common_Data.DisplayMessage(rtb_Log, $"User Profile :{cb_UserProfileList.SelectedItem}, Loaded Successfully");
         }
 

@@ -50,6 +50,20 @@ class ConnectionPanelContracts(unittest.TestCase):
         self.assertIn("connection.AllowNewProfileName = true;", code)
         self.assertIn("ComboBoxStyle.DropDown :", source("ConnectionPanel.cs"))
 
+    def test_profile_extras_outside_the_panel_are_still_filled(self) -> None:
+        # fields a window's old profile handler filled that are not part of the panel
+        expected = {
+            "DB Comparison.cs": ["cb_SRC_TableName.Text = details.str_SRC_TableName", "cb_TRG_TableName.Text = details.str_TRG_TableName"],
+            "UserProfileForm.cs": ["cb_SRC_TableName.Text = details.str_SRC_TableName", "cb_TRG_TableName.Text = details.str_TRG_TableName"],
+            "Pre_Merging_Duplicacy_Form.cs": ["cb_SRC_TableName.Text = details.str_SRC_TableName"],
+            "PreMergingTool_Form.cs": ["tb_SchemaName.Text = details.str_SRC_TableName"],
+        }
+        for name, lines in expected.items():
+            applied = source(name).split("void Connection_ProfileApplied(", 1)[1].split("\n        }", 1)[0]
+            for line in lines:
+                with self.subTest(window=name, line=line):
+                    self.assertIn(line, applied)
+
     def test_converted_windows_use_the_panel_not_copies(self) -> None:
         for name in CONVERTED:
             with self.subTest(window=name):
