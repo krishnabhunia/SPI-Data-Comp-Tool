@@ -1,19 +1,13 @@
 """Compare DB (DB_Comparison_Form) - template for every Source/Target window."""
 from layout_gen import C, T, F, G
+from _connection import PANEL_DROP, LABEL, FIELD, panel, table_picker
 
 DESIGNER = "DB Comparison.Designer.cs"
 FORM_NAME = "DB_Comparison_Form"
 CLIENT = (1180, 700)
 MINIMUM = (980, 620)
 FROZEN = ["groupBox15", "groupBox16"]          # hidden helper boxes the code still uses; left untouched
-DROP = ["groupBox12", "groupBox13", "gb_Source", "gb_Target",   # empty wrappers, not used by the code
-        # now inside the shared ConnectionPanel (the window reaches them through properties of the same names)
-        "gb_Source1", "gb_Target1", "rb_SRC_oracle", "rb_SRC_SQL", "cb_WindowAuthentication_SRC", "cb_SRC_DefaultPort",
-        "tb_SRC_DefaultPort", "tb_SRC_DataSource", "tb_SRC_DBName", "tb_SRC_UserName", "tb_SRC_Password", "rb_TRG_Oracle",
-        "rb_TRG_SQL", "cb_WindowAuthentication_TRG", "cb_TRG_DefaultPort", "tb_TRG_DefaultPort", "tb_TRG_DataSource", "tb_TRG_DBName",
-        "tb_TRG_UserName", "tb_TRG_Password", "btn_Copy_SRC_TRG", "btn_TRG_SRC", "cb_UserProfileList", "label15",
-        "label3", "label5", "label7", "label9", "label2", "label4",
-        "label6", "label8", "lbl_SRC_Platform", "lbl_SRC_Port", "lbl_TRG_Platform", "lbl_TRG_Port"]
+DROP = PANEL_DROP + ["label15", "lbl_SRC_Platform", "lbl_SRC_Port", "lbl_TRG_Platform", "lbl_TRG_Port"]
 
 TEXTS = {
     "groupBox14": "Connection", "cb_FullName": "Show full names in lists",
@@ -36,16 +30,7 @@ PROPS = {
     "label1": {"ForeColor": "System.Drawing.Color.FromArgb(90, 90, 90)"},
 }
 
-LABEL = dict(autosize=True, anchor="Left", margin=(0, 3, 12, 3))
-FIELD = dict(anchor="Left, Right", margin=(0, 3, 0, 3))
 
-
-def table_picker(name, label, combo, button):
-    return T(name, cols=["auto", "100%", "auto"], rows=["auto"], autosize=True, cells=[
-        (C(label, **LABEL), 0, 0),
-        (C(combo, **FIELD), 1, 0),
-        (C(button, size=(110, 30), margin=(8, 0, 0, 0)), 2, 0),
-    ])
 
 
 # the Source and Target pickers line up under the panel's two halves (its Copy column is 100 px)
@@ -100,7 +85,7 @@ PROGRESS = T("tlp_Progress", cols=["100%", "auto", "auto", "auto"], rows=["auto"
 LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "100%", "auto"], cells=[
     (T("tlp_Top", cols=["100%", "320"], rows=["auto"], autosize=True, dock="Fill", cells=[
         (G("groupBox14", T("tlp_Connection", cols=["100%"], rows=["auto", "auto"], autosize=True, cells=[
-            (C("connection", new="SPI_Data_Comp_Tool.ConnectionPanel", anchor="Left, Right", autosize=True, margin=0), 0, 0),
+            (panel(), 0, 0),
             (TABLES, 0, 1),
         ]), autosize=True, margin=(0, 0, 12, 0)), 0, 0),
         (G("groupBox3", COMPARE, margin=0), 1, 0),
