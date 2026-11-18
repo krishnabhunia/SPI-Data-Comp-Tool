@@ -38,260 +38,227 @@
             this.lbl_Progress = new System.Windows.Forms.Label();
             this.gb_DBConnection = new System.Windows.Forms.GroupBox();
             this.btn_TestDBConnection = new System.Windows.Forms.Button();
-            this.groupBox12 = new System.Windows.Forms.GroupBox();
-            this.gb_Source1 = new System.Windows.Forms.GroupBox();
-            this.cb_WindowAuthentication_SRC = new System.Windows.Forms.CheckBox();
-            this.tb_SRC_Password = new System.Windows.Forms.TextBox();
-            this.tb_SRC_UserName = new System.Windows.Forms.TextBox();
-            this.tb_SRC_DBName = new System.Windows.Forms.TextBox();
-            this.tb_SRC_DataSource = new System.Windows.Forms.TextBox();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.cb_UserProfileList = new System.Windows.Forms.ComboBox();
-            this.groupBox1.SuspendLayout();
-            this.gb_Logs.SuspendLayout();
+            this.tlp_Root = new System.Windows.Forms.TableLayoutPanel();
+            this.tlp_Connection = new System.Windows.Forms.TableLayoutPanel();
+            this.connection = new SPI_Data_Comp_Tool.ConnectionPanel();
+            this.tlp_Run = new System.Windows.Forms.TableLayoutPanel();
+            this.tlp_Log = new System.Windows.Forms.TableLayoutPanel();
+            this.tlp_Root.SuspendLayout();
             this.gb_DBConnection.SuspendLayout();
-            this.groupBox12.SuspendLayout();
-            this.gb_Source1.SuspendLayout();
+            this.tlp_Connection.SuspendLayout();
+            this.groupBox1.SuspendLayout();
+            this.tlp_Run.SuspendLayout();
+            this.gb_Logs.SuspendLayout();
+            this.tlp_Log.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // tlp_Root
+            // 
+            this.tlp_Root.Name = "tlp_Root";
+            this.tlp_Root.ColumnCount = 2;
+            this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 240F));
+            this.tlp_Root.RowCount = 2;
+            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Root.Controls.Add(this.gb_DBConnection, 0, 0);
+            this.tlp_Root.Controls.Add(this.groupBox1, 1, 0);
+            this.tlp_Root.Controls.Add(this.gb_Logs, 0, 1);
+            this.tlp_Root.SetColumnSpan(this.gb_Logs, 2);
+            this.tlp_Root.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_Root.AutoSize = false;
+            this.tlp_Root.TabIndex = 0;
+            // 
+            // gb_DBConnection
+            // 
+            this.gb_DBConnection.Name = "gb_DBConnection";
+            this.gb_DBConnection.TabStop = false;
+            this.gb_DBConnection.Text = "Connection";
+            this.gb_DBConnection.Controls.Add(this.tlp_Connection);
+            this.gb_DBConnection.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gb_DBConnection.AutoSize = true;
+            this.gb_DBConnection.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.gb_DBConnection.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
+            this.gb_DBConnection.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
+            this.gb_DBConnection.TabIndex = 1;
+            // 
+            // tlp_Connection
+            // 
+            this.tlp_Connection.Name = "tlp_Connection";
+            this.tlp_Connection.ColumnCount = 1;
+            this.tlp_Connection.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Connection.RowCount = 2;
+            this.tlp_Connection.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Connection.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Connection.Controls.Add(this.connection, 0, 0);
+            this.tlp_Connection.Controls.Add(this.btn_TestDBConnection, 0, 1);
+            this.tlp_Connection.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_Connection.AutoSize = true;
+            this.tlp_Connection.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tlp_Connection.TabIndex = 2;
+            // 
+            // connection
+            // 
+            this.connection.Name = "connection";
+            this.connection.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
+            this.connection.AutoSize = true;
+            this.connection.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.connection.TabIndex = 3;
+            // 
+            // btn_TestDBConnection
+            // 
+            this.btn_TestDBConnection.Name = "btn_TestDBConnection";
+            this.btn_TestDBConnection.UseVisualStyleBackColor = true;
+            this.btn_TestDBConnection.Click += new System.EventHandler(this.btn_TestDBConnection_Click);
+            this.btn_TestDBConnection.Text = "Test connection";
+            this.btn_TestDBConnection.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
+            this.btn_TestDBConnection.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
+            this.btn_TestDBConnection.Size = new System.Drawing.Size(150, 30);
+            this.btn_TestDBConnection.TabIndex = 4;
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.btn_ImportExcel);
-            this.groupBox1.Location = new System.Drawing.Point(355, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(104, 237);
-            this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Controls";
+            this.groupBox1.Text = "Run";
+            this.groupBox1.Controls.Add(this.tlp_Run);
+            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
+            this.groupBox1.TabIndex = 5;
+            // 
+            // tlp_Run
+            // 
+            this.tlp_Run.Name = "tlp_Run";
+            this.tlp_Run.ColumnCount = 1;
+            this.tlp_Run.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Run.RowCount = 2;
+            this.tlp_Run.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Run.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Run.Controls.Add(this.btn_ImportExcel, 0, 0);
+            this.tlp_Run.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_Run.AutoSize = false;
+            this.tlp_Run.TabIndex = 6;
             // 
             // btn_ImportExcel
             // 
-            this.btn_ImportExcel.Location = new System.Drawing.Point(18, 28);
             this.btn_ImportExcel.Name = "btn_ImportExcel";
-            this.btn_ImportExcel.Size = new System.Drawing.Size(75, 23);
-            this.btn_ImportExcel.TabIndex = 0;
-            this.btn_ImportExcel.Text = "Import Excel";
             this.btn_ImportExcel.UseVisualStyleBackColor = true;
             this.btn_ImportExcel.Click += new System.EventHandler(this.btn_ImportExcel_Click);
+            this.btn_ImportExcel.Text = "Import Excel…";
+            this.btn_ImportExcel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.btn_ImportExcel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.btn_ImportExcel.Size = new System.Drawing.Size(160, 36);
+            this.btn_ImportExcel.TabIndex = 7;
             // 
             // gb_Logs
             // 
-            this.gb_Logs.Controls.Add(this.btn_ClearLogs);
-            this.gb_Logs.Controls.Add(this.progressBar1);
-            this.gb_Logs.Controls.Add(this.rtb_Log);
-            this.gb_Logs.Controls.Add(this.lbl_Progress);
-            this.gb_Logs.Location = new System.Drawing.Point(12, 255);
             this.gb_Logs.Name = "gb_Logs";
-            this.gb_Logs.Size = new System.Drawing.Size(999, 482);
-            this.gb_Logs.TabIndex = 34;
             this.gb_Logs.TabStop = false;
-            this.gb_Logs.Text = "Logs";
+            this.gb_Logs.Text = "Log";
+            this.gb_Logs.Controls.Add(this.tlp_Log);
+            this.gb_Logs.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gb_Logs.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
+            this.gb_Logs.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
+            this.gb_Logs.TabIndex = 8;
+            // 
+            // tlp_Log
+            // 
+            this.tlp_Log.Name = "tlp_Log";
+            this.tlp_Log.ColumnCount = 2;
+            this.tlp_Log.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Log.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Log.RowCount = 3;
+            this.tlp_Log.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Log.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Log.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Log.Controls.Add(this.progressBar1, 0, 0);
+            this.tlp_Log.Controls.Add(this.btn_ClearLogs, 1, 0);
+            this.tlp_Log.Controls.Add(this.lbl_Progress, 0, 1);
+            this.tlp_Log.SetColumnSpan(this.lbl_Progress, 2);
+            this.tlp_Log.Controls.Add(this.rtb_Log, 0, 2);
+            this.tlp_Log.SetColumnSpan(this.rtb_Log, 2);
+            this.tlp_Log.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_Log.AutoSize = false;
+            this.tlp_Log.TabIndex = 9;
+            // 
+            // progressBar1
+            // 
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
+            this.progressBar1.Margin = new System.Windows.Forms.Padding(0, 4, 8, 4);
+            this.progressBar1.Size = new System.Drawing.Size(300, 14);
+            this.progressBar1.TabIndex = 10;
             // 
             // btn_ClearLogs
             // 
             this.btn_ClearLogs.BackColor = System.Drawing.Color.White;
-            this.btn_ClearLogs.Location = new System.Drawing.Point(918, 15);
             this.btn_ClearLogs.Name = "btn_ClearLogs";
-            this.btn_ClearLogs.Size = new System.Drawing.Size(75, 23);
-            this.btn_ClearLogs.TabIndex = 2;
-            this.btn_ClearLogs.Text = "Clear Logs";
             this.btn_ClearLogs.UseVisualStyleBackColor = false;
             this.btn_ClearLogs.Click += new System.EventHandler(this.btn_ClearLogs_Click);
+            this.btn_ClearLogs.Text = "Clear log";
+            this.btn_ClearLogs.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.btn_ClearLogs.Size = new System.Drawing.Size(110, 30);
+            this.btn_ClearLogs.TabIndex = 11;
             // 
-            // progressBar1
+            // lbl_Progress
             // 
-            this.progressBar1.Location = new System.Drawing.Point(12, 19);
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(900, 15);
-            this.progressBar1.TabIndex = 1;
+            this.lbl_Progress.Name = "lbl_Progress";
+            this.lbl_Progress.Text = "Progress";
+            this.lbl_Progress.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
+            this.lbl_Progress.AutoSize = true;
+            this.lbl_Progress.Margin = new System.Windows.Forms.Padding(0, 4, 0, 4);
+            this.lbl_Progress.TabIndex = 12;
             // 
             // rtb_Log
             // 
             this.rtb_Log.BackColor = System.Drawing.Color.White;
-            this.rtb_Log.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.rtb_Log.Location = new System.Drawing.Point(12, 59);
             this.rtb_Log.Name = "rtb_Log";
             this.rtb_Log.ReadOnly = true;
-            this.rtb_Log.Size = new System.Drawing.Size(981, 412);
-            this.rtb_Log.TabIndex = 0;
             this.rtb_Log.Text = "";
-            // 
-            // lbl_Progress
-            // 
-            this.lbl_Progress.AutoSize = true;
-            this.lbl_Progress.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lbl_Progress.Location = new System.Drawing.Point(14, 39);
-            this.lbl_Progress.Name = "lbl_Progress";
-            this.lbl_Progress.Size = new System.Drawing.Size(63, 16);
-            this.lbl_Progress.TabIndex = 0;
-            this.lbl_Progress.Text = "Progress";
-            // 
-            // gb_DBConnection
-            // 
-            this.gb_DBConnection.Controls.Add(this.btn_TestDBConnection);
-            this.gb_DBConnection.Controls.Add(this.groupBox12);
-            this.gb_DBConnection.Location = new System.Drawing.Point(12, 12);
-            this.gb_DBConnection.Name = "gb_DBConnection";
-            this.gb_DBConnection.Size = new System.Drawing.Size(337, 237);
-            this.gb_DBConnection.TabIndex = 35;
-            this.gb_DBConnection.TabStop = false;
-            this.gb_DBConnection.Text = "DataBase Connection Settings";
-            // 
-            // btn_TestDBConnection
-            // 
-            this.btn_TestDBConnection.Location = new System.Drawing.Point(98, 208);
-            this.btn_TestDBConnection.Name = "btn_TestDBConnection";
-            this.btn_TestDBConnection.Size = new System.Drawing.Size(150, 23);
-            this.btn_TestDBConnection.TabIndex = 33;
-            this.btn_TestDBConnection.Text = "Test Both DB Connection";
-            this.btn_TestDBConnection.UseVisualStyleBackColor = true;
-            this.btn_TestDBConnection.Click += new System.EventHandler(this.btn_TestDBConnection_Click);
-            // 
-            // groupBox12
-            // 
-            this.groupBox12.Controls.Add(this.gb_Source1);
-            this.groupBox12.Location = new System.Drawing.Point(6, 19);
-            this.groupBox12.Name = "groupBox12";
-            this.groupBox12.Size = new System.Drawing.Size(323, 183);
-            this.groupBox12.TabIndex = 28;
-            this.groupBox12.TabStop = false;
-            this.groupBox12.Text = "Source";
-            // 
-            // gb_Source1
-            // 
-            this.gb_Source1.Controls.Add(this.cb_WindowAuthentication_SRC);
-            this.gb_Source1.Controls.Add(this.tb_SRC_Password);
-            this.gb_Source1.Controls.Add(this.tb_SRC_UserName);
-            this.gb_Source1.Controls.Add(this.tb_SRC_DBName);
-            this.gb_Source1.Controls.Add(this.tb_SRC_DataSource);
-            this.gb_Source1.Controls.Add(this.label9);
-            this.gb_Source1.Controls.Add(this.label7);
-            this.gb_Source1.Controls.Add(this.label5);
-            this.gb_Source1.Controls.Add(this.label3);
-            this.gb_Source1.Location = new System.Drawing.Point(6, 19);
-            this.gb_Source1.Name = "gb_Source1";
-            this.gb_Source1.Size = new System.Drawing.Size(308, 158);
-            this.gb_Source1.TabIndex = 2;
-            this.gb_Source1.TabStop = false;
-            this.gb_Source1.Text = "Source : Oracle Connection and Settings";
-            // 
-            // cb_WindowAuthentication_SRC
-            // 
-            this.cb_WindowAuthentication_SRC.AutoSize = true;
-            this.cb_WindowAuthentication_SRC.Location = new System.Drawing.Point(16, 23);
-            this.cb_WindowAuthentication_SRC.Name = "cb_WindowAuthentication_SRC";
-            this.cb_WindowAuthentication_SRC.Size = new System.Drawing.Size(136, 17);
-            this.cb_WindowAuthentication_SRC.TabIndex = 30;
-            this.cb_WindowAuthentication_SRC.Text = "Window Authentication";
-            this.cb_WindowAuthentication_SRC.UseVisualStyleBackColor = true;
-            this.cb_WindowAuthentication_SRC.CheckedChanged += new System.EventHandler(this.cb_WindowAuthentication_SRC_CheckedChanged);
-            // 
-            // tb_SRC_Password
-            // 
-            this.tb_SRC_Password.Location = new System.Drawing.Point(86, 129);
-            this.tb_SRC_Password.Name = "tb_SRC_Password";
-            this.tb_SRC_Password.PasswordChar = '*';
-            this.tb_SRC_Password.Size = new System.Drawing.Size(207, 20);
-            this.tb_SRC_Password.TabIndex = 8;
-            // 
-            // tb_SRC_UserName
-            // 
-            this.tb_SRC_UserName.Location = new System.Drawing.Point(86, 101);
-            this.tb_SRC_UserName.Name = "tb_SRC_UserName";
-            this.tb_SRC_UserName.Size = new System.Drawing.Size(207, 20);
-            this.tb_SRC_UserName.TabIndex = 7;
-            // 
-            // tb_SRC_DBName
-            // 
-            this.tb_SRC_DBName.Location = new System.Drawing.Point(86, 73);
-            this.tb_SRC_DBName.Name = "tb_SRC_DBName";
-            this.tb_SRC_DBName.Size = new System.Drawing.Size(207, 20);
-            this.tb_SRC_DBName.TabIndex = 6;
-            // 
-            // tb_SRC_DataSource
-            // 
-            this.tb_SRC_DataSource.Location = new System.Drawing.Point(86, 47);
-            this.tb_SRC_DataSource.Name = "tb_SRC_DataSource";
-            this.tb_SRC_DataSource.Size = new System.Drawing.Size(207, 20);
-            this.tb_SRC_DataSource.TabIndex = 5;
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(13, 133);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(53, 13);
-            this.label9.TabIndex = 4;
-            this.label9.Text = "Password";
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(13, 104);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(55, 13);
-            this.label7.TabIndex = 3;
-            this.label7.Text = "Username";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(13, 76);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(53, 13);
-            this.label5.TabIndex = 2;
-            this.label5.Text = "DB Name";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(13, 48);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(67, 13);
-            this.label3.TabIndex = 1;
-            this.label3.Text = "Data Source";
-            // 
-            // cb_UserProfileList
-            // 
-            this.cb_UserProfileList.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cb_UserProfileList.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.cb_UserProfileList.FormattingEnabled = true;
-            this.cb_UserProfileList.ItemHeight = 13;
-            this.cb_UserProfileList.Location = new System.Drawing.Point(465, 12);
-            this.cb_UserProfileList.Name = "cb_UserProfileList";
-            this.cb_UserProfileList.Size = new System.Drawing.Size(299, 21);
-            this.cb_UserProfileList.TabIndex = 36;
-            this.cb_UserProfileList.Visible = false;
-            this.cb_UserProfileList.SelectedIndexChanged += new System.EventHandler(this.cb_UserProfileList_SelectedIndexChanged);
+            this.rtb_Log.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rtb_Log.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.rtb_Log.TabIndex = 13;
             // 
             // SPI_FK_Extraction
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.AutoScroll = true;
-            this.ClientSize = new System.Drawing.Size(1203, 738);
-            this.Controls.Add(this.cb_UserProfileList);
-            this.Controls.Add(this.gb_DBConnection);
-            this.Controls.Add(this.gb_Logs);
-            this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SPI_FK_Extraction";
-            this.Text = "SPI_FK_Extraction";
+            this.Text = "SPI FK extraction";
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(1100, 760);
+            this.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.MinimumSize = new System.Drawing.Size(900, 640);
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Padding = new System.Windows.Forms.Padding(12, 12, 12, 12);
+            this.Controls.Add(this.tlp_Root);
+            this.tlp_Root.ResumeLayout(false);
+            this.tlp_Root.PerformLayout();
+            this.gb_DBConnection.ResumeLayout(false);
+            this.gb_DBConnection.PerformLayout();
+            this.tlp_Connection.ResumeLayout(false);
+            this.tlp_Connection.PerformLayout();
             this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
+            this.tlp_Run.ResumeLayout(false);
+            this.tlp_Run.PerformLayout();
             this.gb_Logs.ResumeLayout(false);
             this.gb_Logs.PerformLayout();
-            this.gb_DBConnection.ResumeLayout(false);
-            this.groupBox12.ResumeLayout(false);
-            this.gb_Source1.ResumeLayout(false);
-            this.gb_Source1.PerformLayout();
+            this.tlp_Log.ResumeLayout(false);
+            this.tlp_Log.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
+
+        private System.Windows.Forms.TableLayoutPanel tlp_Root;
+        private System.Windows.Forms.TableLayoutPanel tlp_Connection;
+        private SPI_Data_Comp_Tool.ConnectionPanel connection;
+        private System.Windows.Forms.TableLayoutPanel tlp_Run;
+        private System.Windows.Forms.TableLayoutPanel tlp_Log;
 
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Button btn_ImportExcel;
@@ -302,17 +269,5 @@
         private System.Windows.Forms.Label lbl_Progress;
         private System.Windows.Forms.GroupBox gb_DBConnection;
         private System.Windows.Forms.Button btn_TestDBConnection;
-        private System.Windows.Forms.GroupBox groupBox12;
-        private System.Windows.Forms.GroupBox gb_Source1;
-        private System.Windows.Forms.CheckBox cb_WindowAuthentication_SRC;
-        private System.Windows.Forms.TextBox tb_SRC_Password;
-        private System.Windows.Forms.TextBox tb_SRC_UserName;
-        private System.Windows.Forms.TextBox tb_SRC_DBName;
-        private System.Windows.Forms.TextBox tb_SRC_DataSource;
-        private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.ComboBox cb_UserProfileList;
     }
 }

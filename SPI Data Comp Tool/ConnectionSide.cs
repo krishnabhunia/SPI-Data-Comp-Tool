@@ -11,6 +11,13 @@ namespace SPI_Data_Comp_Tool
         SourceOnly,
     }
 
+    /// <summary>Which half of a saved profile fills a Source-only panel.</summary>
+    public enum ProfileHalf
+    {
+        Source,
+        Target,
+    }
+
     /// <summary>
     /// The Source or the Target half of the Connection panel: database type, login options,
     /// port, server, database, user and password, and the behaviour that used to be copied
@@ -20,7 +27,7 @@ namespace SPI_Data_Comp_Tool
     {
         public const string OracleDefaultPort = "1521";
 
-        private readonly string title;
+        private string title;
 
         public GroupBox Group { get; }
         public RadioButton Oracle { get; }
@@ -76,6 +83,31 @@ namespace SPI_Data_Comp_Tool
             Sql.CheckedChanged += (s, e) => { if (Sql.Checked) ApplyPlatform(); };
             WindowsLogin.CheckedChanged += (s, e) => ApplyWindowsLogin();
             DefaultPort.CheckedChanged += (s, e) => ApplyDefaultPort();
+            Port.KeyPress += (s, e) => { if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar)) e.Handled = true; };
+        }
+
+        /// <summary>The half's name in its frame, e.g. "Source"; the database type is added after it.</summary>
+        public string Title
+        {
+            get { return title; }
+            set { title = value; ApplyPlatform(); }
+        }
+
+        private bool sqlServerOnly;
+
+        /// <summary>For windows that only work with SQL Server: Oracle can't be chosen.</summary>
+        public bool SqlServerOnly
+        {
+            get { return sqlServerOnly; }
+            set
+            {
+                sqlServerOnly = value;
+                Oracle.Enabled = !value;
+                if (value)
+                {
+                    Sql.Checked = true;
+                }
+            }
         }
 
         /// <summary>The selected database type as the connection code expects it: "Oracle" or "SQL".</summary>
@@ -149,6 +181,11 @@ namespace SPI_Data_Comp_Tool
         internal void Apply(bool oracle, bool sql, bool windowsLogin, bool defaultPort, int port,
                             string dataSource, string database, string user, string password)
         {
+            if (sqlServerOnly)
+            {
+                oracle = false;
+                sql = true;
+            }
             Oracle.Checked = oracle;
             Sql.Checked = sql;
             WindowsLogin.Checked = windowsLogin;

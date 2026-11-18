@@ -14,6 +14,7 @@ namespace SPI_Data_Comp_Tool
     {
         private readonly TableLayoutPanel root;
         private readonly FlowLayoutPanel copyButtons;
+        private readonly FlowLayoutPanel profileRow;
         private ConnectionMode mode = ConnectionMode.SourceAndTarget;
 
         public ComboBox ProfileList { get; }
@@ -38,7 +39,7 @@ namespace SPI_Data_Comp_Tool
 
             ProfileList = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 260, Margin = new Padding(0, 3, 12, 3) };
             ProfileExtras = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = false, BackColor = Color.Transparent, Margin = new Padding(0) };
-            FlowLayoutPanel profileRow = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = false, BackColor = Color.Transparent, Margin = new Padding(0, 0, 0, 6) };
+            profileRow = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = false, BackColor = Color.Transparent, Margin = new Padding(0, 0, 0, 6) };
             profileRow.Controls.Add(new Label { Text = "User profile", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 12, 3) });
             profileRow.Controls.Add(ProfileList);
             profileRow.Controls.Add(ProfileExtras);
@@ -91,8 +92,26 @@ namespace SPI_Data_Comp_Tool
                 bool both = value == ConnectionMode.SourceAndTarget;
                 Target.Group.Visible = both;
                 copyButtons.Visible = both;
+                root.ColumnStyles[0] = new ColumnStyle(SizeType.Percent, both ? 50F : 100F);
                 root.ColumnStyles[2] = both ? new ColumnStyle(SizeType.Percent, 50F) : new ColumnStyle(SizeType.Absolute, 0F);
             }
+        }
+
+        /// <summary>In Source-only mode: fill the one half from the profile's Source or its Target.</summary>
+        public ProfileHalf ProfileHalf { get; set; } = ProfileHalf.Source;
+
+        /// <summary>Shows or hides the profile picker row.</summary>
+        public bool ShowProfile
+        {
+            get { return profileRow.Visible; }
+            set { profileRow.Visible = value; }
+        }
+
+        /// <summary>Only SQL Server can be chosen (windows whose code talks to SQL Server only).</summary>
+        public bool SqlServerOnly
+        {
+            get { return Source.SqlServerOnly; }
+            set { Source.SqlServerOnly = value; Target.SqlServerOnly = value; }
         }
 
         /// <summary>
@@ -109,6 +128,13 @@ namespace SPI_Data_Comp_Tool
         public void ApplySelectedProfile()
         {
             DBConnectionDetails d = new DBConnectionDetails(ProfileList.SelectedIndex);
+            if (mode == ConnectionMode.SourceOnly && ProfileHalf == ProfileHalf.Target)
+            {
+                Source.Apply(d.bool_Rb_TRG_Oracle, d.bool_Rb_TRG_SQL, d.bool_TRG_SQL_WA, d.bool_TRG_Oracle_DefaultPort,
+                             d.int_TRG_Oracle_DefaultPort, d.str_TRG_DataSource, d.str_TRG_DBName, d.str_TRG_UserName, d.str_TRG_Password);
+                ProfileApplied?.Invoke(this, d);
+                return;
+            }
             Source.Apply(d.bool_Rb_SRC_Oracle, d.bool_Rb_SRC_SQL, d.bool_SRC_SQL_WA, d.bool_SRC_Oracle_DefaultPort,
                          d.int_SRC_Oracle_DefaultPort, d.str_SRC_DataSource, d.str_SRC_DBName, d.str_SRC_UserName, d.str_SRC_Password);
             if (mode == ConnectionMode.SourceAndTarget)
