@@ -69,6 +69,27 @@ class UpdaterUiContracts(unittest.TestCase):
             self.assertIn(phrase, install)
         self.assertIn("handingOff = true;", install)
 
+    def test_historical_high_version_beta_is_not_recommended_as_latest(self):
+        ui = source("UpdatesControl.cs")
+        listing = ui.split("private void PopulateReleases()", 1)[1].split("private void SelectionChanged", 1)[0]
+        self.assertIn("r.PublishedAt > latestNormal.PublishedAt", listing)
+        self.assertIn("r.Version.CompareTo(latestNormal.Version) > 0", listing)
+        self.assertIn('labels.Add("Earlier beta")', listing)
+        self.assertIn("release.PublishedAt < latestNormal.PublishedAt", ui)
+        self.assertIn("release.Version.CompareTo(latestNormal.Version) <= 0", ui)
+        self.assertIn("release.PublishedAt == latestNormal.PublishedAt", ui)
+        self.assertIn('"Earlier beta: published before normal v"', ui)
+        self.assertIn("its version is not newer than normal v", ui)
+        self.assertIn("published at the same time as normal v", ui)
+        self.assertIn("it may lack later fixes", ui)
+        selection = ui.split("private void SelectionChanged()", 1)[1].split("private string EarlierBetaWarning", 1)[0]
+        confirmation = ui.split("internal void InstallSelected()", 1)[1].split("private void UpdateButtons()", 1)[0]
+        self.assertIn("EarlierBetaWarning(selected)", selection)
+        self.assertIn("EarlierBetaWarning(selected)", confirmation)
+        checks = (ROOT / "tests" / "UpdateUiChecks.cs").read_text(encoding="utf-8")
+        self.assertIn('Release("3.0.0-beta001", installer: false)', checks)
+        self.assertIn('Release("2.5.8")', checks)
+
     def test_async_work_is_cancellable_and_stale_safe(self):
         ui = source("UpdatesControl.cs")
         self.assertIn("ReferenceEquals(operation, captured)", ui)
@@ -104,6 +125,21 @@ class UpdaterUiContracts(unittest.TestCase):
         self.assertNotIn("UpdatePreferences.Channel =", checks)
         self.assertNotRegex(checks, r"File\.(Write|Delete)|Directory\.Create")
         self.assertIn("UpdateUiChecks.Run(passed);", (ROOT / "tests" / "UiWorkflowChecks.cs").read_text(encoding="utf-8"))
+
+    def test_runtime_async_checks_keep_a_real_ui_message_loop(self):
+        checks = (ROOT / "tests" / "UpdateUiChecks.cs").read_text(encoding="utf-8")
+        self.assertIn("Application.Run(loopHost);", checks)
+        self.assertIn("loopHost.BeginInvoke(new Action", checks)
+        self.assertIn("Control.CheckForIllegalCrossThreadCalls = true", checks)
+        self.assertIn("Control.CheckForIllegalCrossThreadCalls = previousCrossThreadChecks", checks)
+        self.assertIn("SynchronizationContext.Current is WindowsFormsSynchronizationContext", checks)
+        self.assertIn("ExceptionDispatchInfo.Capture", checks)
+        self.assertIn("if (failure != null) failure.Throw();", checks)
+        self.assertIn("CheckUiThreadMarshalling();", checks)
+        self.assertIn("Task.Run(() => reporter.Report", checks)
+        self.assertIn("Task.Run(() => checkResult.SetResult", checks)
+        self.assertIn("Task.Run(() => downloadResult.SetResult", checks)
+        self.assertIn("Interlocked.CompareExchange(ref wrongThread, 0, 0) == 0", checks)
 
 
 if __name__ == "__main__":

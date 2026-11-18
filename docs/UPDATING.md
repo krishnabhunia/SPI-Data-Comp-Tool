@@ -2,7 +2,7 @@
 
 ## First upgrade
 
-Older versions do not have an update page. Install the first updater-enabled release manually from this repository's **Releases** page once. After that, open **File > Settings > Updates**, or **Help > Check for updates**. Both routes use the same Settings window, alongside General and Comparison rules; no extra update form is opened.
+Older versions do not have an update page. Install the first updater-enabled release manually from this repository's **Releases** page once. After that, open **File > User Settings > Updates**, or **Help > Check for updates**. Both routes use the same Settings window, alongside General and Comparison rules; no extra update form is opened.
 
 ## Choose the version yourself
 
@@ -13,6 +13,8 @@ Older versions do not have an update page. Install the first updater-enabled rel
 5. Save your work and close other SPI tool windows and other copies of SPI. Select **Install & restart**, read the selected-version confirmation and approve it. Downgrades and reinstalling the current version are explicitly identified.
 
 Only published releases with compatible assets from `krishnabhunia/SPI-Data-Comp-Tool` are shown. Drafts, manual builds, missing-asset releases and unrecognised/four-part version tags are excluded. `2.6.0` ranks above `2.6.0-beta002`, which ranks above `2.6.0-beta001`; version comparison is numeric, not alphabetical. The current application version comes from build metadata, not the executable filename.
+
+Historical betas remain available for deliberate selection, but a high version number alone does not make an old beta current. **Latest beta** must be newer by version and publication time than the newest compatible normal release. Betas that are not demonstrably newer than that normal release are marked **Earlier beta** and carry an additional warning in their notes and installation confirmation. This prevents an old experimental major-version beta from being presented as the newest recommended beta after a later normal release.
 
 ## Installed and portable copies
 

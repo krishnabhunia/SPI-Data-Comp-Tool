@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -14,10 +15,61 @@ namespace SPI_Data_Comp_Tool
     {
         public static void Run(Action<string> passed)
         {
+            // Unlike normal startup, --check-ui has not entered Application.Run. A lone
+            // DoEvents loop can install and then uninstall the WinForms context, so Progress<T>
+            // and incomplete awaits would otherwise resume on the thread pool. Keep one real
+            // message-loop lifetime around every async UI check, just as production does.
+            bool previousCrossThreadChecks = Control.CheckForIllegalCrossThreadCalls;
+            SynchronizationContext previousContext = SynchronizationContext.Current;
+            ExceptionDispatchInfo failure = null;
+            bool ranChecks = false;
+            ThreadExceptionEventHandler threadFailure = (sender, e) =>
+            {
+                if (failure == null) failure = ExceptionDispatchInfo.Capture(e.Exception);
+            };
+            Control.CheckForIllegalCrossThreadCalls = true;
+            Application.ThreadException += threadFailure;
+            try
+            {
+                using (var loopHost = new Form { ClientSize = new Size(1, 1), ShowInTaskbar = false, Text = "Offline update UI checks" })
+                {
+                    loopHost.Shown += (sender, e) => loopHost.BeginInvoke(new Action(() =>
+                    {
+                        try
+                        {
+                            RequireUiContext();
+                            ranChecks = true;
+                            RunChecks(passed);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (failure == null) failure = ExceptionDispatchInfo.Capture(ex);
+                        }
+                        finally { loopHost.Close(); }
+                    }));
+                    Application.Run(loopHost);
+                }
+            }
+            finally
+            {
+                Application.ThreadException -= threadFailure;
+                Control.CheckForIllegalCrossThreadCalls = previousCrossThreadChecks;
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
+            if (failure != null) failure.Throw();
+            Require(ranChecks, "The update UI message loop closed before running the checks.");
+        }
+
+        private static void RunChecks(Action<string> passed)
+        {
             CheckSelectionAndChannels();
             passed("Updates opens offline, filters compatible Normal/Beta releases, sorts numeric versions and requires explicit selection.");
+            CheckEarlierBetaLabels();
+            passed("Historical higher-numbered betas remain selectable but are not labeled Latest beta; notes and confirmation warn about later Normal fixes.");
             CheckDownloadAndConfirmation();
             passed("Only a matching verified download can install, with explicit downgrade/reinstall confirmation and active-tool checks.");
+            CheckUiThreadMarshalling();
+            passed("Worker-thread release results and download progress return to the UI thread; late progress after completion/disposal is ignored.");
             CheckCancellationAndDisposal();
             passed("Update check/download cancellation, stale completions and disposal cannot enable installation or overwrite newer results.");
             CheckSettingsNavigation();
@@ -29,6 +81,12 @@ namespace SPI_Data_Comp_Tool
             if (!condition) throw new InvalidOperationException(message);
         }
 
+        private static void RequireUiContext()
+        {
+            Require(Application.MessageLoop && SynchronizationContext.Current is WindowsFormsSynchronizationContext,
+                "Async updater checks must run inside the production-style WinForms message loop and synchronization context.");
+        }
+
         private static T Find<T>(Control root, string name) where T : Control
         {
             var result = root.Controls.Find(name, true).OfType<T>().SingleOrDefault();
@@ -38,6 +96,7 @@ namespace SPI_Data_Comp_Tool
 
         private static void Complete(Task task)
         {
+            RequireUiContext();
             var timer = Stopwatch.StartNew();
             while (!task.IsCompleted)
             {
@@ -47,6 +106,7 @@ namespace SPI_Data_Comp_Tool
             }
             task.GetAwaiter().GetResult();
             Application.DoEvents();
+            RequireUiContext();
         }
 
         private static Form Host(UpdatesControl updates)
@@ -55,6 +115,7 @@ namespace SPI_Data_Comp_Tool
             host.Controls.Add(updates);
             host.Show();
             Application.DoEvents();
+            RequireUiContext();
             return host;
         }
 
@@ -112,8 +173,9 @@ namespace SPI_Data_Comp_Tool
                 Require(updates.SelectedRelease == null && !Find<Button>(updates, "btn_InstallUpdate").Enabled,
                     "Checking automatically selected or installed the latest release.");
                 channel.SelectedIndex = (int)UpdateChannel.Beta;
-                Require(list.Items.Count == 2 && list.Items[0].Text == "v2.10.0-beta002" && list.Items[0].SubItems[3].Text.Contains("Latest beta"),
-                    "Beta filtering, ordering or latest beta label is wrong.");
+                Require(list.Items.Count == 2 && list.Items[0].Text == "v2.10.0-beta002" &&
+                    list.Items.Cast<ListViewItem>().All(item => !item.SubItems[3].Text.Contains("Latest beta")),
+                    "Beta filtering/ordering is wrong or a beta older than the latest Normal version was labeled latest.");
                 Require(Find<Label>(updates, "lbl_UpdateStatus").Text.StartsWith("2 compatible versions shown", StringComparison.Ordinal),
                     "Changing channel retained the previous channel's release count.");
                 channel.SelectedIndex = (int)UpdateChannel.All;
@@ -156,6 +218,73 @@ namespace SPI_Data_Comp_Tool
             {
                 string label = Find<Label>(beta, "lbl_CurrentUpdateVersion").Text;
                 Require(label.Contains(" |  Beta  | ") && !label.Contains("unrecognised"), "A canonical current beta lost its Beta channel label.");
+            }
+        }
+
+        private static void CheckEarlierBetaLabels()
+        {
+            // Mirror the repository's higher-numbered, portable-only beta that predates later fixes.
+            var earlier = Release("3.0.0-beta001", installer: false);
+            earlier.PublishedAt = new DateTimeOffset(2026, 11, 17, 12, 0, 0, TimeSpan.Zero);
+            var normal = Release("2.5.8");
+            normal.PublishedAt = new DateTimeOffset(2026, 11, 18, 12, 0, 0, TimeSpan.Zero);
+            var feed = new FakeFeed { Releases = new List<UpdateRelease> { earlier, normal } };
+            var installer = new FakeInstaller(UpdateInstallKind.Portable);
+            string confirmation = null;
+            var updates = new UpdatesControl(feed, installer, false, "2.5.8", true, text => { confirmation = text; return false; });
+            using (var host = Host(updates))
+            {
+                Complete(updates.CheckForUpdatesAsync());
+                var channel = Find<ComboBox>(updates, "cb_UpdateChannel");
+                channel.SelectedIndex = (int)UpdateChannel.Beta;
+                var list = Find<ListView>(updates, "lv_UpdateReleases");
+                Require(list.Items.Count == 1 && list.Items[0].Text == "v3.0.0-beta001" &&
+                    list.Items[0].SubItems[3].Text.Contains("Earlier beta") && !list.Items[0].SubItems[3].Text.Contains("Latest beta"),
+                    "A historical higher-numbered beta was hidden or incorrectly recommended as Latest beta.");
+                Require(updates.SelectedRelease == null, "The historical beta was automatically selected.");
+                updates.SelectRelease(earlier.Tag);
+                const string warning = "published before normal v2.5.8; it may lack later fixes";
+                Require(Find<TextBox>(updates, "tb_UpdateReleaseNotes").Text.Contains(warning),
+                    "Historical beta notes omitted the newer Normal release warning.");
+                Complete(updates.DownloadSelectedAsync());
+                updates.InstallSelected();
+                Require(confirmation != null && confirmation.Contains(warning) && installer.Installs == 0,
+                    "Historical beta confirmation omitted the warning or ignored explicit cancellation.");
+
+                var newer = Release("2.5.9-beta001");
+                newer.PublishedAt = normal.PublishedAt.AddDays(1);
+                var lowerVersion = Release("2.5.8-beta002");
+                lowerVersion.PublishedAt = normal.PublishedAt.AddDays(1);
+                var equalPublication = Release("2.6.0-beta001");
+                equalPublication.PublishedAt = normal.PublishedAt;
+                feed.Releases.Add(newer);
+                feed.Releases.Add(lowerVersion);
+                feed.Releases.Add(equalPublication);
+                Complete(updates.CheckForUpdatesAsync());
+                Require(list.Items.Count == 4 && list.Items[0].Text == "v3.0.0-beta001" && list.Items[1].Text == "v2.6.0-beta001" &&
+                    list.Items[2].Text == "v2.5.9-beta001" && list.Items[2].SubItems[3].Text.Contains("Latest beta") &&
+                    list.Items.Cast<ListViewItem>().Count(item => item.SubItems[3].Text.Contains("Latest beta")) == 1,
+                    "Latest beta did not require both a later publication and a newer numeric version while preserving list order.");
+                updates.SelectRelease(newer.Tag);
+                Require(!Find<TextBox>(updates, "tb_UpdateReleaseNotes").Text.Contains(warning),
+                    "A genuinely newer beta inherited the historical release warning.");
+                updates.SelectRelease(lowerVersion.Tag);
+                string lowerNotes = Find<TextBox>(updates, "tb_UpdateReleaseNotes").Text;
+                Require(lowerNotes.Contains("version is not newer than normal v2.5.8") && !lowerNotes.Contains("published before"),
+                    "A later-published, lower-version beta was given a false publication-date warning.");
+                Complete(updates.DownloadSelectedAsync());
+                updates.InstallSelected();
+                Require(confirmation.Contains("version is not newer than normal v2.5.8") && !confirmation.Contains("published before"),
+                    "Lower-version beta confirmation inaccurately described its publication date.");
+                updates.SelectRelease(equalPublication.Tag);
+                string equalNotes = Find<TextBox>(updates, "tb_UpdateReleaseNotes").Text;
+                Require(equalNotes.Contains("published at the same time as normal v2.5.8") && !equalNotes.Contains("published before"),
+                    "A simultaneous beta was described as published before Normal.");
+                Complete(updates.DownloadSelectedAsync());
+                updates.InstallSelected();
+                Require(confirmation.Contains("published at the same time as normal v2.5.8") && !confirmation.Contains("published before") && installer.Installs == 0,
+                    "Simultaneous-beta confirmation inaccurately described its publication date or installed without approval.");
+                host.Close();
             }
         }
 
@@ -241,6 +370,53 @@ namespace SPI_Data_Comp_Tool
                     !Find<Button>(updates, "btn_InstallUpdate").Enabled,
                     "Installation did not hand off the selected version exactly once.");
                 host.Close();
+            }
+        }
+
+        private static void CheckUiThreadMarshalling()
+        {
+            int uiThread = Thread.CurrentThread.ManagedThreadId;
+            int wrongThread = 0;
+            var selected = Release("2.0.0");
+            var checkResult = new TaskCompletionSource<IList<UpdateRelease>>();
+            var downloadResult = new TaskCompletionSource<DownloadedUpdate>();
+            IProgress<UpdateDownloadProgress> reporter = null;
+            var feed = new FakeFeed
+            {
+                CheckHandler = token => checkResult.Task,
+                DownloadHandler = (release, kind, progress, token) => { reporter = progress; return downloadResult.Task; },
+            };
+            var installer = new FakeInstaller();
+            var updates = new UpdatesControl(feed, installer, false, "1.0.0", true);
+            using (var host = Host(updates))
+            {
+                var progressLabel = Find<Label>(updates, "lbl_UpdateProgress");
+                var statusLabel = Find<Label>(updates, "lbl_UpdateStatus");
+                EventHandler observeThread = (sender, e) =>
+                {
+                    if (Thread.CurrentThread.ManagedThreadId != uiThread) Interlocked.Exchange(ref wrongThread, 1);
+                };
+                progressLabel.TextChanged += observeThread;
+                statusLabel.TextChanged += observeThread;
+
+                Task checkWork = updates.CheckForUpdatesAsync();
+                Complete(Task.WhenAll(checkWork, Task.Run(() => checkResult.SetResult(new List<UpdateRelease> { selected }))));
+                updates.SelectRelease(selected.Tag);
+                Task downloadWork = updates.DownloadSelectedAsync();
+                Require(reporter != null && !downloadWork.IsCompleted, "The worker-thread download fixture did not remain pending.");
+                Complete(Task.Run(() => reporter.Report(new UpdateDownloadProgress { BytesReceived = 1048576, TotalBytes = 4194304 })));
+                Require(Find<ProgressBar>(updates, "pb_UpdateProgress").Value == 25 && progressLabel.Text.Contains("MB"),
+                    "Worker-thread progress was not delivered to the UI while the download was pending.");
+                Complete(Task.WhenAll(downloadWork, Task.Run(() => downloadResult.SetResult(Package(selected, UpdateInstallKind.Installed)))));
+                Require(Find<Button>(updates, "btn_InstallUpdate").Enabled && progressLabel.Text.Contains("SHA-256 verified"),
+                    "Worker-thread completion failed to publish the verified package on the UI thread.");
+                Complete(Task.Run(() => reporter.Report(new UpdateDownloadProgress { BytesReceived = 1, TotalBytes = 100 })));
+                Require(progressLabel.Text.Contains("SHA-256 verified") && Find<ProgressBar>(updates, "pb_UpdateProgress").Value == 100,
+                    "Late worker progress overwrote the completed download state.");
+                host.Close();
+                Complete(Task.Run(() => reporter.Report(new UpdateDownloadProgress { BytesReceived = 2, TotalBytes = 100 })));
+                Require(updates.IsDisposed && Interlocked.CompareExchange(ref wrongThread, 0, 0) == 0 && installer.Installs == 0,
+                    "Progress/completion touched controls off-thread, resurrected disposed controls or installed automatically.");
             }
         }
 

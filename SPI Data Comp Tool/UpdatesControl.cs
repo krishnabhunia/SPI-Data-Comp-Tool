@@ -200,7 +200,8 @@ namespace SPI_Data_Comp_Tool
             {
                 releases.Items.Clear();
                 UpdateRelease latestNormal = available.FirstOrDefault(r => !r.Version.IsBeta);
-                UpdateRelease latestBeta = available.FirstOrDefault(r => r.Version.IsBeta);
+                UpdateRelease latestBeta = available.FirstOrDefault(r => r.Version.IsBeta &&
+                    (latestNormal == null || (r.PublishedAt > latestNormal.PublishedAt && r.Version.CompareTo(latestNormal.Version) > 0)));
                 foreach (UpdateRelease release in available)
                 {
                     if (channel.SelectedIndex == (int)UpdateChannel.Normal && release.Version.IsBeta) continue;
@@ -209,6 +210,7 @@ namespace SPI_Data_Comp_Tool
                     if (currentVersion != null && currentVersion.CompareTo(release.Version) == 0) labels.Add("Current");
                     if (ReferenceEquals(release, latestNormal)) labels.Add("Latest normal");
                     if (ReferenceEquals(release, latestBeta)) labels.Add("Latest beta");
+                    if (EarlierBetaWarning(release).Length > 0) labels.Add("Earlier beta");
                     var item = new ListViewItem("v" + release.Version) { Tag = release };
                     item.SubItems.Add(release.Version.IsBeta ? "Beta" : "Normal");
                     item.SubItems.Add(release.PublishedAt.ToLocalTime().ToString("dd MMM yyyy"));
@@ -229,6 +231,7 @@ namespace SPI_Data_Comp_Tool
                 ? "Select the exact published version to inspect its release notes and download it."
                 : "v" + selected.Version + " — " + (selected.Version.IsBeta ? "Beta" : "Normal / stable") +
                   Environment.NewLine + "Published: " + selected.PublishedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm") +
+                  (EarlierBetaWarning(selected).Length == 0 ? string.Empty : Environment.NewLine + EarlierBetaWarning(selected)) +
                   Environment.NewLine + Environment.NewLine + (string.IsNullOrWhiteSpace(selected.Notes) ? "No release notes supplied." : selected.Notes);
             if (operation == null && !handingOff && !DownloadMatchesSelection())
             {
@@ -242,6 +245,19 @@ namespace SPI_Data_Comp_Tool
                 else ShowReleaseListStatus();
             }
             UpdateButtons();
+        }
+
+        private string EarlierBetaWarning(UpdateRelease release)
+        {
+            UpdateRelease latestNormal = available.FirstOrDefault(r => !r.Version.IsBeta);
+            if (release == null || !release.Version.IsBeta || latestNormal == null) return string.Empty;
+            if (release.PublishedAt < latestNormal.PublishedAt)
+                return "Earlier beta: published before normal v" + latestNormal.Version + "; it may lack later fixes.";
+            if (release.Version.CompareTo(latestNormal.Version) <= 0)
+                return "Earlier beta: its version is not newer than normal v" + latestNormal.Version + "; it may lack later fixes.";
+            if (release.PublishedAt == latestNormal.PublishedAt)
+                return "Earlier beta: published at the same time as normal v" + latestNormal.Version + "; it is not demonstrably newer and may lack later fixes.";
+            return string.Empty;
         }
 
         private void ShowReleaseListStatus()
@@ -428,6 +444,7 @@ namespace SPI_Data_Comp_Tool
                     selected.Version.CompareTo(currentVersion) == 0 ? "This reinstalls the current version." : "This updates the current version.";
                 string message = "Install v" + selected.Version + " (" + (selected.Version.IsBeta ? "Beta" : "Normal / stable") + ")?" +
                     Environment.NewLine + "Currently running: v" + currentVersionText + Environment.NewLine + direction +
+                    (EarlierBetaWarning(selected).Length == 0 ? string.Empty : Environment.NewLine + EarlierBetaWarning(selected)) +
                     Environment.NewLine + Environment.NewLine + "Save your work and close other tools. SPI will close and restart." +
                     Environment.NewLine + "Packages are currently unsigned. Windows may show a UAC or SmartScreen prompt; verify the publisher/source before accepting." +
                     Environment.NewLine + "A checksum verifies download integrity, not publisher signing.";
