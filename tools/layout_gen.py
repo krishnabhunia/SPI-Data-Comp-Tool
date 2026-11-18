@@ -221,7 +221,17 @@ def generate(spec_path):
     if getattr(spec, "TITLE", None) is not None:  # window title bar text
         form_stmts = [x for x in form_stmts if not re.match(r"^\s*this\.Text = ", x)]
         form_stmts.append(f'            this.Text = "{cs(spec.TITLE)}";')
+    def without_dropped_items(stmt):
+        """A menu's item list (AddRange) keeps its other entries when one entry is dropped."""
+        if ".AddRange(" not in stmt:
+            return stmt
+        for d in drop:
+            stmt = re.sub(rf"\s*this\.{re.escape(d)},", "", stmt)             # not the last entry
+            stmt = re.sub(rf",\s*this\.{re.escape(d)}\}}\)", "})", stmt)     # the last entry
+        return stmt
+
     for k in list(per_ctrl):
+        per_ctrl[k] = [without_dropped_items(x) for x in per_ctrl[k]]
         per_ctrl[k] = [x for x in per_ctrl[k] if not (mentions_dropped(x) and not x.strip().startswith(f"this.{k}."))
                        or not mentions_dropped(x.replace(f"this.{k}.", "", 1))]
     pre = [x for x in pre if not mentions_dropped(x)]

@@ -104,7 +104,6 @@ namespace SPI_Data_Comp_Tool
                 sPISpecNoteCreationUtilityToolStripMenuItem.Enabled = boolEnableStatus;
                 exportDBToExcelToolStripMenuItem.Enabled = boolEnableStatus;
                 sQLDBToExcelToolStripMenuItem.Enabled = boolEnableStatus;
-                sPIDeltaChangeTrackerToolStripMenuItem.Enabled = boolEnableStatus;
                 sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Enabled = boolEnableStatus;
                 compareListTablesToolStripMenuItem.Enabled = boolEnableStatus;
                 preMergingToolToolStripMenuItem.Enabled = boolEnableStatus;
@@ -157,12 +156,6 @@ namespace SPI_Data_Comp_Tool
         {
             SQL_DB_To_Excel sQL_DB_To_Excel = new SQL_DB_To_Excel();
             sQL_DB_To_Excel.Show();
-        }
-
-        private void sPIDeltaChangeTrackerToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            SPIDeltaChangeTracker sPIDeltaChangeTracker = new SPIDeltaChangeTracker();
-            sPIDeltaChangeTracker.Show();
         }
 
         private void compareListTablesToolStripMenuItem_Click(object sender, EventArgs e)

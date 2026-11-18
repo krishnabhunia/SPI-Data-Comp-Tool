@@ -10,7 +10,7 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 | `SPI Data Comp Tool/MainForm.cs` | Main window (menus, About, exit) |
 | `SPI Data Comp Tool/DB Comparison.cs` | Database-comparison UI |
 | `SPI Data Comp Tool/Excel_Excel_Comparison.cs` | Excel comparison |
-| `SPI Data Comp Tool/SPIDeltaChangeTracker.cs` | Delta tracking form |
+| `SPI Data Comp Tool/SPIDeltaChangeTrackerOptimised.cs` | Delta tracking form (the only one: the first tracker window, whose menu entry was always hidden, was removed) |
 | `SPI Data Comp Tool/SQL_DB_To_Excel.cs` | Export UI |
 | `SPI Data Comp Tool/Common_Data.cs` | Shared helpers: DB connections, Excel I/O, profiles, developer mode (`GlobalDebug`) |
 | `SPI Data Comp Tool/UserProfile/userProfile.example.json` | Template for a local connection profile |
@@ -106,6 +106,7 @@ Versions are automatic - nobody edits a version number by hand. `tools/release.p
   - `windows-x64/` — `SPI_Data_Comp_Tool_<version>.exe`, the **64-bit installer** (Inno Setup, `windows/installer/SPI_Data_Comp_Tool.iss`) built from the `Release|x64` output. It installs to `C:\Program Files\SPI Data Comparison Tool` (or, without admin rights, just for the current user under `%LocalAppData%\Programs`), adds a Start-menu shortcut (desktop shortcut optional), checks for .NET Framework 4.6.2+, upgrades an older install in place and has an uninstaller in *Apps & features*. Silent install: `/VERYSILENT /SUPPRESSMSGBOXES [/CURRENTUSER] [/DIR="..."]`.
 - **No DLL files ship.** Costura (via Fody, `FodyWeavers.xml`) embeds every referenced library into the `.exe`, compressed, and loads it from there at start-up; only the `.exe.config` and the PNID templates sit beside it. CI fails if a `.dll` appears next to either exe, and runs `"SPI Data Comp Tool.exe" --check-assemblies <file>` on the portable exe and on the installed 64-bit exe to prove every library loads from the exe. The installer is also smoke-tested in CI: silent install, 64-bit check, uninstall.
 - **Only libraries the code uses are referenced.** EntityFramework, System.IO.Packaging and System.IO.FileSystem.Primitives were removed (nothing used them; Open XML on .NET 4.6 uses the built-in WindowsBase). Keep System.ValueTuple (needed on .NET 4.6.2) and System.ComponentModel.Annotations (EPPlus needs it). `tests/test_cleanup.py` guards this.
+- **Every window can be opened.** A window must be reachable from the main menu or from another window, and the main menu has no hidden entries; `tests/test_cleanup.py` fails otherwise. To retire a window, delete it (files, project entries, menu entry) instead of hiding its menu entry.
 - **Excel automation starts only when used.** The Excel Comparison window no longer starts Excel when it opens; the debug Load button starts it, reads the sheet name and quits it again, so no `EXCEL.EXE` is left running.
 - Releases also carry the installer on its own as `SPI_Data_Comp_Tool_<version>_x64_setup.exe`; `SPI_Data_Comp_Tool_<version>.zip.sha256` lists the checksums of the zip and the installer. The installer is not code-signed, so Windows SmartScreen may ask to confirm the first run.
 

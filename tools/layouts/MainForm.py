@@ -10,7 +10,9 @@ TOP = ["menuStrip1"]           # docked to the top, outside the layout table
 
 # the old login box and its two holder panels are gone (login removed in 2.2.0)
 DROP = ["gb_logincredentials", "btn_Login", "tb_username", "tb_password", "label1", "label4",
-        "gb_AppDetails", "panel_control"]
+        "gb_AppDetails", "panel_control",
+        # the first Delta Change Tracker window: its menu entry was always hidden, the window is removed
+        "sPIDeltaChangeTrackerToolStripMenuItem"]
 
 TEXTS = {
     "btn_Exit_Logout": "Exit",

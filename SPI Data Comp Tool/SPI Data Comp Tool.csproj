@@ -280,12 +280,6 @@
     <Compile Include="SPIDeltaChangeLegacyID.Designer.cs">
       <DependentUpon>SPIDeltaChangeLegacyID.cs</DependentUpon>
     </Compile>
-    <Compile Include="SPIDeltaChangeTracker.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SPIDeltaChangeTracker.Designer.cs">
-      <DependentUpon>SPIDeltaChangeTracker.cs</DependentUpon>
-    </Compile>
     <Compile Include="SPI_Analysis.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -394,9 +388,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="SPIDeltaChangeLegacyID.resx">
       <DependentUpon>SPIDeltaChangeLegacyID.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SPIDeltaChangeTracker.resx">
-      <DependentUpon>SPIDeltaChangeTracker.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="SPI_Analysis.resx">
       <DependentUpon>SPI_Analysis.cs</DependentUpon>
