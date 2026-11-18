@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Costura packs every referenced library into the .exe (compressed) and loads it from there at start-up. -->
+<Weavers GenerateXsd="false">
+  <Costura IncludeDebugSymbols="false" />
+</Weavers>

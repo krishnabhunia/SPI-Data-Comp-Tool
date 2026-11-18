@@ -173,6 +173,58 @@ jobs:
           # screenshots ride along in the one artifact; the release job attaches them as a separate zip
           Copy-Item screenshots dist/screenshots -Recurse
           Get-ChildItem dist -Recurse | ForEach-Object { $_.FullName }
+      - name: Portable build is one exe (libraries embedded)
+        shell: pwsh
+        run: |
+          $dlls = Get-ChildItem dist/portable -Recurse -Filter *.dll
+          if ($dlls) { $dlls | ForEach-Object { Write-Host "::error::$($_.FullName)" }; throw 'DLL files next to the portable exe' }
+          $exe = (Get-ChildItem dist/portable -Filter *.exe).FullName
+          $log = Join-Path $env:RUNNER_TEMP 'portable-assemblies.txt'
+          $p = Start-Process $exe -ArgumentList '--check-assemblies', "`"$log`"" -Wait -PassThru
+          Get-Content $log | ForEach-Object { Write-Host $_ }
+          "### Portable: libraries load from the exe" >> $env:GITHUB_STEP_SUMMARY
+          Get-Content $log | ForEach-Object { "- $_" } >> $env:GITHUB_STEP_SUMMARY
+          if ($p.ExitCode -ne 0) { throw 'a library failed to load from the portable exe' }
+      - name: Build 64-bit application
+        shell: pwsh
+        run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release /p:Platform=x64 /warnaserror:MSB3245
+      - name: Build 64-bit installer
+        shell: pwsh
+        run: |
+          $ver = '${{ steps.ver.outputs.version }}'
+          $num = ($ver -split '-')[0]
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          if (-not (Test-Path $iscc)) { throw 'Inno Setup 6 (ISCC.exe) not found' }
+          $src = (Resolve-Path "SPI Data Comp Tool/bin/x64/Release").Path
+          $out = Join-Path $PWD 'dist/windows-x64'
+          & $iscc /Qp "/DAppVersion=$ver" "/DNumericVersion=$num" "/DSourceDir=$src" "/DOutputDir=$out" windows/installer/SPI_Data_Comp_Tool.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed ($LASTEXITCODE)" }
+          Get-ChildItem $out | ForEach-Object { Write-Host "$($_.Name)  $([math]::Round($_.Length / 1MB, 1)) MB" }
+      - name: Test the installer (silent install, check, uninstall)
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem dist/windows-x64 -Filter *.exe).FullName
+          $dir = Join-Path $env:RUNNER_TEMP 'spi-install'
+          $p = Start-Process $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=`"$dir`"" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "setup exit code $($p.ExitCode)" }
+          $exe = Join-Path $dir 'SPI Data Comp Tool.exe'
+          if (-not (Test-Path $exe)) { throw 'installed exe missing' }
+          if (-not (Test-Path (Join-Path $dir 'PNID_Reports/Source/instrument.txt'))) { throw 'PNID templates missing from the install' }
+          $dlls = Get-ChildItem $dir -Recurse -Filter *.dll
+          if ($dlls) { $dlls | ForEach-Object { Write-Host "::error::$($_.FullName)" }; throw 'DLL files in the install folder' }
+          $b = [IO.File]::ReadAllBytes($exe); $pe = [BitConverter]::ToInt32($b, 0x3C)
+          $machine = [BitConverter]::ToUInt16($b, $pe + 4)
+          if ($machine -ne 0x8664) { throw ('installed exe is not 64-bit (machine 0x{0:X})' -f $machine) }
+          $log = Join-Path $env:RUNNER_TEMP 'x64-assemblies.txt'
+          $c = Start-Process $exe -ArgumentList '--check-assemblies', "`"$log`"" -Wait -PassThru
+          Get-Content $log | ForEach-Object { Write-Host $_ }
+          if ($c.ExitCode -ne 0) { throw 'a library failed to load from the installed 64-bit exe' }
+          Get-ChildItem $dir -Recurse -File | ForEach-Object { Write-Host "installed: $($_.FullName.Substring($dir.Length))" }
+          Start-Process (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
+          for ($i = 0; $i -lt 30 -and (Test-Path $exe); $i++) { Start-Sleep 1 }
+          if (Test-Path $exe) { throw 'uninstall left the exe behind' }
+          "### 64-bit installer: installed, 64-bit exe, no DLL files, libraries load, uninstalled cleanly" >> $env:GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v4
         with:
           name: SPI_Data_Comp_Tool_${{ steps.ver.outputs.version }}
@@ -207,13 +259,17 @@ jobs:
           shots_name="SPI_Data_Comp_Tool_${VERSION}_screenshots.zip"
           (cd dist && zip -qr "../${zip_name}" . -x 'screenshots/*')
           (cd dist/screenshots && zip -qr "../../${shots_name}" .)
-          sha256sum "${zip_name}" > "${zip_name}.sha256"
+          # the 64-bit installer also goes on the release page by itself, for a one-click download
+          setup_name="SPI_Data_Comp_Tool_${VERSION}_x64_setup.exe"
+          cp "dist/windows-x64/SPI_Data_Comp_Tool_${VERSION}.exe" "${setup_name}"
+          sha256sum "${zip_name}" "${setup_name}" > "${zip_name}.sha256"
           cat "${zip_name}.sha256"
+          assets=("${zip_name}" "${zip_name}.sha256" "${setup_name}" "${shots_name}")
           if gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release upload "${TAG}" "${zip_name}" "${zip_name}.sha256" "${shots_name}" --clobber
+            gh release upload "${TAG}" "${assets[@]}" --clobber
           else
             flags=(--title "SPI Data Comparison Tool ${VERSION}" --generate-notes --target "${SHA}")
             if [ "${PRE}" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
-            gh release create "${TAG}" "${zip_name}" "${zip_name}.sha256" "${shots_name}" "${flags[@]}"
+            gh release create "${TAG}" "${assets[@]}" "${flags[@]}"
           fi
           echo "### Released ${TAG}" >> "$GITHUB_STEP_SUMMARY"
