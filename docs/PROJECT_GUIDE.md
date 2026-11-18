@@ -6,7 +6,7 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 ## Verified source map
 | Source | Responsibility |
 |---|---|
-| `SPI Data Comp Tool/Program.cs` | Startup; chooses main or debug-specific forms |
+| `SPI Data Comp Tool/Program.cs` | Dispatches the isolated update helper, CI checks, or normal application startup |
 | `SPI Data Comp Tool/MainForm.cs` | Main window (menus, About, exit) |
 | `SPI Data Comp Tool/DB Comparison.cs` | Database-comparison UI |
 | `SPI Data Comp Tool/Excel_Excel_Comparison.cs` | Excel comparison |
@@ -18,6 +18,9 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 | `.github/workflows/build.yml` | CI: docs check, secrets and branding guard, Windows build, portable exe + 64-bit installer in one zip artifact |
 | `windows/installer/SPI_Data_Comp_Tool.iss` | Inno Setup script for the 64-bit installer |
 | `tools/make_app_images.py` | Draws the app icon and pictures (original artwork) |
+| `SPI Data Comp Tool/UpdatesControl.cs` | The Updates page inside Settings; Help reuses that same window |
+| `SPI Data Comp Tool/UpdateFeedClient.cs`, `UpdateVersion.cs` | Published release discovery, three-part version ordering and verified downloads |
+| `SPI Data Comp Tool/UpdateInstaller.cs`, `UpdateApplyWorker.cs`, `UpdatePreferences.cs` | Installed/portable update handoff, bounded file replacement and whitelisted preference preservation |
 
 ## Architecture
 ~~~mermaid
@@ -83,7 +86,7 @@ flowchart TD
 
 | Previous UI | Current route | Preserved behaviour |
 |---|---|---|
-| Settings and a separate Rules import form | Settings: General / Comparison rules tabs | All five existing Import Rules buttons open the Rules tab; Close/Escape returns to the comparison. Invalid/cancelled imports retain existing rules. |
+| Settings and a separate Rules import form | Settings: General / Comparison rules / Updates tabs | All five existing Import Rules buttons open the Rules tab; Close/Escape returns to the comparison. Invalid/cancelled imports retain existing rules. Help's update shortcut activates the same Settings window. |
 | Analysis setup and a separate results window | Analysis: Connection setup / Results tabs | Source and target filters, Arrange, remarks, synchronized grids and Excel export remain. Results use an independent snapshot. Replacing results requires confirmation. |
 | Fake profile list and nonfunctional Save/Delete in Analysis | Removed | No working functionality was attached; the real User Profile window remains. |
 | Repeated main-menu/tool clicks opening duplicate windows | Activate the existing workflow window | Minimized windows restore. Hold Ctrl when opening a tool for an explicit parallel session; Settings, User Profile and configuration remain single-instance per main window. Duplicacy Check and its Configuration mode have separate keys. |
@@ -126,13 +129,19 @@ Versions are automatic - nobody edits a version number by hand. `tools/release.p
 - **Excel automation starts only when used.** The Excel Comparison window no longer starts Excel when it opens; the debug Load button starts it, reads the sheet name and quits it again, so no `EXCEL.EXE` is left running.
 - Releases also carry the installer on its own as `SPI_Data_Comp_Tool_<version>_x64_setup.exe`; `SPI_Data_Comp_Tool_<version>.zip.sha256` lists the checksums of the zip and the installer. The installer is not code-signed, so Windows SmartScreen may ask to confirm the first run.
 
+### In-app updates
+
+**File > Settings > Updates** and **Help > Check for updates** lead to the same page. Opening it performs no network request. Users choose Normal, Beta or All releases, check GitHub, select an exact compatible published version, download it and separately confirm installation. The list distinguishes current, latest normal and latest beta versions and displays release notes. Three-part versions are compared numerically; a normal release sorts above the betas of the same version. Drafts, manual builds and four-part versions are not offered.
+
+The download is streamed into a task-owned cache with size/time limits and SHA-256 checking. Installed copies retain their installation directory and scope through the existing installer and normal Windows permission prompts. Portable copies apply only known application files, preserve their executable filename and keep recovery backups; they are not silently converted to installed copies. Profile/rules file paths and the two Excel-export preferences are preserved, not the contents of connection profiles or database passwords. See [UPDATING.md](UPDATING.md) for first-upgrade instructions, safeguards and limitations.
+
 ## Supported workflows vs. assumptions
 The source has forms for database comparison, Excel comparison, delta change tracking and database-to-Excel export. Exact connection strings, supported server versions, data-size limits and complete workflows must be validated manually: the repository does not supply safe integration fixtures for all operations.
 
 ## Verification
 The GitHub Actions workflow (`build.yml`) runs on pull requests, pushes to `master` and on demand. It checks this guide, runs the complete Python regression suite and generated-layout check, and rejects committed credentials/signing keys. Both Any CPU and x64 Windows builds treat warnings as errors. Actions are pinned to reviewed Node 24 releases rather than relying on forced execution of deprecated Node 20 actions.
 
-`--check-ui <log-file>` runs real Windows controls against synthetic data: profile snapshots and failed file writes, profile selection and import schemas, window reuse and independent modes, Settings startup/failed import, embedded Analysis and failed reload preservation. `--open-form` must successfully open every eligible form; a failed form fails the build. No pictures are taken or published. Portable dependency loading and 64-bit installer install/uninstall checks remain enabled. **Read CI results** rather than assuming success. Live Oracle/SQL Server connectivity, real customer workbooks, all comparison outcomes and older Windows/.NET installations still require manual acceptance tests.
+`--check-ui <log-file>` runs real Windows controls against synthetic data: profile snapshots and failed file writes, profile selection and import schemas, window reuse and independent modes, Settings startup/failed import, embedded Analysis and failed reload preservation. It also exercises updater version/feed parsing, bounded verified downloads with fake transport, staged portable replacement and preference migration, and the update controls with fake services. These updater checks never install a live release, access a database or save real user preferences. `--open-form` must successfully open every eligible form; a failed form fails the build. No pictures are taken or published. Portable dependency loading and 64-bit installer install/uninstall checks remain enabled. **Read CI results** rather than assuming success. Live Oracle/SQL Server connectivity, real customer workbooks, all comparison outcomes, real-user UAC/SmartScreen and older Windows/.NET installations still require manual acceptance tests.
 
 ## Limitations and security
 - Some screens may update data; test in isolated environments, never on production by default.

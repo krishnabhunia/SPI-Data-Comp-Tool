@@ -17,12 +17,16 @@ namespace SPI_Data_Comp_Tool
             Action<string> passed = message => messages.Add("PASS " + message);
             try
             {
+                // Run offline network/file checks before WinForms installs a UI synchronization context.
+                UpdateFeedChecks.Run(passed);
+                UpdateApplyChecks.Run(passed);
                 ProfileWorkflowChecks.Run(passed);
                 ImportSchemaChecks.Run(passed);
                 CredentialRedactionChecks.Run(passed);
                 CheckNavigation(passed);
                 CheckSettings(passed);
                 CheckAnalysis(passed);
+                UpdateUiChecks.Run(passed);
                 File.WriteAllLines(outputFile, messages);
                 return 0;
             }
@@ -100,7 +104,7 @@ namespace SPI_Data_Comp_Tool
                     Application.DoEvents();
                     tabs.SelectedIndex = 0;
                     Application.DoEvents();
-                    Require(tabs.TabPages.Count == 2, "The consolidated Settings window has missing sections.");
+                    Require(tabs.TabPages.Count == 3, "The consolidated Settings window has missing sections.");
                     settings.Close();
                 }
             }

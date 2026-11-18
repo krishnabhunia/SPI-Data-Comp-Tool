@@ -1,15 +1,16 @@
-"""One settings window for output preferences and comparison rules."""
+"""One settings window for output preferences, comparison rules and explicit updates."""
 from layout_gen import C, T, F, G, TABS
 
 DESIGNER = "User_Settings.Designer.cs"
 FORM_NAME = "User_Settings"
 TITLE = "Settings"
-CLIENT = (760, 540)
-MINIMUM = (640, 480)
+CLIENT = (900, 700)
+MINIMUM = (760, 600)
 
 TEXTS = {
     "tab_General": "General",
     "tab_Rules": "Comparison rules",
+    "tab_Updates": "Updates",
     "gb_SaveExcel": "Save Excel files with",
     "rb_EPPlus": "EPPlus (recommended, no Excel needed)",
     "rb_XLSave": "Microsoft Excel (needs Excel installed)",
@@ -29,7 +30,7 @@ PROPS = {
     "lbl_RulesStatus": {"AutoEllipsis": "true"},
 }
 
-LAYOUT = T("tlp_Root", cols=["100%"], rows=["200", "100%", "auto"], cells=[
+LAYOUT = T("tlp_Root", cols=["100%"], rows=["100%", "140", "auto"], cells=[
     (TABS("tabs_Settings", new="TabControl", pages=[
         G("tab_General", new="TabPage", child=G("gb_SaveExcel", T(
             "tlp_SaveExcel", cols=["100%"], rows=["auto", "auto"], autosize=True, cells=[
@@ -44,6 +45,8 @@ LAYOUT = T("tlp_Root", cols=["100%"], rows=["200", "100%", "auto"], cells=[
                 (C("btn_ImportRules", new="Button", size=(136, 32), anchor="Left", margin=(0, 10, 0, 6)), 0, 2, 2),
                 (C("lbl_RulesStatus", new="Label", dock="Fill", margin=0), 0, 3, 2),
             ])),
+        G("tab_Updates", new="TabPage", child=C("updatesControl", new="SPI_Data_Comp_Tool.UpdatesControl",
+            dock="Fill", margin=0)),
     ]), 0, 0),
     (G("gb_Logs", T("tlp_Logs", cols=["auto", "100%"], rows=["100%", "auto"], cells=[
         (C("rtb_Log", dock="Fill", margin=(0, 0, 0, 8)), 0, 0, 2),

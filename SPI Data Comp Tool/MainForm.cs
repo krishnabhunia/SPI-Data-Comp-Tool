@@ -50,6 +50,24 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
+        internal User_Settings ShowUpdatesSettings()
+        {
+            // The same key as File > Settings: never create a second settings window.
+            User_Settings settings = windows.Open(this, () => new User_Settings());
+            settings.ShowUpdates();
+            return settings;
+        }
+
+        private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            try { ShowUpdatesSettings(); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, Common_Data.RedactConnectionCredentials(ex.Message), "Unable to open Updates",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Application.Exit();

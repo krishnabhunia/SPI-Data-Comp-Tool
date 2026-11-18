@@ -254,6 +254,15 @@
       <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
     </Compile>
     <Compile Include="AppVersion.cs" />
+    <Compile Include="UpdateContracts.cs" />
+    <Compile Include="UpdateVersion.cs" />
+    <Compile Include="UpdateFeedClient.cs" />
+    <Compile Include="UpdateInstaller.cs" />
+    <Compile Include="UpdateApplyWorker.cs" />
+    <Compile Include="UpdatePreferences.cs" />
+    <Compile Include="UpdatesControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="ConnectionPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -273,6 +282,15 @@
     </Compile>
     <Compile Include="..\tests\CredentialRedactionChecks.cs">
       <Link>Tests\CredentialRedactionChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\UpdateFeedChecks.cs">
+      <Link>Tests\UpdateFeedChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\UpdateApplyChecks.cs">
+      <Link>Tests\UpdateApplyChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\UpdateUiChecks.cs">
+      <Link>Tests\UpdateUiChecks.cs</Link>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="UiTheme.cs" />

@@ -46,6 +46,8 @@
             this.tb_RulesPath = new System.Windows.Forms.TextBox();
             this.btn_ImportRules = new System.Windows.Forms.Button();
             this.lbl_RulesStatus = new System.Windows.Forms.Label();
+            this.tab_Updates = new System.Windows.Forms.TabPage();
+            this.updatesControl = new SPI_Data_Comp_Tool.UpdatesControl();
             this.tlp_Logs = new System.Windows.Forms.TableLayoutPanel();
             this.flp_SettingsActions = new System.Windows.Forms.FlowLayoutPanel();
             this.btn_Close = new System.Windows.Forms.Button();
@@ -56,6 +58,7 @@
             this.tlp_SaveExcel.SuspendLayout();
             this.tab_Rules.SuspendLayout();
             this.tlp_Rules.SuspendLayout();
+            this.tab_Updates.SuspendLayout();
             this.gb_Logs.SuspendLayout();
             this.tlp_Logs.SuspendLayout();
             this.flp_SettingsActions.SuspendLayout();
@@ -67,8 +70,8 @@
             this.tlp_Root.ColumnCount = 1;
             this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlp_Root.RowCount = 3;
-            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 200F));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 140F));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Root.Controls.Add(this.tabs_Settings, 0, 0);
             this.tlp_Root.Controls.Add(this.gb_Logs, 0, 1);
@@ -82,6 +85,7 @@
             this.tabs_Settings.Name = "tabs_Settings";
             this.tabs_Settings.Controls.Add(this.tab_General);
             this.tabs_Settings.Controls.Add(this.tab_Rules);
+            this.tabs_Settings.Controls.Add(this.tab_Updates);
             this.tabs_Settings.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabs_Settings.TabIndex = 1;
             // 
@@ -219,6 +223,21 @@
             this.lbl_RulesStatus.AutoEllipsis = true;
             this.lbl_RulesStatus.TabIndex = 13;
             // 
+            // tab_Updates
+            // 
+            this.tab_Updates.Name = "tab_Updates";
+            this.tab_Updates.Text = "Updates";
+            this.tab_Updates.Controls.Add(this.updatesControl);
+            this.tab_Updates.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
+            this.tab_Updates.TabIndex = 14;
+            // 
+            // updatesControl
+            // 
+            this.updatesControl.Name = "updatesControl";
+            this.updatesControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.updatesControl.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.updatesControl.TabIndex = 15;
+            // 
             // gb_Logs
             // 
             this.gb_Logs.Name = "gb_Logs";
@@ -227,7 +246,7 @@
             this.gb_Logs.Controls.Add(this.tlp_Logs);
             this.gb_Logs.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gb_Logs.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_Logs.TabIndex = 14;
+            this.gb_Logs.TabIndex = 16;
             // 
             // tlp_Logs
             // 
@@ -244,7 +263,7 @@
             this.tlp_Logs.Controls.Add(this.lbl_Progress, 1, 1);
             this.tlp_Logs.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Logs.AutoSize = false;
-            this.tlp_Logs.TabIndex = 15;
+            this.tlp_Logs.TabIndex = 17;
             // 
             // rtb_Log
             // 
@@ -254,7 +273,7 @@
             this.rtb_Log.Text = "";
             this.rtb_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtb_Log.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
-            this.rtb_Log.TabIndex = 16;
+            this.rtb_Log.TabIndex = 18;
             // 
             // btn_ClearLogs
             // 
@@ -265,7 +284,7 @@
             this.btn_ClearLogs.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.btn_ClearLogs.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_ClearLogs.Size = new System.Drawing.Size(110, 30);
-            this.btn_ClearLogs.TabIndex = 17;
+            this.btn_ClearLogs.TabIndex = 19;
             // 
             // lbl_Progress
             // 
@@ -274,7 +293,7 @@
             this.lbl_Progress.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_Progress.AutoSize = true;
             this.lbl_Progress.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
-            this.lbl_Progress.TabIndex = 18;
+            this.lbl_Progress.TabIndex = 20;
             // 
             // flp_SettingsActions
             // 
@@ -286,7 +305,7 @@
             this.flp_SettingsActions.AutoSize = true;
             this.flp_SettingsActions.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flp_SettingsActions.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.flp_SettingsActions.TabIndex = 19;
+            this.flp_SettingsActions.TabIndex = 21;
             // 
             // btn_Close
             // 
@@ -295,7 +314,7 @@
             this.btn_Close.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_Close.Size = new System.Drawing.Size(100, 32);
             this.btn_Close.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btn_Close.TabIndex = 20;
+            this.btn_Close.TabIndex = 22;
             // 
             // User_Settings
             // 
@@ -303,9 +322,9 @@
             this.Text = "Settings";
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(760, 540);
+            this.ClientSize = new System.Drawing.Size(900, 700);
             this.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.MinimumSize = new System.Drawing.Size(640, 480);
+            this.MinimumSize = new System.Drawing.Size(760, 600);
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Padding = new System.Windows.Forms.Padding(12, 12, 12, 12);
             this.Controls.Add(this.tlp_Root);
@@ -323,6 +342,8 @@
             this.tab_Rules.PerformLayout();
             this.tlp_Rules.ResumeLayout(false);
             this.tlp_Rules.PerformLayout();
+            this.tab_Updates.ResumeLayout(false);
+            this.tab_Updates.PerformLayout();
             this.gb_Logs.ResumeLayout(false);
             this.gb_Logs.PerformLayout();
             this.tlp_Logs.ResumeLayout(false);
@@ -335,6 +356,9 @@
         }
 
         #endregion
+
+        private System.Windows.Forms.TabPage tab_Updates;
+        private SPI_Data_Comp_Tool.UpdatesControl updatesControl;
 
         private System.Windows.Forms.TabControl tabs_Settings;
         private System.Windows.Forms.TabPage tab_General;
