@@ -24,6 +24,7 @@ namespace SPI_Data_Comp_Tool
         public Form_Rules()
         {
             InitializeComponent();
+            UiTheme.SetIcon(this);
             Common_Data = new Common_Data();
             openFileDialogData = new OpenFileDialogData();
 

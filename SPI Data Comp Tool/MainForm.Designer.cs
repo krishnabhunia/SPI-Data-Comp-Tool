@@ -69,22 +69,177 @@
             this.btn_Excel_Comparison = new System.Windows.Forms.Button();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.gb_AppDetails = new System.Windows.Forms.GroupBox();
-            this.gb_logincredentials = new System.Windows.Forms.GroupBox();
-            this.btn_Login = new System.Windows.Forms.Button();
-            this.tb_password = new System.Windows.Forms.TextBox();
-            this.tb_username = new System.Windows.Forms.TextBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
             this.lbl_LoginStatus = new System.Windows.Forms.Label();
-            this.panel_control = new System.Windows.Forms.Panel();
-            this.menuStrip1.SuspendLayout();
+            this.tlp_Root = new System.Windows.Forms.TableLayoutPanel();
+            this.tlp_Pictures = new System.Windows.Forms.TableLayoutPanel();
+            this.tlp_About = new System.Windows.Forms.TableLayoutPanel();
+            this.flp_Status = new System.Windows.Forms.FlowLayoutPanel();
+            this.lbl_Version = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            this.gb_AppDetails.SuspendLayout();
-            this.gb_logincredentials.SuspendLayout();
-            this.panel_control.SuspendLayout();
+            this.tlp_Root.SuspendLayout();
+            this.tlp_Pictures.SuspendLayout();
+            this.tlp_About.SuspendLayout();
+            this.flp_Status.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // tlp_Root
+            // 
+            this.tlp_Root.Name = "tlp_Root";
+            this.tlp_Root.ColumnCount = 2;
+            this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tlp_Root.RowCount = 2;
+            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Root.Controls.Add(this.tlp_Pictures, 0, 0);
+            this.tlp_Root.Controls.Add(this.tlp_About, 1, 0);
+            this.tlp_Root.Controls.Add(this.flp_Status, 0, 1);
+            this.tlp_Root.SetColumnSpan(this.flp_Status, 2);
+            this.tlp_Root.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_Root.AutoSize = false;
+            this.tlp_Root.Padding = new System.Windows.Forms.Padding(16, 16, 16, 8);
+            this.tlp_Root.TabIndex = 0;
+            // 
+            // tlp_Pictures
+            // 
+            this.tlp_Pictures.Name = "tlp_Pictures";
+            this.tlp_Pictures.ColumnCount = 1;
+            this.tlp_Pictures.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Pictures.RowCount = 2;
+            this.tlp_Pictures.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 55F));
+            this.tlp_Pictures.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 45F));
+            this.tlp_Pictures.Controls.Add(this.pictureBox1, 0, 0);
+            this.tlp_Pictures.Controls.Add(this.pictureBox2, 0, 1);
+            this.tlp_Pictures.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_Pictures.AutoSize = false;
+            this.tlp_Pictures.Margin = new System.Windows.Forms.Padding(0, 0, 16, 0);
+            this.tlp_Pictures.TabIndex = 1;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = global::SPI_Data_Comp_Tool.Properties.Resources.app_banner;
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.TabStop = false;
+            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBox1.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox1.TabIndex = 2;
+            // 
+            // pictureBox2
+            // 
+            this.pictureBox2.Image = global::SPI_Data_Comp_Tool.Properties.Resources.compare_diagram;
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.TabStop = false;
+            this.pictureBox2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBox2.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox2.TabIndex = 3;
+            // 
+            // tlp_About
+            // 
+            this.tlp_About.Name = "tlp_About";
+            this.tlp_About.ColumnCount = 1;
+            this.tlp_About.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_About.RowCount = 6;
+            this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_About.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_About.Controls.Add(this.label2, 0, 0);
+            this.tlp_About.Controls.Add(this.label3, 0, 1);
+            this.tlp_About.Controls.Add(this.btn_Open_DB_Comparison, 0, 2);
+            this.tlp_About.Controls.Add(this.btn_Excel_Comparison, 0, 3);
+            this.tlp_About.Controls.Add(this.btn_Exit_Logout, 0, 5);
+            this.tlp_About.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_About.AutoSize = false;
+            this.tlp_About.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.tlp_About.TabIndex = 4;
+            // 
+            // label2
+            // 
+            this.label2.Name = "label2";
+            this.label2.Text = "label2";
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
+            this.label2.AutoSize = true;
+            this.label2.Margin = new System.Windows.Forms.Padding(0, 4, 0, 12);
+            this.label2.TabIndex = 5;
+            // 
+            // label3
+            // 
+            this.label3.Name = "label3";
+            this.label3.Text = "label3";
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
+            this.label3.AutoSize = true;
+            this.label3.Margin = new System.Windows.Forms.Padding(0, 0, 0, 20);
+            this.label3.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
+            this.label3.TabIndex = 6;
+            // 
+            // btn_Open_DB_Comparison
+            // 
+            this.btn_Open_DB_Comparison.Name = "btn_Open_DB_Comparison";
+            this.btn_Open_DB_Comparison.UseVisualStyleBackColor = true;
+            this.btn_Open_DB_Comparison.Click += new System.EventHandler(this.btn_Open_DB_Comparison_Click);
+            this.btn_Open_DB_Comparison.Text = "Compare databases";
+            this.btn_Open_DB_Comparison.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
+            this.btn_Open_DB_Comparison.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
+            this.btn_Open_DB_Comparison.Size = new System.Drawing.Size(200, 36);
+            this.btn_Open_DB_Comparison.TabIndex = 7;
+            // 
+            // btn_Excel_Comparison
+            // 
+            this.btn_Excel_Comparison.Name = "btn_Excel_Comparison";
+            this.btn_Excel_Comparison.UseVisualStyleBackColor = true;
+            this.btn_Excel_Comparison.Click += new System.EventHandler(this.btn_Excel_Comparison_Click);
+            this.btn_Excel_Comparison.Text = "Compare Excel files";
+            this.btn_Excel_Comparison.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
+            this.btn_Excel_Comparison.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.btn_Excel_Comparison.Size = new System.Drawing.Size(200, 36);
+            this.btn_Excel_Comparison.TabIndex = 8;
+            // 
+            // btn_Exit_Logout
+            // 
+            this.btn_Exit_Logout.Name = "btn_Exit_Logout";
+            this.btn_Exit_Logout.UseVisualStyleBackColor = true;
+            this.btn_Exit_Logout.Click += new System.EventHandler(this.btn_Exit_Logout_Click);
+            this.btn_Exit_Logout.Text = "Exit";
+            this.btn_Exit_Logout.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
+            this.btn_Exit_Logout.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.btn_Exit_Logout.Size = new System.Drawing.Size(100, 32);
+            this.btn_Exit_Logout.TabIndex = 9;
+            // 
+            // flp_Status
+            // 
+            this.flp_Status.Name = "flp_Status";
+            this.flp_Status.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
+            this.flp_Status.WrapContents = false;
+            this.flp_Status.Controls.Add(this.lbl_LoginStatus);
+            this.flp_Status.Controls.Add(this.lbl_Version);
+            this.flp_Status.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
+            this.flp_Status.AutoSize = true;
+            this.flp_Status.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.flp_Status.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
+            this.flp_Status.TabIndex = 10;
+            // 
+            // lbl_LoginStatus
+            // 
+            this.lbl_LoginStatus.Name = "lbl_LoginStatus";
+            this.lbl_LoginStatus.Text = "Ready";
+            this.lbl_LoginStatus.AutoSize = true;
+            this.lbl_LoginStatus.Margin = new System.Windows.Forms.Padding(0, 0, 16, 0);
+            this.lbl_LoginStatus.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
+            this.lbl_LoginStatus.TabIndex = 11;
+            // 
+            // lbl_Version
+            // 
+            this.lbl_Version.Name = "lbl_Version";
+            this.lbl_Version.Text = "";
+            this.lbl_Version.AutoSize = true;
+            this.lbl_Version.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.lbl_Version.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
+            this.lbl_Version.TabIndex = 12;
             // 
             // menuStrip1
             // 
@@ -112,32 +267,53 @@
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "&File";
             // 
-            // userProfileToolStripMenuItem
-            // 
-            this.userProfileToolStripMenuItem.Enabled = false;
-            this.userProfileToolStripMenuItem.Name = "userProfileToolStripMenuItem";
-            this.userProfileToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
-            this.userProfileToolStripMenuItem.Text = "&User Profile";
-            this.userProfileToolStripMenuItem.Click += new System.EventHandler(this.userProfileToolStripMenuItem_Click);
-            // 
-            // userSettingsToolStripMenuItem
-            // 
-            this.userSettingsToolStripMenuItem.Name = "userSettingsToolStripMenuItem";
-            this.userSettingsToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
-            this.userSettingsToolStripMenuItem.Text = "User Settings";
-            this.userSettingsToolStripMenuItem.Click += new System.EventHandler(this.userSettingsToolStripMenuItem_Click);
-            // 
-            // toolStripSeparator1
-            // 
-            this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(139, 6);
-            // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
             this.exitToolStripMenuItem.Text = "&Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+            // 
+            // toolToolStripMenuItem
+            // 
+            this.toolToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.compareDBToolStripMenuItem,
+            this.compareExcelToolStripMenuItem,
+            this.compareListTablesToolStripMenuItem});
+            this.toolToolStripMenuItem.Name = "toolToolStripMenuItem";
+            this.toolToolStripMenuItem.Size = new System.Drawing.Size(68, 20);
+            this.toolToolStripMenuItem.Text = "&Compare";
+            // 
+            // compareDBToolStripMenuItem
+            // 
+            this.compareDBToolStripMenuItem.Enabled = false;
+            this.compareDBToolStripMenuItem.Name = "compareDBToolStripMenuItem";
+            this.compareDBToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
+            this.compareDBToolStripMenuItem.Text = "Compare &DB";
+            this.compareDBToolStripMenuItem.Click += new System.EventHandler(this.compareDBToolStripMenuItem_Click);
+            // 
+            // compareExcelToolStripMenuItem
+            // 
+            this.compareExcelToolStripMenuItem.Enabled = false;
+            this.compareExcelToolStripMenuItem.Name = "compareExcelToolStripMenuItem";
+            this.compareExcelToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
+            this.compareExcelToolStripMenuItem.Text = "Compare &Excel";
+            this.compareExcelToolStripMenuItem.Click += new System.EventHandler(this.compareExcelToolStripMenuItem_Click);
+            // 
+            // helpToolStripMenuItem
+            // 
+            this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.aboutUsToolStripMenuItem});
+            this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
+            this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
+            this.helpToolStripMenuItem.Text = "&Help";
+            // 
+            // aboutUsToolStripMenuItem
+            // 
+            this.aboutUsToolStripMenuItem.Name = "aboutUsToolStripMenuItem";
+            this.aboutUsToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
+            this.aboutUsToolStripMenuItem.Text = "&About Us";
+            this.aboutUsToolStripMenuItem.Click += new System.EventHandler(this.aboutUsToolStripMenuItem_Click);
             // 
             // analysisToolStripMenuItem
             // 
@@ -168,72 +344,23 @@
             this.sPISpecNoteCreationUtilityToolStripMenuItem.Text = "SPI Spec Note &Creation Utility";
             this.sPISpecNoteCreationUtilityToolStripMenuItem.Click += new System.EventHandler(this.sPISpecNoteCreationUtilityToolStripMenuItem_Click);
             // 
-            // sPIDeltaChangeTrackerToolStripMenuItem
+            // exportDBToExcelToolStripMenuItem
             // 
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Enabled = false;
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Name = "sPIDeltaChangeTrackerToolStripMenuItem";
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Text = "SPI Delta Change &Tracker";
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Visible = false;
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Click += new System.EventHandler(this.sPIDeltaChangeTrackerToolStripMenuItem_Click);
+            this.exportDBToExcelToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.sQLDBToExcelToolStripMenuItem,
+            this.tableExtractionAfterDeltaToolStripMenuItem,
+            this.mergeLogsExportToolStripMenuItem});
+            this.exportDBToExcelToolStripMenuItem.Name = "exportDBToExcelToolStripMenuItem";
+            this.exportDBToExcelToolStripMenuItem.Size = new System.Drawing.Size(53, 20);
+            this.exportDBToExcelToolStripMenuItem.Text = "&Export";
             // 
-            // sPIDeltaChangeLegacyIDToolStripMenuItem
+            // sQLDBToExcelToolStripMenuItem
             // 
-            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Enabled = false;
-            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Name = "sPIDeltaChangeLegacyIDToolStripMenuItem";
-            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
-            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Text = "SPI Delta Change &Legacy ID";
-            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Click += new System.EventHandler(this.sPIDeltaChangeLegacyIDToolStripMenuItem_Click);
-            // 
-            // sPIDeltaChangeTrackerOptimisedToolStripMenuItem
-            // 
-            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Enabled = false;
-            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Name = "sPIDeltaChangeTrackerOptimisedToolStripMenuItem";
-            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
-            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Text = "SPI Delta Change &Tracker Optimised";
-            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Click += new System.EventHandler(this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem_Click);
-            // 
-            // sPIFKExtractionToolStripMenuItem
-            // 
-            this.sPIFKExtractionToolStripMenuItem.Enabled = false;
-            this.sPIFKExtractionToolStripMenuItem.Name = "sPIFKExtractionToolStripMenuItem";
-            this.sPIFKExtractionToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
-            this.sPIFKExtractionToolStripMenuItem.Text = "SPI FK Extraction";
-            this.sPIFKExtractionToolStripMenuItem.Click += new System.EventHandler(this.sPIFKExtractionToolStripMenuItem_Click);
-            // 
-            // toolToolStripMenuItem
-            // 
-            this.toolToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.compareDBToolStripMenuItem,
-            this.compareExcelToolStripMenuItem,
-            this.compareListTablesToolStripMenuItem});
-            this.toolToolStripMenuItem.Name = "toolToolStripMenuItem";
-            this.toolToolStripMenuItem.Size = new System.Drawing.Size(68, 20);
-            this.toolToolStripMenuItem.Text = "&Compare";
-            // 
-            // compareDBToolStripMenuItem
-            // 
-            this.compareDBToolStripMenuItem.Enabled = false;
-            this.compareDBToolStripMenuItem.Name = "compareDBToolStripMenuItem";
-            this.compareDBToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
-            this.compareDBToolStripMenuItem.Text = "Compare &DB";
-            this.compareDBToolStripMenuItem.Click += new System.EventHandler(this.compareDBToolStripMenuItem_Click);
-            // 
-            // compareExcelToolStripMenuItem
-            // 
-            this.compareExcelToolStripMenuItem.Enabled = false;
-            this.compareExcelToolStripMenuItem.Name = "compareExcelToolStripMenuItem";
-            this.compareExcelToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
-            this.compareExcelToolStripMenuItem.Text = "Compare &Excel";
-            this.compareExcelToolStripMenuItem.Click += new System.EventHandler(this.compareExcelToolStripMenuItem_Click);
-            // 
-            // compareListTablesToolStripMenuItem
-            // 
-            this.compareListTablesToolStripMenuItem.Enabled = false;
-            this.compareListTablesToolStripMenuItem.Name = "compareListTablesToolStripMenuItem";
-            this.compareListTablesToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
-            this.compareListTablesToolStripMenuItem.Text = "Compare &List Tables";
-            this.compareListTablesToolStripMenuItem.Click += new System.EventHandler(this.compareListTablesToolStripMenuItem_Click);
+            this.sQLDBToExcelToolStripMenuItem.Enabled = false;
+            this.sQLDBToExcelToolStripMenuItem.Name = "sQLDBToExcelToolStripMenuItem";
+            this.sQLDBToExcelToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
+            this.sQLDBToExcelToolStripMenuItem.Text = "&Export DB To Excel";
+            this.sQLDBToExcelToolStripMenuItem.Click += new System.EventHandler(this.sQLDBToExcelToolStripMenuItem_Click_1);
             // 
             // toolsToolStripMenuItem
             // 
@@ -259,10 +386,22 @@
             this.customisedExcelToolStripMenuItem.Text = "Customised &Excel";
             this.customisedExcelToolStripMenuItem.Click += new System.EventHandler(this.customisedExcelToolStripMenuItem_Click_1);
             // 
-            // toolStripSeparator2
+            // sPIDeltaChangeTrackerToolStripMenuItem
             // 
-            this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(227, 6);
+            this.sPIDeltaChangeTrackerToolStripMenuItem.Enabled = false;
+            this.sPIDeltaChangeTrackerToolStripMenuItem.Name = "sPIDeltaChangeTrackerToolStripMenuItem";
+            this.sPIDeltaChangeTrackerToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
+            this.sPIDeltaChangeTrackerToolStripMenuItem.Text = "SPI Delta Change &Tracker";
+            this.sPIDeltaChangeTrackerToolStripMenuItem.Visible = false;
+            this.sPIDeltaChangeTrackerToolStripMenuItem.Click += new System.EventHandler(this.sPIDeltaChangeTrackerToolStripMenuItem_Click);
+            // 
+            // compareListTablesToolStripMenuItem
+            // 
+            this.compareListTablesToolStripMenuItem.Enabled = false;
+            this.compareListTablesToolStripMenuItem.Name = "compareListTablesToolStripMenuItem";
+            this.compareListTablesToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
+            this.compareListTablesToolStripMenuItem.Text = "Compare &List Tables";
+            this.compareListTablesToolStripMenuItem.Click += new System.EventHandler(this.compareListTablesToolStripMenuItem_Click);
             // 
             // preMergingToolToolStripMenuItem
             // 
@@ -280,6 +419,19 @@
             this.preMergingDuplicacyCheckToolStripMenuItem.Text = "Pre Merging &Duplicacy Check";
             this.preMergingDuplicacyCheckToolStripMenuItem.Click += new System.EventHandler(this.preMergingDuplicacyCheckToolStripMenuItem_Click);
             // 
+            // userProfileToolStripMenuItem
+            // 
+            this.userProfileToolStripMenuItem.Enabled = false;
+            this.userProfileToolStripMenuItem.Name = "userProfileToolStripMenuItem";
+            this.userProfileToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
+            this.userProfileToolStripMenuItem.Text = "&User Profile";
+            this.userProfileToolStripMenuItem.Click += new System.EventHandler(this.userProfileToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(139, 6);
+            // 
             // configurationToolStripMenuItem
             // 
             this.configurationToolStripMenuItem.Enabled = false;
@@ -288,10 +440,13 @@
             this.configurationToolStripMenuItem.Text = "&Configuration";
             this.configurationToolStripMenuItem.Click += new System.EventHandler(this.configurationToolStripMenuItem_Click);
             // 
-            // toolStripSeparator3
+            // sPIDeltaChangeLegacyIDToolStripMenuItem
             // 
-            this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(227, 6);
+            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Enabled = false;
+            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Name = "sPIDeltaChangeLegacyIDToolStripMenuItem";
+            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
+            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Text = "SPI Delta Change &Legacy ID";
+            this.sPIDeltaChangeLegacyIDToolStripMenuItem.Click += new System.EventHandler(this.sPIDeltaChangeLegacyIDToolStripMenuItem_Click);
             // 
             // generateInsertScriptsToolStripMenuItem
             // 
@@ -301,11 +456,6 @@
             this.generateInsertScriptsToolStripMenuItem.Text = "&Generate Scripts";
             this.generateInsertScriptsToolStripMenuItem.Click += new System.EventHandler(this.generateInsertScriptsToolStripMenuItem_Click);
             // 
-            // toolStripSeparator4
-            // 
-            this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(227, 6);
-            // 
             // executeScriptsFromExcelToolStripMenuItem
             // 
             this.executeScriptsFromExcelToolStripMenuItem.Enabled = false;
@@ -313,24 +463,6 @@
             this.executeScriptsFromExcelToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.executeScriptsFromExcelToolStripMenuItem.Text = "&Execute Scripts From Excel";
             this.executeScriptsFromExcelToolStripMenuItem.Click += new System.EventHandler(this.executeScriptsFromExcelToolStripMenuItem_Click);
-            // 
-            // exportDBToExcelToolStripMenuItem
-            // 
-            this.exportDBToExcelToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.sQLDBToExcelToolStripMenuItem,
-            this.tableExtractionAfterDeltaToolStripMenuItem,
-            this.mergeLogsExportToolStripMenuItem});
-            this.exportDBToExcelToolStripMenuItem.Name = "exportDBToExcelToolStripMenuItem";
-            this.exportDBToExcelToolStripMenuItem.Size = new System.Drawing.Size(53, 20);
-            this.exportDBToExcelToolStripMenuItem.Text = "&Export";
-            // 
-            // sQLDBToExcelToolStripMenuItem
-            // 
-            this.sQLDBToExcelToolStripMenuItem.Enabled = false;
-            this.sQLDBToExcelToolStripMenuItem.Name = "sQLDBToExcelToolStripMenuItem";
-            this.sQLDBToExcelToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
-            this.sQLDBToExcelToolStripMenuItem.Text = "&Export DB To Excel";
-            this.sQLDBToExcelToolStripMenuItem.Click += new System.EventHandler(this.sQLDBToExcelToolStripMenuItem_Click_1);
             // 
             // tableExtractionAfterDeltaToolStripMenuItem
             // 
@@ -348,211 +480,83 @@
             this.mergeLogsExportToolStripMenuItem.Text = "&Merge Logs Export";
             this.mergeLogsExportToolStripMenuItem.Click += new System.EventHandler(this.mergeLogsExportToolStripMenuItem_Click);
             // 
-            // helpToolStripMenuItem
+            // toolStripSeparator2
             // 
-            this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.aboutUsToolStripMenuItem});
-            this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-            this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-            this.helpToolStripMenuItem.Text = "&Help";
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(227, 6);
             // 
-            // aboutUsToolStripMenuItem
+            // toolStripSeparator3
             // 
-            this.aboutUsToolStripMenuItem.Name = "aboutUsToolStripMenuItem";
-            this.aboutUsToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
-            this.aboutUsToolStripMenuItem.Text = "&About Us";
-            this.aboutUsToolStripMenuItem.Click += new System.EventHandler(this.aboutUsToolStripMenuItem_Click);
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(227, 6);
             // 
-            // label2
+            // toolStripSeparator4
             // 
-            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(6, 256);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(322, 81);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "label2";
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(227, 6);
             // 
-            // btn_Exit_Logout
+            // sPIDeltaChangeTrackerOptimisedToolStripMenuItem
             // 
-            this.btn_Exit_Logout.Location = new System.Drawing.Point(8, 7);
-            this.btn_Exit_Logout.Name = "btn_Exit_Logout";
-            this.btn_Exit_Logout.Size = new System.Drawing.Size(32, 23);
-            this.btn_Exit_Logout.TabIndex = 3;
-            this.btn_Exit_Logout.Text = "Exit";
-            this.btn_Exit_Logout.UseVisualStyleBackColor = true;
-            this.btn_Exit_Logout.Click += new System.EventHandler(this.btn_Exit_Logout_Click);
+            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Enabled = false;
+            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Name = "sPIDeltaChangeTrackerOptimisedToolStripMenuItem";
+            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
+            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Text = "SPI Delta Change &Tracker Optimised";
+            this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Click += new System.EventHandler(this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem_Click);
             // 
-            // label3
+            // userSettingsToolStripMenuItem
             // 
-            this.label3.AutoSize = true;
-            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(5, 69);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(35, 13);
-            this.label3.TabIndex = 4;
-            this.label3.Text = "label3";
+            this.userSettingsToolStripMenuItem.Name = "userSettingsToolStripMenuItem";
+            this.userSettingsToolStripMenuItem.Size = new System.Drawing.Size(142, 22);
+            this.userSettingsToolStripMenuItem.Text = "User Settings";
+            this.userSettingsToolStripMenuItem.Click += new System.EventHandler(this.userSettingsToolStripMenuItem_Click);
             // 
-            // btn_Open_DB_Comparison
+            // sPIFKExtractionToolStripMenuItem
             // 
-            this.btn_Open_DB_Comparison.Location = new System.Drawing.Point(46, 7);
-            this.btn_Open_DB_Comparison.Name = "btn_Open_DB_Comparison";
-            this.btn_Open_DB_Comparison.Size = new System.Drawing.Size(118, 23);
-            this.btn_Open_DB_Comparison.TabIndex = 0;
-            this.btn_Open_DB_Comparison.Text = "Open DB Comparison";
-            this.btn_Open_DB_Comparison.UseVisualStyleBackColor = true;
-            this.btn_Open_DB_Comparison.Click += new System.EventHandler(this.btn_Open_DB_Comparison_Click);
-            // 
-            // btn_Excel_Comparison
-            // 
-            this.btn_Excel_Comparison.Location = new System.Drawing.Point(170, 7);
-            this.btn_Excel_Comparison.Name = "btn_Excel_Comparison";
-            this.btn_Excel_Comparison.Size = new System.Drawing.Size(130, 23);
-            this.btn_Excel_Comparison.TabIndex = 1;
-            this.btn_Excel_Comparison.Text = "Open Excel Comparison";
-            this.btn_Excel_Comparison.UseVisualStyleBackColor = true;
-            this.btn_Excel_Comparison.Click += new System.EventHandler(this.btn_Excel_Comparison_Click);
-            // 
-            // pictureBox2
-            // 
-            this.pictureBox2.Image = global::SPI_Data_Comp_Tool.Properties.Resources.compare_diagram;
-            this.pictureBox2.Location = new System.Drawing.Point(9, 150);
-            this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(239, 101);
-            this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox2.TabIndex = 8;
-            this.pictureBox2.TabStop = false;
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Image = global::SPI_Data_Comp_Tool.Properties.Resources.app_banner;
-            this.pictureBox1.Location = new System.Drawing.Point(9, 25);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(239, 119);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox1.TabIndex = 7;
-            this.pictureBox1.TabStop = false;
-            // 
-            // gb_AppDetails
-            // 
-            this.gb_AppDetails.Controls.Add(this.label2);
-            this.gb_AppDetails.Controls.Add(this.pictureBox2);
-            this.gb_AppDetails.Controls.Add(this.pictureBox1);
-            this.gb_AppDetails.Location = new System.Drawing.Point(16, 28);
-            this.gb_AppDetails.Name = "gb_AppDetails";
-            this.gb_AppDetails.Size = new System.Drawing.Size(350, 359);
-            this.gb_AppDetails.TabIndex = 9;
-            this.gb_AppDetails.TabStop = false;
-            this.gb_AppDetails.Visible = false;
-            // 
-            // gb_logincredentials
-            // 
-            this.gb_logincredentials.Controls.Add(this.btn_Login);
-            this.gb_logincredentials.Controls.Add(this.tb_password);
-            this.gb_logincredentials.Controls.Add(this.tb_username);
-            this.gb_logincredentials.Controls.Add(this.label4);
-            this.gb_logincredentials.Controls.Add(this.label1);
-            this.gb_logincredentials.Location = new System.Drawing.Point(372, 118);
-            this.gb_logincredentials.Name = "gb_logincredentials";
-            this.gb_logincredentials.Size = new System.Drawing.Size(280, 144);
-            this.gb_logincredentials.TabIndex = 10;
-            this.gb_logincredentials.TabStop = false;
-            this.gb_logincredentials.Text = "Login Details";
-            // 
-            // btn_Login
-            // 
-            this.btn_Login.Location = new System.Drawing.Point(95, 105);
-            this.btn_Login.Name = "btn_Login";
-            this.btn_Login.Size = new System.Drawing.Size(75, 23);
-            this.btn_Login.TabIndex = 4;
-            this.btn_Login.Text = "Submit";
-            this.btn_Login.UseVisualStyleBackColor = true;
-            this.btn_Login.Click += new System.EventHandler(this.btn_Login_Click);
-            // 
-            // tb_password
-            // 
-            this.tb_password.Location = new System.Drawing.Point(95, 69);
-            this.tb_password.Name = "tb_password";
-            this.tb_password.PasswordChar = '*';
-            this.tb_password.Size = new System.Drawing.Size(168, 20);
-            this.tb_password.TabIndex = 3;
-            // 
-            // tb_username
-            // 
-            this.tb_username.Location = new System.Drawing.Point(95, 38);
-            this.tb_username.Name = "tb_username";
-            this.tb_username.Size = new System.Drawing.Size(168, 20);
-            this.tb_username.TabIndex = 2;
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(15, 72);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(62, 13);
-            this.label4.TabIndex = 1;
-            this.label4.Text = "Password : ";
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(13, 41);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(64, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Username : ";
-            // 
-            // lbl_LoginStatus
-            // 
-            this.lbl_LoginStatus.AutoSize = true;
-            this.lbl_LoginStatus.Location = new System.Drawing.Point(5, 45);
-            this.lbl_LoginStatus.Name = "lbl_LoginStatus";
-            this.lbl_LoginStatus.Size = new System.Drawing.Size(68, 13);
-            this.lbl_LoginStatus.TabIndex = 11;
-            this.lbl_LoginStatus.Text = "Please Login";
-            // 
-            // panel_control
-            // 
-            this.panel_control.Controls.Add(this.btn_Open_DB_Comparison);
-            this.panel_control.Controls.Add(this.lbl_LoginStatus);
-            this.panel_control.Controls.Add(this.btn_Exit_Logout);
-            this.panel_control.Controls.Add(this.label3);
-            this.panel_control.Controls.Add(this.btn_Excel_Comparison);
-            this.panel_control.Location = new System.Drawing.Point(16, 393);
-            this.panel_control.Name = "panel_control";
-            this.panel_control.Size = new System.Drawing.Size(350, 90);
-            this.panel_control.TabIndex = 12;
+            this.sPIFKExtractionToolStripMenuItem.Enabled = false;
+            this.sPIFKExtractionToolStripMenuItem.Name = "sPIFKExtractionToolStripMenuItem";
+            this.sPIFKExtractionToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
+            this.sPIFKExtractionToolStripMenuItem.Text = "SPI FK Extraction";
+            this.sPIFKExtractionToolStripMenuItem.Click += new System.EventHandler(this.sPIFKExtractionToolStripMenuItem_Click);
             // 
             // MainForm
             // 
-            this.AcceptButton = this.btn_Login;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(664, 494);
-            this.Controls.Add(this.panel_control);
-            this.Controls.Add(this.gb_logincredentials);
-            this.Controls.Add(this.gb_AppDetails);
-            this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "SPI Data Comparison Tool";
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(760, 440);
+            this.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.MinimumSize = new System.Drawing.Size(640, 400);
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Padding = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.Controls.Add(this.tlp_Root);
+            this.Controls.Add(this.menuStrip1);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            this.gb_AppDetails.ResumeLayout(false);
-            this.gb_logincredentials.ResumeLayout(false);
-            this.gb_logincredentials.PerformLayout();
-            this.panel_control.ResumeLayout(false);
-            this.panel_control.PerformLayout();
+            this.tlp_Root.ResumeLayout(false);
+            this.tlp_Root.PerformLayout();
+            this.tlp_Pictures.ResumeLayout(false);
+            this.tlp_Pictures.PerformLayout();
+            this.tlp_About.ResumeLayout(false);
+            this.tlp_About.PerformLayout();
+            this.flp_Status.ResumeLayout(false);
+            this.flp_Status.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
+
+        private System.Windows.Forms.TableLayoutPanel tlp_Root;
+        private System.Windows.Forms.TableLayoutPanel tlp_Pictures;
+        private System.Windows.Forms.TableLayoutPanel tlp_About;
+        private System.Windows.Forms.FlowLayoutPanel flp_Status;
+        private System.Windows.Forms.Label lbl_Version;
 
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
@@ -571,15 +575,7 @@
         private System.Windows.Forms.ToolStripMenuItem sPIAnalysisToolStripMenuItem;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.PictureBox pictureBox2;
-        private System.Windows.Forms.GroupBox gb_AppDetails;
-        private System.Windows.Forms.GroupBox gb_logincredentials;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Button btn_Login;
-        private System.Windows.Forms.TextBox tb_password;
-        private System.Windows.Forms.TextBox tb_username;
         private System.Windows.Forms.Label lbl_LoginStatus;
-        private System.Windows.Forms.Panel panel_control;
         private System.Windows.Forms.ToolStripMenuItem sPISpecNoteCreationUtilityToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exportDBToExcelToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem sQLDBToExcelToolStripMenuItem;

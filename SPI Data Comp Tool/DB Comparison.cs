@@ -161,6 +161,7 @@ namespace SPI_Data_Comp_Tool
         public DB_Comparison_Form()
         {
             InitializeComponent();
+            UiTheme.Apply(this, btnGenerateOutput);
 
             try
             {
@@ -1120,7 +1121,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     if (rb_SRC_oracle.Checked)
                     {
-                        gb_Source1.Text = "Source: Oracle Connection and Settings";
+                        gb_Source1.Text = "Source · Oracle";
                         cb_WindowAuthentication_SRC.Enabled = false;
                         cb_WindowAuthentication_SRC.Checked = false;
                         cb_SRC_DefaultPort.Enabled = true;
@@ -1130,7 +1131,7 @@ namespace SPI_Data_Comp_Tool
                     }
                     else if (rb_SRC_SQL.Checked)
                     {
-                        gb_Source1.Text = "Source: SQL Connection and Settings";
+                        gb_Source1.Text = "Source · SQL Server";
                         cb_WindowAuthentication_SRC.Enabled = true;
                         cb_WindowAuthentication_SRC.Checked = false;
                         cb_SRC_DefaultPort.Enabled = false;
@@ -1143,7 +1144,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     if (rb_TRG_Oracle.Checked)
                     {
-                        gb_Target1.Text = "Target : Oracle Connection and Settings";
+                        gb_Target1.Text = "Target · Oracle";
                         cb_WindowAuthentication_TRG.Enabled = false;
                         cb_WindowAuthentication_TRG.Checked = false;
                         cb_TRG_DefaultPort.Enabled = true;
@@ -1154,7 +1155,7 @@ namespace SPI_Data_Comp_Tool
                     }
                     else if (rb_TRG_SQL.Checked)
                     {
-                        gb_Target1.Text = "Target : SQL Connection and Settings";
+                        gb_Target1.Text = "Target · SQL Server";
                         cb_WindowAuthentication_TRG.Enabled = true;
                         cb_WindowAuthentication_TRG.Checked = false;
                         cb_TRG_DefaultPort.Enabled = false;
@@ -1430,7 +1431,7 @@ namespace SPI_Data_Comp_Tool
                 lblExpressionStatus.ResetText();
                 lblStatus.ResetText();
                 lblCal.ResetText();
-                lbl_PercentageShow.Text = "Progress Bar";
+                lbl_PercentageShow.Text = "0 %";
                 progressBar1.Value = 0;
                 myException_BG = new Exception();
                 lblTimer.ResetText();

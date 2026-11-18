@@ -71,6 +71,11 @@ flowchart TD
 - To change the look, edit the script, run `python tools/make_app_images.py` from the repository root (it also refreshes the embedded window icon of every form), and rebuild.
 - CI fails if any other image file is committed or if former-employer names reappear in source, settings or docs.
 
+## Window layout and look
+- Layout is generated: each window has a short description in `tools/layouts/<Form>.py`, and `python tools/layout_gen.py tools/layouts/<Form>.py` rewrites its `*.Designer.cs`. Controls sit in `TableLayoutPanel` / `FlowLayoutPanel` cells, so they are evenly spread and grow with the window; every control keeps its name, events and settings, so no logic changes. CI fails if a designer file no longer matches its description (`--check`).
+- Look: `UiTheme.Apply(this, mainButton)` at the end of each constructor gives the Windows 11 style - Segoe UI 9, light-grey window, white group boxes, flat buttons, one blue main button and the app icon. `UiTheme.SetIcon(this)` only sets the icon.
+- Converted so far: main window (shows the version in its status line), Compare DB (template for the Source/Target windows), User Settings. The rest follow in batches.
+
 ## Versioning and CI artifacts
 Versions are automatic - nobody edits a version number by hand. `tools/release.py` works it out in CI:
 

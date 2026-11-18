@@ -16,6 +16,7 @@ namespace SPI_Data_Comp_Tool
         public ComparisonProcessWindow()
         {
             InitializeComponent();
+            UiTheme.SetIcon(this);
 
             try
             {

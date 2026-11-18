@@ -15,6 +15,7 @@ namespace SPI_Data_Comp_Tool
         public AboutBox1()
         {
             InitializeComponent();
+            UiTheme.SetIcon(this);
 
             try
             {
@@ -71,32 +72,11 @@ namespace SPI_Data_Comp_Tool
 
         public string AssemblyVersion
         {
-            get
-            {
-                try
-                {
-                    if (Debugger.IsAttached)
-                    {
-                        return Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
-                    }
-                    else
-                    {
-                        return System.Deployment.Application.ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
-
-                    }
-                }
-                catch (Exception ex)
-                {
-                    textBoxDescription.Text = ex.Message.ToString();
-                    if (GlobalDebug.boolIsGlobalDebug)
-                    {
-                        textBoxDescription.Text = ex.ToString();
-                    }
-                    return ex.Message.ToString();
-                }
-            }
+            // The version CI stamps into the exe (e.g. 2.4.0 or 2.4.0-beta003). The old code asked the
+            // ClickOnce installer, which a portable app does not have ("Application identity is not set").
+            get { return AppVersion.Full; }
         }
+
 
         public string AssemblyDescription
         {
