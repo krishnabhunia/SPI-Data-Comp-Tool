@@ -22,8 +22,8 @@ namespace SPI_Data_Comp_Tool
             ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
             #endregion
 
-            // CI-only: picture of every window (see FormScreenshots.cs); does nothing in normal use
-            if (FormScreenshots.TryRun(args)) return;
+            // CI-only checks of a finished build (see SelfTest.cs); does nothing in normal use
+            if (SelfTest.TryRun(args)) return;
 
             Logs.EnterLogs($"\n=========== Logs Entry Started at {Common_Data.AppendDateInOutputFileName()} ==================================\n");
 

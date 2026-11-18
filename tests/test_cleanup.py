@@ -86,5 +86,28 @@ class EveryWindowCanBeOpened(unittest.TestCase):
                 self.assertTrue(opened, f"{window} is never created - delete it or give it a menu entry")
 
 
+class NoScreenshots(unittest.TestCase):
+    """Builds open every window as a check, but take and publish no pictures."""
+
+    REPO = PROJ.parent
+
+    def test_nothing_takes_or_publishes_screenshots(self) -> None:
+        self.assertFalse((PROJ / "FormScreenshots.cs").exists())
+        for rel in (".github/workflows/build.yml", "tools/release.py", "docs/PROJECT_GUIDE.md", "README.md"):
+            with self.subTest(file=rel):
+                self.assertNotIn("screenshot", (self.REPO / rel).read_text(encoding="utf-8").lower())
+        selftest = code("SelfTest.cs")
+        for word in ("--screenshot", "Bitmap", "DrawToBitmap", ".png"):
+            self.assertNotIn(word, selftest)
+
+    def test_build_fails_when_a_window_cannot_open(self) -> None:
+        workflow = (self.REPO / ".github/workflows/build.yml").read_text(encoding="utf-8")
+        step = workflow.split("- name: Open every window", 1)[1].split("\n      - name:", 1)[0]
+        self.assertIn("'--open-form'", step)
+        self.assertIn('if ($failed) { throw', step)
+        self.assertIn('"--open-form"', code("SelfTest.cs"))
+        self.assertIn("if (SelfTest.TryRun(args)) return;", code("Program.cs"))
+
+
 if __name__ == "__main__":
     unittest.main()

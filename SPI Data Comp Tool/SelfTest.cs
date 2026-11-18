@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -9,16 +7,17 @@ using System.Windows.Forms;
 namespace SPI_Data_Comp_Tool
 {
     /// <summary>
-    /// Test-only mode used by CI to take a picture of every window, so layout changes can be checked
-    /// without opening the app by hand. It never connects to a database or opens a file.
-    ///   "SPI Data Comp Tool.exe" --list-forms OUT_FILE         writes every form type to OUT_FILE, one per line
-    ///   "SPI Data Comp Tool.exe" --screenshot TYPE OUT_FOLDER  saves TYPE.png (designed size) and
-    ///                                                          TYPE_large.png (stretched to 1920 x 1040)
+    /// Test-only modes used by CI to check a finished build without opening the app by hand.
+    /// They never connect to a database or open a file, and do nothing in normal use.
+    ///   "SPI Data Comp Tool.exe" --list-forms OUT_FILE         writes every window type to OUT_FILE, one per line
+    ///   "SPI Data Comp Tool.exe" --open-form TYPE OUT_FILE     creates, shows and closes the window TYPE and adds
+    ///                                                          "ok TYPE" or "FAIL TYPE: reason" to OUT_FILE;
+    ///                                                          exit code 1 if the window could not be opened
     ///   "SPI Data Comp Tool.exe" --check-assemblies OUT_FILE   loads every library the app uses (embedded in the
     ///                                                          .exe by Costura) and writes ok / FAIL per library;
     ///                                                          exit code 1 if any fails
     /// </summary>
-    internal static class FormScreenshots
+    internal static class SelfTest
     {
         public static bool TryRun(string[] args)
         {
@@ -33,9 +32,9 @@ namespace SPI_Data_Comp_Tool
                 Environment.ExitCode = CheckAssemblies(args[1]);
                 return true;
             }
-            if (args[0] == "--screenshot" && args.Length >= 3)
+            if (args[0] == "--open-form" && args.Length >= 3)
             {
-                Environment.ExitCode = Capture(args[1], args[2]);
+                Environment.ExitCode = OpenForm(args[1], args[2]);
                 return true;
             }
             return false;
@@ -80,41 +79,32 @@ namespace SPI_Data_Comp_Tool
                 .ToArray();
         }
 
-        private static int Capture(string typeName, string outFolder)
+        /// <summary>Creates, shows and closes one window, the way the menu would open it.</summary>
+        private static int OpenForm(string typeName, string outFile)
         {
             var type = FormTypes().FirstOrDefault(t => t.FullName == typeName || t.Name == typeName);
-            if (type == null) return 2;
-            Directory.CreateDirectory(outFolder);
-            using (var form = (Form)Activator.CreateInstance(type))
+            if (type == null)
             {
-                form.StartPosition = FormStartPosition.Manual;
-                form.Location = new Point(0, 0);
-                form.ShowInTaskbar = false;
-                form.WindowState = FormWindowState.Normal;
-                form.Show();
-                Settle();
-                Save(form, Path.Combine(outFolder, type.Name + ".png"));
-
-                // what a maximised window on a 1080p screen would show
-                form.Size = new Size(1920, 1040);
-                Settle();
-                Save(form, Path.Combine(outFolder, type.Name + "_large.png"));
-                form.Close();
+                File.AppendAllText(outFile, "FAIL " + typeName + ": no such window" + Environment.NewLine);
+                return 1;
             }
-            return 0;
-        }
-
-        private static void Settle()
-        {
-            for (int i = 0; i < 5; i++) { Application.DoEvents(); System.Threading.Thread.Sleep(80); }
-        }
-
-        private static void Save(Form form, string path)
-        {
-            using (var bmp = new Bitmap(Math.Max(1, form.Width), Math.Max(1, form.Height)))
+            try
             {
-                form.DrawToBitmap(bmp, new Rectangle(0, 0, bmp.Width, bmp.Height));
-                bmp.Save(path, ImageFormat.Png);
+                using (var form = (Form)Activator.CreateInstance(type))
+                {
+                    form.ShowInTaskbar = false;
+                    form.Show();
+                    for (int i = 0; i < 5; i++) { Application.DoEvents(); System.Threading.Thread.Sleep(80); }
+                    form.Close();
+                }
+                File.AppendAllText(outFile, "ok " + type.Name + Environment.NewLine);
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Exception cause = ex is TargetInvocationException && ex.InnerException != null ? ex.InnerException : ex;
+                File.AppendAllText(outFile, "FAIL " + type.Name + ": " + cause.GetType().Name + " - " + cause.Message.Replace("\r", " ").Replace("\n", " ") + Environment.NewLine);
+                return 1;
             }
         }
     }
