@@ -135,6 +135,14 @@ class VersionOnThePullRequest(unittest.TestCase):
         # the outdated check runs before anything is published
         self.assertLess(self.WORKFLOW.index("state=outdated"), self.WORKFLOW.index("gh release create"))
 
+    def test_a_late_pr_run_cannot_replace_the_released_comment(self):
+        step = self.WORKFLOW.split("- name: Show the version on the pull request", 1)[1]
+        guard = 'if [ "${STATE}" != "stable" ] && [ "$(gh api "repos/${GH_REPO}/pulls/${PR}" --jq .merged)" = "true" ]; then'
+        self.assertIn(guard, step)
+        # the merged check comes before the comment is written or sent
+        self.assertLess(step.index(guard), step.index("tools/release.py comment"))
+        self.assertLess(step.index(guard), step.index("-X PATCH"))
+
 
 def release_assets_as_workflow_names():
     """release_assets() with the version written the way the workflow's shell does."""

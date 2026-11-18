@@ -305,6 +305,12 @@ jobs:
           STATE: ${{ steps.publish.outputs.state }}
         run: |
           set -euo pipefail
+          # A PR run that ends (or is re-run) after the PR was merged must not replace "Released as ..."
+          # with a beta message: once merged, only the merge build writes the comment.
+          if [ "${STATE}" != "stable" ] && [ "$(gh api "repos/${GH_REPO}/pulls/${PR}" --jq .merged)" = "true" ]; then
+            echo "PR #${PR} is already merged: its comment is left to the merge build."
+            exit 0
+          fi
           python3 tools/release.py comment "${STATE}" > "${RUNNER_TEMP}/version-comment.md"
           cat "${RUNNER_TEMP}/version-comment.md" >> "$GITHUB_STEP_SUMMARY"
           # one comment per PR, found by its hidden first line and replaced on every run
