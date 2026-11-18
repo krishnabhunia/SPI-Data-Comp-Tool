@@ -56,5 +56,35 @@ class Cleanup(unittest.TestCase):
         self.assertIn("set { title = value; NameFields();", src)
 
 
+class EveryWindowCanBeOpened(unittest.TestCase):
+    """A window nobody can open is dead weight: delete it instead of hiding its menu entry."""
+
+    def test_the_first_delta_tracker_window_is_gone(self) -> None:
+        for name in ("SPIDeltaChangeTracker.cs", "SPIDeltaChangeTracker.Designer.cs", "SPIDeltaChangeTracker.resx"):
+            self.assertFalse((PROJ / name).exists(), name)
+        project = text("SPI Data Comp Tool.csproj").replace("SPIDeltaChangeTrackerOptimised", "")
+        self.assertNotIn("SPIDeltaChangeTracker", project)
+        self.assertIn("new SPIDeltaChangeTrackerOptimised()", code("MainForm.cs"))
+
+    def test_main_menu_has_no_hidden_entries(self) -> None:
+        hidden = re.findall(r"this\.(\w+ToolStripMenuItem)\.Visible = false;", text("MainForm.Designer.cs"))
+        self.assertEqual(hidden, [])
+
+    def test_every_window_is_opened_somewhere(self) -> None:
+        sources = {p.name: re.sub(r"//[^\n]*", "", p.read_text(encoding="utf-8-sig")) for p in PROJ.glob("*.cs")}
+        windows = {}
+        for name, src in sources.items():
+            if not name.endswith(".Designer.cs"):
+                for m in re.finditer(r"class\s+(\w+)\s*:\s*(?:Form|UserControl)\b", src):
+                    windows[m.group(1)] = name
+        self.assertGreaterEqual(len(windows), 20)
+        for window, home in windows.items():
+            own_designer = home[:-3] + ".Designer.cs"
+            opened = any(re.search(rf"new\s+(?:SPI_Data_Comp_Tool\.)?{window}\s*\(", src)
+                         for name, src in sources.items() if name != own_designer)
+            with self.subTest(window=window):
+                self.assertTrue(opened, f"{window} is never created - delete it or give it a menu entry")
+
+
 if __name__ == "__main__":
     unittest.main()

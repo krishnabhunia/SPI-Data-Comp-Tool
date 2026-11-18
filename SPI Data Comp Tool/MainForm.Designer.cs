@@ -38,7 +38,6 @@
             this.analysisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sPIAnalysisToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sPISpecNoteCreationUtilityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.sPIDeltaChangeTrackerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sPIDeltaChangeLegacyIDToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sPIFKExtractionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -320,7 +319,6 @@
             this.analysisToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.sPIAnalysisToolStripMenuItem,
             this.sPISpecNoteCreationUtilityToolStripMenuItem,
-            this.sPIDeltaChangeTrackerToolStripMenuItem,
             this.sPIDeltaChangeLegacyIDToolStripMenuItem,
             this.sPIDeltaChangeTrackerOptimisedToolStripMenuItem,
             this.sPIFKExtractionToolStripMenuItem});
@@ -385,15 +383,6 @@
             this.customisedExcelToolStripMenuItem.Size = new System.Drawing.Size(230, 22);
             this.customisedExcelToolStripMenuItem.Text = "Customised &Excel";
             this.customisedExcelToolStripMenuItem.Click += new System.EventHandler(this.customisedExcelToolStripMenuItem_Click_1);
-            // 
-            // sPIDeltaChangeTrackerToolStripMenuItem
-            // 
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Enabled = false;
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Name = "sPIDeltaChangeTrackerToolStripMenuItem";
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Text = "SPI Delta Change &Tracker";
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Visible = false;
-            this.sPIDeltaChangeTrackerToolStripMenuItem.Click += new System.EventHandler(this.sPIDeltaChangeTrackerToolStripMenuItem_Click);
             // 
             // compareListTablesToolStripMenuItem
             // 
@@ -581,7 +570,6 @@
         private System.Windows.Forms.ToolStripMenuItem sQLDBToExcelToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem customisedExcelToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem sPIDeltaChangeTrackerToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem compareListTablesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem preMergingToolToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem preMergingDuplicacyCheckToolStripMenuItem;
