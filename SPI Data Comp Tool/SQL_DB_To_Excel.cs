@@ -31,6 +31,18 @@ namespace SPI_Data_Comp_Tool
         private Exception myException;
         private DBConnectionDetails dBConnectionDetails;
 
+        // The connection fields live in the shared ConnectionPanel; these keep the names the code below uses.
+        private System.Windows.Forms.ComboBox cb_UserProfileList => connection.ProfileList;
+        private System.Windows.Forms.RadioButton rb_Oracle => connection.Source.Oracle;
+        private System.Windows.Forms.RadioButton rb_SQL => connection.Source.Sql;
+        private System.Windows.Forms.CheckBox cb_windowsAuthentication => connection.Source.WindowsLogin;
+        private System.Windows.Forms.CheckBox cb_DefaultPort => connection.Source.DefaultPort;
+        private System.Windows.Forms.TextBox tb_DefaultPort => connection.Source.Port;
+        private System.Windows.Forms.TextBox tb_SRC_DataSource => connection.Source.DataSource;
+        private System.Windows.Forms.TextBox tb_SRC_DBName => connection.Source.Database;
+        private System.Windows.Forms.TextBox tb_SRC_UserName => connection.Source.User;
+        private System.Windows.Forms.TextBox tb_SRC_Password => connection.Source.Password;
+
         private Common_Data common_Data;
 
         private DBTOExcel dBTOExcel;
@@ -40,6 +52,12 @@ namespace SPI_Data_Comp_Tool
         public SQL_DB_To_Excel()
         {
             InitializeComponent();
+            connection.Mode = ConnectionMode.SourceOnly;
+            connection.Source.Title = "Database";
+            connection.ProfileHalf = rb_TRG.Checked ? ProfileHalf.Target : ProfileHalf.Source;
+            connection.ProfileApplied += Connection_ProfileApplied;
+            connection.Failed += (sender, error) => DisplayError(error);
+            UiTheme.Apply(this, btn_ExportToExcel);
 
             ds = new DataSet();
             dt_sql = new DataTable();
@@ -52,7 +70,7 @@ namespace SPI_Data_Comp_Tool
             common_Data = new Common_Data();
             lstTableDetails = new List<string>();
 
-            cb_UserProfileList = common_Data.ReadUserProfile(cb_UserProfileList);
+            common_Data.ReadUserProfile(cb_UserProfileList);
 
             if (Debugger.IsAttached)
             {
@@ -73,6 +91,23 @@ namespace SPI_Data_Comp_Tool
                 linkLabel1.Text = @"D:\Krishna\Output\Export DB To Excel";
             }
 
+        }
+
+        /// <summary>A saved profile was put into the Connection panel.</summary>
+        private void Connection_ProfileApplied(object sender, DBConnectionDetails details)
+        {
+            dBConnectionDetails = details;
+            DisplayMessage($"User Profile :{cb_UserProfileList.SelectedItem}, Loaded Successfully");
+        }
+
+        /// <summary>Fill the connection from the profile's Source or Target half (the "Fill from profile half" choice).</summary>
+        private void UseProfileHalf(ProfileHalf half)
+        {
+            connection.ProfileHalf = half;
+            if (cb_UserProfileList.SelectedIndex >= 0)
+            {
+                connection.ApplySelectedProfile();
+            }
         }
 
         private void btn_ExportToExcel_Click(object sender, EventArgs e)
@@ -356,101 +391,6 @@ namespace SPI_Data_Comp_Tool
             lbl_Status.Update();
         }
 
-        private void rb_Oracle_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rb_Oracle.Checked)
-                {
-                    cb_windowsAuthentication.Checked = false;
-                    cb_windowsAuthentication.Enabled = false;
-                    cb_windowsAuthentication.Visible = false;
-                    cb_DefaultPort.Enabled = true;
-                    cb_DefaultPort.Checked = true;
-                    cb_DefaultPort.Visible = true;
-
-                    tb_DefaultPort.Text = "1521";
-                    tb_DefaultPort.Enabled = true;
-                    tb_DefaultPort.Visible = true;
-                    tb_DefaultPort.ReadOnly = true;
-
-                }
-
-                if (Debugger.IsAttached)
-                {
-                    tb_SRC_DataSource.Text = "localhost";
-                    tb_SRC_DBName.Text = "SPEL11G";
-                    tb_SRC_UserName.Text = "system";
-                    tb_SRC_Password.Text = "";
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void rb_SQL_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rb_SQL.Checked)
-                {
-                    cb_windowsAuthentication.Checked = false;
-                    cb_windowsAuthentication.Enabled = true;
-                    cb_windowsAuthentication.Visible = true;
-                    cb_DefaultPort.Enabled = false;
-                    cb_DefaultPort.Checked = false;
-                    cb_DefaultPort.Visible = false;
-
-                    tb_DefaultPort.ResetText();
-                    tb_DefaultPort.Enabled = false;
-                    tb_DefaultPort.Visible = false;
-                    tb_DefaultPort.ReadOnly = false;
-                }
-
-                if (Debugger.IsAttached)
-                {
-                    tb_SRC_DataSource.Text = @"localhost";
-                    tb_SRC_DBName.Text = "training_p";
-                    tb_SRC_UserName.Text = "sa";
-                    tb_SRC_Password.Text = "";
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void cb_DefaultPort_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                if (cb_DefaultPort.CheckState == CheckState.Checked)
-                {
-                    tb_DefaultPort.Text = "1521";
-                    tb_DefaultPort.ReadOnly = true;
-                }
-                else
-                {
-                    tb_DefaultPort.ResetText();
-                    tb_DefaultPort.ReadOnly = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void tb_DefaultPort_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar))
-            {
-                e.Handled = true;
-            }
-        }
 
         private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
@@ -861,80 +801,14 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void cb_UserProfileList_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                //cb_UserProfileList = Common_Data.GetUserProfile(cb_UserProfileList);
-
-                DisplayMessage($"User Profile Selected : {cb_UserProfileList.SelectedItem}");
-
-                dBConnectionDetails = new DBConnectionDetails(cb_UserProfileList.SelectedIndex);
-
-                if (rb_SRC.Checked)
-                {
-                    rb_Oracle.Checked = dBConnectionDetails.bool_Rb_SRC_Oracle;
-                    rb_SQL.Checked = dBConnectionDetails.bool_Rb_SRC_SQL;
-
-                    cb_windowsAuthentication.Checked = dBConnectionDetails.bool_SRC_SQL_WA;
-                    cb_DefaultPort.Checked = dBConnectionDetails.bool_SRC_Oracle_DefaultPort;
-                    tb_DefaultPort.Text = dBConnectionDetails.bool_Rb_SRC_Oracle ? dBConnectionDetails.int_SRC_Oracle_DefaultPort.ToString() : string.Empty;
-
-                    tb_SRC_DataSource.Text = dBConnectionDetails.str_SRC_DataSource;
-                    tb_SRC_DBName.Text = dBConnectionDetails.str_SRC_DBName;
-                    tb_SRC_UserName.Text = dBConnectionDetails.str_SRC_UserName;
-                    tb_SRC_Password.Text = dBConnectionDetails.str_SRC_Password;
-
-                    //cb_SRC_TableName.Text = dBConnectionDetails.str_SRC_TableName;
-
-                }
-                else if (rb_TRG.Checked)
-                {
-
-                    rb_Oracle.Checked = dBConnectionDetails.bool_Rb_TRG_Oracle;
-                    rb_SQL.Checked = dBConnectionDetails.bool_Rb_TRG_SQL;
-
-                    cb_windowsAuthentication.Checked = dBConnectionDetails.bool_TRG_SQL_WA;
-                    cb_DefaultPort.Checked = dBConnectionDetails.bool_TRG_Oracle_DefaultPort;
-                    tb_DefaultPort.Text = dBConnectionDetails.int_TRG_Oracle_DefaultPort == 0 ? "1521" : dBConnectionDetails.int_TRG_Oracle_DefaultPort.ToString();
-
-                    tb_SRC_DataSource.Text = dBConnectionDetails.str_TRG_DataSource;
-                    tb_SRC_DBName.Text = dBConnectionDetails.str_TRG_DBName;
-                    tb_SRC_UserName.Text = dBConnectionDetails.str_TRG_UserName;
-                    tb_SRC_Password.Text = dBConnectionDetails.str_TRG_Password;
-                    //cb_TRG_TableName.Text = dBConnectionDetails.str_TRG_TableName;
-                }
-
-                DisplayMessage($"User Profile :{cb_UserProfileList.SelectedItem}, Loaded Successfully");
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void label15_Click(object sender, EventArgs e)
-        {
-
-        }
 
         private void rb_SRC_CheckedChanged(object sender, EventArgs e)
         {
             try
             {
-                if(rb_SRC.Checked)
+                if (rb_SRC.Checked)
                 {
-                    rb_Oracle.Checked = dBConnectionDetails.bool_Rb_SRC_Oracle;
-                    rb_SQL.Checked = dBConnectionDetails.bool_Rb_SRC_SQL;
-
-                    cb_windowsAuthentication.Checked = dBConnectionDetails.bool_SRC_SQL_WA;
-                    cb_DefaultPort.Checked = dBConnectionDetails.bool_SRC_Oracle_DefaultPort;
-                    tb_DefaultPort.Text = dBConnectionDetails.bool_Rb_SRC_Oracle ? dBConnectionDetails.int_SRC_Oracle_DefaultPort.ToString() : string.Empty;
-
-                    tb_SRC_DataSource.Text = dBConnectionDetails.str_SRC_DataSource;
-                    tb_SRC_DBName.Text = dBConnectionDetails.str_SRC_DBName;
-                    tb_SRC_UserName.Text = dBConnectionDetails.str_SRC_UserName;
-                    tb_SRC_Password.Text = dBConnectionDetails.str_SRC_Password;
+                    UseProfileHalf(ProfileHalf.Source);
                 }
             }
             catch (Exception ex)
@@ -947,19 +821,9 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if(rb_TRG.Checked)
+                if (rb_TRG.Checked)
                 {
-                    rb_Oracle.Checked = dBConnectionDetails.bool_Rb_TRG_Oracle;
-                    rb_SQL.Checked = dBConnectionDetails.bool_Rb_TRG_SQL;
-
-                    cb_windowsAuthentication.Checked = dBConnectionDetails.bool_TRG_SQL_WA;
-                    cb_DefaultPort.Checked = dBConnectionDetails.bool_TRG_Oracle_DefaultPort;
-                    tb_DefaultPort.Text = dBConnectionDetails.int_TRG_Oracle_DefaultPort == 0 ? "1521" : dBConnectionDetails.int_TRG_Oracle_DefaultPort.ToString();
-
-                    tb_SRC_DataSource.Text = dBConnectionDetails.str_TRG_DataSource;
-                    tb_SRC_DBName.Text = dBConnectionDetails.str_TRG_DBName;
-                    tb_SRC_UserName.Text = dBConnectionDetails.str_TRG_UserName;
-                    tb_SRC_Password.Text = dBConnectionDetails.str_TRG_Password;
+                    UseProfileHalf(ProfileHalf.Target);
                 }
             }
             catch (Exception ex)
