@@ -95,6 +95,16 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
+        /// <summary>
+        /// Lets the user type a new profile name into the picker (the User profiles window saves
+        /// under that name). Off by default: other windows only pick a saved profile.
+        /// </summary>
+        public bool AllowNewProfileName
+        {
+            get { return ProfileList.DropDownStyle == ComboBoxStyle.DropDown; }
+            set { ProfileList.DropDownStyle = value ? ComboBoxStyle.DropDown : ComboBoxStyle.DropDownList; }
+        }
+
         /// <summary>Puts the selected saved profile into both halves.</summary>
         public void ApplySelectedProfile()
         {

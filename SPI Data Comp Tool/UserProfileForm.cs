@@ -67,6 +67,7 @@ namespace SPI_Data_Comp_Tool
         public UserProfileForm()
         {
             InitializeComponent();
+            connection.AllowNewProfileName = true;   // Save profile takes the name typed here
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => DisplayError(error);
             UiTheme.Apply(this, btnSaveUserProfile);

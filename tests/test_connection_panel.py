@@ -30,6 +30,13 @@ class ConnectionPanelContracts(unittest.TestCase):
         self.assertIn('Text = "Oracle"', side)
         self.assertIn('Text = "SQL"', side)
 
+    def test_profile_editor_can_type_a_new_profile_name(self) -> None:
+        # Save profile names the new profile from the picker's text, so the picker must be editable there
+        code = source("UserProfileForm.cs")
+        self.assertIn("profileName = cb_UserProfileList.Text", code)
+        self.assertIn("connection.AllowNewProfileName = true;", code)
+        self.assertIn("ComboBoxStyle.DropDown :", source("ConnectionPanel.cs"))
+
     def test_converted_windows_use_the_panel_not_copies(self) -> None:
         for name in CONVERTED:
             with self.subTest(window=name):
