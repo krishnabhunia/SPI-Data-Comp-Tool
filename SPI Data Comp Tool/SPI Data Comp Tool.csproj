@@ -271,6 +271,9 @@
     <Compile Include="..\tests\ImportSchemaChecks.cs">
       <Link>Tests\ImportSchemaChecks.cs</Link>
     </Compile>
+    <Compile Include="..\tests\CredentialRedactionChecks.cs">
+      <Link>Tests\CredentialRedactionChecks.cs</Link>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="UiTheme.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

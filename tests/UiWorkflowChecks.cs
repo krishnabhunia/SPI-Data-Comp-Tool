@@ -19,6 +19,7 @@ namespace SPI_Data_Comp_Tool
             {
                 ProfileWorkflowChecks.Run(passed);
                 ImportSchemaChecks.Run(passed);
+                CredentialRedactionChecks.Run(passed);
                 CheckNavigation(passed);
                 CheckSettings(passed);
                 CheckAnalysis(passed);

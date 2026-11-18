@@ -9,6 +9,7 @@ namespace SPI_Data_Comp_Tool
         public static void Run(Action<string> passed)
         {
             CheckCandidateLists(passed);
+            CheckExportSnapshots(passed);
             CheckValidation(passed);
             CheckAtomicFiles(passed);
             CheckSelection(passed);
@@ -57,6 +58,50 @@ namespace SPI_Data_Comp_Tool
             ExpectInvalid(() => ProfileStore.Validate(new List<DBC> { Example(" ", "one") }));
             ProfileStore.Validate(new List<DBC>());
             passed("Invalid/duplicate profile imports are rejected before publication; an empty profile list is valid.");
+        }
+
+        private static void CheckExportSnapshots(Action<string> passed)
+        {
+            // Synthetic markers only: no database credentials, user profile files or live services.
+            string sourceMarker = "synthetic-source-" + Guid.NewGuid().ToString("N");
+            string targetMarker = "synthetic-target-" + Guid.NewGuid().ToString("N");
+            DBC legacy = Example("Imported legacy profile", "legacy-server");
+            legacy.dbSRC.str_Password = sourceMarker;
+            legacy.dbTRG.str_Password = targetMarker;
+            legacy.dbSRC.str_DBName = "synthetic-database";
+            legacy.dbSRC.str_UserName = "synthetic-user";
+            legacy.dbSRC.str_TableName = "dbo.SyntheticTable";
+            legacy.dbSRC.int_Oracle_DefaultPort = 1521;
+            legacy.dbSRC.bool_SQL_WA = true;
+            var imported = new List<DBC> { legacy };
+            List<DBC> savingAnother = ProfileStore.Upsert(imported, Example("New profile", "new-server"));
+            string saveJson = ProfileStore.SerializeForExport(savingAnother);
+            List<DBC> exported = ProfileStore.ParseJson(saveJson);
+            Check(exported.Count == 2 && !saveJson.Contains(sourceMarker) && !saveJson.Contains(targetMarker),
+                "Saving another profile re-exported credentials from an imported legacy profile.");
+            foreach (DBC profile in exported)
+                Check(profile.dbSRC.str_Password == string.Empty && profile.dbTRG.str_Password == string.Empty,
+                    "An exported Source or Target password was not blank.");
+            Check(exported[0].profileName == legacy.profileName && exported[0].dbSRC.str_DataSource == "legacy-server"
+                && exported[0].dbTRG.str_DataSource == "legacy-server-target"
+                && exported[0].dbSRC.str_DBName == "synthetic-database"
+                && exported[0].dbSRC.str_UserName == "synthetic-user"
+                && exported[0].dbSRC.str_TableName == "dbo.SyntheticTable"
+                && exported[0].dbSRC.int_Oracle_DefaultPort == 1521 && exported[0].dbSRC.bool_SQL_WA,
+                "Sanitizing exported credentials changed noncredential connection details.");
+
+            List<DBC> deletingAnother = ProfileStore.Remove(savingAnother, "New profile");
+            string deleteJson = ProfileStore.SerializeForExport(deletingAnother);
+            Check(ProfileStore.ParseJson(deleteJson).Count == 1 && !deleteJson.Contains(sourceMarker) && !deleteJson.Contains(targetMarker),
+                "Deleting another profile re-exported credentials from a retained legacy profile.");
+            Check(legacy.dbSRC.str_Password == sourceMarker && legacy.dbTRG.str_Password == targetMarker
+                && savingAnother[0].dbSRC.str_Password == sourceMarker && savingAnother[0].dbTRG.str_Password == targetMarker
+                && deletingAnother[0].dbSRC.str_Password == sourceMarker && deletingAnother[0].dbTRG.str_Password == targetMarker,
+                "Export serialization modified active/imported profile objects.");
+            List<DBC> snapshot = ProfileStore.CreateExportSnapshot(imported);
+            Check(!ReferenceEquals(snapshot[0], legacy) && !ReferenceEquals(snapshot[0].dbSRC, legacy.dbSRC)
+                && !ReferenceEquals(snapshot[0].dbTRG, legacy.dbTRG), "An export snapshot shares mutable connection objects.");
+            passed("Save/delete exports clear every legacy Source/Target password on independent snapshots, preserving active objects and noncredential fields.");
         }
 
         private static void ExpectInvalid(Action action)

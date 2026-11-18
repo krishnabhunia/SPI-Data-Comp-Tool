@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace SPI_Data_Comp_Tool
@@ -64,6 +65,30 @@ namespace SPI_Data_Comp_Tool
                     candidate.Add(Clone(profile));
             }
             return candidate;
+        }
+
+        /// <summary>
+        /// Every persisted entry, including unedited profiles imported from a legacy file, must be
+        /// password-free. Clear only a deep export copy: serialization must not change the active
+        /// profiles or credentials the user is currently using in memory.
+        /// </summary>
+        internal static List<DBC> CreateExportSnapshot(IList<DBC> profiles)
+        {
+            Validate(profiles);
+            var export = new List<DBC>();
+            foreach (DBC profile in profiles)
+            {
+                DBC snapshot = Clone(profile);
+                snapshot.dbSRC.str_Password = string.Empty;
+                snapshot.dbTRG.str_Password = string.Empty;
+                export.Add(snapshot);
+            }
+            return export;
+        }
+
+        internal static string SerializeForExport(IList<DBC> profiles)
+        {
+            return JsonConvert.SerializeObject(CreateExportSnapshot(profiles), Formatting.Indented);
         }
 
         internal static void Validate(IList<DBC> profiles)

@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Oracle.ManagedDataAccess.Client;
+﻿using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -131,6 +129,7 @@ namespace SPI_Data_Comp_Tool
 
         private void DisplayMessage(string strMsg, bool boolError = false, int overwriteText = -1, Color? color = null)
         {
+            strMsg = Common_Data.RedactConnectionCredentials(strMsg);
             try
             {
                 rtb_Log.SelectionStart = rtb_Log.TextLength;
@@ -494,7 +493,7 @@ namespace SPI_Data_Comp_Tool
                     if (saveFileDialogFile.BoolFileSaveStatus)
                     {
                         ProfileStore.WriteAtomic(saveFileDialogFile.Str_saveFileNameWithPath,
-                            JsonConvert.SerializeObject(candidate, Formatting.Indented));
+                            ProfileStore.SerializeForExport(candidate));
                         try
                         {
                             SetProfilePath(saveFileDialogFile.Str_saveFileNameWithPath);
@@ -604,7 +603,7 @@ namespace SPI_Data_Comp_Tool
                 }
 
                 List<DBC> candidate = ProfileStore.Remove(Profile.ProfileList, selectedName);
-                ProfileStore.WriteAtomic(profilePath, JsonConvert.SerializeObject(candidate, Formatting.Indented));
+                ProfileStore.WriteAtomic(profilePath, ProfileStore.SerializeForExport(candidate));
                 Profile.ProfileList = candidate;
                 connection.RefreshProfiles();
                 DisplayMessage($"Profile deleted successfully: {selectedName}", false, -1, Color.DarkBlue);

@@ -31,15 +31,26 @@ namespace SPI_Data_Comp_Tool
 
         private List<DBC> items;
         private static bool boolColorAlternate;
+        // A doubled quote is part of a quoted connection-string value, not its terminator.
+        // Consume unterminated quoted values to the end, and unquoted values through line breaks
+        // up to a semicolon, so a malformed/multiline diagnostic cannot reveal a password tail.
         private static readonly Regex ConnectionCredentialPattern = new Regex(
-            @"(\b(?:Password|Pwd)\s*=\s*)(?:""[^""]*""|'[^']*'|[^;\r\n]*)",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            @"(\b(?:Password|Pwd)\s*=\s*)(?:""(?:""""|[^""])*(?:""|\z)[^;\r\n]*|'(?:''|[^'])*(?:'|\z)[^;\r\n]*|[^;]*)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+            TimeSpan.FromSeconds(1));
 
         internal static string RedactConnectionCredentials(string message)
         {
-            return string.IsNullOrEmpty(message)
-                ? message
-                : ConnectionCredentialPattern.Replace(message, "$1[REDACTED]");
+            if (string.IsNullOrEmpty(message)) return message;
+            try
+            {
+                return ConnectionCredentialPattern.Replace(message, "$1[REDACTED]");
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Never return the original (potentially sensitive) message if filtering cannot finish.
+                return "[REDACTED: credential filtering timed out]";
+            }
         }
 
         private SqlDataAdapter sqlDA;

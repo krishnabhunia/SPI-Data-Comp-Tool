@@ -50,6 +50,24 @@ class ProfileSafety(unittest.TestCase):
         self.assertLess(method.index("MessageBox.Show"), method.index("ProfileStore.Remove"))
         self.assertLess(method.index("ProfileStore.WriteAtomic"), method.index("Profile.ProfileList = candidate"))
 
+    def test_save_and_delete_sanitize_every_exported_profile(self) -> None:
+        form = source("UserProfileForm.cs")
+        self.assertEqual(form.count("ProfileStore.SerializeForExport(candidate)"), 2)
+        self.assertNotIn("JsonConvert.SerializeObject", form)
+        store = source("ProfileStore.cs")
+        export = store.split("internal static List<DBC> CreateExportSnapshot", 1)[1].split("internal static void Validate", 1)[0]
+        self.assertIn("foreach (DBC profile in profiles)", export)
+        self.assertIn("DBC snapshot = Clone(profile)", export)
+        self.assertIn("snapshot.dbSRC.str_Password = string.Empty", export)
+        self.assertIn("snapshot.dbTRG.str_Password = string.Empty", export)
+        self.assertIn("JsonConvert.SerializeObject(CreateExportSnapshot(profiles), Formatting.Indented)", export)
+        self.assertNotIn("profile.dbSRC.str_Password =", export)
+        self.assertNotIn("profile.dbTRG.str_Password =", export)
+
+    def test_profile_status_and_exception_log_uses_shared_redaction(self) -> None:
+        method = source("UserProfileForm.cs").split("private void DisplayMessage", 1)[1].split("private void LoadTable", 1)[0]
+        self.assertLess(method.index("Common_Data.RedactConnectionCredentials(strMsg)"), method.index("rtb_Log.SelectionStart"))
+
     def test_import_is_validated_before_replacing_active_profiles(self) -> None:
         form = source("UserProfileForm.cs")
         method = form.split("private void l_lb_ReadProfile_LinkClicked", 1)[1].split("private void boolToggleControlEnable", 1)[0]
@@ -71,7 +89,7 @@ class ProfileSafety(unittest.TestCase):
 
     def test_executable_checks_cover_candidates_locked_files_and_selection(self) -> None:
         checks = (ROOT / "tests" / "ProfileWorkflowChecks.cs").read_text()
-        for scenario in ("CheckCandidateLists(passed)", "CheckValidation(passed)", "CheckAtomicFiles(passed)", "CheckSelection(passed)"):
+        for scenario in ("CheckCandidateLists(passed)", "CheckExportSnapshots(passed)", "CheckValidation(passed)", "CheckAtomicFiles(passed)", "CheckSelection(passed)"):
             self.assertIn(scenario, checks)
         self.assertIn("FileShare.None", checks)
         self.assertIn("Profile.ProfileList = previous", checks)

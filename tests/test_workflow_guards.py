@@ -45,7 +45,7 @@ class WorkflowGuards(unittest.TestCase):
         self.assertIn("--check-ui", workflow)
         self.assertIn("UiWorkflowChecks.Run(args[1])", (PROJ / "SelfTest.cs").read_text(encoding="utf-8-sig"))
         project = (PROJ / "SPI Data Comp Tool.csproj").read_text(encoding="utf-8-sig")
-        for file in ("UiWorkflowChecks.cs", "ProfileWorkflowChecks.cs", "ImportSchemaChecks.cs"):
+        for file in ("UiWorkflowChecks.cs", "ProfileWorkflowChecks.cs", "ImportSchemaChecks.cs", "CredentialRedactionChecks.cs"):
             self.assertIn(file, project)
         self.assertIn("python3 -m unittest discover -s tests -p 'test_*.py'", workflow)
         self.assertNotIn("DrawToBitmap", (ROOT / "tests/UiWorkflowChecks.cs").read_text())

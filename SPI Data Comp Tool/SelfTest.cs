@@ -8,7 +8,8 @@ namespace SPI_Data_Comp_Tool
 {
     /// <summary>
     /// Test-only modes used by CI to check a finished build without opening the app by hand.
-    /// They never connect to a database or open a file, and do nothing in normal use.
+    /// They do not connect to databases. CI uses synthetic inputs, temporary test files and output logs;
+    /// these command-line modes do nothing in normal use.
     ///   "SPI Data Comp Tool.exe" --list-forms OUT_FILE         writes every window type to OUT_FILE, one per line
     ///   "SPI Data Comp Tool.exe" --open-form TYPE OUT_FILE     creates, shows and closes the window TYPE and adds
     ///                                                          "ok TYPE" or "FAIL TYPE: reason" to OUT_FILE;
