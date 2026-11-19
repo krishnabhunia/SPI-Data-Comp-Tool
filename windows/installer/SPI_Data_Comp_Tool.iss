@@ -61,8 +61,15 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#ExeName}"; Tasks: desktopic
 
 [Run]
 Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; The app's own updater runs this installer silently with /RELAUNCH=1 and wants the app started again afterwards.
+Filename: "{app}\{#ExeName}"; Flags: nowait skipifnotsilent runasoriginaluser; Check: RelaunchRequested
 
 [Code]
+function RelaunchRequested: Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
+end;
+
 // .NET Framework 4.6.2 or later (Release key 394802+), which the app is built for.
 function DotNet462Installed(): Boolean;
 var

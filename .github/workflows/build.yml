@@ -141,6 +141,16 @@ jobs:
           if (-not $p.WaitForExit(60000)) { Stop-Process -Id $p.Id -Force; throw 'UI workflow checks timed out' }
           if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
           if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'UI workflow checks failed' }
+      - name: Updater checks
+        shell: pwsh
+        run: |
+          # the updater's decisions on synthetic data: versions, channels, checksums, portable files (nothing is downloaded)
+          $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
+          $log = Join-Path $env:RUNNER_TEMP 'update-checks.txt'
+          $p = Start-Process $exe -ArgumentList '--check-updates', "`"$log`"" -PassThru
+          if (-not $p.WaitForExit(60000)) { Stop-Process -Id $p.Id -Force; throw 'updater checks timed out' }
+          if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
+          if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'updater checks failed' }
       - name: Open every window
         shell: pwsh
         run: |
