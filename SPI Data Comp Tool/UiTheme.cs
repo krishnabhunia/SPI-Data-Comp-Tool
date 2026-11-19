@@ -234,6 +234,7 @@ namespace SPI_Data_Comp_Tool
             public Color Tone;
             public bool Toning;
             public bool ScrollHooked;  // waits for the control's window to exist
+            public bool DarkParts;     // Windows was asked to draw this control's own parts dark
             public bool HasComboStyle;
             public FlatStyle ComboStyle;
         }
@@ -278,7 +279,7 @@ namespace SPI_Data_Comp_Tool
                 look.Hooked = true;
                 themed.Add(form);
                 form.Disposed += (s, e) => themed.Remove((Form)s);
-                form.HandleCreated += (s, e) => Chrome((Form)s);
+                form.HandleCreated += (s, e) => { Of((Control)s).DarkParts = false; Chrome((Form)s); };   // a new window starts light
                 form.ControlAdded += OnControlAdded;
             }
             if (mainButtons != null)
@@ -838,12 +839,16 @@ namespace SPI_Data_Comp_Tool
         /// <summary>A dark title bar for the dark theme (Windows 10 1809 and later; older Windows keeps its own).</summary>
         private static void Chrome(Form form)
         {
-            if (!OnWindows || !form.IsHandleCreated) return;
+            Look look = Of(form);
+            bool dark = Current.Dark;
+            // a light theme asks Windows for nothing unless the title bar was made dark earlier
+            if (!OnWindows || !form.IsHandleCreated || dark == look.DarkParts) return;
             try
             {
-                int dark = Current.Dark ? 1 : 0;
-                if (DwmSetWindowAttribute(form.Handle, 20, ref dark, sizeof(int)) != 0)
-                    DwmSetWindowAttribute(form.Handle, 19, ref dark, sizeof(int));
+                int value = dark ? 1 : 0;
+                if (DwmSetWindowAttribute(form.Handle, 20, ref value, sizeof(int)) != 0)
+                    DwmSetWindowAttribute(form.Handle, 19, ref value, sizeof(int));
+                look.DarkParts = dark;
             }
             catch (Exception)
             {
@@ -855,42 +860,34 @@ namespace SPI_Data_Comp_Tool
         private static void Scrollbars(Control c, UiPalette p)
         {
             if (!OnWindows) return;
-            if (!c.IsHandleCreated)
+            Look look = Of(c);
+            if (!look.ScrollHooked)
             {
-                Look look = Of(c);
-                if (!look.ScrollHooked) c.HandleCreated += (s, e) => Scrollbars((Control)s, Current);
                 look.ScrollHooked = true;
-                return;
+                // a new window handle starts with Windows' own look again
+                c.HandleCreated += (s, e) => { Of((Control)s).DarkParts = false; Scrollbars((Control)s, Current); };
             }
-            try { SetWindowTheme(c.Handle, p.Dark ? "DarkMode_Explorer" : null, null); }
+            if (!c.IsHandleCreated || p.Dark == look.DarkParts) return;
+            try
+            {
+                SetWindowTheme(c.Handle, p.Dark ? "DarkMode_Explorer" : null, null);
+                look.DarkParts = p.Dark;
+            }
             catch (Exception)
             {
                 // the scroll bars stay as Windows draws them
             }
         }
 
-        /// <summary>A progress bar in the theme's accent colour instead of Windows' green.</summary>
+        /// <summary>
+        /// The progress bar keeps Windows' own drawing: the classic bar that would take the theme's
+        /// colour needs its window rebuilt while it is being created. Its colours are still set for
+        /// systems that use them.
+        /// </summary>
         private static void StyleProgress(ProgressBar bar, Look look, UiPalette p)
         {
             bar.ForeColor = p.Accent;
             bar.BackColor = p.Border;
-            if (!OnWindows) return;
-            if (!bar.IsHandleCreated)
-            {
-                if (!look.ScrollHooked) bar.HandleCreated += (s, e) => StyleProgress((ProgressBar)s, Of((Control)s), Current);
-                look.ScrollHooked = true;
-                return;
-            }
-            try
-            {
-                // Windows' own drawing ignores colours; without it the bar uses ForeColor on BackColor
-                SetWindowTheme(bar.Handle, string.Empty, string.Empty);
-                if (bar.Style == ProgressBarStyle.Blocks) bar.Style = ProgressBarStyle.Continuous;
-            }
-            catch (Exception)
-            {
-                // the bar stays green
-            }
         }
     }
 }
