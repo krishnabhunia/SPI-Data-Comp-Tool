@@ -920,7 +920,7 @@
             this.Controls.Add(this.groupBox3);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SPIDeltaChangeTrackerOptimised";
-            this.Text = "SPI Delta Change Tracker Optimised";
+            this.Text = "Delta change tracker";
             this.groupBox14.ResumeLayout(false);
             this.groupBox14.PerformLayout();
             this.groupBox4.ResumeLayout(false);

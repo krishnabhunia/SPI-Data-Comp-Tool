@@ -1062,7 +1062,7 @@
             // 
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "DB_Comparison_Form";
-            this.Text = "Compare Oracle and SQL server Data and Generate Report";
+            this.Text = "Compare databases";
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1180, 700);

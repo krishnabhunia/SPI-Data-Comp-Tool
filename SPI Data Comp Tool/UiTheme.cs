@@ -274,7 +274,7 @@ namespace SPI_Data_Comp_Tool
             if (form == null) return;
             SetIcon(form);
             Look look = Of(form);
-            if (!look.Hooked)
+            if (!themed.Contains(form))
             {
                 look.Hooked = true;
                 themed.Add(form);
@@ -300,7 +300,8 @@ namespace SPI_Data_Comp_Tool
         /// <summary>Themes a window that has not asked for it itself (every tool window gets the same look).</summary>
         public static void EnsureApplied(Form form)
         {
-            if (form != null && !Of(form).Hooked) Apply(form);
+            // a tool shown inside a group window may already have been styled as a control of that window
+            if (form != null && !themed.Contains(form)) Apply(form);
         }
 
         private static void Paint(Form form, bool darknessChanged)

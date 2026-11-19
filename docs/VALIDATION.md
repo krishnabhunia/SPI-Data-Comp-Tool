@@ -1,6 +1,6 @@
 # Form and workflow validation
 
-This inventory covers all 21 current Forms plus their shared controls. A screen with no editable input is audited for navigation/lifecycle behaviour rather than given artificial required fields. Existing updater safeguards remain in use; this change does not add a second updater, authentication system or SQL transaction framework.
+This inventory covers all 22 current Forms plus their shared controls. A screen with no editable input is audited for navigation/lifecycle behaviour rather than given artificial required fields. Existing updater safeguards remain in use; this change does not add a second updater, authentication system or SQL transaction framework.
 
 ## Common behaviour
 
@@ -19,6 +19,7 @@ This inventory covers all 21 current Forms plus their shared controls. A screen 
 |---|---|
 | `MainForm` | Existing workflow reuse, closed-window handling and independent mode keys; redacted navigation errors. No data-entry fields. |
 | `AboutBox1` | Read-only information; existing open/close smoke coverage. No artificial validation fields. |
+| `ToolGroupWindow` | Holds existing tools as tabs (Pre-merging, Excel and file tools, Delta tools); no data-entry fields of its own. Each tool keeps its own validation; a tool that refuses to close keeps the window open. |
 | `UserProfileForm` | Required unique profile names, applicable connection fields, strict bounded JSON, candidate-before-publication imports and password-free exports. |
 | `User_Settings` | Rules workbook/path/schema, required row values, unique identifiers and supported rule types; failed imports retain current rules. Existing update channel/version/download/install validation retained. |
 | `DB_Comparison_Form` | Source/Target mode, connection freshness, loaded table and comparison-column selections, busy state and export bounds. Correct provider connection is used on each side. |

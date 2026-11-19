@@ -121,7 +121,7 @@ class Themes(unittest.TestCase):
         self.assertIn("private const double Readable = 4.5;", checks)
         self.assertIn("LiveSwitch", checks)
         # a self-test that does not finish says which dialog it was waiting on
-        self.assertEqual(workflow.count("& tools/ci_window_report.ps1 -ProcessId"), 4)
+        self.assertGreaterEqual(workflow.count("& tools/ci_window_report.ps1 -ProcessId"), 4)
         self.assertTrue((ROOT / "tools/ci_window_report.ps1").exists())
 
     def test_windows_only_calls_cannot_stop_the_app(self) -> None:

@@ -109,7 +109,7 @@
             this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MergeLogsExport";
-            this.Text = "MergeLogsExport";
+            this.Text = "Merge logs to Excel";
             this.groupBox1.ResumeLayout(false);
             this.groupBox10.ResumeLayout(false);
             this.ResumeLayout(false);

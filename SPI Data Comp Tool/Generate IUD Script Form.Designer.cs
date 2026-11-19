@@ -332,7 +332,7 @@
             this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Generate_IUD_Script_Form";
-            this.Text = "Generate Insert/Update/Delete Script Form";
+            this.Text = "Generate scripts (insert / update / delete)";
             this.groupBox1.ResumeLayout(false);
             this.groupBox6.ResumeLayout(false);
             this.groupBox5.ResumeLayout(false);

@@ -47,6 +47,29 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
+        /// <summary>
+        /// Opens a tool as a tab of its group window (see ToolGroups.cs). With Ctrl held, and where a
+        /// separate session is allowed, it opens in a window of its own as before.
+        /// </summary>
+        private void OpenTool<T>(string group, Func<T> create, string mode = "", bool allowSeparateSession = true) where T : Form
+        {
+            try
+            {
+                if (allowSeparateSession && (ModifierKeys & Keys.Control) == Keys.Control)
+                {
+                    windows.Open(this, create, mode, true);
+                    return;
+                }
+                ToolGroupWindow host = windows.Open(this, () => ToolGroups.Create(group), group);
+                host.ShowTool(ToolGroupWindow.KeyOf(typeof(T), mode), () => create());
+            }
+            catch (Exception ex)
+            {
+                lbl_LoginStatus.Text = "Unable to open window";
+                MessageBox.Show(this, Common_Data.RedactConnectionCredentials(ex.Message), "Unable to open window", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void aboutUsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (AboutBox1 abu = new AboutBox1())
@@ -140,7 +163,7 @@ namespace SPI_Data_Comp_Tool
 
         private void sPISpecNoteCreationUtilityToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenWindow(() => new SPI_Spec_Note_Creation_Utility());
+            OpenTool(ToolGroups.ExcelTools, () => new SPI_Spec_Note_Creation_Utility());
         }
 
         private void compareDBToolStripMenuItem_Click(object sender, EventArgs e)
@@ -150,7 +173,7 @@ namespace SPI_Data_Comp_Tool
 
         private void customisedExcelToolStripMenuItem_Click_1(object sender, EventArgs e)
         {
-            OpenWindow(() => new CustomisedExcel());
+            OpenTool(ToolGroups.ExcelTools, () => new CustomisedExcel());
         }
 
         private void sQLDBToExcelToolStripMenuItem_Click_1(object sender, EventArgs e)
@@ -165,12 +188,12 @@ namespace SPI_Data_Comp_Tool
 
         private void preMergingToolToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenWindow(() => new PreMergingTool_Form());
+            OpenTool(ToolGroups.PreMerging, () => new PreMergingTool_Form());
         }
 
         private void preMergingDuplicacyCheckToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenWindow(() => new Pre_Merging_Duplicacy_Form(), "check");
+            OpenTool(ToolGroups.PreMerging, () => new Pre_Merging_Duplicacy_Form(), "check");
         }
 
         private void userProfileToolStripMenuItem_Click(object sender, EventArgs e)
@@ -180,12 +203,12 @@ namespace SPI_Data_Comp_Tool
 
         private void configurationToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenWindow(() => new Pre_Merging_Duplicacy_Form(true), "configuration", false);
+            OpenTool(ToolGroups.PreMerging, () => new Pre_Merging_Duplicacy_Form(true), "configuration", false);
         }
 
         private void generateInsertScriptsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenWindow(() => new Generate_IUD_Script_Form());
+            OpenTool(ToolGroups.ExcelTools, () => new Generate_IUD_Script_Form());
         }
 
         private void executeScriptsFromExcelToolStripMenuItem_Click(object sender, EventArgs e)
@@ -195,17 +218,17 @@ namespace SPI_Data_Comp_Tool
 
         private void tableExtractionAfterDeltaToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenWindow(() => new Table_Extraction_After_Delta_Form());
+            OpenTool(ToolGroups.Delta, () => new Table_Extraction_After_Delta_Form());
         }
 
         private void mergeLogsExportToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenWindow(() => new MergeLogsExport());
+            OpenTool(ToolGroups.ExcelTools, () => new MergeLogsExport());
         }
 
         private void sPIDeltaChangeLegacyIDToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenWindow(() => new SPIDeltaChangeLegacyID());
+            OpenTool(ToolGroups.Delta, () => new SPIDeltaChangeLegacyID());
         }
 
         private void sPIDeltaChangeTrackerOptimisedToolStripMenuItem_Click(object sender, EventArgs e)

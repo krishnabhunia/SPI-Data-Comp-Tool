@@ -98,7 +98,7 @@
             this.Controls.Add(this.btn_ReadExcel);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "CustomisedExcel";
-            this.Text = "CustomisedExcel";
+            this.Text = "Customised Excel";
             this.ResumeLayout(false);
             this.PerformLayout();
 

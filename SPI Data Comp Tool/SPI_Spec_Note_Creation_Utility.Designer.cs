@@ -148,7 +148,7 @@
             this.Controls.Add(this.gb_ViewExcelData);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SPI_Spec_Note_Creation_Utility";
-            this.Text = "SPI_Spec_Note_Creation_Utility";
+            this.Text = "Spec note creation";
             this.gb_ViewExcelData.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.gb_ControlAndStatus.ResumeLayout(false);

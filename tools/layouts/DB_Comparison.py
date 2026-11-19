@@ -4,6 +4,7 @@ from _connection import PANEL_DROP, LABEL, FIELD, panel, table_picker
 
 DESIGNER = "DB Comparison.Designer.cs"
 FORM_NAME = "DB_Comparison_Form"
+TITLE = "Compare databases"
 CLIENT = (1180, 700)
 MINIMUM = (980, 620)
 FROZEN = ["groupBox15", "groupBox16"]          # hidden helper boxes the code still uses; left untouched
