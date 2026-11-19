@@ -141,8 +141,8 @@ namespace SPI_Data_Comp_Tool
             }
             catch (FileNotFoundException) { return UpdateChannel.Normal; }
             catch (DirectoryNotFoundException) { return UpdateChannel.Normal; }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is SecurityException ||
-                ex is JsonException || ex is DecoderFallbackException)
+            catch (Exception ex) when (ex is InvalidDataException || ex is IOException || ex is UnauthorizedAccessException ||
+                ex is SecurityException || ex is JsonException || ex is DecoderFallbackException)
             {
                 warning = "Previous updater preferences could not be read safely. Normal is the fallback; " +
                     "check your selected release filter in Updates. The previous file was not changed.";

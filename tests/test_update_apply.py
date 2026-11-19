@@ -86,6 +86,7 @@ class UpdateApplyContracts(unittest.TestCase):
         self.assertIn("value == \"0\") selected = UpdateChannel.Normal", migration)
         self.assertIn("!names.Add(name)", migration)
         self.assertIn("reader.TokenType != JsonToken.Boolean", migration)
+        self.assertIn("ex is InvalidDataException", migration)
         self.assertNotIn("File.Write", migration)
         self.assertNotIn("File.Delete", migration)
         self.assertNotIn("Process.Start", migration)
