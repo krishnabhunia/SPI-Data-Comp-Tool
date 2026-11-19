@@ -118,6 +118,7 @@ namespace SPI_Data_Comp_Tool
         private SaveFileDialogFile saveFileDialogFile;
 
         private bool boolSelectedBothFile;
+        private bool isLoading;
         private DataSet dsUnmatched;
 
         public Excel_Excel_Comparison()
@@ -209,6 +210,20 @@ namespace SPI_Data_Comp_Tool
             }
 
             dsUnmatched = new DataSet();
+            clb_reference_ID.ItemCheck += (sender, args) => InvalidateComparison();
+            clb_firstExcel.ItemCheck += (sender, args) => InvalidateComparison();
+            clb_secondExcel.ItemCheck += (sender, args) => InvalidateComparison();
+            cb_Primary_Key.CheckedChanged += (sender, args) => InvalidateComparison();
+            cb_IncludeRule.CheckedChanged += (sender, args) => InvalidateComparison();
+            cb_IgnoreCase.CheckedChanged += (sender, args) => InvalidateComparison();
+            FormClosing += (sender, args) =>
+            {
+                if (isLoading || backgroundWorker1.IsBusy || backgroundWorkerInstrument.IsBusy || bgw_multiThreading.IsBusy)
+                {
+                    args.Cancel = true;
+                    DisplayMessage("Wait for loading or cancel the current operation before closing this window.", true);
+                }
+            };
         }
 
         private void btn_FirstExcelSheet_Click(object sender, EventArgs e)
@@ -302,71 +317,20 @@ namespace SPI_Data_Comp_Tool
             return boolStatus;
         }
 
-        private DataSet LoadExcelFromDataReader(string str_file_to_load_path, string dataTableName)
+        private DataSet LoadExcelFromDataReader(string path, string tableName)
         {
-            DataSet dsResult = new DataSet();
-            try
-            {
-                FileStream stream = File.Open(str_file_to_load_path, FileMode.Open, FileAccess.Read);
-                IExcelDataReader excelReader = ExcelReaderFactory.CreateOpenXmlReader(stream);
-
-                dsResult = excelReader.AsDataSet();
-
-                string str_columnName = string.Empty;
-
-                foreach (DataColumn dc in dsResult.Tables[0].Columns)
-                {
-                    str_columnName = dsResult.Tables[0].Rows[0][dc.ColumnName.ToString()].ToString();
-                    dc.Caption = str_columnName;
-                    dc.ColumnName = str_columnName;
-                }
-                dsResult.Tables[0].Rows.RemoveAt(0);
-                dsResult.Tables[0].TableName = dataTableName;
-                dsResult.AcceptChanges();
-
-                excelReader.Close();
-
-                dsResult = common_Data.ChangeColumnToString(dsResult);
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-            return dsResult;
+            // The shared reader validates headers and disposes its file/reader on every outcome.
+            DataSet loaded = new Common_Data().LoadExcelFromDataReader(path, tableName);
+            return new Common_Data().ChangeColumnToString(loaded);
         }
 
-
-        private DataTable LoadExcelFromDataReader(string str_file_to_load_path, string dataTableName, bool b = true)
+        private DataTable LoadExcelFromDataReader(string path, string tableName, bool firstSheetOnly = true)
         {
-            DataSet dsResult = new DataSet();
-            try
+            using (DataSet loaded = LoadExcelFromDataReader(path, tableName))
             {
-                FileStream stream = File.Open(str_file_to_load_path, FileMode.Open, FileAccess.Read);
-                IExcelDataReader excelReader = ExcelReaderFactory.CreateOpenXmlReader(stream);
-
-                dsResult = excelReader.AsDataSet();
-
-                string str_columnName = string.Empty;
-
-                foreach (DataColumn dc in dsResult.Tables[0].Columns)
-                {
-                    str_columnName = dsResult.Tables[0].Rows[0][dc.ColumnName.ToString()].ToString();
-                    dc.Caption = str_columnName;
-                    dc.ColumnName = str_columnName;
-                }
-                dsResult.Tables[0].Rows.RemoveAt(0);
-                dsResult.Tables[0].TableName = dataTableName;
-                dsResult.AcceptChanges();
-
-                excelReader.Close();
-
-                dsResult = common_Data.ChangeColumnToString(dsResult);
+                if (loaded.Tables.Count == 0) throw new InvalidDataException("The workbook contains no readable worksheets.");
+                return loaded.Tables[0].Copy();
             }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-            return dsResult.Tables[0];
         }
 
         // Close the workbook and quit Excel so no EXCEL.EXE is left running.
@@ -506,7 +470,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (clb_reference_ID.CheckedItems.Count > 0)
+                if (boolSelectedBothFile)
                 {
                     btn_Validate.Enabled = true;
                 }
@@ -531,7 +495,7 @@ namespace SPI_Data_Comp_Tool
                 foreach (var a in clb_reference_ID.CheckedItems)
                 {
                     //str_Reference_ID = str_Reference_ID + a.ToString() + " = '" + dr[a.ToString()] + "' AND ";
-                    str_Reference_ID = $"{str_Reference_ID} [{a.ToString()}] = '{dr[a.ToString()]}' AND ";
+                    str_Reference_ID = str_Reference_ID + FilterPredicate(a.ToString(), dr[a.ToString()]) + " AND ";
                 }
                 str_Reference_ID = str_Reference_ID.Substring(0, str_Reference_ID.Length - 4);
             }
@@ -638,142 +602,68 @@ namespace SPI_Data_Comp_Tool
 
         private async void btn_SelectLoad_Click(object sender, EventArgs e)
         {
+            if (!FormValidation.Check(this, ValidateIdle, message => DisplayMessage(message, true))) return;
+            bool loadingSucceeded = false;
+            isLoading = true;
+            changeEnabledStatus(false);
             try
             {
+                var sourceFile = new OpenFileDialogData().openFileDialog("Select First Excel File");
+                if (!sourceFile.boolFileSelected) return;
+                var targetFile = new OpenFileDialogData().openFileDialog("Select Second Excel File");
+                if (!targetFile.boolFileSelected) return;
+                if (!checkDuplicateSameFile(sourceFile.strFileNameWithPath, targetFile.strFileNameWithPath)) return;
+                if (!FormValidation.Check(this, () =>
+                {
+                    FormValidation.ReadableFile(sourceFile.strFileNameWithPath, btn_SelectLoad, "Source workbook", ".xlsx", ".xlsm");
+                    FormValidation.ReadableFile(targetFile.strFileNameWithPath, btn_SelectLoad, "Target workbook", ".xlsx", ".xlsm");
+                }, message => DisplayMessage(message, true))) return;
+
+                lbl_LoadStatus.Text = "Loading workbooks...";
+                Task<DataTable> sourceTask = Task.Run(() => LoadExcelFromDataReader(sourceFile.strFileNameWithPath, sourceFile.SimpleFileName_WithoutExt, true));
+                Task<DataTable> targetTask = Task.Run(() => LoadExcelFromDataReader(targetFile.strFileNameWithPath, targetFile.SimpleFileName_WithoutExt, true));
+                await Task.WhenAll(sourceTask, targetTask);
+                if (IsDisposed || Disposing) return;
+                DataTable source = sourceTask.Result;
+                DataTable target = targetTask.Result;
+                if (!FormValidation.Check(this, () =>
+                {
+                    FormValidation.Table(source, btn_SelectLoad, "Source worksheet", false);
+                    FormValidation.Table(target, btn_SelectLoad, "Target worksheet", false);
+                }, message => DisplayMessage(message, true))) { source.Dispose(); target.Dispose(); return; }
+
+                if (string.Equals(source.TableName, target.TableName, StringComparison.OrdinalIgnoreCase))
+                    target.TableName += "_Second";
+                var candidate = new DataSet();
+                candidate.Tables.Add(source);
+                candidate.Tables.Add(target);
+
                 resetControlsToDefaultValue(10);
-                changeEnabledStatus(false);
-                boolSelectedBothFile = false;
-                btn_Compare.Enabled = false;
-                Logs.EnterLogsWithTime($"Selecting both input files");
-
-                firstExcelData = firstExcelData.openFileDialog("Select First Excel File");
-                firstExcel = firstExcelData.strFileNameWithPath;
+                ds = candidate;
+                firstExcelData = sourceFile;
+                secondExcelData = targetFile;
+                firstExcel = sourceFile.strFileNameWithPath;
+                secondExcel = targetFile.strFileNameWithPath;
                 lbl_FirstExcelFileName.Text = firstExcel;
-
-                // ============================================================================
-                if (firstExcelData.boolFileSelected)
+                lbl_SecondExcelFileName.Text = secondExcel;
+                dt_firstTable = common_Data.getCommonColumns(ds.Tables[0], ds.Tables[1], lb_IgnoreTable1);
+                dt_secondTable = common_Data.getCommonColumns(ds.Tables[1], ds.Tables[0], lb_IgnoreTable2);
+                boolValidate = false;
+                boolSelectedBothFile = true;
+                if (cb_MultiReference.Checked)
                 {
-                    do
-                    {
-                        secondExcelData = secondExcelData.openFileDialog("Select Second Excel File");
-                        secondExcel = secondExcelData.strFileNameWithPath;
-                        lbl_SecondExcelFileName.Text = secondExcel;
-                        //lbl_SecondExcelFileName.Update();
-                        boolStatus = checkDuplicateSameFile(firstExcel, secondExcel);
-                        //boolLoopWhileStatus = !(boolStatus);
-
-                    } while (!boolStatus);
-                }
-
-                // ============================================================================
-
-                if (boolStatus & firstExcelData.boolFileSelected & secondExcelData.boolFileSelected)
-                {
-                    Logs.EnterLogsWithTime($"Source : {firstExcelData.strFileNameWithPath}, Target : {secondExcelData.strFileNameWithPath}");
-                    lbl_LoadStatus.Text = "Loading started, pls wait !!!";
-                    lbl_LoadStatus.Update();
-                    ds = new DataSet();
-
-                    DataTable dt = new DataTable();
-
-                    //dt = LoadExcelFromDataReader(firstExcel, firstExcelData.SimpleFileName_WithoutExt).Tables[0];
-
-                    Task<DataTable> taskLoadSRCExcelFile = Task.Run<DataTable>(() => LoadExcelFromDataReader(firstExcel, firstExcelData.SimpleFileName_WithoutExt, true));
-
-                    #region test memory exception
-
-                    //await Task.WhenAll(taskLoadSRCExcelFile).ContinueWith(x => {
-                    //    ds.Tables.Add(taskLoadSRCExcelFile.Result.Copy());
-                    //    Test_SYSTEM_OUT_OF_MEMORYEXCEPTION();
-                    //});
-
-                    #endregion
-
-                    //ds.Tables.Add(dt.Copy());
-
-                    //dt = new DataTable();
-
-                    //dt = LoadExcelFromDataReader(secondExcel, secondExcelData.SimpleFileName_WithoutExt).Tables[0];
-                    Task<DataTable> taskLoadTRGExcelFile = Task.Run<DataTable>(() => LoadExcelFromDataReader(secondExcel, secondExcelData.SimpleFileName_WithoutExt, true));
-
-                    await Task.WhenAll(taskLoadSRCExcelFile, taskLoadTRGExcelFile).ContinueWith(x =>
-                    {
-                        ds.Tables.Add(taskLoadSRCExcelFile.Result.Copy());
-                        ds.Tables.Add(taskLoadTRGExcelFile.Result.Copy());
-                        //Test_SYSTEM_OUT_OF_MEMORYEXCEPTION();
-                    });
-
-                    //await Task.WhenAll(taskLoadSRCExcelFile, taskLoadTRGExcelFile);
-
-                    if (string.Equals(firstExcelData.SimpleFileName_WithoutExt, secondExcelData.SimpleFileName_WithoutExt, StringComparison.OrdinalIgnoreCase))
-                    {
-                        //dt.TableName += "_Second";
-                        ds.Tables[1].TableName += "_Second";
-                    }
-                    Logs.EnterLogsWithTime($"Both source and target data loaded");
-                    Logs.EnterLogsWithTime($"Source file raw :Rows: {ds.Tables[0].Rows.Count}, Columns: {ds.Tables[0].Columns.Count}");
-                    Logs.EnterLogsWithTime($"Target file raw :Rows: {ds.Tables[1].Rows.Count}, Columns: {ds.Tables[1].Columns.Count}");
-                    //ds.Tables.Add(dt.Copy());
-
-                    //ds = LoadExcel(firstExcel, "firstExcel");
-                    //ds = LoadExcel(secondExcel, "secondExcel");
-
-                    dt_firstTable = new DataTable();
-                    dt_firstTable = common_Data.getCommonColumns(ds.Tables[0], ds.Tables[1], lb_IgnoreTable1);
-                    dt_secondTable = new DataTable();
-                    dt_secondTable = common_Data.getCommonColumns(ds.Tables[1], ds.Tables[0], lb_IgnoreTable2);
-
-                    Logs.EnterLogsWithTime($"Source file :Rows: {dt_firstTable.Rows.Count}, Columns: {dt_firstTable.Columns.Count}");
-
-                    Logs.EnterLogsWithTime($"Target file :Rows: {dt_secondTable.Rows.Count}, Columns: {dt_secondTable.Columns.Count}");
-
-                    if (cb_MultiReference.Checked)
-                    {
-                        Logs.EnterLogsWithTime($"Comparison started with ViewForMultiReference");
-                        ViewForMultiReference viewForMultiReference = new ViewForMultiReference(ds, ds);
-                        viewForMultiReference.Show();
-                    }
-                    else
-                    {
-                        Logs.EnterLogsWithTime($"Comparison started with Normal mode");
-                        LoadCheckListBox(clb_reference_ID, dt_firstTable);
-                        LoadCheckListBox(clb_firstExcel, dt_firstTable);
-                        LoadCheckListBox(clb_secondExcel, dt_secondTable);
-                        Logs.EnterLogsWithTime($"All data loaded and comparison ready to start");
-                    }
-
-                    //int index1 = firstExcel.LastIndexOf('\\') + 1;
-                    //int index2 = firstExcel.LastIndexOf('.');
-
-                    //tb_fileName.Text = firstExcel.Substring(index1, index2 - index1) + "_output_" + DateTime.Now.ToString().Replace(':', '_').Replace('-', '_');
-
-                    //tb_fileName.Text = $"{firstExcel.Substring(index1, index2 - index1)}_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}";
-
-                    if (clb_firstExcel.Items.Count > 0)
-                    {
-                        cb_select_first_clb.Checked = true;
-                    }
-
-                    lbl_Parameter.Text = "Rows : " + ds.Tables[0].Rows.Count + " and Columns : " + ds.Tables[0].Columns.Count
-                    + ", Total comparison : " + ds.Tables[0].Rows.Count * ds.Tables[0].Columns.Count;
-
-                    lbl_LoadStatus.Text = "Loaded successfully";
-
-                    boolSelectedBothFile = true;
-
-                    //if (Debugger.IsAttached & false)
-                    //{
-                    //    checkRules.PNIDVariousRuleChecks(ds.Tables[0], ds.Tables[1]);
-                    //}
-                    //boolLoopWhileStatus = false;
-
+                    new ViewForMultiReference(ds, ds).Show(this);
                 }
                 else
                 {
-                    lbl_LoadStatus.Text = "One of the two files OR both files not selected";
-                    Logs.EnterLogsWithTime($"{lbl_LoadStatus.Text}");
+                    LoadCheckListBox(clb_reference_ID, dt_firstTable);
+                    LoadCheckListBox(clb_firstExcel, dt_firstTable);
+                    LoadCheckListBox(clb_secondExcel, dt_secondTable);
+                    if (clb_firstExcel.Items.Count > 0) cb_select_first_clb.Checked = true;
                 }
-                // New Code
+                lbl_Parameter.Text = "Rows: " + source.Rows.Count + "; Columns: " + source.Columns.Count;
+                lbl_LoadStatus.Text = "Loaded successfully. Select keys and columns, then validate.";
+                loadingSucceeded = true;
             }
             catch (Exception ex)
             {
@@ -781,89 +671,30 @@ namespace SPI_Data_Comp_Tool
             }
             finally
             {
-                changeEnabledStatus(true);
-                btn_Compare.Enabled = false;
-                btn_Validate.Enabled = false;
+                isLoading = false;
+                if (!IsDisposed && !Disposing)
+                {
+                    changeEnabledStatus(true);
+                    btn_Compare.Enabled = !loadingSucceeded && boolValidate;
+                    btn_Validate.Enabled = boolSelectedBothFile;
+                }
             }
         }
 
         private void btn_Validate_Click(object sender, EventArgs e)
         {
-            try
+            boolValidate = false;
+            btn_Compare.Enabled = false;
+            if (!FormValidation.Check(this, ValidateComparisonInput, message => DisplayMessage(message, true))) return;
+            // Keys are not comparison columns; make that existing distinction explicit in the UI.
+            foreach (string key in clb_reference_ID.CheckedItems)
             {
-                if (boolSelectedBothFile)
-                {
-
-                    changeEnabledStatus(false);
-                    lbl_Status.ResetText();
-
-                    int index1 = firstExcel.LastIndexOf('\\') + 1;
-                    int index2 = firstExcel.LastIndexOf('.');
-                    //tb_fileName.Text = $"{firstExcel.Substring(index1, index2 - index1)}_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}";
-
-                    if (clb_reference_ID.CheckedItems.Count >= 1)
-                    {
-                        boolValidate = true;
-                    }
-                    else
-                    {
-                        boolValidate = false;
-                        lbl_Status.Text = "Pls select atleast one reference key";
-                        Logs.EnterLogsWithTime(lbl_Status.Text);
-                    }
-
-                    if (boolValidate)
-                    {
-
-                        CheckedListBox.CheckedItemCollection cic_referencekey = clb_reference_ID.CheckedItems;
-                        CheckedListBox.CheckedItemCollection cic_firstExcel = clb_firstExcel.CheckedItems;
-
-                        foreach (var a in cic_referencekey)
-                        {
-                            clb_firstExcel.SetItemChecked(clb_firstExcel.FindStringExact(a.ToString()), false);
-                        }
-
-                        if (boolValidate && clb_firstExcel.CheckedItems.Count >= 1)
-                        {
-                            boolValidate = true;
-                        }
-                        else
-                        {
-                            boolValidate = false;
-                        }
-                    }
-
-                    changeEnabledStatus(true);
-                    lblError.Text = string.Empty;
-
-                    if (boolValidate)
-                    {
-                        btn_Compare.Enabled = true;
-                    }
-                    else
-                    {
-                        lbl_Status.Text = "Pls select atleast one column to check mismatch";
-                        btn_Compare.Enabled = false;
-                        Logs.EnterLogsWithTime(lbl_Status.Text);
-                    }
-                }
-                else
-                {
-                    lbl_Status.Text = "No Files Selected Or there is some problem in Excel File";
-                    btn_Compare.Enabled = false;
-                    btn_Validate.Enabled = false;
-                    Logs.EnterLogsWithTime(lbl_Status.Text);
-                }
-
+                int index = clb_firstExcel.FindStringExact(key);
+                if (index >= 0) clb_firstExcel.SetItemChecked(index, false);
             }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-            finally
-            {
-                //changeEnabledStatus(true);
-            }
+            boolValidate = true;
+            btn_Compare.Enabled = true;
+            DisplayMessage("Inputs validated. Compare rechecks them before starting.");
         }
 
         private void changeEnabledStatus(bool boolEnabledStatus)
@@ -882,6 +713,9 @@ namespace SPI_Data_Comp_Tool
 
                 cb_IncludeDiff_Columns.Enabled = boolEnabledStatus;
                 cb_IgnoreCase.Enabled = boolEnabledStatus;
+                cb_Primary_Key.Enabled = boolEnabledStatus;
+                cb_MultiReference.Enabled = boolEnabledStatus;
+                clb_reference_ID.Enabled = clb_firstExcel.Enabled = clb_secondExcel.Enabled = boolEnabledStatus;
                 cb_IncludeRule.Enabled = boolEnabledStatus;
                 btn_RuleForm.Enabled = boolEnabledStatus;
 
@@ -909,6 +743,9 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, ValidateComparisonInput, message => DisplayMessage(message, true))) return;
+                boolValidate = true;
+                boolStatus = true;
                 if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName))
                 {
                     //tb_fileName.Text = $"Output_{common_Data.RemoveSpecialCharacters(DateTime.Now.ToString())}";
@@ -947,7 +784,7 @@ namespace SPI_Data_Comp_Tool
                     boolRules = common_Data.GetRulesStatus();
                     dsRules = common_Data.GetDatasetRules();
 
-                    if (dsRules != null && dsRules.Tables[0] != null && dsRules.Tables[0].Rows.Count > 0 && dt_firstTable.Rows.Count > 0 && dt_secondTable.Rows.Count > 0)
+                    if (dsRules != null && dsRules.Tables.Count > 0 && dsRules.Tables[0].Rows.Count > 0 && dt_firstTable.Rows.Count > 0 && dt_secondTable.Rows.Count > 0)
                     {
                         //boolRules = true;
                         if (GlobalDebug.boolIsGlobalDebug)
@@ -1013,6 +850,12 @@ namespace SPI_Data_Comp_Tool
 
                 if (saveFileDialogFile.BoolFileSaveStatus)
                 {
+                    if (!FormValidation.Check(this, () =>
+                    {
+                        string output = FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath, btn_Compare, "Comparison output", ".xlsx");
+                        FormValidation.DifferentFiles(output, firstExcel, btn_Compare);
+                        FormValidation.DifferentFiles(output, secondExcel, btn_Compare);
+                    }, message => DisplayMessage(message, true))) return;
                     if (!backgroundWorker1.IsBusy)
                     {
                         DisplayMessage("Processing, Pls Wait !!!");
@@ -2056,7 +1899,12 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 lbl_Status.ForeColor = Color.Red;
-                if (e.Cancelled)
+                if (e.Error != null)
+                {
+                    DisplayError(e.Error);
+                    boolStatus = false;
+                }
+                else if (e.Cancelled)
                 {
                     lbl_Status.Text = "Process Cancelled";
                     Logs.EnterLogsWithTime(lbl_Status.Text);
@@ -2068,7 +1916,8 @@ namespace SPI_Data_Comp_Tool
                         Logs.EnterLogsWithTime(myException_BG.ToString());
                     }
                 }
-                else if (boolStatus)
+                else if (boolStatus && myException == null && myException_BG == null
+                    && File.Exists(saveFileDialogFile.Str_saveFileNameWithPath))
                 {
                     lbl_Status.ForeColor = Color.Black;
                     llbl_filePath.Visible = true;
@@ -2109,6 +1958,7 @@ namespace SPI_Data_Comp_Tool
             finally
             {
                 changeEnabledStatus(true);
+                btn_Compare.Enabled = boolValidate;
                 timer1.Enabled = false;
             }
         }
@@ -2534,6 +2384,16 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, () =>
+                {
+                    ValidateIdle();
+                    FormValidation.Require(ds != null && ds.Tables.Count == 2, btn_SelectLoad, "Load both input workbooks first.");
+                    FormValidation.Table(ds.Tables[0], btn_SelectLoad, "Source instrument worksheet");
+                    FormValidation.Table(ds.Tables[1], btn_SelectLoad, "Target instrument worksheet", false);
+                    FormValidation.Columns(ds.Tables[0], new[] { "Item Tag", "Tag Seq No", "Industrial complex (site and unit)",
+                        "Process area", "Subprocess", "Short ItemTag", "Measured Variable Code", "Instr Type Modifier", "Instrument Class" },
+                        btn_SelectLoad, "Instrument columns");
+                }, message => DisplayMessage(message, true))) return;
                 //checkRules.PNIDVariousRuleChecks(ds.Tables[0], ds.Tables[1]);
                 changeEnabledStatus(false);
                 dateTime1 = DateTime.Now;
@@ -2551,6 +2411,86 @@ namespace SPI_Data_Comp_Tool
                 DisplayError(ex);
             }
 
+        }
+
+        private void InvalidateComparison()
+        {
+            boolValidate = false;
+            btn_Compare.Enabled = false;
+            btn_Validate.Enabled = boolSelectedBothFile && !isLoading;
+        }
+
+        private void ValidateIdle()
+        {
+            FormValidation.Require(!isLoading, btn_SelectLoad, "Wait for the workbook load to finish.");
+            FormValidation.IsBusy(backgroundWorker1, btn_Compare);
+            FormValidation.IsBusy(backgroundWorkerInstrument, btnLoad);
+            FormValidation.IsBusy(bgw_multiThreading, btn_ProcessBy_MultiThreading);
+        }
+
+        internal void ValidateComparisonInput()
+        {
+            ValidateIdle();
+            FormValidation.Require(boolSelectedBothFile && ds != null && ds.Tables.Count == 2, btn_SelectLoad, "Load both workbooks first.");
+            string[] keys = clb_reference_ID.CheckedItems.Cast<string>().ToArray();
+            string[] compared = clb_firstExcel.CheckedItems.Cast<string>().Except(keys).ToArray();
+            FormValidation.Require(keys.Length > 0, clb_reference_ID, "Select at least one reference key.");
+            FormValidation.Require(compared.Length > 0, clb_firstExcel, "Select at least one comparison column other than the reference keys.");
+            foreach (DataTable table in ds.Tables)
+            {
+                FormValidation.Table(table, btn_SelectLoad, "Worksheet", false);
+                FormValidation.Columns(table, keys.Concat(compared), clb_firstExcel, "Comparison columns");
+                FormValidation.Require(!table.Columns.Contains("boolChecked"), clb_firstExcel,
+                    "Rename the reserved internal column boolChecked before comparing this workbook.");
+                FormValidation.Require(keys.Concat(compared).All(name => !name.Contains(",") && name == name.Trim()), clb_firstExcel,
+                    "The comparison engine requires selected headers without commas or leading/trailing spaces. Rename those headers first.");
+                if (cb_Primary_Key.Checked) ValidatePrimaryKeys(table, keys, clb_reference_ID);
+            }
+            if (cb_IncludeRule.Checked)
+            {
+                DataSet rules = common_Data.GetDatasetRules();
+                FormValidation.Require(common_Data.GetRulesStatus() && rules != null && rules.Tables.Count > 0,
+                    cb_IncludeRule, "Import valid rules before choosing Include rules.");
+                FormValidation.Table(rules.Tables[0], cb_IncludeRule, "Comparison rules");
+            }
+        }
+
+        internal static void ValidatePrimaryKeys(DataTable table, string[] keys, Control field)
+        {
+            FormValidation.Columns(table, keys, field, "Primary key");
+            var values = new HashSet<string[]>(new KeyComparer(StringComparer.Create(table.Locale, !table.CaseSensitive)));
+            foreach (DataRow row in table.Rows)
+            {
+                var parts = new List<string>();
+                foreach (string key in keys)
+                {
+                    FormValidation.Require(!row.IsNull(key), field, "Primary-key mode requires non-null key values in both worksheets.");
+                    string value = Convert.ToString(row[key], System.Globalization.CultureInfo.InvariantCulture);
+                    parts.Add(value);
+                }
+                FormValidation.Require(values.Add(parts.ToArray()), field,
+                    "Primary-key mode requires unique key combinations in each worksheet. Choose different keys or disable Primary key.");
+            }
+        }
+
+        private sealed class KeyComparer : IEqualityComparer<string[]>
+        {
+            private readonly StringComparer comparer;
+            internal KeyComparer(StringComparer comparer) { this.comparer = comparer; }
+            public bool Equals(string[] left, string[] right)
+            {
+                return left.Length == right.Length && left.Select((value, i) => comparer.Equals(value, right[i])).All(value => value);
+            }
+            public int GetHashCode(string[] values)
+            {
+                unchecked { int hash = 17; foreach (string value in values) hash = hash * 31 + comparer.GetHashCode(value); return hash; }
+            }
+        }
+
+        internal static string FilterPredicate(string name, object value)
+        {
+            string column = "[" + name.Replace("\\", "\\\\").Replace("]", "\\]") + "]";
+            return column + (value == null || value == DBNull.Value ? " IS NULL" : " = '" + value.ToString().Replace("'", "''") + "'");
         }
 
         private void button1_Click(object sender, EventArgs e)

@@ -30,6 +30,8 @@ namespace SPI_Data_Comp_Tool
         public event EventHandler<DBConnectionDetails> ProfileApplied;
         /// <summary>Raised when something in the panel fails, so the window can show it its own way.</summary>
         public event EventHandler<Exception> Failed;
+        /// <summary>Entered connection values changed; loaded/tested data must be checked again.</summary>
+        public event EventHandler InputChanged;
 
         public ConnectionPanel()
         {
@@ -82,6 +84,29 @@ namespace SPI_Data_Comp_Tool
 
             Source.ApplyPlatform();
             Target.ApplyPlatform();
+            WatchInput(Source);
+            WatchInput(Target);
+        }
+
+        internal void ValidateInput(bool source = true, bool target = true, bool requireCredentials = true)
+        {
+            if (source) Source.ValidateInput(requireCredentials);
+            if (target && mode == ConnectionMode.SourceAndTarget) Target.ValidateInput(requireCredentials);
+        }
+
+        private void WatchInput(ConnectionSide side)
+        {
+            foreach (TextBox field in new[] { side.Port, side.DataSource, side.Database, side.User, side.Password })
+                field.TextChanged += RaiseInputChanged;
+            side.Oracle.CheckedChanged += RaiseInputChanged;
+            side.Sql.CheckedChanged += RaiseInputChanged;
+            side.WindowsLogin.CheckedChanged += RaiseInputChanged;
+            side.DefaultPort.CheckedChanged += RaiseInputChanged;
+        }
+
+        private void RaiseInputChanged(object sender, EventArgs e)
+        {
+            InputChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>Source and Target, or Source only (the Target half and the Copy buttons hide).</summary>

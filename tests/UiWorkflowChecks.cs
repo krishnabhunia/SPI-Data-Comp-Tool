@@ -23,6 +23,18 @@ namespace SPI_Data_Comp_Tool
                 ProfileWorkflowChecks.Run(passed);
                 ImportSchemaChecks.Run(passed);
                 CredentialRedactionChecks.Run(passed);
+                // Independent synthetic suites clean up their own fixtures. Report every suite's
+                // failure in one run rather than hiding later regressions behind the first one.
+                bool validationPassed = RunValidationSuite("Core", () => { CoreValidationChecks.Run(passed); }, messages);
+                validationPassed &= RunValidationSuite("Connections", () => { ConnectionValidationChecks.Run(passed); }, messages);
+                validationPassed &= RunValidationSuite("Database forms", () => { DatabaseFormValidationChecks.Run(passed); }, messages);
+                validationPassed &= RunValidationSuite("Excel forms", () => { ExcelFormValidationChecks.Run(passed); }, messages);
+                validationPassed &= RunValidationSuite("Analysis", () => { AnalysisValidationChecks.Run(passed); }, messages);
+                if (!validationPassed)
+                {
+                    File.WriteAllLines(outputFile, messages);
+                    return 1;
+                }
                 CheckNavigation(passed);
                 CheckSettings(passed);
                 CheckAnalysis(passed);
@@ -35,6 +47,20 @@ namespace SPI_Data_Comp_Tool
                 messages.Add("FAIL " + ex);
                 File.WriteAllLines(outputFile, messages);
                 return 1;
+            }
+        }
+
+        private static bool RunValidationSuite(string name, Action run, List<string> messages)
+        {
+            try
+            {
+                run();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                messages.Add("FAIL " + name + " validation suite: " + ex);
+                return false;
             }
         }
 

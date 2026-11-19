@@ -14,12 +14,9 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class MergeLogsExport : Form
     {
-        private OpenFileDialogData openFileDialogData;
-        private DataTable dtMerge_Log_Output;
         private SaveFileDialogFile saveFileDialogFile;
         private Common_Data common_Data;
         private DataSet dsAll;
-        private DataTable dt;
 
         public MergeLogsExport()
         {
@@ -27,26 +24,11 @@ namespace SPI_Data_Comp_Tool
 
             try
             {
-                openFileDialogData = new OpenFileDialogData();
-                dtMerge_Log_Output = new DataTable();
                 common_Data = new Common_Data();
-
-                string[] strIntColumnNames = { "Total Source Rows", "Inserted Rows", " Updated Rows", "Rejected Rows" };
-                var dcColumnNames = strIntColumnNames.AsEnumerable().Select(x => new DataColumn(x.ToString(), typeof(int))).ToArray();
-
-                dtMerge_Log_Output.Columns.Add("Table Name");
-                dtMerge_Log_Output.Columns.AddRange(dcColumnNames);
-
-                string[] strSTRColumnNames = { "Target Sql", "Source Sql" };
-                dcColumnNames = strSTRColumnNames.AsEnumerable().Select(x => new DataColumn(x.ToString())).ToArray();
-
-                dtMerge_Log_Output.Columns.AddRange(dcColumnNames);
-                dtMerge_Log_Output.TableName = "Merge Log Out";
 
                 saveFileDialogFile = new SaveFileDialogFile();
 
                 dsAll = new DataSet();
-                dt = new DataTable();
             }
             catch (Exception ex)
             {
@@ -59,129 +41,90 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                openFileDialogData = openFileDialogData.openFileDialog("Browse Text Log File", "txt,log");
-
-                if (openFileDialogData.boolFileSelected)
+                var selected = new OpenFileDialogData().openFileDialog("Browse Text Log File", "txt,log");
+                if (!selected.boolFileSelected) return;
+                string path = null;
+                if (!FormValidation.Check(this, () => path = FormValidation.ReadableFile(selected.strFileNameWithPath,
+                    lbl_ReadTxtFile, "Merge log", ".txt", ".log"), ReportValidation)) return;
+                DataSet candidate = null;
+                if (!FormValidation.Check(this, () =>
                 {
-                    lbl_ReadTxtFile.Text = openFileDialogData.strFileNameWithPath;
-                    Common_Data.DisplayMessage(rtb_Log, $"File Selected : {openFileDialogData.strFileNameWithPath}");
+                    FormValidation.Require(new FileInfo(path).Length <= 64L * 1024L * 1024L, lbl_ReadTxtFile,
+                        "This log is larger than the 64 MiB in-memory import limit. Split it at table boundaries first.");
+                    candidate = ParseMergeLog(File.ReadAllText(path), lbl_ReadTxtFile);
+                }, ReportValidation)) return;
 
-                    if (!(Debugger.IsAttached))
-                    {
-                        saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Excel File", $"Merge_Log_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}");
-                    }
-                    else
-                    {
-                        saveFileDialogFile.Str_saveFileNameWithPath = $@"D:\Krishna\Projects\SPI\INPUT FILES\Merge Log Export\Output\Merge_Log_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
-                        saveFileDialogFile.BoolFileSaveStatus = true;
-                    }
-
-                    if (saveFileDialogFile.BoolFileSaveStatus)
-                    {
-                        string strAllText = File.ReadAllText(openFileDialogData.strFileNameWithPath);
-                        string strAllTextToUse = strAllText.Replace("Table Name", "|Table Name");
-
-                        //string[] strTableName = File.ReadAllLines(openFileDialogData.strFileNameWithPath).AsEnumerable().Where(x => x.Contains("Table Name") || x.Contains("Total Source Rows") || x.Contains("Target Sql") || x.Contains("Source Sql")).ToArray();
-
-                        //List<string> lstTableName = strAllTextToUse.Split(new[] { "|" },StringSplitOptions.RemoveEmptyEntries).Where(x => x.Contains("Table Name")).ToList();
-
-                        string[] arrTableName = strAllTextToUse.Split(new[] { "|" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.Contains("Table Name")).ToArray();
-                        string[] strRR = arrTableName.Where(x => x.Contains("Rejected Rows") & (!x.Contains("Rejected Rows: 0"))).ToArray();
-
-                        dtMerge_Log_Output.Clear();
-                        int int_index = 0;
-                        foreach (string ss in arrTableName)
-                        {
-                            Common_Data.UpdateProgressBar(progressBar1, ++int_index,arrTableName.Length);
-                            Common_Data.DisplayDebugMsg(rtb_Log, $"{ss}");
-                            string[] strDetails = ss.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                            string strTN = strDetails[0].Substring(strDetails[0].IndexOf(":") + 1, strDetails[0].IndexOf(";") - strDetails[0].IndexOf(":") - 1).Trim();
-                            Common_Data.DisplayMessage(rtb_Log, $"Processing Table : {strTN}");
-                            string strTRG = strDetails[2].Substring(strDetails[2].IndexOf(":") + 1).Trim();
-                            string strSRC = strDetails[4].Substring(strDetails[4].IndexOf(":") + 1).Trim();
-
-                            Common_Data.DisplayDebugMsg(rtb_Log, $"Evaluating {strDetails.Length - 1}:{strDetails[strDetails.Length - 1]}");
-                            //string[] strRowDetails = strDetails[strDetails.Length - 1].Split(';');
-                            string[] strRowDetails = strDetails.Where(x => x.Contains("Total Source Rows")).ToArray()[0].Split(';');
-
-                            string strTotalSRCRows = strRowDetails[0].Substring(strRowDetails[0].IndexOf(":") + 1).Trim();
-                            string strInsertedRows = strRowDetails[1].Substring(strRowDetails[1].IndexOf(":") + 1).Trim();
-                            string strUpdatedRows = strRowDetails[2].Substring(strRowDetails[2].IndexOf(":") + 1).Trim();
-                            string strRejectedRows = strRowDetails[3].Substring(strRowDetails[3].IndexOf(":") + 1).Trim();
-
-                            dtMerge_Log_Output.Rows.Add(strTN, strTotalSRCRows, strInsertedRows, strUpdatedRows, strRejectedRows, strTRG, strSRC);
-                        }
-
-                        dsAll.Clear();
-                        dsAll.Tables.Clear();
-                        dsAll.Tables.Add(dtMerge_Log_Output.Copy());
-                        
-                        dt = common_Data.AddColumns(dt,"Rejection Remarks");
-
-                        Common_Data.DisplayMessage(rtb_Log, $"Now Processing Rejected Rows", false, -1, Color.DarkBlue);
-                        int_index = 0;
-
-                        // Processing for Rejected Rows
-                        foreach (string sr in strRR)
-                        {
-                            Common_Data.UpdateProgressBar(progressBar1, ++int_index, strRR.Length);
-                            Common_Data.DisplayDebugMsg(rtb_Log, sr);
-                            string[] strDetails = sr.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                            string strTN = strDetails[0].Substring(strDetails[0].IndexOf(":") + 1, strDetails[0].IndexOf(";") - strDetails[0].IndexOf(":") - 1).Trim();
-
-                            //int int_index_Source = sr.IndexOf("Testing") + 7;
-                            //int int_count_Index = sr.IndexOf("Total Source Rows:") - sr.IndexOf("Testing") - 7;
-
-                            int int_first_ID = sr.IndexOf("First Id");
-                            int int_source_data_by_datastore = sr.IndexOf("Total Source Rows") - 25;
-
-                            
-                            //if (sr.IndexOf("Testing source data by datastore") < sr.LastIndexOf("Testing source data by datastore"))
-                            if (int_source_data_by_datastore > int_first_ID)
-                            {
-                                //string txt = sr.Substring(sr.IndexOf("Testing source data by datastore") + 34, sr.IndexOf("Total Source Rows:") - sr.LastIndexOf("Testing source data by datastore") - 36);
-
-                                //string txt = sr.Substring(int_index_Source, int_count_Index);
-                                string txt = sr.Substring(int_first_ID, int_source_data_by_datastore);
-
-                                dt.Clear();
-                                dt.TableName = strTN;
-                                txt.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x != null && x.Trim() != "").ToList().ForEach(x => dt.Rows.Add(x));
-
-                                dsAll = common_Data.InsertDataTable(dsAll, dt, strTN);
-
-                                Common_Data.DisplayDebugMsg(rtb_Log, $"Added Table in Dataset : {dt.TableName}");
-                            }
-
-                        }
-
-                        if (WriteExcel.ExportToExcel(dsAll, saveFileDialogFile.Str_saveFileNameWithPath))
-                        {
-                            Common_Data.DisplayMessage(rtb_Log, $"File saved as : {saveFileDialogFile.Str_saveFileNameWithPath}");
-                            Process.Start(saveFileDialogFile.Str_saveFileNameWithPath);
-                        }
-                        else
-                        {
-                            Common_Data.DisplayMessage(rtb_Log, $"There is some problem in saving the file : {saveFileDialogFile.Str_saveFileNameWithPath}", true);
-                        }
-
-                    }
-                    else
-                    {
-                        Common_Data.DisplayMessage(rtb_Log, $"File Not Saved By User !!!", true);
-                    }
-                }
-                else
+                saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Excel File",
+                    "Merge_Log_Output_" + common_Data.AppendDateInOutputFileName(DateTime.Now));
+                if (!saveFileDialogFile.BoolFileSaveStatus) { candidate.Dispose(); return; }
+                if (!FormValidation.Check(this, () =>
                 {
-                    lbl_ReadTxtFile.Text = $"No File Selected";
-                    Common_Data.DisplayMessage(rtb_Log, $"File Selected : {openFileDialogData.strFileNameWithPath}", true);
-                }
-
+                    string output = FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath, lbl_ReadTxtFile,
+                        "Merge-log output", ".xlsx");
+                    FormValidation.DifferentFiles(output, path, lbl_ReadTxtFile);
+                }, ReportValidation)) { candidate.Dispose(); return; }
+                if (!WriteExcel.ExportToExcel(candidate, saveFileDialogFile.Str_saveFileNameWithPath))
+                { candidate.Dispose(); ReportValidation("The output workbook could not be saved."); return; }
+                dsAll?.Dispose();
+                dsAll = candidate;
+                lbl_ReadTxtFile.Text = path;
+                progressBar1.Value = 100;
+                Common_Data.DisplayMessage(rtb_Log, "File saved as: " + saveFileDialogFile.Str_saveFileNameWithPath);
+                Process.Start(saveFileDialogFile.Str_saveFileNameWithPath);
             }
-            catch (Exception ex)
+            catch (Exception ex) { Common_Data.DisplayError(rtb_Log, ex); }
+        }
+
+        private void ReportValidation(string message) { Common_Data.DisplayMessage(rtb_Log, message, true); }
+
+        internal static DataSet ParseMergeLog(string text, Control field)
+        {
+            FormValidation.Require(!string.IsNullOrWhiteSpace(text), field, "The merge log is empty.");
+            var options = System.Text.RegularExpressions.RegexOptions.IgnoreCase;
+            TimeSpan timeout = TimeSpan.FromSeconds(2);
+            var entries = System.Text.RegularExpressions.Regex.Matches(text, @"Table Name\s*:\s*([^;\r\n]+);", options, timeout);
+            FormValidation.Require(entries.Count > 0, field, "No valid 'Table Name: ...;' records were found in the log.");
+            var result = new DataSet();
+            var summary = result.Tables.Add("Merge Log Out");
+            summary.Columns.Add("Table Name");
+            foreach (string name in new[] { "Total Source Rows", "Inserted Rows", " Updated Rows", "Rejected Rows" })
+                summary.Columns.Add(name, typeof(int));
+            summary.Columns.Add("Target Sql");
+            summary.Columns.Add("Source Sql");
+            for (int i = 0; i < entries.Count; i++)
             {
-                Common_Data.DisplayError(rtb_Log, ex);
+                string name = entries[i].Groups[1].Value.Trim();
+                int end = i + 1 < entries.Count ? entries[i + 1].Index : text.Length;
+                string block = text.Substring(entries[i].Index, end - entries[i].Index);
+                int[] counts = new int[4];
+                string[] labels = { "Total Source Rows", "Inserted Rows", "Updated Rows", "Rejected Rows" };
+                for (int count = 0; count < labels.Length; count++)
+                {
+                    var match = System.Text.RegularExpressions.Regex.Match(block,
+                        System.Text.RegularExpressions.Regex.Escape(labels[count]) + @"\s*:\s*([^;\r\n]+)", options, timeout);
+                    FormValidation.Require(match.Success && int.TryParse(match.Groups[1].Value.Trim(),
+                        System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out counts[count]),
+                        field, "Each table record must contain four non-negative whole-number row counts.");
+                }
+                var target = System.Text.RegularExpressions.Regex.Match(block, @"Target Sql\s*:\s*([^\r\n]*)", options, timeout);
+                var source = System.Text.RegularExpressions.Regex.Match(block, @"Source Sql\s*:\s*([^\r\n]*)", options, timeout);
+                FormValidation.Require(target.Success && source.Success, field, "A table record is missing its Source Sql or Target Sql line.");
+                summary.Rows.Add(name, counts[0], counts[1], counts[2], counts[3], target.Groups[1].Value, source.Groups[1].Value);
+                if (counts[3] > 0)
+                {
+                    // A numbered sheet avoids collisions/restrictions in external table names.
+                    DataTable rejected = result.Tables.Add("Rejected " + (i + 1));
+                    rejected.Columns.Add("Table Name");
+                    rejected.Columns.Add("Rejection Remarks");
+                    int first = block.IndexOf("First Id", StringComparison.OrdinalIgnoreCase);
+                    int last = block.IndexOf("Total Source Rows", StringComparison.OrdinalIgnoreCase);
+                    string details = first >= 0 && last > first ? block.Substring(first, last - first)
+                        : "Rejected rows were reported but detailed First Id records are absent.";
+                    foreach (string line in details.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                        rejected.Rows.Add(name, line);
+                }
             }
+            return result;
         }
 
         private void btn_Clear_Reset_Click(object sender, EventArgs e)

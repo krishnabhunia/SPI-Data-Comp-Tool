@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Color = System.Drawing.Color;
+using Control = System.Windows.Forms.Control;
 using DataTable = System.Data.DataTable;
 
 namespace SPI_Data_Comp_Tool
@@ -83,6 +84,7 @@ namespace SPI_Data_Comp_Tool
 
         private int int_count_src_id,int_count_trg_id,int_count_src_col,int_count_trg_col;
         private int int_Count_Comparison;
+        private readonly Dictionary<Control, bool> runningControls = new Dictionary<Control, bool>();
 
         public ViewForMultiReference()
         {
@@ -136,6 +138,14 @@ namespace SPI_Data_Comp_Tool
             tb_FileName.Text = $"{tb_FileName.Text}_{DateTime.Now.ToString().Replace('-','_').Replace(':','_')}";
 
             int_Count_Comparison = 0;
+            FormClosing += (sender, args) =>
+            {
+                if (backgroundWorker1.IsBusy)
+                {
+                    args.Cancel = true;
+                    DisplayMessage(lbl_Status, "Cancel the comparison and wait for it to stop before closing.");
+                }
+            };
             //start_Time = new DateTime();
         }
 
@@ -143,6 +153,13 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, () =>
+                {
+                    FormValidation.Require(dsS != null && dsS.Tables.Count > 0 && dsT != null && dsT.Tables.Count > 1,
+                        btn_Set, "Load the source and target worksheets before opening multiple-reference comparison.");
+                    FormValidation.Table(dsS.Tables[0], btn_Set, "Source worksheet", false);
+                    FormValidation.Table(dsT.Tables[1], btn_Set, "Target worksheet", false);
+                }, message => DisplayMessage(lbl_Status, message))) return;
                 dsSource.Tables.Add(dsS.Tables[0].Copy());
                 dsTarget.Tables.Add(dsT.Tables[1].Copy());
 
@@ -351,6 +368,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, ValidateMapping, message => DisplayMessage(lbl_Status, message))) return;
                 boolSet = false;
                 progressBar1.Value = 0;
                 dsSource_Com.Tables.Clear();
@@ -441,6 +459,17 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, () =>
+                {
+                    ValidateMapping();
+                    FormValidation.Require(boolSet, btn_Set, "Apply the current mapping with Set before comparing.");
+                    FormValidation.ExistingDirectory(llbl_Folder_path.Text, llbl_Folder_path, "Output folder");
+                    FormValidation.Required(tb_FileName, "Output filename");
+                    FormValidation.Require(tb_FileName.Text == Path.GetFileName(tb_FileName.Text), tb_FileName,
+                        "Enter an output filename, not a path.");
+                    FormValidation.OutputFile(Path.Combine(llbl_Folder_path.Text, tb_FileName.Text + ".xlsx"), tb_FileName,
+                        "Comparison output", ".xlsx");
+                }, message => DisplayMessage(lbl_Status, message))) return;
                 
                 if (Debugger.IsAttached || GlobalDebug.boolIsGlobalDebug)
                 {
@@ -463,6 +492,7 @@ namespace SPI_Data_Comp_Tool
                 if (!backgroundWorker1.IsBusy)
                 {
                     int_Count_Comparison = 0;
+                    SetRunningControls(this);
                     backgroundWorker1.RunWorkerAsync();
                 }
             }
@@ -556,12 +586,12 @@ namespace SPI_Data_Comp_Tool
                     //str_unique_reference_key = str_unique_reference_key + lb_oc[i].ToString() + " = '" + dr[i] + "' AND ";
                     if(dr[i].ToString().Trim().Length > 0)
                     {
-                        str_unique_reference_key = $"{str_unique_reference_key} [{lb_oc[i].ToString()}] = '{dr[i]}' AND ";
+                        str_unique_reference_key += Excel_Excel_Comparison.FilterPredicate(lb_oc[i].ToString(), dr[i]) + " AND ";
                         boolUniqueKey = true;
                     }
                     else
                     {
-                        str_unique_reference_key = $"{str_unique_reference_key} [{lb_oc[i].ToString()}] = '{dr[i]}' AND ";
+                        str_unique_reference_key += Excel_Excel_Comparison.FilterPredicate(lb_oc[i].ToString(), dr[i]) + " AND ";
                         boolUniqueKey = false;
                     }
                     
@@ -1029,6 +1059,8 @@ namespace SPI_Data_Comp_Tool
                 DisplayElapsedTime();
                 stopwatch.Stop();
                 stopwatch.Reset();
+                if (e.Error != null) DisplayError(lbl_Status, e.Error);
+                else if (e.Cancelled) DisplayMessage(lbl_Status, "Comparison cancelled.");
 
                 //DisplayMessage(lbl_Status, "Done, Excel File Open Successfully");
                 if (myException_BG.Message != null && myException_BG.Message != "Exception of type 'System.Exception' was thrown.")
@@ -1039,6 +1071,45 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex)
             {
                 DisplayError(lbl_Status, ex);
+            }
+            finally
+            {
+                foreach (var saved in runningControls) if (!saved.Key.IsDisposed) saved.Key.Enabled = saved.Value;
+                runningControls.Clear();
+            }
+        }
+
+        internal void ValidateMapping()
+        {
+            FormValidation.IsBusy(backgroundWorker1, btn_Compare);
+            FormValidation.Require(dsSource != null && dsSource.Tables.Count > 0 && dsTarget != null && dsTarget.Tables.Count > 0,
+                btn_Set, "Load both worksheets before setting the mapping.");
+            FormValidation.Require(lb_Source_ID.Items.Count > 0 && lb_Source_ID.Items.Count == lb_Target_ID.Items.Count,
+                lb_Source_ID, "Map an equal, non-zero number of Source and Target keys.");
+            FormValidation.Require(lb_Source_Col.Items.Count > 0 && lb_Source_Col.Items.Count == lb_Target_Col.Items.Count,
+                lb_Source_Col, "Map an equal, non-zero number of Source and Target comparison columns.");
+            ValidateSide(dsSource.Tables[0], lb_Source_ID, lb_Source_Col);
+            ValidateSide(dsTarget.Tables[0], lb_Target_ID, lb_Target_Col);
+        }
+
+        private static void ValidateSide(DataTable table, ListBox keys, ListBox compared)
+        {
+            FormValidation.Table(table, keys, "Mapped worksheet", false);
+            string[] names = keys.Items.Cast<string>().Concat(compared.Items.Cast<string>()).ToArray();
+            FormValidation.Columns(table, names, keys, "Mapped columns");
+            FormValidation.Require(names.Distinct(StringComparer.Ordinal).Count() == names.Length, keys,
+                "A column can be mapped once, as either a key or a comparison column.");
+            FormValidation.Require(!table.Columns.Contains("boolChecked"), keys,
+                "Rename the reserved internal column boolChecked before comparing.");
+        }
+
+        private void SetRunningControls(Control root)
+        {
+            foreach (Control control in root.Controls)
+            {
+                if (control != btn_Cancel && (control is Button || control is ListBox || control is TextBox || control is CheckBox || control is LinkLabel))
+                { runningControls[control] = control.Enabled; control.Enabled = false; }
+                SetRunningControls(control);
             }
         }
 

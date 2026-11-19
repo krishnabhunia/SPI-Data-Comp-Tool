@@ -28,11 +28,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (!oracleAndSQLConnection1.HasLoadedData)
-                {
-                    lbl_Status.Text = "Load source and target data before showing results.";
-                    return;
-                }
+                if (!ValidateShowResults()) return;
                 if (results != null && MessageBox.Show(this,
                     "Replace the current results? Export any arranged results you want to keep first.",
                     "Replace analysis results", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
@@ -44,8 +40,15 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message;
+                FormHelpers.ShowError(lbl_Status, ex);
             }
+        }
+
+        internal bool ValidateShowResults()
+        {
+            return FormValidation.Check(this, () => FormValidation.Require(oracleAndSQLConnection1.HasLoadedData,
+                oracleAndSQLConnection1, "Load source and target data for the current connection and query before showing results."),
+                message => FormHelpers.ShowText(lbl_Status, message));
         }
 
         /// <summary>Build first, then replace: an invalid reload must not destroy the current results.</summary>

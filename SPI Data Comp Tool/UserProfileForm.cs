@@ -65,6 +65,12 @@ namespace SPI_Data_Comp_Tool
             connection.AllowNewProfileName = true;   // Save profile takes the name typed here
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => DisplayError(error);
+            connection.InputChanged += (sender, e) =>
+            {
+                // A prior successful test never authorizes edited connection values.
+                if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
+                if (dBConnectionStatus_TRG != null) dBConnectionStatus_TRG.boolConnection = false;
+            };
             UiTheme.Apply(this, btnSaveUserProfile);
 
             try
@@ -78,7 +84,7 @@ namespace SPI_Data_Comp_Tool
                 common_Data = new Common_Data();
 
                 string profilePath = Properties.Settings.Default.ProfilePathUser;
-                if (!string.IsNullOrWhiteSpace(profilePath) && File.Exists(profilePath))
+                if (!SelfTest.IsRunning && !string.IsNullOrWhiteSpace(profilePath) && File.Exists(profilePath))
                 {
                     Profile.ProfileList = ReadProfileFile(profilePath);
                     connection.RefreshProfiles();
@@ -329,6 +335,12 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                bool source = strFor == null || string.Equals(strFor, "SRC", StringComparison.OrdinalIgnoreCase);
+                bool target = strFor == null || string.Equals(strFor, "TRG", StringComparison.OrdinalIgnoreCase);
+                if (source) dBConnectionStatus_SRC = new DBConnectionStatus();
+                if (target) dBConnectionStatus_TRG = new DBConnectionStatus();
+                if (!FormValidation.Check(this, () => connection.ValidateInput(source, target),
+                    message => DisplayMessage(message, true))) return;
                 if (strFor == null || strFor.ToUpper() == "SRC")
                 {
                     str_DBName = tb_SRC_DBName.Text.Trim();
@@ -338,12 +350,12 @@ namespace SPI_Data_Comp_Tool
                     {
                         DisplayMessage("Trying to connect to Source Oracle...");
 
-                        dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                        dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                     }
                     else if (rb_SRC_SQL.Checked)
                     {
                         DisplayMessage("Trying to connect to Source SQL...");
-                        dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                        dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                     }
                     DisplayMessage(dBConnectionStatus_SRC.strConnectionMSG, (!dBConnectionStatus_SRC.boolConnection), -1, Color.DarkBlue);
 
@@ -363,12 +375,12 @@ namespace SPI_Data_Comp_Tool
                     {
                         DisplayMessage("Trying to connect to Target Oracle...");
 
-                        dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                        dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                     }
                     else if (rb_TRG_SQL.Checked)
                     {
                         DisplayMessage("Trying to connect to Target SQL...");
-                        dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                        dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                     }
                     DisplayMessage(dBConnectionStatus_TRG.strConnectionMSG, (!dBConnectionStatus_TRG.boolConnection), -1, Color.DarkBlue);
                     if (dBConnectionStatus_TRG.exceptionConnection != null)
@@ -425,6 +437,8 @@ namespace SPI_Data_Comp_Tool
                 openFileDialogData = openFileDialogData.openFileDialog("User Profile", "json");
                 if (openFileDialogData.boolFileSelected)
                 {
+                    if (!FormValidation.Check(this, () => FormValidation.ReadableFile(openFileDialogData.strFileNameWithPath,
+                        l_lb_ReadProfile, "profile", ".json"), message => DisplayMessage(message, true))) return;
                     DisplayMessage($"Reading json file : '{openFileDialogData.strFileNameWithPath}'");
                     // Reject an incomplete file before replacing the currently usable catalog.
                     List<DBC> imported = ReadProfileFile(openFileDialogData.strFileNameWithPath);
@@ -466,12 +480,13 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 string profileName = cb_UserProfileList.Text.Trim();
-                if (string.IsNullOrWhiteSpace(profileName))
+                if (!FormValidation.Check(this, () =>
                 {
-                    DisplayMessage("Enter a profile name before saving.", true);
-                    cb_UserProfileList.Focus();
-                    return;
-                }
+                    FormValidation.Required(cb_UserProfileList, "profile name");
+                    FormValidation.Require(!ConnectionSide.ContainsControlCharacters(profileName), cb_UserProfileList,
+                        "Profile names cannot contain line breaks or control characters.");
+                    connection.ValidateInput(true, true, !GlobalDebug.boolIsGlobalDebug);
+                }, message => DisplayMessage(message, true))) return;
                 ConnectToDB();
 
                 if (GlobalDebug.boolIsGlobalDebug || (dBConnectionStatus_SRC.boolConnection && dBConnectionStatus_TRG.boolConnection))
@@ -492,6 +507,8 @@ namespace SPI_Data_Comp_Tool
 
                     if (saveFileDialogFile.BoolFileSaveStatus)
                     {
+                        if (!FormValidation.Check(this, () => FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath,
+                            btnSaveUserProfile, "profile output", ".json"), message => DisplayMessage(message, true))) return;
                         ProfileStore.WriteAtomic(saveFileDialogFile.Str_saveFileNameWithPath,
                             ProfileStore.SerializeForExport(candidate));
                         try
@@ -538,7 +555,8 @@ namespace SPI_Data_Comp_Tool
                         bool_Rb_Oracle = rb_SRC_oracle.Checked,
                         bool_Rb_SQL = rb_SRC_SQL.Checked,
                         bool_SQL_WA = cb_WindowAuthentication_SRC.Checked,
-                        int_Oracle_DefaultPort = tb_SRC_DefaultPort.Text == "" ? 1521 : Convert.ToInt32(tb_SRC_DefaultPort.Text),
+                        // SQL profiles do not use an Oracle port; preserve the compatible unset sentinel.
+                        int_Oracle_DefaultPort = rb_SRC_oracle.Checked ? FormValidation.Port(tb_SRC_DefaultPort, "Source Oracle port") : 0,
                         str_DataSource = tb_SRC_DataSource.Text,
                         str_DBName = tb_SRC_DBName.Text,
                         str_DBType = rb_SRC_oracle.Checked ? "Oracle" : "SQL",
@@ -557,7 +575,7 @@ namespace SPI_Data_Comp_Tool
                         bool_Rb_Oracle = rb_TRG_Oracle.Checked,
                         bool_Rb_SQL = rb_TRG_SQL.Checked,
                         bool_SQL_WA = cb_WindowAuthentication_TRG.Checked,
-                        int_Oracle_DefaultPort = tb_TRG_DefaultPort.Text == "" ? 1521 : Convert.ToInt32(tb_TRG_DefaultPort.Text),
+                        int_Oracle_DefaultPort = rb_TRG_Oracle.Checked ? FormValidation.Port(tb_TRG_DefaultPort, "Target Oracle port") : 0,
                         str_DataSource = tb_TRG_DataSource.Text,
                         str_DBName = tb_TRG_DBName.Text,
                         str_DBType = rb_TRG_Oracle.Checked ? "Oracle" : "SQL",
@@ -591,6 +609,13 @@ namespace SPI_Data_Comp_Tool
                 if (string.IsNullOrWhiteSpace(profilePath) || !File.Exists(profilePath))
                 {
                     DisplayMessage("Load or save a profile file before deleting a profile.", true);
+                    return;
+                }
+                // Deleting from a stale catalog must not overwrite edits another window/process saved.
+                List<DBC> currentFile = ReadProfileFile(profilePath);
+                if (!string.Equals(ProfileStore.SerializeForExport(currentFile), ProfileStore.SerializeForExport(Profile.ProfileList), StringComparison.Ordinal))
+                {
+                    DisplayMessage("The profile file changed after it was loaded. Reload it before deleting a profile.", true);
                     return;
                 }
                 if (MessageBox.Show(this,
@@ -632,6 +657,11 @@ namespace SPI_Data_Comp_Tool
 
         private static List<DBC> ReadProfileFile(string path)
         {
+            if (!string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Select a JSON profile file.");
+            var file = new FileInfo(path);
+            if (file.Length == 0 || file.Length > 16 * 1024 * 1024)
+                throw new InvalidDataException("Select a nonempty profile JSON file no larger than 16 MiB.");
             return ProfileStore.ParseJson(File.ReadAllText(path));
         }
 
@@ -639,6 +669,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, () => connection.ValidateInput(),
+                    message => DisplayMessage(message, true))) return;
                 boolToggleControlEnable(false);
                 ConnectToDB();
             }

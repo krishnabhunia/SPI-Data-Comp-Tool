@@ -51,6 +51,7 @@ namespace SPI_Data_Comp_Tool
             connection.ShowProfile = false;
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
+            connection.InputChanged += (sender, args) => { boolSRCConnection = false; dbSRCConnection = null; };
             UiTheme.Apply(this, btn_ImportExcel);
 
             try
@@ -151,12 +152,16 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateExtractionInputs()) return;
                 openFileDialogData = openFileDialogData.openFileDialog("Open File To Execute Scripts");
 
                 if (openFileDialogData.boolFileSelected)
                 {
                     Common_Data.DisplayMessage(rtb_Log, $"Input Script File : {openFileDialogData.strFileNameWithPath}");
-                    dtGenerateScript = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath).Tables[0];
+                    DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                    if (!FormValidation.Check(this, () => ValidateExtractionWorkbook(candidate),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                    dtGenerateScript = candidate.Tables[0];
                     dtResult.Rows.Clear();
 
                     Common_Data.DisplayMessage(rtb_Log, $"Processing started !!!");
@@ -195,6 +200,11 @@ namespace SPI_Data_Comp_Tool
 
                     if (saveFileDialogFile.BoolFileSaveStatus)
                     {
+                        if (!FormValidation.Check(this, () =>
+                        {
+                            FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath, btn_ImportExcel, "Output workbook", ".xlsx");
+                            FormValidation.DifferentFiles(saveFileDialogFile.Str_saveFileNameWithPath, openFileDialogData.strFileNameWithPath, btn_ImportExcel);
+                        }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                         if (WriteExcel.ExportToExcel(dtResult, "List of IDs", saveFileDialogFile.Str_saveFileNameWithPath))
                         {
                             Common_Data.DisplayMessage(rtb_Log, $"File saved as : {saveFileDialogFile.Str_saveFileNameWithPath}");
@@ -268,47 +278,29 @@ namespace SPI_Data_Comp_Tool
         }
         private bool ValidateMyControls()
         {
-            try
-            {
-                //if (rb_SRC_oracle.Checked)
-                //{
-                //    return (CheckLengthOfTextBox(tb_SRC_DefaultPort) && CheckLengthOfTextBox(tb_SRC_DataSource) && CheckLengthOfTextBox(tb_SRC_DBName) && CheckLengthOfTextBox(tb_SRC_UserName) && CheckLengthOfTextBox(tb_SRC_Password));
-                //}
-                //else if (rb_SRC_SQL.Checked)
-                //{
-                if (cb_WindowAuthentication_SRC.Checked)
-                {
-                    return (CheckLengthOfTextBox(tb_SRC_DataSource) && CheckLengthOfTextBox(tb_SRC_DBName));
-                }
-                else
-                {
-                    return (CheckLengthOfTextBox(tb_SRC_DataSource) && CheckLengthOfTextBox(tb_SRC_DBName) && CheckLengthOfTextBox(tb_SRC_UserName) && CheckLengthOfTextBox(tb_SRC_Password));
-                }
-                //}
+            return FormValidation.Check(this, () => connection.Source.ValidateInput(),
+                message => Common_Data.DisplayMessage(rtb_Log, message, true));
+        }
 
-                //if (rb_TRG_Oracle.Checked)
-                //{
-                //    return (CheckLengthOfTextBox(tb_TRG_DefaultPort) && CheckLengthOfTextBox(tb_TRG_DataSource) && CheckLengthOfTextBox(tb_TRG_DBName) && CheckLengthOfTextBox(tb_TRG_UserName) && CheckLengthOfTextBox(tb_TRG_Password));
-                //}
-                //else if (rb_TRG_SQL.Checked)
-                //{
-                //if (cb_WindowAuthentication_TRG.Checked)
-                //{
-                //    return (CheckLengthOfTextBox(tb_TRG_DataSource) && CheckLengthOfTextBox(tb_TRG_DBName));
-                //}
-                //else
-                //{
-                //    return (CheckLengthOfTextBox(tb_TRG_DataSource) && CheckLengthOfTextBox(tb_TRG_DBName) && CheckLengthOfTextBox(tb_TRG_UserName) && CheckLengthOfTextBox(tb_TRG_Password));
-                //}
-                //}
-
-                //return true;
-            }
-            catch (Exception ex)
+        internal bool ValidateExtractionInputs()
+        {
+            return FormValidation.Check(this, () =>
             {
-                Common_Data.DisplayError(rtb_Log, ex);
-                return false;
-            }
+                connection.Source.ValidateInput();
+                FormValidation.Require(boolSRCConnection && dbSRCConnection != null && dbSRCConnection.boolConnection,
+                    btn_TestDBConnection, "Test the current database connection before extracting foreign keys.");
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true));
+        }
+
+        internal void ValidateExtractionWorkbook(DataSet candidate)
+        {
+            FormValidation.Require(candidate != null && candidate.Tables.Count > 0, btn_ImportExcel, "Select a workbook containing an extraction list.");
+            FormValidation.Table(candidate.Tables[0], btn_ImportExcel, "Extraction list");
+            FormValidation.Columns(candidate.Tables[0], new[] { "table_name_fk", "table_fk_primary_key" }, btn_ImportExcel, "Extraction list");
+            foreach (DataRow row in candidate.Tables[0].Rows)
+                foreach (string column in new[] { "table_name_fk", "table_fk_primary_key" })
+                    FormValidation.Require(!string.IsNullOrWhiteSpace(Convert.ToString(row[column])), btn_ImportExcel,
+                        "Every extraction row must include a table name and primary-key columns.");
         }
 
         private Color GetStatusColor(bool boolStatus)
@@ -347,13 +339,13 @@ namespace SPI_Data_Comp_Tool
                 //{
                 //    Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Oracle Source...");
 
-                //    dbConnection = common_Data.DBConnectionTest(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBNameSRC, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                //    dbConnection = common_Data.DBConnectionTest(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBNameSRC, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
 
                 //}
                 //else if (rb_SRC_SQL.Checked)
                 //{
                 Common_Data.DisplayMessage(rtb_Log, "Trying to connect to SQL Source...");
-                dbConnection = common_Data.DBConnectionTest("sql", tb_SRC_DataSource.Text.Trim(), str_DBNameSRC, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), "1521");
+                dbConnection = common_Data.DBConnectionTest("sql", tb_SRC_DataSource.Text.Trim(), str_DBNameSRC, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, "1521");
                 //}
 
                 dbSRCConnection = dbConnection;
@@ -364,12 +356,12 @@ namespace SPI_Data_Comp_Tool
                 //{
                 //    Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Oracle Target...");
 
-                //    dbConnection = common_Data.DBConnectionTest(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBNameTRG, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                //    dbConnection = common_Data.DBConnectionTest(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBNameTRG, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                 //}
                 //else if (rb_TRG_SQL.Checked)
                 //{
                 //    Common_Data.DisplayMessage(rtb_Log, "Trying to connect to SQL Target...");
-                //    dbConnection = common_Data.DBConnectionTest(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBNameTRG, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                //    dbConnection = common_Data.DBConnectionTest(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBNameTRG, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                 //}
 
                 //dbTRGConnection = dbConnection;

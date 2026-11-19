@@ -32,6 +32,7 @@ namespace SPI_Data_Comp_Tool
         private DataTable dt_remarks, dt_Merge;// = new DataTable();
 
         private DataSet dataSnapshot;
+        private readonly HashSet<string> arrangedPairs = new HashSet<string>(StringComparer.Ordinal);
 
         public SPI_Analysis_View(DataSet ds) : this()
         {
@@ -81,16 +82,60 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private static void ValidateInput(DataSet dataSet)
+        internal static void ValidateInput(DataSet dataSet)
         {
             if (dataSet == null || dataSet.Tables.Count < 2)
                 throw new ArgumentException("Load both source and target data before showing results.");
             string[] required = { "SPEC_FORM_CNUM", "COLUMN_NAME", "HEADER_TEXT" };
             for (int side = 0; side < 2; side++)
+            {
                 foreach (string column in required)
                     if (!dataSet.Tables[side].Columns.Contains(column))
                         throw new ArgumentException((side == 0 ? "Source" : "Target") +
                             " data is missing the required column " + column + ".");
+                foreach (DataRow row in dataSet.Tables[side].Rows)
+                {
+                    int formNumber;
+                    if (!TryGetFormNumber(row["SPEC_FORM_CNUM"], out formNumber))
+                        throw new ArgumentException("Source and target SPEC_FORM_CNUM values must be non-null 32-bit whole numbers.");
+                    if (string.IsNullOrWhiteSpace(Convert.ToString(row["COLUMN_NAME"])))
+                        throw new ArgumentException("Source and target COLUMN_NAME values cannot be blank.");
+                }
+            }
+        }
+
+        internal static bool TryGetFormNumber(object value, out int formNumber)
+        {
+            formNumber = 0;
+            if (value == null || value == DBNull.Value) return false;
+            if (value is string)
+                return int.TryParse((string)value, System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out formNumber);
+            switch (Type.GetTypeCode(value.GetType()))
+            {
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.Int16:
+                case TypeCode.UInt16:
+                case TypeCode.Int32:
+                case TypeCode.UInt32:
+                case TypeCode.Int64:
+                case TypeCode.UInt64:
+                case TypeCode.Decimal:
+                    decimal number = Convert.ToDecimal(value, System.Globalization.CultureInfo.InvariantCulture);
+                    if (number != decimal.Truncate(number) || number < int.MinValue || number > int.MaxValue) return false;
+                    formNumber = (int)number;
+                    return true;
+                case TypeCode.Single:
+                case TypeCode.Double:
+                    double floating = Convert.ToDouble(value, System.Globalization.CultureInfo.InvariantCulture);
+                    if (double.IsNaN(floating) || double.IsInfinity(floating) || floating != Math.Truncate(floating)
+                        || floating < int.MinValue || floating > int.MaxValue) return false;
+                    formNumber = (int)floating;
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private void ConfigureResponsiveLayout()
@@ -162,6 +207,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateExport()) return;
                 string excelFileNameSaved = "Output.xlsx";
                 SaveFileDialog saveFileDialogExcel = new SaveFileDialog
                 {
@@ -169,6 +215,10 @@ namespace SPI_Data_Comp_Tool
                     Filter = "xlsx files (*.xlsx)|*.xlsx",
                     Title = "Save As Excel File",
                     FileName = excelFileNameSaved,
+                    DefaultExt = "xlsx",
+                    AddExtension = true,
+                    CheckPathExists = true,
+                    OverwritePrompt = true,
                 };
 
                 //saveFileDialogExcel.CheckFileExists = true;
@@ -178,6 +228,8 @@ namespace SPI_Data_Comp_Tool
 
                 if(saveFileDialogExcel.ShowDialog() == DialogResult.OK)
                 {
+                    if (!FormValidation.Check(this, () => FormValidation.OutputFile(saveFileDialogExcel.FileName,
+                        btn_SaveInExcel, "analysis output", ".xlsx"), message => FormHelpers.ShowText(lbl_Error, message))) return;
                     #region epplus code assembly
 
                     ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
@@ -186,11 +238,13 @@ namespace SPI_Data_Comp_Tool
                     {
                         ExcelWorksheet worksheet = pck.Workbook.Worksheets.Add("SPEC_Output");
                         worksheet.Cells["A1"].LoadFromDataTable(dt_source_arranged_all, true);
-                        worksheet.Cells["F1"].LoadFromDataTable(dt_target_arranged_all, true);
-                        worksheet.Cells["K1"].LoadFromDataTable(dt_remarks_all, true);
+                        worksheet.Cells[1, dt_source_arranged_all.Columns.Count + 1].LoadFromDataTable(dt_target_arranged_all, true);
+                        worksheet.Cells[1, dt_source_arranged_all.Columns.Count + dt_target_arranged_all.Columns.Count + 1]
+                            .LoadFromDataTable(dt_remarks_all, true);
 
                         worksheet.Cells.AutoFitColumns();
-                        pck.SaveAs(new System.IO.FileInfo(saveFileDialogExcel.FileName));
+                        FormValidation.WriteAtomically(saveFileDialogExcel.FileName,
+                            temporary => pck.SaveAs(new System.IO.FileInfo(temporary)));
                         lbl_Status.Text = "File Saved Successfully : " + saveFileDialogExcel.FileName;
                         Process.Start(saveFileDialogExcel.FileName);
                         //pck.SaveAs(new System.IO.FileInfo(excelFileNameSaved));
@@ -206,8 +260,24 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Error.Text = ex.Message.ToString();
+                FormHelpers.ShowError(lbl_Error, ex);
             }
+        }
+
+        internal bool ValidateExport()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                FormValidation.Table(dt_source_arranged_all, btn_SaveInExcel, "arranged analysis results");
+                FormValidation.Table(dt_target_arranged_all, btn_SaveInExcel, "arranged target results");
+                FormValidation.Table(dt_remarks_all, btn_SaveInExcel, "analysis remarks");
+                FormValidation.ExcelTable(dt_source_arranged_all, btn_SaveInExcel, "analysis output");
+                FormValidation.Require(dt_source_arranged_all.Rows.Count == dt_target_arranged_all.Rows.Count
+                    && dt_source_arranged_all.Rows.Count == dt_remarks_all.Rows.Count, btn_SaveInExcel,
+                    "Analysis rows and remarks do not align. Reload and arrange the results again.");
+                FormValidation.Require(dt_source_arranged_all.Columns.Count + dt_target_arranged_all.Columns.Count
+                    + dt_remarks_all.Columns.Count <= 16384, btn_SaveInExcel, "The combined analysis exceeds Excel's column limit.");
+            }, message => FormHelpers.ShowText(lbl_Error, message));
         }
 
         private void dgv_Remarks_Scroll(object sender, ScrollEventArgs e)
@@ -242,7 +312,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 dgv1.ClearSelection();
-                if(dgv1.Rows.Count > rowIndex && boolFormLoad)
+                if(rowIndex >= 0 && dgv1.Rows.Count > rowIndex && boolFormLoad)
                 {
                     dgv1.Rows[rowIndex].Selected = true;
                 }
@@ -564,9 +634,10 @@ namespace SPI_Data_Comp_Tool
                 }
                 
             }
-            catch (Exception ex)
+            catch
             {
-                lbl_Error.Text = ex.Message.ToString();
+                // The caller reports failure; never turn an incomplete arrangement into success.
+                throw;
             }
         }
 
@@ -575,7 +646,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 int index_Scroll = dgv_first.FirstDisplayedScrollingRowIndex;
-                if (dgv_second.Rows.Count > 0 & dgv_first.Rows.Count > 0 & dgv_second.Rows.Count > index_Scroll)
+                if (index_Scroll >= 0 && dgv_second.Rows.Count > 0 && dgv_first.Rows.Count > 0 && dgv_second.Rows.Count > index_Scroll)
                 {
                     dgv_second.FirstDisplayedScrollingRowIndex = index_Scroll;
                 }
@@ -640,7 +711,9 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateArrangement()) return;
                 LoadTargetAndSourceArranged(cb_Target.Text, dt_source_spec, dt_target_spec);
+                arrangedPairs.Add(SelectedPair());
                 dgv_Source.DataSource = dt_source_arranged;
                 dgv_Target.DataSource = dt_target_arranged;
                 dgv_Remarks.DataSource = dt_remarks;
@@ -654,8 +727,27 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                FormHelpers.ShowError(lbl_Status, ex);
             }
+        }
+
+        internal bool ValidateArrangement()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                FormValidation.Table(dt_source_spec, cb_Source, "selected source specification");
+                FormValidation.Table(dt_target_spec, cb_Target, "selected target specification");
+                FormValidation.Require(!arrangedPairs.Contains(SelectedPair()), btn_Arrange_target,
+                    "This source/target specification pair is already arranged. Select a different pair or reload the results.");
+            }, message => FormHelpers.ShowText(lbl_Error, message));
+        }
+
+        private string SelectedPair()
+        {
+            return Convert.ToInt32(dt_source_spec.Rows[0]["SPEC_FORM_CNUM"], System.Globalization.CultureInfo.InvariantCulture)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture) + ":"
+                + Convert.ToInt32(dt_target_spec.Rows[0]["SPEC_FORM_CNUM"], System.Globalization.CultureInfo.InvariantCulture)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
     }
 }

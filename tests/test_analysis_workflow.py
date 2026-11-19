@@ -42,7 +42,7 @@ class AnalysisWorkflow(unittest.TestCase):
         self.assertIn("dataSet.Tables.Count < 2", view)
         self.assertIn("side < 2", view)
         for column in ("SPEC_FORM_CNUM", "COLUMN_NAME", "HEADER_TEXT"):
-            self.assertIn('"' + column + '"', view.split("private static void ValidateInput", 1)[1])
+            self.assertIn('"' + column + '"', view.split("internal static void ValidateInput", 1)[1])
         self.assertIn("dataSnapshot.Dispose()", source("SPI_Analysis_View.Designer.cs"))
 
     def test_no_database_load_on_window_startup(self) -> None:

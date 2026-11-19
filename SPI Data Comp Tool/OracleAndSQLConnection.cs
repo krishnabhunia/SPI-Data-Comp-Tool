@@ -20,14 +20,12 @@ namespace SPI_Data_Comp_Tool
         private string strSourceName;
         private string strSQLConnection;
 
-        private OracleDataAdapter oracleDA;
-        private SqlDataAdapter sqlDA;
-
         private DataTable dt_oracle;
         private DataTable dt_sql;
         private bool boolStatus;
         private Exception myException;
         private DataSet ds;
+        private bool loading;
 
         public bool HasLoadedData { get { return boolStatus && ds.Tables.Count == 2; } }
         public event EventHandler DataLoadStateChanged;
@@ -44,6 +42,97 @@ namespace SPI_Data_Comp_Tool
             ds = new DataSet();
 
             UseQueryForCheckBoxFunction();
+            foreach (TextBox field in new[] { tb_oracle_dsource, tb_oracle_dbName, tb_oracle_username, tb_oracle_pwd,
+                tb_sql_dsource, tb_sql_dbName, tb_sql_username, tb_sql_pwd, tb_Source_tableName, tb_destination_tableName, tb_querybox })
+                field.TextChanged += InvalidateLoadedData;
+            rb_SRC_oracle.CheckedChanged += InvalidateLoadedData;
+            rb_SRC_SQL.CheckedChanged += InvalidateLoadedData;
+            cb_query.CheckedChanged += InvalidateLoadedData;
+            Disposed += (sender, e) => ds?.Dispose();
+        }
+
+        private void InvalidateLoadedData(object sender, EventArgs e)
+        {
+            boolStatus = false;
+            lbl_Oracle_SQL_Connection.Text = "Connection or query changed. Reload source and target data.";
+            DataLoadStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        internal void ValidateInput()
+        {
+            FormValidation.Require(!loading, btn_Connect_Reference_ID, "Wait for the current load to finish.");
+            FormValidation.Require(rb_SRC_oracle.Checked != rb_SRC_SQL.Checked, rb_SRC_oracle, "Select a source database platform.");
+            foreach (TextBox field in new[] { tb_oracle_dsource, tb_oracle_dbName, tb_oracle_username,
+                tb_sql_dsource, tb_sql_dbName, tb_sql_username })
+            {
+                FormValidation.Required(field, field == tb_oracle_dsource || field == tb_sql_dsource ? "database server" :
+                    field == tb_oracle_dbName || field == tb_sql_dbName ? "database or service name" : "database username");
+                FormValidation.Require(!ConnectionSide.ContainsControlCharacters(field.Text), field,
+                    "Connection names cannot contain line breaks or control characters.");
+            }
+            FormValidation.Require(tb_oracle_pwd.Text.Length > 0, tb_oracle_pwd, "Enter the source database password.");
+            FormValidation.Require(tb_sql_pwd.Text.Length > 0, tb_sql_pwd, "Enter the target database password.");
+            if (rb_SRC_oracle.Checked)
+            {
+                FormValidation.Require(tb_oracle_dsource.Text.IndexOfAny(new[] { '(', ')', '=' }) < 0, tb_oracle_dsource,
+                    "Enter an Oracle host name or address, not a connection descriptor.");
+                FormValidation.Require(tb_oracle_dbName.Text.IndexOfAny(new[] { '(', ')', '=' }) < 0, tb_oracle_dbName,
+                    "Enter an Oracle service name, not a connection descriptor.");
+            }
+            if (cb_query.Checked) FormValidation.Required(tb_querybox, "the query to run on both databases");
+            else
+            {
+                ValidateTableField(tb_Source_tableName, rb_SRC_oracle.Checked);
+                ValidateTableField(tb_destination_tableName, false);
+            }
+        }
+
+        private static void ValidateTableField(TextBox field, bool oracle)
+        {
+            FormValidation.Required(field, "table name");
+            try { ValidateTableName(field.Text, oracle); }
+            catch (ArgumentException) { FormValidation.Reject(field, "Enter a valid qualified table name. Use query mode for expressions or database links."); }
+        }
+
+        /// <summary>Validates identifiers, not arbitrary SQL. Quoted names keep punctuation as literal name text.</summary>
+        internal static string ValidateTableName(string value, bool oracle)
+        {
+            string text = (value ?? string.Empty).Trim();
+            int index = 0;
+            int parts = 0;
+            while (index < text.Length)
+            {
+                while (index < text.Length && char.IsWhiteSpace(text[index])) index++;
+                if (index == text.Length) throw new ArgumentException("A table name cannot have an empty part.");
+                int characters = 0;
+                if (text[index] == '"' || (!oracle && text[index] == '['))
+                {
+                    char close = text[index++] == '[' ? ']' : '"';
+                    bool closed = false;
+                    while (index < text.Length)
+                    {
+                        char current = text[index++];
+                        if (char.IsControl(current)) throw new ArgumentException("Invalid table name character.");
+                        if (current != close) { characters++; continue; }
+                        if (index < text.Length && text[index] == close) { index++; characters++; continue; }
+                        closed = true;
+                        break;
+                    }
+                    if (!closed) throw new ArgumentException("The quoted table name is incomplete.");
+                }
+                else
+                {
+                    if (!(char.IsLetter(text[index]) || text[index] == '_' || (!oracle && text[index] == '#')))
+                        throw new ArgumentException("Invalid first table-name character.");
+                    while (index < text.Length && (char.IsLetterOrDigit(text[index]) || text[index] == '_' || text[index] == '$' || text[index] == '#'))
+                    { index++; characters++; }
+                }
+                if (characters == 0 || ++parts > (oracle ? 3 : 4)) throw new ArgumentException("Invalid qualified table name.");
+                while (index < text.Length && char.IsWhiteSpace(text[index])) index++;
+                if (index == text.Length) return text;
+                if (text[index++] != '.' || index == text.Length) throw new ArgumentException("Unexpected text after a table name.");
+            }
+            throw new ArgumentException("Enter a table name.");
         }
 
         public DataTable DataTableLoad()
@@ -73,23 +162,17 @@ namespace SPI_Data_Comp_Tool
 
                 if (rb_SRC_oracle.Checked)
                 {
-                    strOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_oracle_dsource.Text + " )(PORT = 1521))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_oracle_dbName.Text + ")));"
-                        + "User Id=" + tb_oracle_username.Text + ";Password=" + tb_oracle_pwd.Text + ";";
-
-                    oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
-                    oracleDA.Fill(dt_oracle);
+                    strOracleConnection = ConnectionStrings.Build("Oracle", tb_oracle_dsource.Text.Trim(), tb_oracle_dbName.Text.Trim(),
+                        false, tb_oracle_username.Text.Trim(), tb_oracle_pwd.Text, "1521");
+                    using (var adapter = new OracleDataAdapter(strQuery, strOracleConnection)) adapter.Fill(dt_oracle);
                     strSourceName = "Source Oracle 11G";
                 }
 
                 if (rb_SRC_SQL.Checked)
                 {
-                    strSQLConnection = "Data Source = " + tb_oracle_dsource.Text + ";Initial Catalog = " + tb_oracle_dbName.Text
-                    + "; User ID = " + tb_oracle_username.Text + "; " + "Password = " + tb_oracle_pwd.Text + ";";// providerName=System.Data.SqlClient";
-
-                    sqlDA = new SqlDataAdapter(strQuery, strSQLConnection);
-                    sqlDA.Fill(dt_oracle);
+                    strSQLConnection = ConnectionStrings.Build("SQL", tb_oracle_dsource.Text.Trim(), tb_oracle_dbName.Text.Trim(),
+                        false, tb_oracle_username.Text.Trim(), tb_oracle_pwd.Text, null);
+                    using (var adapter = new SqlDataAdapter(strQuery, strSQLConnection)) adapter.Fill(dt_oracle);
                     strSourceName = "Source SQL";
                 }
 
@@ -121,6 +204,10 @@ namespace SPI_Data_Comp_Tool
 
             rb_SRC_oracle.Enabled = boolEnabledCase;
             rb_SRC_SQL.Enabled = boolEnabledCase;
+            cb_query.Enabled = boolEnabledCase;
+            tb_querybox.Enabled = boolEnabledCase && cb_query.Checked;
+            tb_Source_tableName.Enabled = boolEnabledCase && !cb_query.Checked;
+            tb_destination_tableName.Enabled = boolEnabledCase && !cb_query.Checked;
 
 
             btn_Connect_Reference_ID.Enabled = boolEnabledCase;
@@ -132,6 +219,8 @@ namespace SPI_Data_Comp_Tool
 
         public void Load_DB_Oracle_SQL()
         {
+            if (!FormValidation.Check(this, ValidateInput, message => lbl_Oracle_SQL_Connection.Text = message)) return;
+            loading = true;
             try
             {
                 boolStatus = false;
@@ -152,35 +241,43 @@ namespace SPI_Data_Comp_Tool
 
                 if (boolStatus)
                 {
-                    ds.Tables.Clear();
-                    ds.Tables.Add(dt_oracle);
-                    ds.Tables.Add(dt_sql);
-                    foreach(DataTable dt_ in ds.Tables)
+                    var candidate = new DataSet();
+                    candidate.Tables.Add(dt_oracle);
+                    candidate.Tables.Add(dt_sql);
+                    try
                     {
-                        foreach(DataColumn dc_ in dt_.Columns)
+                        foreach(DataTable dt_ in candidate.Tables)
                         {
-                            foreach(DataRow dr_ in dt_.Rows)
+                            foreach(DataColumn dc_ in dt_.Columns)
                             {
-                                dr_[dc_] = dr_[dc_].ToString().Trim();
+                                foreach(DataRow dr_ in dt_.Rows)
+                                {
+                                    if (dc_.DataType == typeof(string) && dr_[dc_] != DBNull.Value)
+                                        dr_[dc_] = dr_[dc_].ToString().Trim();
+                                }
                             }
                         }
+                        DataSet previous = ds;
+                        ds = candidate;
+                        previous.Dispose();
                     }
-
+                    catch { candidate.Dispose(); throw; }
                     lbl_Oracle_SQL_Connection.Text = "All data table loaded";
                 }
                 else
                 {
-                    lbl_Oracle_SQL_Connection.Text = "There is some error : " + myException.Message.ToString();
+                    lbl_Oracle_SQL_Connection.Text = Common_Data.RedactConnectionCredentials("Data was not loaded: " + myException.Message);
                 }
 
             }
             catch (Exception ex)
             {
-                lbl_Oracle_SQL_Connection.Text = ex.Message.ToString();
+                lbl_Oracle_SQL_Connection.Text = Common_Data.RedactConnectionCredentials(ex.Message);
                 boolStatus = false;
             }
             finally
             {
+                loading = false;
                 controlEnableToggle(true);
                 DataLoadStateChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -193,7 +290,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Oracle_SQL_Connection.Text = ex.Message.ToString();
+                lbl_Oracle_SQL_Connection.Text = Common_Data.RedactConnectionCredentials(ex.Message);
                 boolStatus = false;
             }
         }
@@ -209,12 +306,11 @@ namespace SPI_Data_Comp_Tool
                     strQuery = tb_querybox.Text;
                 }
 
-                strSQLConnection = "Data Source = " + tb_sql_dsource.Text + ";Initial Catalog = " + tb_sql_dbName.Text
-                    + "; User ID = " + tb_sql_username.Text + "; " + "Password = " + tb_sql_pwd.Text + ";";
+                strSQLConnection = ConnectionStrings.Build("SQL", tb_sql_dsource.Text.Trim(), tb_sql_dbName.Text.Trim(),
+                    false, tb_sql_username.Text.Trim(), tb_sql_pwd.Text, null);
 
                 dt_sql = new DataTable();
-                sqlDA = new SqlDataAdapter(strQuery, strSQLConnection);
-                sqlDA.Fill(dt_sql);
+                using (var adapter = new SqlDataAdapter(strQuery, strSQLConnection)) adapter.Fill(dt_sql);
                 dt_sql.TableName = "Target SQL Table";
 
                 boolStatus = true;

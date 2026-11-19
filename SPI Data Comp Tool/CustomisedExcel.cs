@@ -36,13 +36,18 @@ namespace SPI_Data_Comp_Tool
             {
                 DisplayMessage("Pls select a excel file to import");
                 openFileDialogData = openFileDialogData.openFileDialog("Select Rule File");
-                str_CustomisedExcelName = openFileDialogData.strFileNameWithPath;
-
                 if (openFileDialogData.boolFileSelected)
                 {
-                    dsCustomisedExcel.Clear();
-                    dsCustomisedExcel.Tables.Clear();
-                    dsCustomisedExcel = common_Data.LoadExcelFromDataReader(str_CustomisedExcelName, "Rules for comparison");
+                    string path = null;
+                    if (!FormValidation.Check(this, () => path = FormValidation.ReadableFile(openFileDialogData.strFileNameWithPath,
+                        btn_ReadExcel, "Workbook", ".xlsx", ".xlsm"), DisplayMessage)) return;
+                    DataSet candidate = common_Data.LoadExcelFromDataReader(path, "Rules for comparison");
+                    if (!FormValidation.Check(this, () => ExcelFileReadCustomControl.ValidateWorkbook(candidate, btn_ReadExcel), DisplayMessage))
+                    { candidate?.Dispose(); return; }
+                    DataSet previous = dsCustomisedExcel;
+                    dsCustomisedExcel = candidate;
+                    previous?.Dispose();
+                    str_CustomisedExcelName = path;
                     FillCheckBoxList(dsCustomisedExcel);
                     DisplayMessage(string.Format("Rule file {0} imported successfully", str_CustomisedExcelName));
                 }
@@ -65,13 +70,11 @@ namespace SPI_Data_Comp_Tool
                 checkedListBox1.Items.Clear();
                 if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
                 {
-                    foreach (DataTable dt in ds.Tables)
-                    {
-                        foreach (DataColumn dc in dt.Columns)
+                    // This workflow exports the first worksheet; do not offer columns from other sheets.
+                        foreach (DataColumn dc in ds.Tables[0].Columns)
                         {
                             checkedListBox1.Items.Add(dc.ColumnName.ToString());
                         }
-                    }
 
                 }
 
@@ -111,6 +114,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, ValidateExportInput, DisplayMessage)) return;
                 DataSet ds = dsCustomisedExcel.Copy();
 
                 foreach (DataTable dataTable in ds.Tables.Cast<DataTable>().ToArray())
@@ -136,6 +140,12 @@ namespace SPI_Data_Comp_Tool
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
+                    if (!FormValidation.Check(this, () =>
+                    {
+                        string output = FormValidation.OutputFile(saveFileDialog.FileName, btn_CreateExcel, "Output workbook", ".xlsx");
+                        FormValidation.Require(!string.Equals(output, System.IO.Path.GetFullPath(str_CustomisedExcelName),
+                            StringComparison.OrdinalIgnoreCase), btn_CreateExcel, "Choose an output file different from the input workbook.");
+                    }, DisplayMessage)) return;
                     #region epplus code assembly
 
                     ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
@@ -145,7 +155,7 @@ namespace SPI_Data_Comp_Tool
                         worksheet.Cells["A1"].LoadFromDataTable(ds.Tables[0], true);
 
                         worksheet.Cells.AutoFitColumns(22,50);
-                        pck.SaveAs(new System.IO.FileInfo(saveFileDialog.FileName));
+                        FormValidation.WriteAtomically(saveFileDialog.FileName, path => pck.SaveAs(new System.IO.FileInfo(path)));
                         DisplayMessage("File Saved Successfully !!! Path : " + saveFileDialog.FileName);
                     }
                     #endregion
@@ -164,6 +174,13 @@ namespace SPI_Data_Comp_Tool
             {
                 DisplayError(ex);
             }
+        }
+
+        internal void ValidateExportInput()
+        {
+            ExcelFileReadCustomControl.ValidateWorkbook(dsCustomisedExcel, btn_ReadExcel);
+            FormValidation.Require(checkedListBox1.CheckedItems.Count > 0, checkedListBox1, "Select at least one column to export.");
+            FormValidation.Columns(dsCustomisedExcel.Tables[0], checkedListBox1.CheckedItems.Cast<string>(), checkedListBox1, "Export columns");
         }
 
         private void cb_SelectAll_CheckedChanged(object sender, EventArgs e)
