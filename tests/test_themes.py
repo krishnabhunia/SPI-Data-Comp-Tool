@@ -93,6 +93,25 @@ class Themes(unittest.TestCase):
         self.assertEqual(len(re.findall(r"rtb_Log\.SelectionColor = (?!UiTheme\.Readable\()", log)), 0)
         self.assertGreaterEqual(log.count("rtb_Log.SelectionColor = UiTheme.Readable("), 4)
 
+    def test_no_window_writes_log_colours_past_the_theme(self) -> None:
+        # a logger of its own (User profiles has one) must use the same mapping as the shared logger
+        for file in sorted(PROJ.glob("*.cs")):
+            if file.name.endswith(".Designer.cs") or file.name == "UiTheme.cs":
+                continue
+            for number, line in enumerate(file.read_text(encoding="utf-8-sig").splitlines(), 1):
+                if line.strip().startswith("//") or "SelectionColor =" not in line:
+                    continue
+                with self.subTest(file=file.name, line=number):
+                    self.assertIn("SelectionColor = UiTheme.Readable(", line)
+
+    def test_every_open_settings_window_shows_the_theme_in_use(self) -> None:
+        settings = code("User_Settings.cs")
+        self.assertIn("UiTheme.Changed += Theme_Changed;", settings)
+        self.assertIn("Disposed += (sender, e) => UiTheme.Changed -= Theme_Changed;", settings)   # no closed window is kept alive
+        sync = settings.split("private void Theme_Changed", 1)[1].split("private void cb_Theme_SelectedIndexChanged", 1)[0]
+        self.assertIn("cb_Theme.SelectedItem = UiTheme.Current;", sync)
+        self.assertLess(sync.index("initializing = true;"), sync.index("cb_Theme.SelectedItem = UiTheme.Current;"))
+
     def test_ci_checks_every_window_in_every_theme(self) -> None:
         workflow = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
         self.assertIn("-ArgumentList '--check-themes'", workflow)

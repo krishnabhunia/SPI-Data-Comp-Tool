@@ -64,6 +64,7 @@ namespace SPI_Data_Comp_Tool
                     }
                 }
                 check("the theme switches while windows are open", LiveSwitch);
+                check("two Settings windows show the same theme", SettingsPickers);
             }
             finally
             {
@@ -188,6 +189,24 @@ namespace SPI_Data_Comp_Tool
                 tool.Close();
                 main.Close();
             }
+        }
+
+        private static void SettingsPickers()
+        {
+            UiTheme.Use(UiTheme.Ocean, false);
+            using (var first = new User_Settings())
+            using (var second = new User_Settings(true))
+            {
+                var firstPicker = (ComboBox)first.Controls.Find("cb_Theme", true).Single();
+                var secondPicker = (ComboBox)second.Controls.Find("cb_Theme", true).Single();
+                secondPicker.SelectedItem = UiTheme.Midnight;      // the user picks Midnight in the second window
+                Require(UiTheme.Current == UiTheme.Midnight, "Picking a theme in Settings did not apply it.");
+                Require(firstPicker.SelectedItem == UiTheme.Midnight, "The other Settings window still shows the old theme.");
+                firstPicker.SelectedItem = UiTheme.Ocean;          // and can go back from the first one
+                Require(UiTheme.Current == UiTheme.Ocean && secondPicker.SelectedItem == UiTheme.Ocean,
+                    "Going back to Ocean from the other Settings window did not work.");
+            }
+            UiTheme.Use(UiTheme.Berry, false);   // a closed Settings window no longer listens
         }
 
         private static void Pump()

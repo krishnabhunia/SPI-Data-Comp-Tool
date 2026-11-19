@@ -139,11 +139,11 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 rtb_Log.SelectionStart = rtb_Log.TextLength;
-                rtb_Log.SelectionColor = color ?? Color.Black;
+                rtb_Log.SelectionColor = UiTheme.Readable(color ?? Color.Black);   // readable in every colour theme
 
                 if (boolError)
                 {
-                    rtb_Log.SelectionColor = Color.Red;
+                    rtb_Log.SelectionColor = UiTheme.Readable(Color.Red);
                 }
 
                 if (overwriteText > 0)
@@ -152,7 +152,7 @@ namespace SPI_Data_Comp_Tool
                     if (charcf0 != -1)
                     {
                         var last = rtb_Log.Rtf.LastIndexOf("Processing", charcf0, 20);
-                        rtb_Log.SelectionColor = Color.Blue;
+                        rtb_Log.SelectionColor = UiTheme.Readable(Color.Blue);
                         if (last > 0)
                         {
                             rtb_Log.Rtf = rtb_Log.Rtf.Remove(last, charcf0 - last);
