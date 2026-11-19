@@ -6,7 +6,7 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 ## Verified source map
 | Source | Responsibility |
 |---|---|
-| `SPI Data Comp Tool/Program.cs` | Startup; chooses main or debug-specific forms |
+| `SPI Data Comp Tool/Program.cs` | Dispatches the isolated update helper, CI checks, or normal application startup |
 | `SPI Data Comp Tool/MainForm.cs` | Main window (menus, About, exit) |
 | `SPI Data Comp Tool/DB Comparison.cs` | Database-comparison UI |
 | `SPI Data Comp Tool/Excel_Excel_Comparison.cs` | Excel comparison |
@@ -18,6 +18,9 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 | `.github/workflows/build.yml` | CI: docs check, secrets and branding guard, Windows build, portable exe + 64-bit installer in one zip artifact |
 | `windows/installer/SPI_Data_Comp_Tool.iss` | Inno Setup script for the 64-bit installer |
 | `tools/make_app_images.py` | Draws the app icon and pictures (original artwork) |
+| `SPI Data Comp Tool/UpdatesControl.cs` | The Updates page inside Settings; Help reuses that same window |
+| `SPI Data Comp Tool/UpdateFeedClient.cs`, `UpdateVersion.cs` | Published release discovery, three-part version ordering and verified downloads |
+| `SPI Data Comp Tool/UpdateInstaller.cs`, `UpdateApplyWorker.cs`, `UpdatePreferences.cs` | Installed/portable update handoff, bounded file replacement and whitelisted preference preservation |
 
 ## Architecture
 ~~~mermaid
@@ -83,7 +86,7 @@ flowchart TD
 
 | Previous UI | Current route | Preserved behaviour |
 |---|---|---|
-| Settings and a separate Rules import form | Settings: General / Comparison rules tabs | All five existing Import Rules buttons open the Rules tab; Close/Escape returns to the comparison. Invalid/cancelled imports retain existing rules. |
+| Settings and a separate Rules import form | Settings: General / Comparison rules / Updates tabs | All five existing Import Rules buttons open the Rules tab; Close/Escape returns to the comparison. Invalid/cancelled imports retain existing rules. Help's update shortcut activates the same Settings window. |
 | Analysis setup and a separate results window | Analysis: Connection setup / Results tabs | Source and target filters, Arrange, remarks, synchronized grids and Excel export remain. Results use an independent snapshot. Replacing results requires confirmation. |
 | Fake profile list and nonfunctional Save/Delete in Analysis | Removed | No working functionality was attached; the real User Profile window remains. |
 | Repeated main-menu/tool clicks opening duplicate windows | Activate the existing workflow window | Minimized windows restore. Hold Ctrl when opening a tool for an explicit parallel session; Settings, User Profile and configuration remain single-instance per main window. Duplicacy Check and its Configuration mode have separate keys. |
@@ -93,16 +96,22 @@ There are now **21 Form classes** (23 on the base branch after #44). The retired
 Profile edits build independent candidate lists. Cancelling a save does not change active profiles; JSON is written to a same-directory temporary file and atomically replaced before publishing a changed list. Deletion requires confirmation. If the file is saved but its path cannot be remembered, the UI explicitly reports the partial outcome and retains the active catalog. Shared pickers resolve names rather than stale list positions, and typing a new name preserves entered fields.
 
 ## Updates in the app
-- **Check.** Every start, the main window asks GitHub for this repository's releases in the background (`UpdateService.FindUpdate`). Offline or a GitHub error stays silent. Build checks (`--open-form`, `--check-…`) never go online.
-- **Channels.** *Stable* (default): normal releases only. *Beta* (optional): also pre-releases built from open pull requests. Chosen in **Settings › Updates**; the status line of the main window shows the version and the channel.
-- **What is offered.** The highest version above the running one. A beta ranks below the normal version with the same number; a beta published before the newest normal release is not offered (it was built on older code); a release without its `.zip.sha256` file is not offered. Never a downgrade.
-- **Where it shows.** An **Update to v…** entry appears at the right end of the menu bar only when an update exists. It opens the Update window: release notes, **Update now**, **Install when I close the app**, **Later**.
-- **Download and check.** An installed copy (it has `unins000.exe` beside it) downloads `…_x64_setup.exe`; a portable copy downloads the zip. The file's SHA-256 must equal the one in the release's `.zip.sha256`, otherwise it is deleted and nothing is installed.
-- **Install.** Installed copy: the installer runs silently (Windows asks for permission) and starts the app again (`/RELAUNCH=1`). Portable copy: the zip's `portable/` files are put beside the running exe - the new exe has the new version in its name, existing files are never overwritten, and the old exe stays as the way back.
-- **Silent option.** With "Download updates in the background and install them when I close the app" on, the download happens at start-up and the install when the main window closes.
-- **Choices are kept** in `%AppData%\SPI Data Comparison Tool\updates.json`, outside the app folder.
-- **Needs a public repository.** The app reads releases without signing in. If this repository is made private, the updater finds nothing until releases are published somewhere public and `UpdateService.Repository` points there.
-- Code: `UpdateService.cs` (logic), `UpdateDialog.cs`, `UpdateSettingsPage.cs`, `MainForm.Updates.cs`. Checks: `tests/UpdateChecks.cs`, run in CI as `--check-updates`.
+
+**File > User Settings > Updates** and **Help > Check for updates** lead to one designer-defined Updates page. Starting the app or opening Settings performs no update network request. The main status line shows the running version and its actual Normal/Beta build type; the release filter is a separate choice.
+
+| Area | Current behaviour |
+|---|---|
+| Channels | Normal shows stable releases, Beta shows betas only, and All includes both. |
+| Version selection | Choose an exact compatible published version; no automatic selection. Current/latest labels, publication dates and plain-text release notes are shown. Confirmed downgrade/reinstallation is supported. Historical betas that may lack newer normal-release fixes carry explicit warnings. |
+| Download | Separate explicit action, streamed with size/time limits and cancellation. A matching SHA-256 is required and rechecked before installation. |
+| Installed copy | Exact installer registration determines installation directory/scope. The staged helper waits for the parent to exit, runs setup with normal Windows permission prompts, verifies the result and restarts once. |
+| Portable copy | Keeps the current executable filename and only replaces allowlisted application files, with backup/rollback. It is not converted into an installed copy. |
+| Previous updater | The separate Update dialog, duplicate Settings page, startup download and install-on-close path are retired. All installation now requires explicit confirmation through the same updater. |
+| Existing preferences | If no new per-install snapshot exists, legacy Stable maps to Normal and legacy Beta (which included stable releases) maps to All. The legacy file is read-only; its automatic-install choice and queued packages are not imported. |
+
+Code: `UpdatesControl.cs`, `UpdateFeedClient.cs`, `UpdateInstaller.cs`, `UpdateApplyWorker.cs`, `UpdatePreferences.cs` and the presentation-only `MainForm.Updates.cs`. Three-part versions are compared numerically; a normal release ranks above the betas of the same version. Drafts, manual builds, four-part versions and incompatible/missing assets are excluded. Profile/rules paths and Excel-export preferences are preserved, not profile contents or database passwords.
+
+The repository's releases must remain publicly readable: the updater does not request GitHub credentials. The installer retains its conditional `/RELAUNCH=1` hook for already-released older updater clients; the current helper never supplies that switch and controls its own verified restart. See [UPDATING.md](UPDATING.md) for migration, first-upgrade instructions, safeguards and limitations.
 
 ## Versioning and CI artifacts
 Versions are automatic - nobody edits a version number by hand. `tools/release.py` works it out in CI:
@@ -145,7 +154,7 @@ The source has forms for database comparison, Excel comparison, delta change tra
 ## Verification
 The GitHub Actions workflow (`build.yml`) runs on pull requests, pushes to `master` and on demand. It checks this guide, runs the complete Python regression suite and generated-layout check, and rejects committed credentials/signing keys. Both Any CPU and x64 Windows builds treat warnings as errors. Actions are pinned to reviewed Node 24 releases rather than relying on forced execution of deprecated Node 20 actions.
 
-`--check-ui <log-file>` runs real Windows controls against synthetic data: profile snapshots and failed file writes, profile selection and import schemas, window reuse and independent modes, Settings startup/failed import, embedded Analysis and failed reload preservation. `--open-form` must successfully open every eligible form; a failed form fails the build. No pictures are taken or published. Portable dependency loading and 64-bit installer install/uninstall checks remain enabled. **Read CI results** rather than assuming success. Live Oracle/SQL Server connectivity, real customer workbooks, all comparison outcomes and older Windows/.NET installations still require manual acceptance tests.
+`--check-ui <log-file>` runs real Windows controls against synthetic data: profile snapshots and failed file writes, profile selection and import schemas, window reuse and independent modes, Settings startup/failed import, embedded Analysis and failed reload preservation. It also exercises updater version/feed parsing, bounded verified downloads with fake transport, staged portable replacement and preference migration, and the update controls with fake services. The retained `--check-updates <log-file>` entry point exercises the same canonical updater rather than a second implementation. These updater checks never install a live release, access a database or save real user preferences. `--open-form` must successfully open every eligible form; a failed form fails the build. No pictures are taken or published. Portable dependency loading and 64-bit installer install/uninstall checks remain enabled. **Read CI results** rather than assuming success. Live Oracle/SQL Server connectivity, real customer workbooks, all comparison outcomes, real-user UAC/SmartScreen and older Windows/.NET installations still require manual acceptance tests.
 
 ## Limitations and security
 - Some screens may update data; test in isolated environments, never on production by default.

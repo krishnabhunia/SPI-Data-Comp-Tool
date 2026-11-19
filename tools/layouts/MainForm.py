@@ -19,6 +19,7 @@ TEXTS = {
     "btn_Open_DB_Comparison": "Compare databases",
     "btn_Excel_Comparison": "Compare Excel files",
     "lbl_LoginStatus": "Ready",
+    "checkForUpdatesToolStripMenuItem": "Check for &updates…",
 }
 
 PROPS = {

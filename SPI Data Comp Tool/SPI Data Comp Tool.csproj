@@ -129,7 +129,6 @@
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.IO.Compression" />
-    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Management" />
     <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
@@ -255,10 +254,14 @@
       <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
     </Compile>
     <Compile Include="AppVersion.cs" />
-    <Compile Include="UpdateService.cs" />
-    <Compile Include="UpdateSettingsPage.cs" />
-    <Compile Include="UpdateDialog.cs">
-      <SubType>Form</SubType>
+    <Compile Include="UpdateContracts.cs" />
+    <Compile Include="UpdateVersion.cs" />
+    <Compile Include="UpdateFeedClient.cs" />
+    <Compile Include="UpdateInstaller.cs" />
+    <Compile Include="UpdateApplyWorker.cs" />
+    <Compile Include="UpdatePreferences.cs" />
+    <Compile Include="UpdatesControl.cs">
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="MainForm.Updates.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
@@ -282,6 +285,15 @@
     </Compile>
     <Compile Include="..\tests\CredentialRedactionChecks.cs">
       <Link>Tests\CredentialRedactionChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\UpdateFeedChecks.cs">
+      <Link>Tests\UpdateFeedChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\UpdateApplyChecks.cs">
+      <Link>Tests\UpdateApplyChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\UpdateUiChecks.cs">
+      <Link>Tests\UpdateUiChecks.cs</Link>
     </Compile>
     <Compile Include="..\tests\UpdateChecks.cs">
       <Link>Tests\UpdateChecks.cs</Link>

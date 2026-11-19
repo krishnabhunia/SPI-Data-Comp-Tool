@@ -15,6 +15,9 @@ namespace SPI_Data_Comp_Tool
         [STAThread]
         static void Main(string[] args)
         {
+            // The copied helper must never open the normal app or touch normal startup preferences.
+            if (UpdateApplyWorker.TryRun(args)) return;
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -25,9 +28,28 @@ namespace SPI_Data_Comp_Tool
             // CI-only checks of a finished build (see SelfTest.cs); does nothing in normal use
             if (SelfTest.TryRun(args)) return;
 
+            try { UpdatePreferences.Initialize(); }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Update preferences could not be loaded safely. Existing files were not overwritten. " +
+                    "You can continue using SPI, but update installation is disabled for this session." +
+                    Environment.NewLine + Environment.NewLine + Common_Data.RedactConnectionCredentials(ex.Message),
+                    "Update preferences", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
             Logs.EnterLogs($"\n=========== Logs Entry Started at {Common_Data.AppendDateInOutputFileName()} ==================================\n");
 
-            Application.Run(new MainForm());
+            try { Application.Run(new MainForm()); }
+            finally
+            {
+                try { UpdatePreferences.SaveCurrent(); }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Update preferences could not be saved. The previous saved copy has been retained." +
+                        Environment.NewLine + Environment.NewLine + Common_Data.RedactConnectionCredentials(ex.Message),
+                        "Update preferences", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
 
             Logs.EnterLogs($"\n**************** Logs Ended at {Common_Data.AppendDateInOutputFileName()} ***************************************\n");
         }

@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    /// <summary>Application preferences and comparison rules share one settings window.</summary>
+    /// <summary>Application preferences, comparison rules and updates share one settings window.</summary>
     public partial class User_Settings : Form
     {
         private bool initializing = true;
@@ -25,7 +25,6 @@ namespace SPI_Data_Comp_Tool
             btn_ClearLogs.Click += (sender, e) => rtb_Log.Clear();
             btn_Close.Click += (sender, e) => Close();
             CancelButton = btn_Close;
-            tabs_Settings.TabPages.Add(new UpdateSettingsPage());
             tabs_Settings.SelectedIndexChanged += (sender, e) => UpdateAcceptButton();
             UiTheme.Apply(this, btn_ImportRules);
 
@@ -58,9 +57,21 @@ namespace SPI_Data_Comp_Tool
             btn_ImportRules.Select();
         }
 
+        public void ShowUpdates()
+        {
+            tabs_Settings.SelectedTab = tab_Updates;
+            updatesControl.FocusCheckButton();
+        }
+
         private void UpdateAcceptButton()
         {
-            AcceptButton = tabs_Settings.SelectedTab == tab_Rules ? btn_ImportRules : btn_Close;
+            bool showingUpdates = tabs_Settings.SelectedTab == tab_Updates;
+            // Updates own their status and progress; do not waste their workspace on the rules log.
+            gb_Logs.Visible = !showingUpdates;
+            tlp_Root.RowStyles[1].SizeType = SizeType.Absolute;
+            tlp_Root.RowStyles[1].Height = showingUpdates ? 0F : 140F;
+            // Enter must never accidentally start installation.
+            AcceptButton = showingUpdates ? null : tabs_Settings.SelectedTab == tab_Rules ? btn_ImportRules : btn_Close;
         }
 
         private void btn_ImportRules_Click(object sender, EventArgs e)
