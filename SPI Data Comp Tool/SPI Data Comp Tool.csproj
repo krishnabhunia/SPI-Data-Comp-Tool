@@ -263,6 +263,9 @@
     <Compile Include="UpdatesControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="MainForm.Updates.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ConnectionPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -291,6 +294,9 @@
     </Compile>
     <Compile Include="..\tests\UpdateUiChecks.cs">
       <Link>Tests\UpdateUiChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\UpdateChecks.cs">
+      <Link>Tests\UpdateChecks.cs</Link>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="UiTheme.cs" />

@@ -16,7 +16,7 @@ namespace SPI_Data_Comp_Tool
             // The login screen was removed: its user name and password were hard-coded in this
             // source, so it protected nothing. The main window now opens ready to use.
             UnlockMainWindow();
-            lbl_Version.Text = AppVersion.Display;
+            InitializeUpdates();
             UiTheme.Apply(this, btn_Open_DB_Comparison);
         }
 

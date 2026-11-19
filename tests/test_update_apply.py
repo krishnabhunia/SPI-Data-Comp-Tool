@@ -73,6 +73,31 @@ class UpdateApplyContracts(unittest.TestCase):
         self.assertNotIn("InstallAndRestart(", checks)
         self.assertNotIn("RegistryKey", checks)
 
+    def test_previous_channel_migration_is_read_only_bounded_and_keeps_canonical_precedence(self):
+        preferences = (APP / "UpdatePreferences.cs").read_text()
+        migration = preferences.split("internal static UpdateChannel ResolveInitialChannel", 1)[1].split("public static void SaveCurrent()", 1)[0]
+        self.assertIn("MaximumLegacyPreferenceBytes", migration)
+        self.assertIn("File.GetAttributes(stableFile)", migration)
+        self.assertLess(migration.index("return ReadSnapshot(stableFile).Channel"), migration.index("new FileStream(legacyFile"))
+        self.assertIn("UpdateApplyWorker.RejectReparsePoints(legacyFile)", migration)
+        self.assertIn("FileAccess.Read, FileShare.Read", migration)
+        self.assertIn("new UTF8Encoding(false, true)", migration)
+        self.assertIn("value == \"1\") selected = UpdateChannel.All", migration)
+        self.assertIn("value == \"0\") selected = UpdateChannel.Normal", migration)
+        self.assertIn("!names.Add(name)", migration)
+        self.assertIn("reader.TokenType != JsonToken.Boolean", migration)
+        self.assertNotIn("File.Write", migration)
+        self.assertNotIn("File.Delete", migration)
+        self.assertNotIn("Process.Start", migration)
+        initialize = preferences.split("public static void Initialize()", 1)[1].split("internal static UpdateChannel ResolveInitialChannel", 1)[0]
+        self.assertIn('"SPI Data Comparison Tool", "updates.json"', initialize)
+        self.assertIn("CaptureInMemory(), null", initialize)
+        self.assertIn("InitializationWarning = warning", initialize)
+        checks = (ROOT / "tests/UpdateApplyChecks.cs").read_text()
+        self.assertIn("CheckLegacyChannels(root)", checks)
+        self.assertIn("FileShare.None", checks)
+        self.assertIn("concurrently-created canonical choice", checks)
+
 
 if __name__ == "__main__":
     unittest.main()

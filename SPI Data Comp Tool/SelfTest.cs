@@ -21,9 +21,18 @@ namespace SPI_Data_Comp_Tool
     /// </summary>
     internal static class SelfTest
     {
+        /// <summary>True while a build check runs: the app then stays offline and saves nothing.</summary>
+        public static bool IsRunning { get; private set; }
+
         public static bool TryRun(string[] args)
         {
             if (args == null || args.Length == 0) return false;
+            IsRunning = args[0].StartsWith("--", StringComparison.Ordinal);
+            if (args[0] == "--check-updates" && args.Length >= 2)
+            {
+                Environment.ExitCode = UpdateChecks.Run(args[1]);
+                return true;
+            }
             if (args[0] == "--list-forms" && args.Length >= 2)
             {
                 File.WriteAllLines(args[1], FormTypes().Select(t => t.FullName));
@@ -44,6 +53,7 @@ namespace SPI_Data_Comp_Tool
                 Environment.ExitCode = OpenForm(args[1], args[2]);
                 return true;
             }
+            IsRunning = false;
             return false;
         }
 

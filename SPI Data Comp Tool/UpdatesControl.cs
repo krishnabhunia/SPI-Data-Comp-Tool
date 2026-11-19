@@ -151,6 +151,8 @@ namespace SPI_Data_Comp_Tool
             cancel.Click += (sender, e) => CancelOperation();
             install.Click += (sender, e) => InstallSelected();
             UpdateButtons();
+            if (persistPreferences && !string.IsNullOrWhiteSpace(UpdatePreferences.InitializationWarning))
+                SetStatus(UpdatePreferences.InitializationWarning);
         }
 
         private static Button MakeButton(string name, string text, int width)

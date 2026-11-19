@@ -72,6 +72,8 @@ namespace SPI_Data_Comp_Tool
             passed("Worker-thread release results and download progress return to the UI thread; late progress after completion/disposal is ignored.");
             CheckCancellationAndDisposal();
             passed("Update check/download cancellation, stale completions and disposal cannot enable installation or overwrite newer results.");
+            CheckConsolidatedUpdater();
+            passed("The app has one updater implementation; build status shows the running Normal/Beta channel, not the release filter.");
             CheckSettingsNavigation();
             passed("Help reuses Settings > Updates, preserves other settings sections and makes update actions usable at minimum size.");
         }
@@ -516,6 +518,18 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
+        private static void CheckConsolidatedUpdater()
+        {
+            Require(MainForm.BuildVersionStatus("2.6.0") == "v2.6.0  ·  Normal" &&
+                MainForm.BuildVersionStatus("2.6.0-beta006") == "v2.6.0-beta006  ·  Beta" &&
+                MainForm.BuildVersionStatus("2.6.0-manual").Contains("Manual / unrecognised build") &&
+                MainForm.BuildVersionStatus(null).StartsWith("Version unavailable", StringComparison.Ordinal),
+                "Main window status misidentifies a normal, beta or unrecognised running build.");
+            foreach (string legacyType in new[] { "UpdateDialog", "UpdateSettingsPage", "UpdateService" })
+                Require(typeof(MainForm).Assembly.GetType("SPI_Data_Comp_Tool." + legacyType, false) == null,
+                    "The superseded updater is still compiled: " + legacyType + ".");
+        }
+
         private static void CheckSettingsNavigation()
         {
             using (var main = new MainForm())
@@ -523,6 +537,10 @@ namespace SPI_Data_Comp_Tool
                 main.Show();
                 Application.DoEvents();
                 var menu = Find<MenuStrip>(main, "menuStrip1");
+                Require(Find<Label>(main, "lbl_Version").Text == MainForm.BuildVersionStatus(AppVersion.Full),
+                    "The main window does not show its actual build version and channel.");
+                Require(menu.Items.Find("updateToolStripMenuItem", true).Length == 0,
+                    "A second automatic-update menu entry survived consolidation.");
                 menu.Items.Find("userSettingsToolStripMenuItem", true).OfType<ToolStripMenuItem>().Single().PerformClick();
                 Application.DoEvents();
                 var settings = Application.OpenForms.OfType<User_Settings>().Single();
@@ -535,6 +553,9 @@ namespace SPI_Data_Comp_Tool
                 var tabs = Find<TabControl>(settings, "tabs_Settings");
                 Require(tabs.TabPages.Count == 3 && tabs.SelectedTab.Name == "tab_Updates" && settings.AcceptButton == null,
                     "Help did not open Updates or Enter can implicitly start an action.");
+                Require(tabs.TabPages.Cast<TabPage>().Count(tab => tab.Name == "tab_Updates") == 1 &&
+                    settings.Controls.Find("updatesControl", true).Length == 1,
+                    "Settings contains duplicate Updates pages or updater controls.");
                 Require(!Find<GroupBox>(settings, "gb_Logs").Visible && Find<TableLayoutPanel>(settings, "tlp_Root").RowStyles[1].Height == 0,
                     "The unrelated log consumes the Updates workspace.");
                 settings.Size = settings.MinimumSize;

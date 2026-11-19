@@ -4,6 +4,14 @@
 
 Older versions do not have an update page. Install the first updater-enabled release manually from this repository's **Releases** page once. After that, open **File > User Settings > Updates**, or **Help > Check for updates**. Both routes use the same Settings window, alongside General and Comparison rules; no extra update form is opened.
 
+## Upgrading from the earlier updater
+
+This unified page replaces the earlier separate Update window and startup/background/install-on-close coordinator. Starting or closing SPI does not check, download or install an update; each operation now follows your explicit selection and confirmation.
+
+When the new per-install preference snapshot does not exist, the old `%AppData%\SPI Data Comparison Tool\updates.json` is read without modifying it. Legacy **Stable** becomes **Normal**. Legacy **Beta** included stable and beta releases, so it becomes **All releases**, not the new beta-only filter. An existing new-format snapshot always takes precedence. Invalid, inaccessible or oversized legacy preferences are ignored with a notice in Updates and a Normal default; other application preferences are not reset. The old `InstallSilently` choice and queued downloads are not imported or executed.
+
+The installer still accepts the earlier updater's `/RELAUNCH=1` request for backward compatibility. The current helper does not request that installer launch: it verifies the installed executable first, then restarts SPI itself.
+
 ## Choose the version yourself
 
 1. Select **Normal / stable**, **Beta**, or **All releases**. Normal is the default; the filter is remembered per installation.

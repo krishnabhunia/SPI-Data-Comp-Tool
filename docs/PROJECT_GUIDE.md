@@ -95,6 +95,24 @@ There are now **21 Form classes** (23 on the base branch after #44). The retired
 
 Profile edits build independent candidate lists. Cancelling a save does not change active profiles; JSON is written to a same-directory temporary file and atomically replaced before publishing a changed list. Deletion requires confirmation. If the file is saved but its path cannot be remembered, the UI explicitly reports the partial outcome and retains the active catalog. Shared pickers resolve names rather than stale list positions, and typing a new name preserves entered fields.
 
+## Updates in the app
+
+**File > User Settings > Updates** and **Help > Check for updates** lead to one designer-defined Updates page. Starting the app or opening Settings performs no update network request. The main status line shows the running version and its actual Normal/Beta build type; the release filter is a separate choice.
+
+| Area | Current behaviour |
+|---|---|
+| Channels | Normal shows stable releases, Beta shows betas only, and All includes both. |
+| Version selection | Choose an exact compatible published version; no automatic selection. Current/latest labels, publication dates and plain-text release notes are shown. Confirmed downgrade/reinstallation is supported. Historical betas that may lack newer normal-release fixes carry explicit warnings. |
+| Download | Separate explicit action, streamed with size/time limits and cancellation. A matching SHA-256 is required and rechecked before installation. |
+| Installed copy | Exact installer registration determines installation directory/scope. The staged helper waits for the parent to exit, runs setup with normal Windows permission prompts, verifies the result and restarts once. |
+| Portable copy | Keeps the current executable filename and only replaces allowlisted application files, with backup/rollback. It is not converted into an installed copy. |
+| Previous updater | The separate Update dialog, duplicate Settings page, startup download and install-on-close path are retired. All installation now requires explicit confirmation through the same updater. |
+| Existing preferences | If no new per-install snapshot exists, legacy Stable maps to Normal and legacy Beta (which included stable releases) maps to All. The legacy file is read-only; its automatic-install choice and queued packages are not imported. |
+
+Code: `UpdatesControl.cs`, `UpdateFeedClient.cs`, `UpdateInstaller.cs`, `UpdateApplyWorker.cs`, `UpdatePreferences.cs` and the presentation-only `MainForm.Updates.cs`. Three-part versions are compared numerically; a normal release ranks above the betas of the same version. Drafts, manual builds, four-part versions and incompatible/missing assets are excluded. Profile/rules paths and Excel-export preferences are preserved, not profile contents or database passwords.
+
+The repository's releases must remain publicly readable: the updater does not request GitHub credentials. The installer retains its conditional `/RELAUNCH=1` hook for already-released older updater clients; the current helper never supplies that switch and controls its own verified restart. See [UPDATING.md](UPDATING.md) for migration, first-upgrade instructions, safeguards and limitations.
+
 ## Versioning and CI artifacts
 Versions are automatic - nobody edits a version number by hand. `tools/release.py` works it out in CI:
 
@@ -116,6 +134,7 @@ Versions are automatic - nobody edits a version number by hand. `tools/release.p
 - `NNN` starts at `001` for each `x.y.z` and counts up across all PRs for that version; each new commit pushed to a PR gets the next number, re-running the same commit keeps its number. CI reserves the number by tagging the PR's head commit, so a number used by a failed build is skipped.
 - Updaters rank `x.y.z-betaNNN` below `x.y.z`.
 - **No warnings in Actions.** The workflows use action versions that run on Node.js 24 (`actions/checkout@v6`, `upload-artifact@v6`, `download-artifact@v7`, `setup-python@v6`, `microsoft/setup-msbuild@v3`, `NuGet/setup-nuget@v3`) and a named Linux image (`ubuntu-24.04`, not `ubuntu-latest`), so a run shows no deprecation warning or image-migration notice. `tests/test_workflows.py` fails if an older version or `ubuntu-latest` comes back. When GitHub announces the next change, raise these versions in the two workflow files and in that test.
+- **Release clean-up (by hand).** `Actions > Release clean-up (run by hand) > Run workflow` lists the zips of window pictures that earlier releases still carry and the leftover test builds `v3.0.0-beta001` and `v2.5.1-beta001`. It deletes them only when you type `DELETE` in the confirm box; with the box empty it only lists. Deleted files cannot be restored. Once it has run, `.github/workflows/release-cleanup.yml` can be removed.
 - **Where to read the version.** Never type a version into a PR title: the number depends on which PR is merged first, so a typed one goes stale. CI shows the real one in two places: the check named `Publish <version>`, and one comment on the PR that it keeps up to date - `Beta version: vX.Y.Z-betaNNN` with download links on every PR run, replaced by `Released as vX.Y.Z` when the PR is merged to `master`.
 - **No outdated betas.** If the normal `vX.Y.Z` is released while a PR build for the same number is still running (another PR was merged first), that beta is not published; the PR comment says so. Re-run all jobs or push a commit to get the next beta, which then counts from the new number.
 - CI writes the version into the exe (`AssemblyVersion` / `AssemblyFileVersion` `x.y.z.0`, `AssemblyInformationalVersion` = the full name, e.g. `2.4.0-beta003`).
@@ -129,19 +148,13 @@ Versions are automatic - nobody edits a version number by hand. `tools/release.p
 - **Excel automation starts only when used.** The Excel Comparison window no longer starts Excel when it opens; the debug Load button starts it, reads the sheet name and quits it again, so no `EXCEL.EXE` is left running.
 - Releases also carry the installer on its own as `SPI_Data_Comp_Tool_<version>_x64_setup.exe`; `SPI_Data_Comp_Tool_<version>.zip.sha256` lists the checksums of the zip and the installer. The installer is not code-signed, so Windows SmartScreen may ask to confirm the first run.
 
-### In-app updates
-
-**File > User Settings > Updates** and **Help > Check for updates** lead to the same page. Opening it performs no network request. Users choose Normal, Beta or All releases, check GitHub, select an exact compatible published version, download it and separately confirm installation. The list distinguishes current, latest normal and latest beta versions and displays release notes. Three-part versions are compared numerically; a normal release sorts above the betas of the same version. Drafts, manual builds and four-part versions are not offered.
-
-The download is streamed into a task-owned cache with size/time limits and SHA-256 checking. Installed copies retain their installation directory and scope through the existing installer and normal Windows permission prompts. Portable copies apply only known application files, preserve their executable filename and keep recovery backups; they are not silently converted to installed copies. Profile/rules file paths and the two Excel-export preferences are preserved, not the contents of connection profiles or database passwords. See [UPDATING.md](UPDATING.md) for first-upgrade instructions, safeguards and limitations.
-
 ## Supported workflows vs. assumptions
 The source has forms for database comparison, Excel comparison, delta change tracking and database-to-Excel export. Exact connection strings, supported server versions, data-size limits and complete workflows must be validated manually: the repository does not supply safe integration fixtures for all operations.
 
 ## Verification
 The GitHub Actions workflow (`build.yml`) runs on pull requests, pushes to `master` and on demand. It checks this guide, runs the complete Python regression suite and generated-layout check, and rejects committed credentials/signing keys. Both Any CPU and x64 Windows builds treat warnings as errors. Actions are pinned to reviewed Node 24 releases rather than relying on forced execution of deprecated Node 20 actions.
 
-`--check-ui <log-file>` runs real Windows controls against synthetic data: profile snapshots and failed file writes, profile selection and import schemas, window reuse and independent modes, Settings startup/failed import, embedded Analysis and failed reload preservation. It also exercises updater version/feed parsing, bounded verified downloads with fake transport, staged portable replacement and preference migration, and the update controls with fake services. These updater checks never install a live release, access a database or save real user preferences. `--open-form` must successfully open every eligible form; a failed form fails the build. No pictures are taken or published. Portable dependency loading and 64-bit installer install/uninstall checks remain enabled. **Read CI results** rather than assuming success. Live Oracle/SQL Server connectivity, real customer workbooks, all comparison outcomes, real-user UAC/SmartScreen and older Windows/.NET installations still require manual acceptance tests.
+`--check-ui <log-file>` runs real Windows controls against synthetic data: profile snapshots and failed file writes, profile selection and import schemas, window reuse and independent modes, Settings startup/failed import, embedded Analysis and failed reload preservation. It also exercises updater version/feed parsing, bounded verified downloads with fake transport, staged portable replacement and preference migration, and the update controls with fake services. The retained `--check-updates <log-file>` entry point exercises the same canonical updater rather than a second implementation. These updater checks never install a live release, access a database or save real user preferences. `--open-form` must successfully open every eligible form; a failed form fails the build. No pictures are taken or published. Portable dependency loading and 64-bit installer install/uninstall checks remain enabled. **Read CI results** rather than assuming success. Live Oracle/SQL Server connectivity, real customer workbooks, all comparison outcomes, real-user UAC/SmartScreen and older Windows/.NET installations still require manual acceptance tests.
 
 ## Limitations and security
 - Some screens may update data; test in isolated environments, never on production by default.

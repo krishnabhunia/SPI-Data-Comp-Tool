@@ -64,6 +64,15 @@ class UpdateIntegrationTests(unittest.TestCase):
         self.assertEqual(source.count("Newtonsoft.Json.Formatting.Indented"), 2)
         self.assertNotIn(", Formatting.Indented", source)
 
+    def test_ignored_legacy_preferences_are_reported_without_background_work(self):
+        source = (APP / "UpdatesControl.cs").read_text()
+        constructor = source.split("internal UpdatesControl(", 1)[1].split("private static Button", 1)[0]
+        self.assertIn("persistPreferences && !string.IsNullOrWhiteSpace(UpdatePreferences.InitializationWarning)", constructor)
+        self.assertIn("SetStatus(UpdatePreferences.InitializationWarning)", constructor)
+        self.assertNotIn("feed.CheckAsync(", constructor)
+        self.assertNotIn("feed.DownloadAsync(", constructor)
+        self.assertNotIn("UpdatePreferences.Initialize()", constructor)
+
 
 if __name__ == "__main__":
     unittest.main()

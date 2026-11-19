@@ -35,6 +35,8 @@ namespace SPI_Data_Comp_Tool
                 CheckSettings(root, version);
                 CheckInterleavedPreferences(root);
                 passed("Preference snapshots and version-directory migration preserve whitelisted paths/Excel options, retain unknown destination fields, reject invalid XML/paths and exclude secrets from backups.");
+                CheckLegacyChannels(root);
+                passed("Previous updater channels migrate once without enabling automation; canonical preferences win, invalid or locked legacy files warn safely, and original files remain untouched.");
                 CheckRollback(root, version);
                 passed("Portable copy and settings failures restore replaced files, remove only newly created app-owned files and retain unrelated user files plus backups.");
                 CheckRealExecutable(root);
@@ -280,6 +282,86 @@ namespace SPI_Data_Comp_Tool
             var explicitChoice = UpdatePreferences.SavePersistedSnapshot(stable, config, stale, UpdateChannel.Normal);
             Require(explicitChoice.Channel == UpdateChannel.Normal && explicitChoice.RuleFilePath == passive.RuleFilePath,
                 "An explicit local channel selection did not preserve the latest saved paths.");
+        }
+
+        private static void CheckLegacyChannels(string root)
+        {
+            string directory = Path.Combine(root, "legacy-preferences");
+            Directory.CreateDirectory(directory);
+            string canonical = Path.Combine(directory, "preferences.json");
+            string legacy = Path.Combine(directory, "updates.json");
+            string warning;
+            Require(UpdatePreferences.ResolveInitialChannel(canonical, legacy, out warning) == UpdateChannel.Normal && warning.Length == 0,
+                "A missing previous preferences file did not leave the normal default without a warning.");
+            foreach (var item in new[]
+            {
+                new KeyValuePair<string, UpdateChannel>("{\"Channel\":0,\"InstallSilently\":false}", UpdateChannel.Normal),
+                new KeyValuePair<string, UpdateChannel>("{\"Channel\":1,\"InstallSilently\":true}", UpdateChannel.All),
+                new KeyValuePair<string, UpdateChannel>("{\"InstallSilently\":true,\"Channel\":\"Beta\"}", UpdateChannel.All),
+                new KeyValuePair<string, UpdateChannel>("{\"Channel\":\"Stable\"}", UpdateChannel.Normal),
+            })
+            {
+                File.WriteAllText(legacy, item.Key);
+                Require(UpdatePreferences.ResolveInitialChannel(canonical, legacy, out warning) == item.Value && warning.Length == 0,
+                    "The previous stable/beta channel changed its effective filter during migration.");
+                Require(File.ReadAllText(legacy) == item.Key && !File.Exists(canonical),
+                    "Inspecting a previous channel changed either preferences file.");
+            }
+            foreach (string invalid in new[]
+            {
+                "{}", "null", "[]", "{", "{\"Channel\":2}", "{\"Channel\":null}", "{\"Channel\":1.0}",
+                "{\"Channel\":0x1}", "{\"Channel\":01}",
+                "{\"Channel\":\"All\"}", "{\"Channel\":0,\"Channel\":1}", "{\"Channel\":0} {\"Channel\":1}",
+                "{\"Channel\":0,\"InstallSilently\":\"true\"}", "{\"Channel\":0,\"PendingFile\":\"never-run.exe\"}",
+                "{\"Channel\":0,}", "{\"Channel\":/*not-json*/1}", "{'Channel':1}",
+                new string(' ', UpdatePreferences.MaximumLegacyPreferenceBytes + 1),
+            })
+            {
+                File.WriteAllText(legacy, invalid);
+                Require(UpdatePreferences.ResolveInitialChannel(canonical, legacy, out warning) == UpdateChannel.Normal &&
+                    warning.Contains("Normal") && warning.Contains("Updates"), "Invalid previous preferences did not report a safe fallback.");
+                Require(File.ReadAllText(legacy) == invalid && !File.Exists(canonical),
+                    "Rejecting previous preferences modified their source or created an implicit snapshot.");
+            }
+            File.WriteAllBytes(legacy, new byte[] { 0xFF, 0xFF, 0xFF });
+            Require(UpdatePreferences.ResolveInitialChannel(canonical, legacy, out warning) == UpdateChannel.Normal && warning.Length > 0,
+                "Malformed preference text did not report a safe fallback.");
+
+            const string beta = "{\"Channel\":1,\"InstallSilently\":true}";
+            File.WriteAllText(legacy, beta);
+            using (var held = new FileStream(legacy, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                Require(UpdatePreferences.ResolveInitialChannel(canonical, legacy, out warning) == UpdateChannel.Normal && warning.Length > 0,
+                    "Locked previous preferences disabled initialization instead of falling back safely.");
+            string directoryCollision = Path.Combine(directory, "not-a-file");
+            Directory.CreateDirectory(directoryCollision);
+            Require(UpdatePreferences.ResolveInitialChannel(canonical, directoryCollision, out warning) == UpdateChannel.Normal && warning.Length > 0,
+                "A previous preferences directory collision did not warn safely.");
+            Expect<InvalidDataException>(() => UpdatePreferences.ResolveInitialChannel(directoryCollision, legacy, out warning),
+                "A canonical preferences directory collision incorrectly fell back to older preferences.");
+
+            UpdateChannel imported = UpdatePreferences.ResolveInitialChannel(canonical, legacy, out warning);
+            var snapshot = new UpdatePreferenceSnapshot { Channel = imported };
+            UpdatePreferences.SavePersistedSnapshot(canonical, Path.Combine(directory, "absent-user.config"), snapshot, null);
+            Require(UpdatePreferences.ReadSnapshot(canonical).Channel == UpdateChannel.All &&
+                !File.ReadAllText(canonical).Contains("InstallSilently") && File.ReadAllText(legacy) == beta,
+                "Migration lost stable+beta semantics, imported automation, or modified the previous file.");
+            // A deliberate new Beta-only choice differs from the old Beta meaning; never remap it.
+            snapshot.Channel = UpdateChannel.Beta;
+            UpdatePreferences.WriteSnapshot(canonical, snapshot);
+            string canonicalText = File.ReadAllText(canonical);
+            using (var held = new FileStream(legacy, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                Require(UpdatePreferences.ResolveInitialChannel(canonical, legacy, out warning) == UpdateChannel.Beta && warning.Length == 0,
+                    "Existing canonical preferences did not win without reading the previous file.");
+            Require(File.ReadAllText(canonical) == canonicalText, "Reading the existing canonical choice changed it.");
+            var concurrent = UpdatePreferences.SavePersistedSnapshot(canonical, Path.Combine(directory, "absent-user.config"),
+                new UpdatePreferenceSnapshot { Channel = imported }, null);
+            Require(concurrent.Channel == UpdateChannel.Beta, "An imported fallback replaced a concurrently-created canonical choice.");
+            using (var held = new FileStream(canonical, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                Expect<IOException>(() => UpdatePreferences.ResolveInitialChannel(canonical, legacy, out warning),
+                    "A locked canonical snapshot silently fell back to previous preferences.");
+            File.WriteAllText(canonical, "{}");
+            Expect<JsonException>(() => UpdatePreferences.ResolveInitialChannel(canonical, legacy, out warning),
+                "A malformed canonical snapshot silently fell back to previous preferences.");
         }
 
         private static void CheckRealExecutable(string root)

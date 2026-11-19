@@ -4,8 +4,10 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using Newtonsoft.Json;
@@ -26,6 +28,7 @@ namespace SPI_Data_Comp_Tool
     internal static class UpdatePreferences
     {
         internal const string SettingsSection = "SPI_Data_Comp_Tool.Properties.Settings";
+        internal const int MaximumLegacyPreferenceBytes = 16384;
         internal static readonly string[] MigratedNames = { "ProfilePathUser", "RuleFilePath", "EPPlus_Excel_Save", "XL_Excel_Save" };
         private static bool initialized;
         private static UpdateChannel channel = UpdateChannel.Normal;
@@ -34,6 +37,7 @@ namespace SPI_Data_Comp_Tool
         private static bool channelChanged;
         private static UpdatePreferenceSnapshot lastSaved;
         internal static bool IsInitialized { get { return initialized; } }
+        internal static string InitializationWarning { get; private set; } = string.Empty;
 
         public static UpdateChannel Channel
         {
@@ -45,7 +49,11 @@ namespace SPI_Data_Comp_Tool
                 bool previouslyChanged = channelChanged;
                 channel = value;
                 channelChanged = true;
-                try { SaveCurrent(); }
+                try
+                {
+                    SaveCurrent();
+                    if (initialized) InitializationWarning = string.Empty;
+                }
                 catch { channel = previous; channelChanged = previouslyChanged; throw; }
             }
         }
@@ -73,7 +81,11 @@ namespace SPI_Data_Comp_Tool
                     if (previous != null) Properties.Settings.Default[name] = previous;
                 }
             }
-            if (File.Exists(stableFile)) channel = ReadSnapshot(stableFile).Channel;
+            string warning;
+            channel = ResolveInitialChannel(stableFile, Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "SPI Data Comparison Tool", "updates.json"), out warning);
+            InitializationWarning = warning;
             // A failed initialization must not later overwrite the last-good snapshot on exit.
             lastSaved = SavePersistedSnapshot(stableFile, currentUserConfig, CaptureInMemory(), null);
             // Reload the whitelist observed under the snapshot read handle. If a second instance
@@ -88,6 +100,100 @@ namespace SPI_Data_Comp_Tool
             }
             else Apply(lastSaved);
             initialized = true;
+        }
+
+        // The earlier updater used one roaming file shared by all copies. Import its filter once,
+        // only when this installation has no canonical snapshot. Its Beta meant stable + beta,
+        // so that choice maps to All; its silent-install flag never enables the new manual flow.
+        internal static UpdateChannel ResolveInitialChannel(string stableFile, string legacyFile, out string warning)
+        {
+            warning = string.Empty;
+            UpdateApplyWorker.RejectReparsePoints(stableFile);
+            bool exists;
+            FileAttributes attributes = 0;
+            try { attributes = File.GetAttributes(stableFile); exists = true; }
+            catch (FileNotFoundException) { exists = false; }
+            catch (DirectoryNotFoundException) { exists = false; }
+            if (exists)
+            {
+                if ((attributes & FileAttributes.Directory) != 0)
+                    throw new InvalidDataException("The saved update preferences path is not a file.");
+                // A corrupt, locked, inaccessible or disappearing canonical file is an error,
+                // not permission to replace a user's explicit choice with older defaults.
+                return ReadSnapshot(stableFile).Channel;
+            }
+            try
+            {
+                UpdateApplyWorker.RejectReparsePoints(legacyFile);
+                using (var file = new FileStream(legacyFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    if (file.Length > MaximumLegacyPreferenceBytes)
+                        throw new InvalidDataException("The previous updater preferences exceed the size limit.");
+                    using (var input = new StreamReader(file, new UTF8Encoding(false, true), true))
+                    {
+                        var text = new char[MaximumLegacyPreferenceBytes + 1];
+                        int count = input.ReadBlock(text, 0, text.Length);
+                        if (count > MaximumLegacyPreferenceBytes)
+                            throw new InvalidDataException("The previous updater preferences exceed the size limit.");
+                        return ParseLegacyChannel(new string(text, 0, count));
+                    }
+                }
+            }
+            catch (FileNotFoundException) { return UpdateChannel.Normal; }
+            catch (DirectoryNotFoundException) { return UpdateChannel.Normal; }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is SecurityException ||
+                ex is JsonException || ex is DecoderFallbackException)
+            {
+                warning = "Previous updater preferences could not be read safely. Normal is the fallback; " +
+                    "check your selected release filter in Updates. The previous file was not changed.";
+                return UpdateChannel.Normal;
+            }
+        }
+
+        private static UpdateChannel ParseLegacyChannel(string text)
+        {
+            // Only the two original, scalar fields are accepted. Reject duplicate/unknown fields,
+            // comments, arrays, malformed values and extra documents; never materialize a type name.
+            if (Regex.IsMatch(text, @",\s*\}\s*\z"))
+                throw new InvalidDataException("A trailing comma is not a valid previous updater preference.");
+            using (var input = new StringReader(text))
+            using (var reader = new JsonTextReader(input) { MaxDepth = 2, DateParseHandling = DateParseHandling.None })
+            {
+                if (!reader.Read() || reader.TokenType != JsonToken.StartObject)
+                    throw new InvalidDataException("Previous updater preferences must be an object.");
+                var names = new HashSet<string>(StringComparer.Ordinal);
+                UpdateChannel? selected = null;
+                while (reader.Read() && reader.TokenType != JsonToken.EndObject)
+                {
+                    if (reader.TokenType != JsonToken.PropertyName || reader.QuoteChar != '"')
+                        throw new InvalidDataException("Invalid previous updater preference name.");
+                    string name = (string)reader.Value;
+                    if (!names.Add(name) || (name != "Channel" && name != "InstallSilently") || !reader.Read())
+                        throw new InvalidDataException("Unexpected previous updater preference.");
+                    if (name == "InstallSilently")
+                    {
+                        if (reader.TokenType != JsonToken.Boolean)
+                            throw new InvalidDataException("Invalid previous automatic-install preference.");
+                        // Deliberately do not persist, queue or execute this legacy automation flag.
+                        continue;
+                    }
+                    string value = Convert.ToString(reader.Value, System.Globalization.CultureInfo.InvariantCulture);
+                    // Json.NET also understands hexadecimal/octal integers. Only a literal JSON
+                    // 0 or 1 is a previous enum value; the only other allowed field is Boolean.
+                    bool integer = reader.TokenType == JsonToken.Integer &&
+                        Regex.IsMatch(text, @":\s*[01]\s*[,}]", RegexOptions.CultureInvariant);
+                    if (integer && value == "0") selected = UpdateChannel.Normal;
+                    else if (integer && value == "1") selected = UpdateChannel.All;
+                    else if (reader.TokenType == JsonToken.String && reader.QuoteChar == '"' &&
+                        string.Equals(value, "Stable", StringComparison.OrdinalIgnoreCase)) selected = UpdateChannel.Normal;
+                    else if (reader.TokenType == JsonToken.String && reader.QuoteChar == '"' &&
+                        string.Equals(value, "Beta", StringComparison.OrdinalIgnoreCase)) selected = UpdateChannel.All;
+                    else throw new InvalidDataException("Unsupported previous updater channel.");
+                }
+                if (reader.TokenType != JsonToken.EndObject || !selected.HasValue || reader.Read())
+                    throw new InvalidDataException("Incomplete or additional previous updater preferences.");
+                return selected.Value;
+            }
         }
 
         public static void SaveCurrent()
