@@ -269,6 +269,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                // stop here when an input is missing or wrong: marks at the fields, reasons in the log
+                if (!connection.AddChecks(InputCheck.For(this)).Report()) return;
                 string str_DBName = tb_SRC_DBName.Text.Trim();
                 //string str_SchemaName = tb_SchemaName.Text.Trim();
 

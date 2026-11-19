@@ -127,6 +127,17 @@ namespace SPI_Data_Comp_Tool
         }
 
         /// <summary>Puts the selected saved profile into both halves.</summary>
+        /// <summary>
+        /// Adds the checks of the visible connection halves to <paramref name="check"/>: what each platform needs
+        /// before a connection can be tried. A Source-only panel never checks Target.
+        /// </summary>
+        internal InputCheck AddChecks(InputCheck check, bool source = true, bool target = true)
+        {
+            if (source) check.Connection(Source);
+            if (target && Mode == ConnectionMode.SourceAndTarget) check.Connection(Target);
+            return check;
+        }
+
         public void ApplySelectedProfile()
         {
             // Typing a new name (or rebuilding the list) raises SelectedIndexChanged with -1.

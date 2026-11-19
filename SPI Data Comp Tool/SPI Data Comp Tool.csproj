@@ -254,6 +254,7 @@
       <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
     </Compile>
     <Compile Include="AppVersion.cs" />
+    <Compile Include="InputCheck.cs" />
     <Compile Include="UpdateContracts.cs" />
     <Compile Include="UpdateVersion.cs" />
     <Compile Include="UpdateFeedClient.cs" />
@@ -297,6 +298,9 @@
     </Compile>
     <Compile Include="..\tests\UpdateChecks.cs">
       <Link>Tests\UpdateChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\InputCheckChecks.cs">
+      <Link>Tests\InputCheckChecks.cs</Link>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="UiTheme.cs" />

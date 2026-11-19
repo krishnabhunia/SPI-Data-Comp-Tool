@@ -197,6 +197,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                // stop here when an input is missing or wrong: marks at the fields, reasons in the log
+                if (!connection.AddChecks(InputCheck.For(this), target: false).Report()) return;
                 tb_Find.ResetText();
                 cb_SelectAll.CheckState = CheckState.Unchecked;
                 cb_SelectAll.Update();

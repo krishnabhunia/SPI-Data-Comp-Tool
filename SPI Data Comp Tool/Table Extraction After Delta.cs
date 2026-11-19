@@ -138,6 +138,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                // stop here when an input is missing or wrong: marks at the fields, reasons in the log
+                if (!connection.AddChecks(InputCheck.For(this)).Report()) return;
                 ConnectDB();
             }
             catch (Exception ex)

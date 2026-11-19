@@ -1723,6 +1723,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                // stop here when an input is missing or wrong: marks at the fields, reasons in the log
+                if (!InputCheck.For(this).Connection("Source", rb_SRC_oracle.Checked, cb_WindowAuthentication_SRC.Checked, tb_SRC_DefaultPort, tb_SRC_DataSource, tb_SRC_DBName, tb_SRC_UserName, tb_SRC_Password).Report()) return;
                 resetLabelsToDefaultValue();
                 //UpdateLabel(lblStatus, );
                 Common_Data.DisplayMessage(rtb_Log, "Pls Wait, Loading !!!");
@@ -1788,6 +1790,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                // stop here when an input is missing or wrong: marks at the fields, reasons in the log
+                if (!InputCheck.For(this).Connection("Target", rb_TRG_Oracle.Checked, cb_WindowAuthentication_TRG.Checked, tb_TRG_DefaultPort, tb_TRG_DataSource, tb_TRG_DBName, tb_TRG_UserName, tb_TRG_Password).Report()) return;
                 resetLabelsToDefaultValue();
                 //UpdateLabel(lblStatus, "Pls Wait, Loading !!!");
                 Common_Data.DisplayMessage(rtb_Log, "Pls Wait, Loading !!!");
