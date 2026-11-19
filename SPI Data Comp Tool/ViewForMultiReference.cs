@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Color = System.Drawing.Color;
+using Control = System.Windows.Forms.Control;
 using DataTable = System.Data.DataTable;
 
 namespace SPI_Data_Comp_Tool
