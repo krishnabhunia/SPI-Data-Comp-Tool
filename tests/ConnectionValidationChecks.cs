@@ -311,7 +311,7 @@ namespace SPI_Data_Comp_Tool
                     panel.Source.DataSource.Text = "synthetic-source";
                     panel.Source.Database.Text = "synthetic-service";
                     panel.Source.User.Text = "synthetic-user";
-                    panel.Source.Password.Text = "synthetic-password";
+                    panel.Source.Password.Text = Guid.NewGuid().ToString("N"); // Disposable offline fixture, not a saved credential.
                     panel.Source.DefaultPort.Checked = false;
                     panel.Source.Port.Text = "1527";
                     panel.Target.CopyFrom(panel.Source);
