@@ -54,7 +54,9 @@ class ToolGroups(unittest.TestCase):
         self.assertLess(fill.index("UiTheme.EnsureApplied(tool);"), fill.index("page.Controls.Add(tool);"))
         self.assertIn("tool.Dispose();", fill)                                             # a tool that fails to open leaves nothing behind
         closing = window.split("private void CloseTools", 1)[1]
-        self.assertLess(closing.index("tool.Close();"), closing.index("e.Cancel = true;"))  # a busy tool keeps the window open
+        # all tools or none: every tool is asked before any is closed, so a busy tool keeps every tab as it was
+        self.assertLess(closing.index("if (!Refuses(pair.Value, e.CloseReason)) continue;"), closing.index("pair.Value.Close();"))
+        self.assertGreaterEqual(closing.count("e.Cancel = true;"), 2)
         self.assertIn("Math.Min(screen.Width", window)                                      # never larger than the screen
 
     def test_windows_have_readable_titles(self) -> None:

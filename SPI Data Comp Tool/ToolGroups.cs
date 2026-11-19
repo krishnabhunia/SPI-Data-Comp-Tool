@@ -146,21 +146,34 @@ namespace SPI_Data_Comp_Tool
                 Math.Min(screen.Height, Math.Max(Height, wanted.Height + extra.Height)));
         }
 
-        /// <summary>Closing the window closes each tool; a tool that refuses (work in progress) keeps the window open.</summary>
+        /// <summary>
+        /// Closing the window closes its tools - all of them or none: every tool is asked first, and
+        /// if one refuses (work in progress) the window stays open with every tab as it was.
+        /// </summary>
         private void CloseTools(object sender, FormClosingEventArgs e)
         {
             closing = true;
             try
             {
+                var open = new List<KeyValuePair<TabPage, Form>>();
                 foreach (TabPage page in tabs.TabPages)
                 {
-                    var slot = (Slot)page.Tag;
-                    Form tool = slot.Tool;
-                    if (tool == null || tool.IsDisposed) continue;
-                    tool.Close();
-                    if (tool.IsDisposed) continue;
-                    e.Cancel = true;            // the tool said no: show it, and stay open
-                    tabs.SelectedTab = page;
+                    Form tool = ((Slot)page.Tag).Tool;
+                    if (tool != null && !tool.IsDisposed) open.Add(new KeyValuePair<TabPage, Form>(page, tool));
+                }
+                foreach (KeyValuePair<TabPage, Form> pair in open)
+                {
+                    if (!Refuses(pair.Value, e.CloseReason)) continue;
+                    e.Cancel = true;            // nothing has been closed: show the tool that said no
+                    tabs.SelectedTab = pair.Key;
+                    return;
+                }
+                foreach (KeyValuePair<TabPage, Form> pair in open)
+                {
+                    pair.Value.Close();
+                    if (pair.Value.IsDisposed) continue;
+                    e.Cancel = true;            // it changed its answer between the question and the close
+                    tabs.SelectedTab = pair.Key;
                     return;
                 }
             }
@@ -168,6 +181,18 @@ namespace SPI_Data_Comp_Tool
             {
                 closing = false;
             }
+        }
+
+        private static readonly System.Reflection.MethodInfo AskToClose = typeof(Form).GetMethod("OnFormClosing",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        /// <summary>Runs the tool's own "may I close?" handlers without closing it.</summary>
+        private static bool Refuses(Form tool, CloseReason reason)
+        {
+            if (AskToClose == null) return false;   // cannot ask: the close itself will tell
+            var question = new FormClosingEventArgs(reason, false);
+            AskToClose.Invoke(tool, new object[] { question });
+            return question.Cancel;
         }
     }
 }
