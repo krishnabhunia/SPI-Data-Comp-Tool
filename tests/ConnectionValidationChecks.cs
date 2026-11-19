@@ -106,7 +106,10 @@ namespace SPI_Data_Comp_Tool
                 "{\"str_DBType\":\"unknown\"}",
                 "{\"int_Oracle_DefaultPort\":-1}",
                 "{\"int_Oracle_DefaultPort\":65536}",
+                "{\"int_Oracle_DefaultPort\":2147483648}",
+                "{\"int_Oracle_DefaultPort\":9223372036854775808}",
                 "{\"int_Oracle_DefaultPort\":99999999999999999999}",
+                "{\"int_Oracle_DefaultPort\":-99999999999999999999}",
                 "{\"int_Oracle_DefaultPort\":\"1521\"}",
                 "{\"bool_Rb_SQL\":\"true\"}",
                 "{\"str_DataSource\":12}",
@@ -123,7 +126,53 @@ namespace SPI_Data_Comp_Tool
                 "A legacy partial profile was rejected.");
             Require(ProfileStore.ParseJson("[{\"profileName\":\"नाम\",\"dbSRC\":{\"bool_Rb_Oracle\":true,\"int_Oracle_DefaultPort\":0},\"dbTRG\":{}}]").Count == 1,
                 "Unicode names or the legacy default-port sentinel were rejected.");
+            foreach (string value in new[] { "0", "1", "1521", "65535" })
+            {
+                string side = "{\"int_Oracle_DefaultPort\":" + value + "}";
+                List<DBC> imported = ProfileStore.ParseJson("[{\"profileName\":\"Boundary\",\"dbSRC\":" + side + ",\"dbTRG\":" + side + "}]");
+                Require(imported[0].dbSRC.int_Oracle_DefaultPort.ToString(System.Globalization.CultureInfo.InvariantCulture) == value
+                    && imported[0].dbTRG.int_Oracle_DefaultPort.ToString(System.Globalization.CultureInfo.InvariantCulture) == value,
+                    "A valid saved port was changed during import.");
+            }
+            InvalidProfile("[{\"profileName\":\"Target overflow\",\"dbSRC\":{},\"dbTRG\":{\"int_Oracle_DefaultPort\":99999999999999999999}}]");
+            CheckProfileExportPorts();
             passed("Profile imports reject malformed/ambiguous JSON, wrong field types, contradictory platforms and invalid ports while preserving Unicode names, partial templates and legacy default ports.");
+        }
+
+        private static void CheckProfileExportPorts()
+        {
+            List<DBC> previous = Profile.ProfileList;
+            try
+            {
+                Profile.ProfileList = new List<DBC>();
+                using (var form = new UserProfileForm())
+                {
+                    var panel = Find<ConnectionPanel>(form, "connection");
+                    MethodInfo capture = typeof(UserProfileForm).GetMethod("GetDBConnectionDetailsProfile",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
+                    panel.Source.Sql.Checked = panel.Target.Sql.Checked = true;
+                    panel.Source.Port.Text = "999999999999999999999";
+                    panel.Target.Port.Text = "inactive-port";
+                    panel.ValidateInput(true, true, false);
+                    var source = (DBConnectionDetailsProfile)capture.Invoke(form, new object[] { "SRC" });
+                    var target = (DBConnectionDetailsProfile)capture.Invoke(form, new object[] { "TRG" });
+                    Require(source.int_Oracle_DefaultPort == 0 && target.int_Oracle_DefaultPort == 0,
+                        "SQL profile capture parsed an inactive Oracle port instead of storing its unset sentinel.");
+                    Require(panel.Source.Port.Text == "999999999999999999999" && panel.Target.Port.Text == "inactive-port",
+                        "Profile capture changed inactive input text.");
+                    panel.Source.Oracle.Checked = true;
+                    panel.Source.DefaultPort.Checked = false;
+                    panel.Source.Port.Text = "65535";
+                    source = (DBConnectionDetailsProfile)capture.Invoke(form, new object[] { "SRC" });
+                    Require(source.int_Oracle_DefaultPort == 65535, "Profile capture changed a valid active Oracle port.");
+                    panel.Source.Port.Text = "999999999999999999999";
+                    bool rejected = false;
+                    try { capture.Invoke(form, new object[] { "SRC" }); }
+                    catch (TargetInvocationException ex) { rejected = ex.InnerException is ValidationFailure; }
+                    Require(rejected, "Profile capture accepted an invalid active Oracle port.");
+                }
+            }
+            finally { Profile.ProfileList = previous; }
         }
 
         private static void InvalidProfile(string json)

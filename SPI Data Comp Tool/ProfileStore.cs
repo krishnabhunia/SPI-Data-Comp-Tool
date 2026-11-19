@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
@@ -73,8 +74,17 @@ namespace SPI_Data_Comp_Tool
                     throw new InvalidDataException("Connection platform and authentication choices must be JSON true or false.");
             }
             JToken port = connection.GetValue("int_Oracle_DefaultPort", StringComparison.OrdinalIgnoreCase);
-            if (port != null && port.Type != JTokenType.Integer)
-                throw new InvalidDataException("The saved Oracle port must be an integer.");
+            if (port != null)
+            {
+                if (port.Type != JTokenType.Integer)
+                    throw new InvalidDataException("The saved Oracle port must be an integer.");
+                // JSON integers can be backed by BigInteger. Check the token before ToObject
+                // attempts an Int32 conversion, which otherwise throws an uncaught overflow.
+                int savedPort;
+                if (!int.TryParse(port.ToString(Formatting.None), NumberStyles.Integer, CultureInfo.InvariantCulture,
+                    out savedPort) || savedPort < 0 || savedPort > 65535)
+                    throw new InvalidDataException("The saved Oracle port must be between 1 and 65535, or 0 for the default.");
+            }
             foreach (string name in new[] { "str_DBType", "str_DataSource", "str_DBName", "str_UserName", "str_Password", "str_SchemaName", "str_TableName" })
             {
                 JToken value = connection.GetValue(name, StringComparison.OrdinalIgnoreCase);

@@ -38,6 +38,18 @@ class ConnectionValidation(unittest.TestCase):
             self.assertIn(expected, store)
         self.assertIn("file.Length > 16 * 1024 * 1024", source("UserProfileForm.cs"))
 
+    def test_profile_ports_are_range_checked_before_integer_materialization(self):
+        store = source("ProfileStore.cs")
+        check = store.split("private static void ValidateConnectionJson", 1)[1].split("internal static List<DBC> Upsert", 1)[0]
+        self.assertIn("int.TryParse(port.ToString(Formatting.None), NumberStyles.Integer, CultureInfo.InvariantCulture", check)
+        self.assertIn("savedPort < 0 || savedPort > 65535", check)
+        self.assertLess(store.index("ValidateConnectionJson((JObject)profile.GetValue"), store.index("array.ToObject<List<DBC>>()"))
+        profile = source("UserProfileForm.cs")
+        self.assertIn('rb_SRC_oracle.Checked ? FormValidation.Port(tb_SRC_DefaultPort, "Source Oracle port") : 0', profile)
+        self.assertIn('rb_TRG_Oracle.Checked ? FormValidation.Port(tb_TRG_DefaultPort, "Target Oracle port") : 0', profile)
+        self.assertNotIn("Convert.ToInt32(tb_SRC_DefaultPort.Text)", profile)
+        self.assertNotIn("Convert.ToInt32(tb_TRG_DefaultPort.Text)", profile)
+
     def test_analysis_checks_before_connecting_and_uses_literal_connection_values(self):
         analysis = source("OracleAndSQLConnection.cs")
         load = analysis.split("public void Load_DB_Oracle_SQL()", 1)[1].split("private void btn_Connect", 1)[0]

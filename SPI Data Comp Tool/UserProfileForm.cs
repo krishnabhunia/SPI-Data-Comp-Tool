@@ -555,7 +555,8 @@ namespace SPI_Data_Comp_Tool
                         bool_Rb_Oracle = rb_SRC_oracle.Checked,
                         bool_Rb_SQL = rb_SRC_SQL.Checked,
                         bool_SQL_WA = cb_WindowAuthentication_SRC.Checked,
-                        int_Oracle_DefaultPort = tb_SRC_DefaultPort.Text == "" ? 1521 : Convert.ToInt32(tb_SRC_DefaultPort.Text),
+                        // SQL profiles do not use an Oracle port; preserve the compatible unset sentinel.
+                        int_Oracle_DefaultPort = rb_SRC_oracle.Checked ? FormValidation.Port(tb_SRC_DefaultPort, "Source Oracle port") : 0,
                         str_DataSource = tb_SRC_DataSource.Text,
                         str_DBName = tb_SRC_DBName.Text,
                         str_DBType = rb_SRC_oracle.Checked ? "Oracle" : "SQL",
@@ -574,7 +575,7 @@ namespace SPI_Data_Comp_Tool
                         bool_Rb_Oracle = rb_TRG_Oracle.Checked,
                         bool_Rb_SQL = rb_TRG_SQL.Checked,
                         bool_SQL_WA = cb_WindowAuthentication_TRG.Checked,
-                        int_Oracle_DefaultPort = tb_TRG_DefaultPort.Text == "" ? 1521 : Convert.ToInt32(tb_TRG_DefaultPort.Text),
+                        int_Oracle_DefaultPort = rb_TRG_Oracle.Checked ? FormValidation.Port(tb_TRG_DefaultPort, "Target Oracle port") : 0,
                         str_DataSource = tb_TRG_DataSource.Text,
                         str_DBName = tb_TRG_DBName.Text,
                         str_DBType = rb_TRG_Oracle.Checked ? "Oracle" : "SQL",
