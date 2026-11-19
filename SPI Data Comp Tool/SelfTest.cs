@@ -35,6 +35,11 @@ namespace SPI_Data_Comp_Tool
                 Environment.ExitCode = UpdateChecks.Run(args[1]);
                 return true;
             }
+            if (args[0] == "--check-inputs" && args.Length >= 2)
+            {
+                Environment.ExitCode = InputCheckChecks.Run(args[1]);
+                return true;
+            }
             if (args[0] == "--list-forms" && args.Length >= 2)
             {
                 File.WriteAllLines(args[1], FormTypes().Select(t => t.FullName));

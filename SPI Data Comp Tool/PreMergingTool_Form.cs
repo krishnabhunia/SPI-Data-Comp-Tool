@@ -732,6 +732,8 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 boolConnection = false;
+                // stop here when an input is missing or wrong: marks at the fields, reasons in the log
+                if (!connection.AddChecks(InputCheck.For(this), target: false).Report()) return;
                 if (!FormValidation.Check(this, () =>
                 {
                     connection.Source.ValidateInput();

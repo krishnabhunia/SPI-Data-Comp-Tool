@@ -154,6 +154,9 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                // stop here when an input is missing or wrong: marks at the fields, reasons in the log
+                // with "Input from Excel" the Source database is not used, so it is not asked for
+                if (!connection.AddChecks(InputCheck.For(this), source: !cb_CHG_NUM_From_Excel.Checked).Report()) return;
                 ConnectDB();
             }
             catch (Exception ex)

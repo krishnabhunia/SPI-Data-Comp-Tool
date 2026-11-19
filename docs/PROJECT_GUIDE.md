@@ -117,6 +117,15 @@ Code: `UpdatesControl.cs`, `UpdateFeedClient.cs`, `UpdateInstaller.cs`, `UpdateA
 
 The repository's releases must remain publicly readable: the updater does not request GitHub credentials. The installer retains its conditional `/RELAUNCH=1` hook for already-released older updater clients; the current helper never supplies that switch and controls its own verified restart. See [UPDATING.md](UPDATING.md) for migration, first-upgrade instructions, safeguards and limitations.
 
+## Input checks
+- **One checker for every window:** `InputCheck.cs`. Before an action starts, the window lists what it needs and stops when something is missing or wrong:
+  `if (!InputCheck.For(this).Connection(connection.Source).Required(tb_Table, "Table name").Report()) return;`
+- **What the user sees:** a mark beside each wrong field (hovering shows the reason), every reason and the count ("3 inputs need fixing. Nothing was started.") in the window's log (`rtb_Log`), and the cursor in the first wrong field. A window without a log shows the reason at the field. No message box.
+- **Checks available:** `Required`, `Number` / `Port` (1-65535), `FileExists` / `FilePath` (with allowed file types), `FolderExists` / `FolderPath`, `ValidName` (table, schema, column), `ValidFileName`, `AnyChosen` (lists, drop-downs, grids), `Connection`, and `That` for anything else. Switched-off fields are skipped.
+- **Connection rules:** Oracle needs port, data source, database, user name and password. SQL Server needs data source and database, plus user name and password unless Windows authentication is ticked. `ConnectionPanel.AddChecks` adds them for the halves a window shows.
+- **Where it runs now:** every button that connects, in the 11 windows with a connection (Compare DB, Compare List Tables, Execute Scripts, Pre Merging Tool, Duplicacy Check, FK Extraction, Legacy ID, Delta Change Tracker, Export DB To Excel, Table Extraction, User Profile).
+- **Checks of the checker:** `tests/InputCheckChecks.cs`, run in CI as `--check-inputs`.
+
 ## Versioning and CI artifacts
 Versions are automatic - nobody edits a version number by hand. `tools/release.py` works it out in CI:
 
