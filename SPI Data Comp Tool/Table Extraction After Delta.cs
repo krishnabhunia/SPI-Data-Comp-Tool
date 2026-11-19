@@ -13,6 +13,7 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class Table_Extraction_After_Delta_Form : Form
     {
+        private IDisposable operationInputs;
         private Common_Data common_Data;
         private DBConnectionDetails dBConnectionDetails;
 
@@ -73,8 +74,23 @@ namespace SPI_Data_Comp_Tool
         public Table_Extraction_After_Delta_Form()
         {
             InitializeComponent();
+            FormClosing += (sender, args) =>
+            {
+                if (bgw_old_VS_new.IsBusy || bgw_Chg_Num.IsBusy || bgw_Chg_numVsChg_Num.IsBusy || bgw_TableExtractionAfterDelta.IsBusy)
+                {
+                    args.Cancel = true;
+                    FormValidation.Check(this, () => FormValidation.Reject(btn_Cancel,
+                        "Wait for the current operation to finish or cancel it before closing this window."),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true));
+                }
+            };
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
+            connection.InputChanged += (sender, args) =>
+            {
+                if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
+                if (dBConnectionStatus_TRG != null) dBConnectionStatus_TRG.boolConnection = false;
+            };
             UiTheme.Apply(this);
 
             try
@@ -139,7 +155,8 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
-                if (!connection.AddChecks(InputCheck.For(this)).Report()) return;
+                // with "Input from Excel" the Source database is not used, so it is not asked for
+                if (!connection.AddChecks(InputCheck.For(this), source: !cb_CHG_NUM_From_Excel.Checked).Report()) return;
                 ConnectDB();
             }
             catch (Exception ex)
@@ -152,33 +169,36 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateDeltaConnectionInputs(!cb_CHG_NUM_From_Excel.Checked)) return;
+                dBConnectionStatus_SRC.boolConnection = dBConnectionStatus_TRG.boolConnection = false;
                 string str_DBName = tb_SRC_DBName.Text.Trim();
 
-                if (rb_SRC_oracle.Checked)
+                if (!cb_CHG_NUM_From_Excel.Checked && rb_SRC_oracle.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Source Oracle...");
 
-                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                 }
-                else if (rb_SRC_SQL.Checked)
+                else if (!cb_CHG_NUM_From_Excel.Checked && rb_SRC_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Source SQL...");
-                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                 }
 
-                Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_SRC.strConnectionMSG, (!dBConnectionStatus_SRC.boolConnection), -1, Color.DarkBlue);
+                if (!cb_CHG_NUM_From_Excel.Checked)
+                    Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_SRC.strConnectionMSG, (!dBConnectionStatus_SRC.boolConnection), -1, Color.DarkBlue);
                 str_DBName = tb_TRG_DBName.Text.Trim();
 
                 if (rb_TRG_Oracle.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target Oracle...");
 
-                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                 }
                 else if (rb_TRG_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target SQL...");
-                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                 }
                 Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_TRG.strConnectionMSG, (!dBConnectionStatus_TRG.boolConnection), -1, Color.DarkBlue);
 
@@ -289,6 +309,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateDeltaInputs()) return;
                 Common_Data.DisplayMessage(rtb_Log, $"Old Versur New Selected");
 
                 strSRCTypeSelected = connection.Source.DatabaseType;
@@ -320,7 +341,13 @@ namespace SPI_Data_Comp_Tool
 
                     if (boolFolderBrowserDialog)
                     {
-                        dsTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                        DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                        if (!FormValidation.Check(this, () =>
+                        {
+                            ValidateDeltaWorkbook(candidate, "old");
+                            FormValidation.ExistingDirectory(folderBrowserDialog.SelectedPath, btnOLDvsNew, "Output folder");
+                        }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                        dsTableList = candidate;
                         dtTableList = dsTableList.Tables[0];
 
                         strFolderPath = folderBrowserDialog.SelectedPath;
@@ -330,7 +357,7 @@ namespace SPI_Data_Comp_Tool
                         {
                             timer1.Enabled = true;
                             start_Time = DateTime.Now;
-                            bgw_old_VS_new.RunWorkerAsync();
+                            FormValidation.StartWorker(this, bgw_old_VS_new, ref operationInputs, btn_Cancel);
                         }
                         else
                         {
@@ -358,6 +385,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateDeltaInputs(!cb_CHG_NUM_From_Excel.Checked)) return;
                 Common_Data.DisplayMessage(rtb_Log, $"CHG_NUM Versus Columns Selected");
 
                 strSRCTypeSelected = connection.Source.DatabaseType;
@@ -401,7 +429,20 @@ namespace SPI_Data_Comp_Tool
 
                         if (boolFolderBrowserDialog)
                         {
-                            dsTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                            DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                            if (!FormValidation.Check(this, () =>
+                            {
+                                ValidateDeltaWorkbook(candidate, "change");
+                                FormValidation.ExistingDirectory(folderBrowserDialog.SelectedPath, btn_Chg_Num, "Output folder");
+                                if (cb_CHG_NUM_From_Excel.Checked)
+                                {
+                                    FormValidation.Selection(cb_ExcelSheetName, "source worksheet");
+                                    FormValidation.Table(dtSRC, cb_ExcelSheetName, "Source worksheet");
+                                    foreach (DataRow row in candidate.Tables[0].Rows)
+                                        FormValidation.Columns(dtSRC, new[] { Convert.ToString(row["src_column_name"]).Trim() }, cb_ExcelSheetName, "Source worksheet");
+                                }
+                            }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                            dsTableList = candidate;
                             dtTableList = dsTableList.Tables[0];
 
                             strFolderPath = folderBrowserDialog.SelectedPath;
@@ -411,7 +452,7 @@ namespace SPI_Data_Comp_Tool
                             {
                                 timer1.Enabled = true;
                                 start_Time = DateTime.Now;
-                                bgw_Chg_Num.RunWorkerAsync();
+                                FormValidation.StartWorker(this, bgw_Chg_Num, ref operationInputs, btn_Cancel);
                             }
                             else
                             {
@@ -718,6 +759,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateDeltaInputs()) return;
                 Common_Data.DisplayMessage(rtb_Log, $"CHG_NUM Versus CHG_NUM");
 
                 strSRCTypeSelected = connection.Source.DatabaseType;
@@ -749,7 +791,13 @@ namespace SPI_Data_Comp_Tool
 
                     if (boolFolderBrowserDialog)
                     {
-                        dsTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                        DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                        if (!FormValidation.Check(this, () =>
+                        {
+                            ValidateDeltaWorkbook(candidate, "change-pair");
+                            FormValidation.ExistingDirectory(folderBrowserDialog.SelectedPath, btn_Chg_NumVsChg_Num, "Output folder");
+                        }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                        dsTableList = candidate;
                         dtTableList = dsTableList.Tables[0];
 
                         strFolderPath = folderBrowserDialog.SelectedPath;
@@ -759,7 +807,7 @@ namespace SPI_Data_Comp_Tool
                         {
                             timer1.Enabled = true;
                             start_Time = DateTime.Now;
-                            bgw_Chg_numVsChg_Num.RunWorkerAsync();
+                            FormValidation.StartWorker(this, bgw_Chg_numVsChg_Num, ref operationInputs, btn_Cancel);
                         }
                         else
                         {
@@ -893,6 +941,8 @@ namespace SPI_Data_Comp_Tool
 
         private void bgw_Chg_numVsChg_Num_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
                 timer1.Enabled = false;
@@ -920,6 +970,8 @@ namespace SPI_Data_Comp_Tool
 
         private void bgw_Chg_Num_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
                 timer1.Enabled = false;
@@ -1295,6 +1347,8 @@ namespace SPI_Data_Comp_Tool
 
         private void bgw_TableExtractionAfterDelta_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
                 timer1.Enabled = false;
@@ -1303,6 +1357,10 @@ namespace SPI_Data_Comp_Tool
                 {
                     Exception MyException = new Exception(e.Error.Message, e.Error.InnerException);
                     Common_Data.DisplayError(rtb_Log, MyException);
+                }
+                else if (e.Cancelled)
+                {
+                    Common_Data.DisplayMessage(rtb_Log, "Table extraction was cancelled; partial outputs may remain.", true);
                 }
                 else
                 {
@@ -1329,6 +1387,8 @@ namespace SPI_Data_Comp_Tool
 
         private void bgw_old_VS_new_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
                 timer1.Enabled = false;
@@ -1390,6 +1450,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateDeltaInputs()) return;
                 Common_Data.DisplayMessage(rtb_Log, $"Table Extraction After Delta Selected");
 
                 strSRCTypeSelected = connection.Source.DatabaseType;
@@ -1410,7 +1471,13 @@ namespace SPI_Data_Comp_Tool
 
                     if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
                     {
-                        dtTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath).Tables[0];
+                        DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                        if (!FormValidation.Check(this, () =>
+                        {
+                            ValidateDeltaWorkbook(candidate, "extract");
+                            FormValidation.ExistingDirectory(folderBrowserDialog.SelectedPath, btn_Excel, "Output folder");
+                        }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                        dtTableList = candidate.Tables[0];
 
                         strFolderPath = folderBrowserDialog.SelectedPath;
                         Common_Data.DisplayMessage(rtb_Log, $"Saving path selected : {strFolderPath}");
@@ -1419,7 +1486,7 @@ namespace SPI_Data_Comp_Tool
                         {
                             timer1.Enabled = true;
                             start_Time = DateTime.Now;
-                            bgw_TableExtractionAfterDelta.RunWorkerAsync();
+                            FormValidation.StartWorker(this, bgw_TableExtractionAfterDelta, ref operationInputs, btn_Cancel);
                         }
                         else
                         {
@@ -1501,5 +1568,62 @@ namespace SPI_Data_Comp_Tool
                 Common_Data.DisplayError(rtb_Log, ex);
             }
         }
+        private void ValidateIdle()
+        {
+            FormValidation.IsBusy(bgw_old_VS_new, btnOLDvsNew);
+            FormValidation.IsBusy(bgw_Chg_Num, btn_Chg_Num);
+            FormValidation.IsBusy(bgw_Chg_numVsChg_Num, btn_Chg_NumVsChg_Num);
+            FormValidation.IsBusy(bgw_TableExtractionAfterDelta, btn_Excel);
+        }
+
+        internal bool ValidateDeltaConnectionInputs(bool requireSource = true)
+        {
+            return FormValidation.Check(this, () =>
+            {
+                ValidateIdle();
+                connection.ValidateInput(requireSource, true);
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true));
+        }
+
+        internal bool ValidateDeltaInputs(bool requireSource = true)
+        {
+            return FormValidation.Check(this, () =>
+            {
+                ValidateIdle();
+                connection.ValidateInput(requireSource, true);
+                FormValidation.Require(dBConnectionStatus_TRG != null && dBConnectionStatus_TRG.boolConnection
+                    && (!requireSource || dBConnectionStatus_SRC != null && dBConnectionStatus_SRC.boolConnection), btn_TestDBConnection,
+                    "Test the current required database connections before extracting tables.");
+                if (!requireSource)
+                {
+                    FormValidation.Selection(cb_ExcelSheetName, "source worksheet");
+                    FormValidation.Table(dtSRC, cb_ExcelSheetName, "Source worksheet");
+                }
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true));
+        }
+
+        internal void ValidateDeltaWorkbook(DataSet candidate, string mode)
+        {
+            FormValidation.Require(candidate != null && candidate.Tables.Count > 0, btn_Excel, "Load a workbook containing an extraction list.");
+            string[] required = mode == "old" ? new[] { "src_table_name", "trg_table_name", "column_name", "table_id" }
+                : mode == "extract" ? new[] { "src_table_name", "trg_table_name", "primary_key", "table_id" }
+                : mode == "change" ? new[] { "src_table_name", "trg_table_name", "src_column_name", "trg_column_name", "table_id" }
+                : new[] { "src_table_name", "trg_table_name", "src_column_name", "trg_column_name" };
+            foreach (DataTable table in candidate.Tables)
+            {
+                FormValidation.Table(table, btn_Excel, "Extraction list");
+                FormValidation.Columns(table, required, btn_Excel, "Extraction list");
+                for (int rowIndex = 0; rowIndex < table.Rows.Count; rowIndex++)
+                    foreach (string column in required)
+                    {
+                        // Old-vs-new worksheets name their source/target table on the first row only.
+                        if (mode == "old" && rowIndex > 0 && (column == "src_table_name" || column == "trg_table_name")) continue;
+                        FormValidation.Require(!string.IsNullOrWhiteSpace(Convert.ToString(table.Rows[rowIndex][column])), btn_Excel,
+                            "Extraction rows need the table, column and ID values required by the selected mode.");
+                    }
+                if (mode != "old") break;
+            }
+        }
+
     }
 }

@@ -43,6 +43,8 @@ namespace SPI_Data_Comp_Tool
             connection.Source.Title = "Database";
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
+            connection.InputChanged += (sender, args) => { boolConnection = false; strConnection = string.Empty; };
+            tb_SchemaName.TextChanged += (sender, args) => { boolConnection = false; };
             UiTheme.Apply(this);   // its main button sits in a tab kept as designed; too small for the bold blue style
 
             try
@@ -371,6 +373,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidatePreMergeInputs()) return;
                 lb_link.Visible = false;
                 llb_File.Visible = false;
 
@@ -378,7 +381,10 @@ namespace SPI_Data_Comp_Tool
 
                 if (openFileDialogData.boolFileSelected)
                 {
-                    dsTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                    DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                    if (!FormValidation.Check(this, () => ValidatePreMergeWorkbook(candidate, true),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                    dsTableList = candidate;
                     if (dsTableList != null && dsTableList.Tables.Count > 0 && dsTableList.Tables[0].Rows.Count > 0)
                     {
                         Common_Data.DisplayMessage(rtb_Log, $"Selected File :{openFileDialogData.strFileNameWithPath}");
@@ -393,6 +399,8 @@ namespace SPI_Data_Comp_Tool
 
                             if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
                             {
+                                if (!FormValidation.Check(this, () => FormValidation.ExistingDirectory(folderBrowserDialog.SelectedPath,
+                                    btn_Duplicate, "Output folder"), message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                                 Common_Data.DisplayMessage(rtb_Log, $"Output Folder Selected : {folderBrowserDialog.SelectedPath}");
                                 Common_Data.DisplayMessage(rtb_Log, "Duplicate Checking Started, Pls Wait !!!");
 
@@ -439,6 +447,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidatePreMergeInputs()) return;
                 lb_link.Visible = false;
                 llb_File.Visible = false;
                 dtDelta = new DataTable();
@@ -451,7 +460,10 @@ namespace SPI_Data_Comp_Tool
 
                 if (openFileDialogData.boolFileSelected)
                 {
-                    dsTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                    DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                    if (!FormValidation.Check(this, () => ValidatePreMergeWorkbook(candidate, false),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                    dsTableList = candidate;
 
                     if (dsTableList != null && dsTableList.Tables.Count > 0 && dsTableList.Tables[0].Rows.Count > 0)
                     {
@@ -464,6 +476,11 @@ namespace SPI_Data_Comp_Tool
 
                             if (saveFileDialogFile.BoolFileSaveStatus)
                             {
+                                if (!FormValidation.Check(this, () =>
+                                {
+                                    FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath, btn_ListTableExcel, "Output workbook", ".xlsx");
+                                    FormValidation.DifferentFiles(saveFileDialogFile.Str_saveFileNameWithPath, openFileDialogData.strFileNameWithPath, btn_ListTableExcel);
+                                }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                                 Common_Data.DisplayMessage(rtb_Log, "PreMerging Started");
                                 str_excelFileName = saveFileDialogFile.Str_saveFileNameWithPath;
                                 if (PreMergingTest())
@@ -668,6 +685,7 @@ namespace SPI_Data_Comp_Tool
                         }
 
                         worksheet = pck.Workbook.Worksheets.Add(dtDelta.TableName);
+                        FormValidation.ExcelTable(dtDelta, null, "Excel output");
                         worksheet.Cells["A1"].LoadFromDataTable(dtDelta, true);
                     }
                     else
@@ -679,10 +697,13 @@ namespace SPI_Data_Comp_Tool
                         worksheet = pck.Workbook.Worksheets[str_TableName];
                         //var lastRow = worksheet.Cells.Last(c => c.Start.Row == 1);
                         int int_lastCol = worksheet.Dimension.Columns + 2;
+                        FormValidation.ExcelTable(dtDelta, null, "Pre-merging output");
+                        FormValidation.Require((long)int_lastCol + dtDelta.Columns.Count - 1 <= 16384, null,
+                            "The combined pre-merging worksheet exceeds Excel's 16,384-column limit.");
                         worksheet.Cells[1, int_lastCol].LoadFromDataTable(dtDelta, true);
                     }
                     worksheet.Cells.AutoFitColumns(22, 50);
-                    pck.SaveAs(new System.IO.FileInfo(str_excelFileName));
+                    FormValidation.WriteAtomically(str_excelFileName, temporary => pck.SaveAs(new FileInfo(temporary)));
                 }
             }
             catch (Exception ex)
@@ -710,8 +731,14 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                boolConnection = false;
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
                 if (!connection.AddChecks(InputCheck.For(this), target: false).Report()) return;
+                if (!FormValidation.Check(this, () =>
+                {
+                    connection.Source.ValidateInput();
+                    if (cb_Schema.Checked) FormValidation.Required(tb_SchemaName, "Schema name");
+                }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                 str_DBName = tb_SRC_DBName.Text.Trim();
                 str_SchemaName = tb_SchemaName.Text.Trim();
 
@@ -719,12 +746,12 @@ namespace SPI_Data_Comp_Tool
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Oracle...");
 
-                    boolConnection = DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    boolConnection = DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                 }
                 else if (rb_SRC_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to SQL...");
-                    boolConnection = DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    boolConnection = DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                 }
 
             }
@@ -740,7 +767,7 @@ namespace SPI_Data_Comp_Tool
             {
                 if (str_DBType.ToLower() == "oracle")
                 {
-                    strConnection = $"Data Source=(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP) (HOST = {str_ServerName} )(PORT = {str_OraclePortNo})) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = {str_DBName}))); User Id={str_Username};Password={str_Password};";
+                    strConnection = ConnectionStrings.Build("oracle", str_ServerName, str_DBName, false, str_Username, str_Password, str_OraclePortNo);
 
                     using (OracleConnection oracleConnection = new OracleConnection(strConnection))
                     {
@@ -762,11 +789,11 @@ namespace SPI_Data_Comp_Tool
                 {
                     if (boolWinAuthType)
                     {
-                        strConnection = $"Data Source = {str_DBName};Initial Catalog = {str_DBName}; Integrated Security = true ";
+                        strConnection = ConnectionStrings.Build("sql", str_ServerName, str_DBName, true, str_Username, str_Password, str_OraclePortNo);
                     }
                     else
                     {
-                        strConnection = $"Data Source = {str_ServerName};Initial Catalog = {str_DBName}; User ID = {str_Username};Password = {str_Password};";
+                        strConnection = ConnectionStrings.Build("sql", str_ServerName, str_DBName, false, str_Username, str_Password, str_OraclePortNo);
                     }
 
                     using (SqlConnection sqlConn = new SqlConnection(strConnection))
@@ -796,6 +823,31 @@ namespace SPI_Data_Comp_Tool
                 DisplayError(ex);
                 return boolConnection = false;
             }
+        }
+
+        internal bool ValidatePreMergeInputs()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                connection.Source.ValidateInput();
+                if (cb_Schema.Checked) FormValidation.Required(tb_SchemaName, "Schema name");
+                FormValidation.Require(boolConnection && !string.IsNullOrWhiteSpace(strConnection), btn_Connect,
+                    "Connect using the current database and schema before processing a workbook.");
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true));
+        }
+
+        internal void ValidatePreMergeWorkbook(DataSet candidate, bool duplicate)
+        {
+            FormValidation.Require(candidate != null && candidate.Tables.Count > 0, btn_ListTableExcel, "The workbook contains no worksheets.");
+            DataTable list = candidate.Tables[0];
+            FormValidation.Table(list, btn_ListTableExcel, "Pre-merging list");
+            string[] columns = duplicate ? new[] { "TABLE_NAME", "DUPLICACY_COLUMNS" }
+                : new[] { "TABLE_FK_PRIMARY_KEY", "FOREIGN_KEY_SRC", "TABLE_NAME_FK", "TABLE_NAME_PK", "FOREIGN_KEY_TRG" };
+            FormValidation.Columns(list, columns, btn_ListTableExcel, "Pre-merging list");
+            foreach (DataRow row in list.Rows)
+                foreach (string column in columns)
+                    FormValidation.Require(!string.IsNullOrWhiteSpace(Convert.ToString(row[column])), btn_ListTableExcel,
+                        "Pre-merging rows must not contain blank table or key-column names.");
         }
 
     }

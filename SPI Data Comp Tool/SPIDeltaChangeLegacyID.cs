@@ -54,6 +54,11 @@ namespace SPI_Data_Comp_Tool
             InitializeComponent();
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => DisplayError(error);
+            connection.InputChanged += (sender, args) =>
+            {
+                if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
+                if (dBConnectionStatus_TRG != null) dBConnectionStatus_TRG.boolConnection = false;
+            };
             UiTheme.Apply(this, btn_ListTableExcel);
 
             try
@@ -92,16 +97,25 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateLegacyInputs()) return;
                 openFileDialogData = openFileDialogData.openFileDialog("Select Excel File");
 
                 if (openFileDialogData.boolFileSelected)
                 {
+                    DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                    if (!FormValidation.Check(this, () => ValidateLegacyWorkbook(candidate),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                     saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Excel File", $"{openFileDialogData.SimpleFileName_WithoutExt}_{ common_Data.AppendDateInOutputFileName(DateTime.Now)}");
 
                     if (saveFileDialogFile.BoolFileSaveStatus)
                     {
+                        if (!FormValidation.Check(this, () =>
+                        {
+                            FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath, btn_ListTableExcel, "Output workbook", ".xlsx");
+                            FormValidation.DifferentFiles(saveFileDialogFile.Str_saveFileNameWithPath, openFileDialogData.strFileNameWithPath, btn_ListTableExcel);
+                        }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                         Common_Data.DisplayMessage(rtb_Log, openFileDialogData.strFileNameWithPath);
-                        dsTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                        dsTableList = candidate;
 
                         if (dsTableList.Tables.Contains("Source rows only"))
                         {
@@ -118,6 +132,7 @@ namespace SPI_Data_Comp_Tool
                                     strSelectStmt = $"Select {dr["Refrence_Field_Name_for_Mapping"]},{dr["Field_to_be_taken"]} from {dr["Reference_Table_Name"]} Where {dr["Refrence_Field_Name_for_Mapping"]} in ({strSourceRowsData})";
 
                                     strConnection = dBConnectionStatus_SRC.strConnectionString;
+                                    dtFetch = new DataTable();
 
                                     using (SqlDataAdapter sqlDA = new SqlDataAdapter(strSelectStmt, strConnection))
                                     {
@@ -269,8 +284,11 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                dBConnectionStatus_SRC.boolConnection = false;
+                dBConnectionStatus_TRG.boolConnection = false;
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
-                if (!connection.AddChecks(InputCheck.For(this)).Report()) return;
+                if (!connection.AddChecks(InputCheck.For(this), target: false).Report()) return;
+                if (!ValidateLegacyConnectionInputs()) return;
                 string str_DBName = tb_SRC_DBName.Text.Trim();
                 //string str_SchemaName = tb_SchemaName.Text.Trim();
 
@@ -278,35 +296,68 @@ namespace SPI_Data_Comp_Tool
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Source Oracle...");
 
-                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                 }
                 else if (rb_SRC_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Source SQL...");
-                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                 }
 
                 Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_SRC.strConnectionMSG, (!dBConnectionStatus_SRC.boolConnection), -1, Color.DarkBlue);
-                str_DBName = tb_TRG_DBName.Text.Trim();
-                //str_SchemaName = tb_SchemaName.Text.Trim();
-
-                if (rb_TRG_Oracle.Checked)
-                {
-                    Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target Oracle...");
-
-                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
-                }
-                else if (rb_TRG_SQL.Checked)
-                {
-                    Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target SQL...");
-                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
-                }
-                Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_TRG.strConnectionMSG, (!dBConnectionStatus_TRG.boolConnection), -1, Color.DarkBlue);
+                // This mapper reads only Source; an unused Target must not block a valid Source-only run.
 
             }
             catch (Exception ex)
             {
                 DisplayError(ex);
+            }
+        }
+        private void ValidateLegacySource()
+        {
+            connection.Source.ValidateInput();
+            FormValidation.Require(rb_SRC_SQL.Checked, rb_SRC_SQL,
+                "Legacy-ID mapping currently requires a SQL Server source connection.");
+        }
+
+        internal bool ValidateLegacyConnectionInputs()
+        {
+            return FormValidation.Check(this, ValidateLegacySource,
+                message => Common_Data.DisplayMessage(rtb_Log, message, true));
+        }
+
+        internal bool ValidateLegacyInputs()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                ValidateLegacySource();
+                FormValidation.Require(dBConnectionStatus_SRC != null && dBConnectionStatus_SRC.boolConnection,
+                    btn_Connect_Reference_ID, "Test the current source database connection before mapping legacy IDs.");
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true));
+        }
+
+        internal void ValidateLegacyWorkbook(DataSet candidate)
+        {
+            FormValidation.Require(candidate != null && candidate.Tables.Contains("Source rows only")
+                && candidate.Tables.Contains("References_Source_Rows_Only"), btn_ListTableExcel,
+                "The workbook must contain Source rows only and References_Source_Rows_Only worksheets.");
+            DataTable source = candidate.Tables["Source rows only"];
+            DataTable mapping = candidate.Tables["References_Source_Rows_Only"];
+            FormValidation.Table(source, btn_ListTableExcel, "Source rows only");
+            FormValidation.Table(mapping, btn_ListTableExcel, "Legacy-ID mappings");
+            string[] columns = { "Field_to_be_taken", "Refrence_Field_Name_for_Mapping", "Reference_Table_Name", "Source_Rows_Field_Name" };
+            FormValidation.Columns(mapping, columns, btn_ListTableExcel, "Legacy-ID mappings");
+            var outputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (DataRow row in mapping.Rows)
+            {
+                foreach (string column in columns)
+                    FormValidation.Require(!string.IsNullOrWhiteSpace(Convert.ToString(row[column])), btn_ListTableExcel,
+                        "Every mapping row must include its table and column names.");
+                FormValidation.Columns(source, new[] { Convert.ToString(row["Field_to_be_taken"]), Convert.ToString(row["Source_Rows_Field_Name"]) }.Distinct(StringComparer.OrdinalIgnoreCase),
+                    btn_ListTableExcel, "Source rows only");
+                string output = Convert.ToString(row["Source_Rows_Field_Name"]) + "_NEW";
+                FormValidation.Require(outputs.Add(output) && !source.Columns.Contains(output), btn_ListTableExcel,
+                    "A mapping output column already exists or is repeated. Use an original input workbook with unique mappings.");
             }
         }
     }

@@ -3,8 +3,6 @@
 Run from the repository root:  python tools/make_app_images.py
 Writes:
   SPI Data Comp Tool/app.ico                     - window / exe icon (16-256 px)
-  SPI Data Comp Tool/Resources/app_banner.png    - main window header
-  SPI Data Comp Tool/Resources/compare_diagram.png - main window Source <-> Target picture
   SPI Data Comp Tool/Resources/about_side.png    - About box side picture
 and puts app.ico into every form's embedded window icon ($this.Icon in *.resx).
 Needs Pillow and the Inter font (falls back to DejaVu Sans).
@@ -17,7 +15,6 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[1] / "SPI Data Comp Tool"
 NAVY, BLUE, SKY = (30, 58, 138), (37, 99, 235), (191, 219, 254)
 MINT, MINT_DARK, WHITE = (167, 243, 208), (16, 185, 129), (255, 255, 255)
-INK, GREY = (15, 23, 42), (100, 116, 139)
 
 
 def font(size, bold=True):
@@ -83,32 +80,6 @@ def write_icon(master):
     master.save(ROOT / "app.ico", format="ICO", sizes=sizes)
 
 
-def banner(master, w=956, h=476):
-    img = Image.new("RGB", (w, h), WHITE)
-    ic = master.resize((300, 300), Image.LANCZOS)
-    img.paste(ic, (50, (h - 300) // 2), ic)
-    d = ImageDraw.Draw(img)
-    d.text((385, 120), "SPI Data", font=font(84), fill=INK)
-    d.text((385, 215), "Comparison Tool", font=font(62), fill=BLUE)
-    d.text((388, 312), "Oracle  ·  SQL Server  ·  Excel", font=font(34, bold=False), fill=GREY)
-    img.save(ROOT / "Resources" / "app_banner.png", optimize=True)
-
-
-def compare_diagram(w=956, h=404):
-    big = Image.new("RGB", (w * 2, h * 2), (248, 250, 252))
-    d = ImageDraw.Draw(big)
-    cylinder(d, 360, 150, 300, 420, (219, 234, 254), BLUE, BLUE, 12)
-    cylinder(d, 1552, 150, 300, 420, (209, 250, 229), MINT_DARK, MINT_DARK, 12)
-    arrow(d, 560, 1352, 360, GREY, 22)
-    f, fs = font(60), font(46, bold=False)
-    for cx, label in ((360, "Source"), (1552, "Target")):
-        tw = d.textlength(label, font=f)
-        d.text((cx - tw / 2, 625), label, font=f, fill=INK)
-    t = "compare"
-    d.text((956 - d.textlength(t, font=fs) / 2, 270), t, font=fs, fill=GREY)
-    big.resize((w, h), Image.LANCZOS).save(ROOT / "Resources" / "compare_diagram.png", optimize=True)
-
-
 def about_side(master, w=262, h=518):
     img = gradient((w, h), BLUE, NAVY).convert("RGBA")
     ic = master.resize((190, 190), Image.LANCZOS)
@@ -140,8 +111,6 @@ def update_form_icons():
 if __name__ == "__main__":
     m = icon_master()
     write_icon(m)
-    banner(m)
-    compare_diagram()
     about_side(m)
     print("images written to", ROOT)
     print("form icons updated:", update_form_icons())

@@ -79,6 +79,11 @@ namespace SPI_Data_Comp_Tool
                 folderBrowserDialog1 = new FolderBrowserDialog();
 
                 boolSRC_Folder = boolTRG_Folder = false;
+                connection.InputChanged += (sender, args) =>
+                {
+                    // A test of an older target must never authorize execution on edited fields.
+                    if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
+                };
                 common_Data.ReadUserProfile(cb_UserProfileList);
 
                 point_gbTextFile = gb_ExcelFile.Location;
@@ -146,10 +151,16 @@ namespace SPI_Data_Comp_Tool
 
                 if (openFileDialogData.boolFileSelected)
                 {
+                    if (!FormValidation.Check(this, () => FormValidation.ReadableFile(openFileDialogData.strFileNameWithPath,
+                        btn_ExecuteScript, "Script workbook", ".xlsx", ".xlsm"), ReportValidation)) return;
+                    DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                    if (!FormValidation.Check(this, () => ExcelFileReadCustomControl.ValidateWorkbook(candidate, btn_ExecuteScript), ReportValidation))
+                    { candidate?.Dispose(); return; }
                     lbl_ExcelFile.Text = $"Read File : {openFileDialogData.SimpleFileName}";
                     lbl_ExcelFile.Visible = true;
                     Common_Data.DisplayMessage(rtb_Log, $"Input Script File : {openFileDialogData.strFileNameWithPath}");
-                    dtGenerateScript = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath).Tables[0];
+                    dtGenerateScript = candidate.Tables[0].Copy();
+                    candidate.Dispose();
                     ListCols = (from DataColumn col in dtGenerateScript.Columns select col).ToList();
                     clb_Checked.Items.Clear();
                     clb_Checked.Items.AddRange(ListCols.Select(x => x.ColumnName).ToArray());
@@ -159,8 +170,7 @@ namespace SPI_Data_Comp_Tool
                 }
                 else
                 {
-                    lbl_ExcelFile.ResetText();
-                    lbl_ExcelFile.Visible = false;
+                    Common_Data.DisplayMessage(rtb_Log, "Import cancelled; the previously loaded script workbook is unchanged.");
                 }
             }
             catch (Exception ex)
@@ -174,6 +184,12 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, () =>
+                {
+                    ValidateTestedConnection();
+                    ValidateScriptTable(dtGenerateScript, clb_Checked.CheckedItems.Cast<string>().ToArray(),
+                        chkb_SelectQuery.Checked, cmb_SelectFileName.Text, linkLabel1.Text, clb_Checked);
+                }, ReportValidation)) return;
                 int_RowsAffected = 0;
                 int_Count = 0;
                 Common_Data.DisplayMessage(rtb_Log, "Execution Started");
@@ -187,7 +203,7 @@ namespace SPI_Data_Comp_Tool
                     {
                         if (chkb_SelectQuery.CheckState == CheckState.Unchecked)
                         {
-                            dtExecute = common_Data.RemoveColumnExcept(dtGenerateScript, string.Join(",", checkedValuesEnum));
+                            dtExecute = dtGenerateScript.Copy();
                             Common_Data.DisplayDebugMsg(rtb_Log, $"Connecting : {dBConnectionStatus_SRC.strConnectionString}");
                             foreach (DataRow dr in dtExecute.Rows)
                             {
@@ -200,7 +216,7 @@ namespace SPI_Data_Comp_Tool
                         }
                         else if (chkb_SelectQuery.CheckState == CheckState.Checked)
                         {
-                            dtExecute = common_Data.RemoveColumnExcept(dtGenerateScript, string.Join(", ", string.Join(",", checkedValuesEnum), cmb_SelectFileName.Text));
+                            dtExecute = dtGenerateScript.Copy();
 
                             Common_Data.DisplayDebugMsg(rtb_Log, $"Connecting : {dBConnectionStatus_SRC.strConnectionString}");
                             foreach (DataRow dr in dtExecute.Rows)
@@ -210,7 +226,7 @@ namespace SPI_Data_Comp_Tool
                                 //dtSelect.TableName = dr[cmb_SelectFileName.Text].ToString();
                                 //dtSelect = common_Data.FillDataTable(dtSelect, dBConnectionStatus_SRC);
 
-                                dsSelect = common_Data.FillDataTable(dsSelect, dBConnectionStatus_SRC);
+                                dsSelect = common_Data.FillDataTable(new DataSet(), dBConnectionStatus_SRC);
 
                                 Common_Data.DisplayMessage(rtb_Log, $"Executing Select Script : {dBConnectionStatus_SRC.strCMDText}");
                                 str_FileNameWithPath = $@"{linkLabel1.Text}\{dr[cmb_SelectFileName.Text]}.xlsx";
@@ -377,6 +393,24 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                var queries = new Dictionary<string, string>();
+                if (!FormValidation.Check(this, () =>
+                {
+                    ValidateTestedConnection();
+                    FormValidation.ExistingDirectory(llb_PNID_Report_Path.Text, llb_PNID_Report_Path, "Report output folder");
+                    FormValidation.Require(rb_SRC.Checked != rb_TRG.Checked, rb_SRC, "Choose Source or Target reports.");
+                    FormValidation.Require(clb_PNID_Reports.CheckedItems.Count > 0, clb_PNID_Reports, "Select at least one report.");
+                    foreach (string report in clb_PNID_Reports.CheckedItems)
+                    {
+                        string query = FetchSQLQueryForText(report, rb_SRC.Checked ? "Source" : "Target_IPEP");
+                        FormValidation.Require(!string.IsNullOrWhiteSpace(query) && !query.Contains("###"), clb_PNID_Reports,
+                            "A report template is missing or has unresolved schema/path placeholders. Complete the selected template options.");
+                        queries.Add(report, query);
+                    }
+                    string suffix = (rb_TRG.Checked ? tb_Path.Text : "") + tb_CommonSchema.Text;
+                    FormValidation.Require(suffix.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 && !suffix.EndsWith(".", StringComparison.Ordinal),
+                        tb_CommonSchema, "Report path/schema options contain characters that cannot be used in an output filename.");
+                }, ReportValidation)) return;
                 Common_Data.DisplayMessage(rtb_Log, "Execution Started, Fetching PNID Reports from Database");
 
                 if (boolPNIDFolderPath)
@@ -406,7 +440,7 @@ namespace SPI_Data_Comp_Tool
                             {
                                 try
                                 {
-                                    dBConnectionStatus_SRC.strCMDText = FetchSQLQueryForText(str, strPath);
+                                    dBConnectionStatus_SRC.strCMDText = queries[str];
 
                                     Common_Data.DisplayDebugMsg(rtb_Log, $"Executing script : {dBConnectionStatus_SRC.strCMDText}");
                                     dtPNIDReports.Reset();
@@ -427,6 +461,7 @@ namespace SPI_Data_Comp_Tool
                                     //}
 
                                     str_FileNameWithPath = $@"{llb_PNID_Report_Path.Text}\{strPathGen}_{str}{strCustom}_Report_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
+                                    FormValidation.OutputFile(str_FileNameWithPath, llb_PNID_Report_Path, "Report output", ".xlsx");
                                     if (WriteExcel.ExportToExcel(dtPNIDReports, dtPNIDReports.TableName, str_FileNameWithPath))
                                     {
                                         Common_Data.DisplayMessage(rtb_Log, $"File saved as : {str_FileNameWithPath}");
@@ -719,6 +754,26 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                FileInfo[] inputFiles = null;
+                var queries = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                if (!FormValidation.Check(this, () =>
+                {
+                    ValidateTestedConnection();
+                    FormValidation.ExistingDirectory(llb_Excel_SRC.Text, llb_Excel_SRC, "SQL text input folder");
+                    FormValidation.ExistingDirectory(llb_Excel_TRG.Text, llb_Excel_TRG, "Workbook output folder");
+                    inputFiles = new DirectoryInfo(llb_Excel_SRC.Text).GetFiles("*.txt", SearchOption.TopDirectoryOnly);
+                    FormValidation.Require(inputFiles.Length > 0, llb_Excel_SRC, "The input folder contains no SQL text files.");
+                    foreach (FileInfo file in inputFiles)
+                    {
+                        FormValidation.ReadableFile(file.FullName, llb_Excel_SRC, "SQL text file", ".txt");
+                        string query = File.ReadAllText(file.FullName);
+                        FormValidation.Require(!string.IsNullOrWhiteSpace(query) && !query.Contains("\0"), llb_Excel_SRC,
+                            "Every SQL text file must contain a non-empty statement without null characters.");
+                        FormValidation.OutputFile(Path.Combine(llb_Excel_TRG.Text, Path.GetFileNameWithoutExtension(file.Name) + ".xlsx"),
+                            llb_Excel_TRG, "Export workbook", ".xlsx");
+                        queries.Add(file.FullName, query);
+                    }
+                }, ReportValidation)) return;
                 int_Count = 0;
                 if (dBConnectionStatus_SRC.boolConnection)
                 {
@@ -728,10 +783,9 @@ namespace SPI_Data_Comp_Tool
                         directoryInfo_SRC = new DirectoryInfo(llb_Excel_SRC.Text);
                         directoryInfo_TRG = new DirectoryInfo(llb_Excel_TRG.Text);
 
-                        foreach (FileInfo fileInfo in directoryInfo_SRC.GetFiles("*.txt", SearchOption.TopDirectoryOnly))
+                        foreach (FileInfo fileInfo in inputFiles)
                         {
-                            strQuery = File.ReadAllText(fileInfo.FullName);
-                            strQuery = strQuery.Replace("\r", " ").Replace("\n", " ");
+                            strQuery = queries[fileInfo.FullName]; // Preserve line comments and literal whitespace.
                             dBConnectionStatus_SRC.strCMDText = strQuery;
                             Common_Data.DisplayMessage(rtb_Log, $"Executing Select Script From File : {fileInfo.FullName}");
                             dtSelect.Reset();
@@ -758,7 +812,7 @@ namespace SPI_Data_Comp_Tool
                                 Common_Data.DisplayError(rtb_Log, ex);
                                 Common_Data.DisplayMessage(rtb_Log, "Skipping current file and processing further", true);
                             }
-                            UpdateProgress(++int_Count, directoryInfo_SRC.EnumerateFiles("*.txt", SearchOption.TopDirectoryOnly).Count());
+                            UpdateProgress(++int_Count, inputFiles.Length);
                         }
                         Common_Data.DisplayMessage(rtb_Log, $"Opening folder : {llb_Excel_TRG.Text}");
                         Process.Start(llb_Excel_TRG.Text);
@@ -840,18 +894,20 @@ namespace SPI_Data_Comp_Tool
             {
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
                 if (!connection.AddChecks(InputCheck.For(this), target: false).Report()) return;
+                if (!FormValidation.Check(this, () => connection.ValidateInput(), ReportValidation)) return;
+                dBConnectionStatus_SRC.boolConnection = false;
                 string str_DBName = tb_SRC_DBName.Text.Trim();
 
                 if (rb_Oracle.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Oracle...");
 
-                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_Oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_windowsAuthentication.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_DefaultPort.Text.Trim());
+                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_Oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_windowsAuthentication.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_DefaultPort.Text.Trim());
                 }
                 else if (rb_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to SQL...");
-                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_windowsAuthentication.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_DefaultPort.Text.Trim());
+                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_windowsAuthentication.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_DefaultPort.Text.Trim());
                 }
 
                 Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_SRC.strConnectionMSG, (!dBConnectionStatus_SRC.boolConnection), -1, (dBConnectionStatus_SRC.boolConnection) ? Color.DarkGreen : Color.Red);
@@ -861,6 +917,41 @@ namespace SPI_Data_Comp_Tool
                 Common_Data.DisplayError(rtb_Log, ex);
             }
 
+        }
+
+        private void ReportValidation(string message) { Common_Data.DisplayMessage(rtb_Log, message, true); }
+
+        internal void ValidateTestedConnection()
+        {
+            connection.ValidateInput();
+            FormValidation.Require(dBConnectionStatus_SRC != null && dBConnectionStatus_SRC.boolConnection,
+                btnTestConnecton, "Test the current database connection before executing. Editing connection fields invalidates the previous test.");
+        }
+
+        internal static void ValidateScriptTable(DataTable table, string[] selectedColumns, bool export,
+            string fileNameColumn, string outputFolder, Control field)
+        {
+            FormValidation.Table(table, field, "Script worksheet");
+            FormValidation.Require(selectedColumns != null && selectedColumns.Length == 1, field,
+                "Select exactly one SQL statement column; only one statement column is executed per run.");
+            FormValidation.Columns(table, selectedColumns, field, "SQL statement column");
+            foreach (DataRow row in table.Rows)
+                FormValidation.Require(!row.IsNull(selectedColumns[0]) && !string.IsNullOrWhiteSpace(row[selectedColumns[0]].ToString())
+                    && !row[selectedColumns[0]].ToString().Contains("\0"), field,
+                    "The selected SQL column contains an empty statement or a null character. Correct every row before running.");
+            if (!export) return;
+            FormValidation.Columns(table, new[] { fileNameColumn }, field, "Output filename column");
+            FormValidation.ExistingDirectory(outputFolder, field, "Output folder");
+            var outputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (DataRow row in table.Rows)
+            {
+                string name = row[fileNameColumn].ToString();
+                FormValidation.Require(!string.IsNullOrWhiteSpace(name) && name == Path.GetFileName(name)
+                    && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 && !name.EndsWith(".", StringComparison.Ordinal), field,
+                    "Every output filename must be a non-empty filename, not a path.");
+                string path = FormValidation.OutputFile(Path.Combine(outputFolder, name + ".xlsx"), field, "Output workbook", ".xlsx");
+                FormValidation.Require(outputs.Add(path), field, "Output filenames must be unique (ignoring letter case) to avoid overwriting an earlier result.");
+            }
         }
     }
 }

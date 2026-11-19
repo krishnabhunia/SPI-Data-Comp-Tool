@@ -38,7 +38,14 @@
             this.tlp_Root = new System.Windows.Forms.TableLayoutPanel();
             this.tabs_Settings = new System.Windows.Forms.TabControl();
             this.tab_General = new System.Windows.Forms.TabPage();
+            this.tlp_General = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_SaveExcel = new System.Windows.Forms.TableLayoutPanel();
+            this.gb_Theme = new System.Windows.Forms.GroupBox();
+            this.tlp_Theme = new System.Windows.Forms.TableLayoutPanel();
+            this.lbl_Theme = new System.Windows.Forms.Label();
+            this.cb_Theme = new System.Windows.Forms.ComboBox();
+            this.swatch_Theme = new SPI_Data_Comp_Tool.ThemeSwatch();
+            this.lbl_ThemeHelp = new System.Windows.Forms.Label();
             this.tab_Rules = new System.Windows.Forms.TabPage();
             this.tlp_Rules = new System.Windows.Forms.TableLayoutPanel();
             this.lbl_RulesHelp = new System.Windows.Forms.Label();
@@ -54,8 +61,11 @@
             this.tlp_Root.SuspendLayout();
             this.tabs_Settings.SuspendLayout();
             this.tab_General.SuspendLayout();
+            this.tlp_General.SuspendLayout();
             this.gb_SaveExcel.SuspendLayout();
             this.tlp_SaveExcel.SuspendLayout();
+            this.gb_Theme.SuspendLayout();
+            this.tlp_Theme.SuspendLayout();
             this.tab_Rules.SuspendLayout();
             this.tlp_Rules.SuspendLayout();
             this.tab_Updates.SuspendLayout();
@@ -93,9 +103,24 @@
             // 
             this.tab_General.Name = "tab_General";
             this.tab_General.Text = "General";
-            this.tab_General.Controls.Add(this.gb_SaveExcel);
+            this.tab_General.Controls.Add(this.tlp_General);
             this.tab_General.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
             this.tab_General.TabIndex = 2;
+            // 
+            // tlp_General
+            // 
+            this.tlp_General.Name = "tlp_General";
+            this.tlp_General.ColumnCount = 1;
+            this.tlp_General.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_General.RowCount = 3;
+            this.tlp_General.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 92F));
+            this.tlp_General.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 112F));
+            this.tlp_General.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_General.Controls.Add(this.gb_SaveExcel, 0, 0);
+            this.tlp_General.Controls.Add(this.gb_Theme, 0, 1);
+            this.tlp_General.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_General.AutoSize = false;
+            this.tlp_General.TabIndex = 3;
             // 
             // gb_SaveExcel
             // 
@@ -103,12 +128,10 @@
             this.gb_SaveExcel.TabStop = false;
             this.gb_SaveExcel.Text = "Save Excel files with";
             this.gb_SaveExcel.Controls.Add(this.tlp_SaveExcel);
-            this.gb_SaveExcel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.gb_SaveExcel.AutoSize = true;
-            this.gb_SaveExcel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.gb_SaveExcel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.gb_SaveExcel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gb_SaveExcel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
             this.gb_SaveExcel.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_SaveExcel.TabIndex = 3;
+            this.gb_SaveExcel.TabIndex = 4;
             // 
             // tlp_SaveExcel
             // 
@@ -123,7 +146,7 @@
             this.tlp_SaveExcel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_SaveExcel.AutoSize = true;
             this.tlp_SaveExcel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_SaveExcel.TabIndex = 4;
+            this.tlp_SaveExcel.TabIndex = 5;
             // 
             // rb_EPPlus
             // 
@@ -135,7 +158,7 @@
             this.rb_EPPlus.Text = "EPPlus (recommended, no Excel needed)";
             this.rb_EPPlus.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.rb_EPPlus.AutoSize = true;
-            this.rb_EPPlus.TabIndex = 5;
+            this.rb_EPPlus.TabIndex = 6;
             // 
             // rb_XLSave
             // 
@@ -145,7 +168,75 @@
             this.rb_XLSave.Text = "Microsoft Excel (needs Excel installed)";
             this.rb_XLSave.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.rb_XLSave.AutoSize = true;
-            this.rb_XLSave.TabIndex = 6;
+            this.rb_XLSave.TabIndex = 7;
+            // 
+            // gb_Theme
+            // 
+            this.gb_Theme.Name = "gb_Theme";
+            this.gb_Theme.Text = "Colour theme";
+            this.gb_Theme.Controls.Add(this.tlp_Theme);
+            this.gb_Theme.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gb_Theme.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.gb_Theme.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
+            this.gb_Theme.TabIndex = 8;
+            // 
+            // tlp_Theme
+            // 
+            this.tlp_Theme.Name = "tlp_Theme";
+            this.tlp_Theme.ColumnCount = 3;
+            this.tlp_Theme.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Theme.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Theme.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlp_Theme.RowCount = 2;
+            this.tlp_Theme.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Theme.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.tlp_Theme.Controls.Add(this.lbl_Theme, 0, 0);
+            this.tlp_Theme.Controls.Add(this.cb_Theme, 1, 0);
+            this.tlp_Theme.Controls.Add(this.swatch_Theme, 2, 0);
+            this.tlp_Theme.Controls.Add(this.lbl_ThemeHelp, 0, 1);
+            this.tlp_Theme.SetColumnSpan(this.lbl_ThemeHelp, 3);
+            this.tlp_Theme.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tlp_Theme.AutoSize = true;
+            this.tlp_Theme.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tlp_Theme.TabIndex = 9;
+            // 
+            // lbl_Theme
+            // 
+            this.lbl_Theme.Name = "lbl_Theme";
+            this.lbl_Theme.Text = "Theme";
+            this.lbl_Theme.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
+            this.lbl_Theme.AutoSize = true;
+            this.lbl_Theme.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
+            this.lbl_Theme.TabIndex = 10;
+            // 
+            // cb_Theme
+            // 
+            this.cb_Theme.Name = "cb_Theme";
+            this.cb_Theme.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
+            this.cb_Theme.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.cb_Theme.Size = new System.Drawing.Size(200, 23);
+            this.cb_Theme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cb_Theme.AccessibleName = "Colour theme";
+            this.cb_Theme.TabIndex = 11;
+            // 
+            // swatch_Theme
+            // 
+            this.swatch_Theme.Name = "swatch_Theme";
+            this.swatch_Theme.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
+            this.swatch_Theme.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
+            this.swatch_Theme.Size = new System.Drawing.Size(240, 22);
+            this.swatch_Theme.AccessibleName = "Colours of the chosen theme";
+            this.swatch_Theme.AccessibleRole = System.Windows.Forms.AccessibleRole.Graphic;
+            this.swatch_Theme.TabIndex = 12;
+            // 
+            // lbl_ThemeHelp
+            // 
+            this.lbl_ThemeHelp.Name = "lbl_ThemeHelp";
+            this.lbl_ThemeHelp.Text = "Changes the colours of every open window at once and is remembered for next time.";
+            this.lbl_ThemeHelp.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lbl_ThemeHelp.AutoSize = true;
+            this.lbl_ThemeHelp.Margin = new System.Windows.Forms.Padding(0, 10, 0, 0);
+            this.lbl_ThemeHelp.TabIndex = 13;
             // 
             // tab_Rules
             // 
@@ -153,7 +244,7 @@
             this.tab_Rules.Text = "Comparison rules";
             this.tab_Rules.Controls.Add(this.tlp_Rules);
             this.tab_Rules.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.tab_Rules.TabIndex = 7;
+            this.tab_Rules.TabIndex = 14;
             // 
             // tlp_Rules
             // 
@@ -176,7 +267,7 @@
             this.tlp_Rules.SetColumnSpan(this.lbl_RulesStatus, 2);
             this.tlp_Rules.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Rules.AutoSize = false;
-            this.tlp_Rules.TabIndex = 8;
+            this.tlp_Rules.TabIndex = 15;
             // 
             // lbl_RulesHelp
             // 
@@ -185,7 +276,7 @@
             this.lbl_RulesHelp.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lbl_RulesHelp.AutoSize = true;
             this.lbl_RulesHelp.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
-            this.lbl_RulesHelp.TabIndex = 9;
+            this.lbl_RulesHelp.TabIndex = 16;
             // 
             // lbl_RulesPath
             // 
@@ -194,7 +285,7 @@
             this.lbl_RulesPath.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_RulesPath.AutoSize = true;
             this.lbl_RulesPath.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
-            this.lbl_RulesPath.TabIndex = 10;
+            this.lbl_RulesPath.TabIndex = 17;
             // 
             // tb_RulesPath
             // 
@@ -203,7 +294,7 @@
             this.tb_RulesPath.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.tb_RulesPath.ReadOnly = true;
             this.tb_RulesPath.AccessibleName = "Comparison rules file";
-            this.tb_RulesPath.TabIndex = 11;
+            this.tb_RulesPath.TabIndex = 18;
             // 
             // btn_ImportRules
             // 
@@ -212,7 +303,7 @@
             this.btn_ImportRules.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.btn_ImportRules.Margin = new System.Windows.Forms.Padding(0, 10, 0, 6);
             this.btn_ImportRules.Size = new System.Drawing.Size(136, 32);
-            this.btn_ImportRules.TabIndex = 12;
+            this.btn_ImportRules.TabIndex = 19;
             // 
             // lbl_RulesStatus
             // 
@@ -221,7 +312,7 @@
             this.lbl_RulesStatus.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lbl_RulesStatus.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.lbl_RulesStatus.AutoEllipsis = true;
-            this.lbl_RulesStatus.TabIndex = 13;
+            this.lbl_RulesStatus.TabIndex = 20;
             // 
             // tab_Updates
             // 
@@ -229,14 +320,14 @@
             this.tab_Updates.Text = "Updates";
             this.tab_Updates.Controls.Add(this.updatesControl);
             this.tab_Updates.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.tab_Updates.TabIndex = 14;
+            this.tab_Updates.TabIndex = 21;
             // 
             // updatesControl
             // 
             this.updatesControl.Name = "updatesControl";
             this.updatesControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.updatesControl.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.updatesControl.TabIndex = 15;
+            this.updatesControl.TabIndex = 22;
             // 
             // gb_Logs
             // 
@@ -246,7 +337,7 @@
             this.gb_Logs.Controls.Add(this.tlp_Logs);
             this.gb_Logs.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gb_Logs.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_Logs.TabIndex = 16;
+            this.gb_Logs.TabIndex = 23;
             // 
             // tlp_Logs
             // 
@@ -263,7 +354,7 @@
             this.tlp_Logs.Controls.Add(this.lbl_Progress, 1, 1);
             this.tlp_Logs.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Logs.AutoSize = false;
-            this.tlp_Logs.TabIndex = 17;
+            this.tlp_Logs.TabIndex = 24;
             // 
             // rtb_Log
             // 
@@ -273,7 +364,7 @@
             this.rtb_Log.Text = "";
             this.rtb_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtb_Log.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
-            this.rtb_Log.TabIndex = 18;
+            this.rtb_Log.TabIndex = 25;
             // 
             // btn_ClearLogs
             // 
@@ -284,7 +375,7 @@
             this.btn_ClearLogs.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.btn_ClearLogs.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_ClearLogs.Size = new System.Drawing.Size(110, 30);
-            this.btn_ClearLogs.TabIndex = 19;
+            this.btn_ClearLogs.TabIndex = 26;
             // 
             // lbl_Progress
             // 
@@ -293,7 +384,7 @@
             this.lbl_Progress.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_Progress.AutoSize = true;
             this.lbl_Progress.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
-            this.lbl_Progress.TabIndex = 20;
+            this.lbl_Progress.TabIndex = 27;
             // 
             // flp_SettingsActions
             // 
@@ -305,7 +396,7 @@
             this.flp_SettingsActions.AutoSize = true;
             this.flp_SettingsActions.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flp_SettingsActions.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.flp_SettingsActions.TabIndex = 21;
+            this.flp_SettingsActions.TabIndex = 28;
             // 
             // btn_Close
             // 
@@ -314,7 +405,7 @@
             this.btn_Close.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_Close.Size = new System.Drawing.Size(100, 32);
             this.btn_Close.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btn_Close.TabIndex = 22;
+            this.btn_Close.TabIndex = 29;
             // 
             // User_Settings
             // 
@@ -334,10 +425,16 @@
             this.tabs_Settings.PerformLayout();
             this.tab_General.ResumeLayout(false);
             this.tab_General.PerformLayout();
+            this.tlp_General.ResumeLayout(false);
+            this.tlp_General.PerformLayout();
             this.gb_SaveExcel.ResumeLayout(false);
             this.gb_SaveExcel.PerformLayout();
             this.tlp_SaveExcel.ResumeLayout(false);
             this.tlp_SaveExcel.PerformLayout();
+            this.gb_Theme.ResumeLayout(false);
+            this.gb_Theme.PerformLayout();
+            this.tlp_Theme.ResumeLayout(false);
+            this.tlp_Theme.PerformLayout();
             this.tab_Rules.ResumeLayout(false);
             this.tab_Rules.PerformLayout();
             this.tlp_Rules.ResumeLayout(false);
@@ -356,6 +453,14 @@
         }
 
         #endregion
+
+        private System.Windows.Forms.TableLayoutPanel tlp_General;
+        private System.Windows.Forms.GroupBox gb_Theme;
+        private System.Windows.Forms.TableLayoutPanel tlp_Theme;
+        private System.Windows.Forms.Label lbl_Theme;
+        private System.Windows.Forms.ComboBox cb_Theme;
+        private SPI_Data_Comp_Tool.ThemeSwatch swatch_Theme;
+        private System.Windows.Forms.Label lbl_ThemeHelp;
 
         private System.Windows.Forms.TabPage tab_Updates;
         private SPI_Data_Comp_Tool.UpdatesControl updatesControl;

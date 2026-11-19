@@ -5,6 +5,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,6 +19,7 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class Compare_Multiples_List_Tables_Forms : Form
     {
+        private IDisposable operationInputs;
         private OpenFileDialogData openFileDialogData;
 
         private DataSet dsTableList;
@@ -89,6 +91,7 @@ namespace SPI_Data_Comp_Tool
 
         private int int_Table_Progress_Count, int_timer;
         private bool boolCompare_List;
+        private bool operationFailed;
         private BackGroundWorkerUserObjectForReport backGroundWorkerObject;
         private bool boolSelectTabDB, boolSelectTabExcel;
 
@@ -99,8 +102,19 @@ namespace SPI_Data_Comp_Tool
         public Compare_Multiples_List_Tables_Forms()
         {
             InitializeComponent();
+            FormClosing += (sender, args) =>
+            {
+                if (bgw_List.IsBusy)
+                {
+                    args.Cancel = true;
+                    FormValidation.Check(this, () => FormValidation.Reject(btnCancel,
+                        "Wait for the current operation to finish or cancel it before closing this window."),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true));
+                }
+            };
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
+            connection.InputChanged += (sender, args) => { boolLoadDataBase = boolSRCConnection = boolTRGConnection = false; };
             UiTheme.Apply(this, btn_Compare);
 
             try
@@ -221,12 +235,17 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, () => FormValidation.IsBusy(bgw_List, btn_ListTableExcel),
+                    message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                 Common_Data.DisplayMessage(rtb_Log, ("Browsing Contained List Table Excel File ... "));
                 openFileDialogData = openFileDialogData.openFileDialog("Select Excel File Contain Table List");
 
                 if (openFileDialogData.boolFileSelected)
                 {
-                    dsTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath, "Table List");
+                    DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath, "Table List");
+                    if (!FormValidation.Check(this, () => ValidateBatchWorkbook(candidate),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                    dsTableList = candidate;
 
                     if (dsTableList != null && dsTableList.Tables.Count > 0 && dsTableList.Tables[0].Rows.Count > 0)
                     {
@@ -395,6 +414,7 @@ namespace SPI_Data_Comp_Tool
                             }
                             catch (Exception ex1)
                             {
+                                operationFailed = true;
                                 bgw_List.ReportProgress(5, new BackGroundWorkerUserObjectForReport(ex1));
                             }
                         }
@@ -457,6 +477,7 @@ namespace SPI_Data_Comp_Tool
                             }
                             catch (Exception ex1)
                             {
+                                operationFailed = true;
                                 bgw_List.ReportProgress(5, new BackGroundWorkerUserObjectForReport(ex1));
 
                             }
@@ -476,6 +497,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
+                operationFailed = true;
                 bgw_List.ReportProgress(5, new BackGroundWorkerUserObjectForReport(ex));
                 return false;
             }
@@ -553,6 +575,7 @@ namespace SPI_Data_Comp_Tool
                 }
 
                 worksheet = pck.Workbook.Worksheets.Add(dt.TableName);
+                FormValidation.ExcelTable(dt, null, "Excel output");
                 worksheet.Cells["A1"].LoadFromDataTable(dt, true);
                 worksheet.Cells.AutoFitColumns(22, 55);
 
@@ -765,6 +788,7 @@ namespace SPI_Data_Comp_Tool
                 using (ExcelPackage pck = new ExcelPackage())
                 {
                     worksheet = pck.Workbook.Worksheets.Add("Mismatch");
+                    FormValidation.ExcelTable(dtUnmatched, null, "Excel output");
                     worksheet.Cells["A1"].LoadFromDataTable(dtUnmatched, true);
                     worksheet.Cells.AutoFitColumns(22, 55);
 
@@ -825,7 +849,7 @@ namespace SPI_Data_Comp_Tool
                     dtSummaryForList.Rows.Add(int_Table_Progress_Count, dtSRC.TableName, dtSummary.AsEnumerable().Sum(x => Int32.Parse(x.Field<string>("Summarize Count"))), dtSRCOnly.Rows.Count, dtTRG.Rows.Count);
 
                     strFileName = $@"{strFolderPath}\{dtSRC.TableName}_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
-                    pck.SaveAs(new System.IO.FileInfo(strFileName));
+                    FormValidation.WriteAtomically(strFileName, temporary => pck.SaveAs(new FileInfo(temporary)));
                     //Common_Data.DisplayMessage(rtb_Log, $"File Saved : {strFileName}", false, -1, Color.DarkBlue);
                     bgw_List.ReportProgress(0, new BackGroundWorkerUserObjectForReport(0, 0, $"File Saved : {strFileName}"));
 
@@ -835,6 +859,7 @@ namespace SPI_Data_Comp_Tool
 
             catch (Exception ex)
             {
+                operationFailed = true;
                 bgw_List.ReportProgress(5, new BackGroundWorkerUserObjectForReport(ex));
             }
 
@@ -1024,6 +1049,7 @@ namespace SPI_Data_Comp_Tool
                 using (ExcelPackage pck = new ExcelPackage())
                 {
                     worksheet = pck.Workbook.Worksheets.Add("Mismatch");
+                    FormValidation.ExcelTable(dtUnmatched, null, "Excel output");
                     worksheet.Cells["A1"].LoadFromDataTable(dtUnmatched, true);
                     worksheet.Cells.AutoFitColumns(22, 55);
 
@@ -1083,7 +1109,7 @@ namespace SPI_Data_Comp_Tool
                     dtSummaryForList.Rows.Add(int_Table_Progress_Count + 1, dtSRC.TableName, dtSummary.AsEnumerable().Sum(x => Int32.Parse(x.Field<string>("Summarize Count"))), dtSRCOnly.Rows.Count, dtTRG.Rows.Count);
 
                     strFileName = $@"{strFolderPath}\{dtSRC.TableName}_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
-                    pck.SaveAs(new System.IO.FileInfo(strFileName));
+                    FormValidation.WriteAtomically(strFileName, temporary => pck.SaveAs(new FileInfo(temporary)));
                     //Common_Data.DisplayMessage(rtb_Log, $"File Saved : {strFileName}", false, -1, Color.DarkBlue);
                     bgw_List.ReportProgress(0, new BackGroundWorkerUserObjectForReport(0, 0, $"File Saved : {strFileName}"));
 
@@ -1093,6 +1119,7 @@ namespace SPI_Data_Comp_Tool
 
             catch (Exception ex)
             {
+                operationFailed = true;
                 bgw_List.ReportProgress(5, new BackGroundWorkerUserObjectForReport(ex));
             }
 
@@ -1360,11 +1387,13 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                operationFailed = false;
                 boolCompare_List = false;
                 boolCompare_List = Compare_List(e);
             }
             catch (Exception ex)
             {
+                operationFailed = true;
                 bgw_List.ReportProgress(5, new BackGroundWorkerUserObjectForReport(ex));
             }
         }
@@ -1439,10 +1468,22 @@ namespace SPI_Data_Comp_Tool
 
         private void bgw_List_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
                 timer1.Enabled = false;
-                if (boolCompare_List)
+                if (e.Error != null)
+                {
+                    Common_Data.DisplayError(rtb_Log, e.Error);
+                    return;
+                }
+                if (operationFailed)
+                {
+                    Common_Data.DisplayMessage(rtb_Log, "Batch comparison finished with errors; review the log. Partial outputs may remain.", true);
+                    return;
+                }
+                if (boolCompare_List && !e.Cancelled)
                 {
                     if (dtSummaryForList.Rows.Count > 0)
                     {
@@ -1609,50 +1650,12 @@ namespace SPI_Data_Comp_Tool
 
         private bool ValidateMyControls()
         {
-            try
+            return FormValidation.Check(this, () =>
             {
-
-                if (rb_SRC_oracle.Checked)
-                {
-                    return (CheckLengthOfTextBox(tb_SRC_DefaultPort) && CheckLengthOfTextBox(tb_SRC_DataSource) && CheckLengthOfTextBox(tb_SRC_DBName) && CheckLengthOfTextBox(tb_SRC_UserName) && CheckLengthOfTextBox(tb_SRC_Password));
-                }
-                else if (rb_SRC_SQL.Checked)
-                {
-                    if (cb_WindowAuthentication_SRC.Checked)
-                    {
-                        return (CheckLengthOfTextBox(tb_SRC_DataSource) && CheckLengthOfTextBox(tb_SRC_DBName));
-                    }
-                    else
-                    {
-                        return (CheckLengthOfTextBox(tb_SRC_DataSource) && CheckLengthOfTextBox(tb_SRC_DBName) && CheckLengthOfTextBox(tb_SRC_UserName) && CheckLengthOfTextBox(tb_SRC_Password));
-                    }
-                }
-
-                if (rb_TRG_Oracle.Checked)
-                {
-                    return (CheckLengthOfTextBox(tb_TRG_DefaultPort) && CheckLengthOfTextBox(tb_TRG_DataSource) && CheckLengthOfTextBox(tb_TRG_DBName) && CheckLengthOfTextBox(tb_TRG_UserName) && CheckLengthOfTextBox(tb_TRG_Password));
-                }
-                else if (rb_TRG_SQL.Checked)
-                {
-                    if (cb_WindowAuthentication_TRG.Checked)
-                    {
-                        return (CheckLengthOfTextBox(tb_TRG_DataSource) && CheckLengthOfTextBox(tb_TRG_DBName));
-                    }
-                    else
-                    {
-                        return (CheckLengthOfTextBox(tb_TRG_DataSource) && CheckLengthOfTextBox(tb_TRG_DBName) && CheckLengthOfTextBox(tb_TRG_UserName) && CheckLengthOfTextBox(tb_TRG_Password));
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Common_Data.DisplayError(rtb_Log, ex);
-                return false;
-            }
+                FormValidation.IsBusy(bgw_List, btn_TestDBConnection);
+                connection.ValidateInput();
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true));
         }
-
         private Color GetStatusColor(bool boolStatus)
         {
             try
@@ -1690,13 +1693,13 @@ namespace SPI_Data_Comp_Tool
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Oracle Source...");
 
-                    dbConnection = common_Data.DBConnectionTest(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBNameSRC, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    dbConnection = common_Data.DBConnectionTest(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBNameSRC, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
 
                 }
                 else if (rb_SRC_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to SQL Source...");
-                    dbConnection = common_Data.DBConnectionTest(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBNameSRC, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    dbConnection = common_Data.DBConnectionTest(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBNameSRC, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                 }
 
                 dbSRCConnection = dbConnection;
@@ -1707,12 +1710,12 @@ namespace SPI_Data_Comp_Tool
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Oracle Target...");
 
-                    dbConnection = common_Data.DBConnectionTest(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBNameTRG, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                    dbConnection = common_Data.DBConnectionTest(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBNameTRG, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                 }
                 else if (rb_TRG_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to SQL Target...");
-                    dbConnection = common_Data.DBConnectionTest(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBNameTRG, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                    dbConnection = common_Data.DBConnectionTest(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBNameTRG, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                 }
                 dbTRGConnection = dbConnection;
                 boolTRGConnection = dbConnection.boolConnection;
@@ -1738,6 +1741,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateBatchInputs()) return;
+                strFolderPath = l_lbl_outputFolder.Text;
                 boolRules = common_Data.GetRulesStatus();
 
                 if (cb_IncludeRule.Checked && boolRules)
@@ -1766,7 +1771,7 @@ namespace SPI_Data_Comp_Tool
                         timer1.Enabled = true;
                         boolSelectTabDB = tabControl1.SelectedTab == tabPage_DB ? true : false;
                         boolSelectTabExcel = tabControl1.SelectedTab == tabPage_Excel ? true : false;
-                        bgw_List.RunWorkerAsync();
+                        FormValidation.StartWorker(this, bgw_List, ref operationInputs, btnCancel);
                     }
                     else
                     {
@@ -1801,6 +1806,51 @@ namespace SPI_Data_Comp_Tool
             {
                 Common_Data.DisplayError(rtb_Log, ex);
             }
+        }
+        internal void ValidateBatchWorkbook(DataSet candidate)
+        {
+            FormValidation.Require(candidate != null && candidate.Tables.Count > 0, btn_ListTableExcel, "Load a workbook containing a table list.");
+            DataTable table = candidate.Tables[0];
+            FormValidation.Table(table, btn_ListTableExcel, "Table list");
+            FormValidation.Columns(table, new[] { "src_table_names", "trg_table_names", "primary_key_columns", "ignore_columns" }, btn_ListTableExcel, "Table list");
+            foreach (DataRow row in table.Rows)
+                foreach (string column in new[] { "src_table_names", "trg_table_names", "primary_key_columns" })
+                    FormValidation.Require(!string.IsNullOrWhiteSpace(Convert.ToString(row[column])), btn_ListTableExcel,
+                        "Every table-list row needs source, target and reference-key column names.");
+        }
+
+        internal bool ValidateBatchInputs()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(bgw_List, btn_Compare);
+                FormValidation.Require(boolExcelFileList, btn_ListTableExcel, "Load a valid table-list workbook first.");
+                ValidateBatchWorkbook(dsTableList);
+                FormValidation.ExistingDirectory(l_lbl_outputFolder.Text, l_lbl_outputFolder, "Output folder");
+                if (tabControl1.SelectedTab == tabPage_DB)
+                {
+                    connection.ValidateInput();
+                    FormValidation.Require(boolLoadDataBase && boolSRCConnection && boolTRGConnection, btn_TestDBConnection,
+                        "Test both current database connections again before comparing.");
+                }
+                else
+                {
+                    FormValidation.Require(tabControl1.SelectedTab == tabPage_Excel, tabControl1, "Select Database or Excel comparison.");
+                    FormValidation.ExistingDirectory(llb_Excel_SRC.Text, llb_Excel_SRC, "Source workbook folder");
+                    FormValidation.ExistingDirectory(llb_Excel_TRG.Text, llb_Excel_TRG, "Target workbook folder");
+                    foreach (DataRow row in dsTableList.Tables[0].Rows)
+                    {
+                        string source = Convert.ToString(row["src_table_names"]);
+                        string target = Convert.ToString(row["trg_table_names"]);
+                        FormValidation.FileName(source, btn_ListTableExcel, "Source workbook name");
+                        FormValidation.FileName(target, btn_ListTableExcel, "Target workbook name");
+                        FormValidation.ReadableFile(System.IO.Path.Combine(llb_Excel_SRC.Text, source + ".xlsx"), llb_Excel_SRC, "Source workbook", ".xlsx");
+                        FormValidation.ReadableFile(System.IO.Path.Combine(llb_Excel_TRG.Text, target + ".xlsx"), llb_Excel_TRG, "Target workbook", ".xlsx");
+                    }
+                }
+                if (cb_IncludeRule.Checked) FormValidation.Require(common_Data.GetRulesStatus(), cb_IncludeRule,
+                    "Import valid rules, or clear Include rules before comparing.");
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true));
         }
     }
 }

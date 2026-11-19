@@ -20,6 +20,7 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class Pre_Merging_Duplicacy_Form : Form
     {
+        private IDisposable operationInputs;
         private DBConnectionStatus dBConnectionStatus_SRC, dBConnectionStatus_TRG;
         private Exception myException_BG;
         private OracleDataAdapter oracleDA;
@@ -53,6 +54,7 @@ namespace SPI_Data_Comp_Tool
         private FolderBrowserDialog folderBrowserDialog1;
         private string strFolderPath;
         private bool boolFolderPathSelected, boolPreMergingDuplicacyTest, boolConfigurationMode;
+        private bool operationFailed;
         private DBConnectionDetails dBConnectionDetails;
 
         // The connection fields live in the shared ConnectionPanel; these keep the names the code below uses.
@@ -112,8 +114,23 @@ namespace SPI_Data_Comp_Tool
         public Pre_Merging_Duplicacy_Form()
         {
             InitializeComponent();
+            FormClosing += (sender, args) =>
+            {
+                if (backgroundWorker1.IsBusy)
+                {
+                    args.Cancel = true;
+                    FormValidation.Check(this, () => FormValidation.Reject(btn_ListTableExcel,
+                        "Wait for the current operation to finish before closing this window."),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true));
+                }
+            };
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => DisplayError(error);
+            connection.InputChanged += (sender, args) =>
+            {
+                if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
+                if (dBConnectionStatus_TRG != null) dBConnectionStatus_TRG.boolConnection = false;
+            };
             UiTheme.Apply(this, btn_ListTableExcel);
 
             try
@@ -218,6 +235,11 @@ namespace SPI_Data_Comp_Tool
 
         private void btn_Load_SRC_Table_Click(object sender, EventArgs e)
         {
+            if (!FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker1, btn_Load_SRC_Table);
+                connection.Source.ValidateInput();
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
             try
             {
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
@@ -228,11 +250,7 @@ namespace SPI_Data_Comp_Tool
                 if (rb_SRC_oracle.Checked)
                 {
                     strQuery = "SELECT * FROM all_tables where OWNER != 'SYS' ORDER BY OWNER, TABLE_NAME";
-
-                    strOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_SRC_DataSource.Text + " )(PORT = " + tb_SRC_DefaultPort.Text + "))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_SRC_DBName.Text + ")));"
-                        + "User Id=" + tb_SRC_UserName.Text + ";Password=" + tb_SRC_Password.Text + ";";
+                    strOracleConnection = ConnectionStrings.Build("oracle", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
 
                     oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
                     dt_SRC = new DataTable();
@@ -248,13 +266,11 @@ namespace SPI_Data_Comp_Tool
 
                     if (cb_WindowAuthentication_SRC.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
                     }
                     else if (cb_WindowAuthentication_SRC.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; User ID = " + tb_SRC_UserName.Text + "; " + "Password = " + tb_SRC_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
                     }
 
                     dt_sql = new DataTable();
@@ -403,6 +419,11 @@ namespace SPI_Data_Comp_Tool
         }
         private void btn_Load_TRG_Table_Click(object sender, EventArgs e)
         {
+            if (!FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker1, btn_Load_TRG_Table);
+                connection.Target.ValidateInput();
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
             try
             {
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
@@ -413,11 +434,7 @@ namespace SPI_Data_Comp_Tool
                 if (rb_TRG_Oracle.Checked)
                 {
                     strQuery = "SELECT * FROM all_tables where OWNER != 'SYS' ORDER BY OWNER, TABLE_NAME";
-
-                    strOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_TRG_DataSource.Text + " )(PORT = " + tb_TRG_DefaultPort.Text + "))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_TRG_DBName.Text + ")));"
-                        + "User Id=" + tb_TRG_UserName.Text + ";Password=" + tb_TRG_Password.Text + ";";
+                    strOracleConnection = ConnectionStrings.Build("oracle", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
 
                     oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
                     dt_SRC = new DataTable();
@@ -432,13 +449,11 @@ namespace SPI_Data_Comp_Tool
 
                     if (cb_WindowAuthentication_TRG.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
                     else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; User ID = " + tb_TRG_UserName.Text + "; " + "Password = " + tb_TRG_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
 
                     dt_sql = new DataTable();
@@ -787,6 +802,7 @@ namespace SPI_Data_Comp_Tool
                             }
                             else
                             {
+                                operationFailed = true;
                                 BG_DisplayMessage($"There is some problem is saving the file", true);
                             }
 
@@ -895,6 +911,7 @@ namespace SPI_Data_Comp_Tool
                             }
                             else
                             {
+                                operationFailed = true;
                                 BG_DisplayMessage($"There is some problem is saving the file", true);
                             }
 
@@ -904,6 +921,7 @@ namespace SPI_Data_Comp_Tool
                     }
                     catch (Exception ex)
                     {
+                        operationFailed = true;
                         BG_DisplayError(ex);
                     }
                     backgroundWorker1.ReportProgress(1, new BackGroundWorkerUserObjectForReport(++int_progressCount, int_totalCount));
@@ -911,6 +929,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
+                operationFailed = true;
                 BG_DisplayError(ex);
             }
         }
@@ -952,9 +971,27 @@ namespace SPI_Data_Comp_Tool
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
                 groupBox3.Enabled = true;
+                if (e.Error != null)
+                {
+                    DisplayError(e.Error);
+                    return;
+                }
+                if (e.Cancelled)
+                {
+                    Common_Data.DisplayMessage(rtb_Log, "Pre-merging was cancelled; partial outputs may remain.", true);
+                    return;
+                }
+                if (operationFailed)
+                {
+                    lb_link.Visible = llb_File.Visible = false;
+                    Common_Data.DisplayMessage(rtb_Log, "Pre-merging finished with errors; review the log. Partial outputs may remain.", true);
+                    return;
+                }
                 boolPreMergingDuplicacyTest = boolPreMergingDuplicacyTest || boolConfigurationMode;
 
                 if (boolPreMergingDuplicacyTest)
@@ -1035,6 +1072,7 @@ namespace SPI_Data_Comp_Tool
             {
                 boolPreMergingDuplicacyTest = false;
                 boolConfigurationMode = false;
+                operationFailed = false;
 
                 int_totalCount = dsTableList.Tables[0].Rows.Count;
                 int_percentage = int_progressCount = 0;
@@ -1044,7 +1082,7 @@ namespace SPI_Data_Comp_Tool
                 if(!(backgroundWorker1.IsBusy))
                 {
                     groupBox3.Enabled = false;
-                    backgroundWorker1.RunWorkerAsync();
+                    FormValidation.StartWorker(this, backgroundWorker1, ref operationInputs);
                 }
             }
             catch (Exception ex)
@@ -1067,11 +1105,12 @@ namespace SPI_Data_Comp_Tool
                 {
                     ExcelWorksheet worksheet;
                     worksheet = pck.Workbook.Worksheets.Add(strSheetName);
+                    FormValidation.ExcelTable(dataTable, null, "Excel output");
                     worksheet.Cells["A1"].LoadFromDataTable(dataTable, true);
                     worksheet.Cells.AutoFitColumns(22, 55);
 
                     str_excelFileName = $@"{strFolderPath}\PM_Duplicacy_{strFileName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
-                    pck.SaveAs(new System.IO.FileInfo(str_excelFileName));
+                    FormValidation.WriteAtomically(str_excelFileName, temporary => pck.SaveAs(new FileInfo(temporary)));
                     return true;
                     //DisplayMessage($"File Saved : {str_excelFileName}");
                 }
@@ -1095,12 +1134,13 @@ namespace SPI_Data_Comp_Tool
                     foreach (DataTable dt in ds.Tables)
                     {
                         worksheet = pck.Workbook.Worksheets.Add(dt.TableName);
+                        FormValidation.ExcelTable(dt, null, "Excel output");
                         worksheet.Cells["A1"].LoadFromDataTable(dt, true);
                         worksheet.Cells.AutoFitColumns(22, 55);
 
                     }
                     str_excelFileName = $@"{strFolderPath}\PM_Duplicacy_{strFileName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
-                    pck.SaveAs(new System.IO.FileInfo(str_excelFileName));
+                    FormValidation.WriteAtomically(str_excelFileName, temporary => pck.SaveAs(new FileInfo(temporary)));
                     return true;
                 }
             }
@@ -1122,11 +1162,12 @@ namespace SPI_Data_Comp_Tool
                     foreach (DataTable dt in ds.Tables)
                     {
                         worksheet = pck.Workbook.Worksheets.Add(dt.TableName);
+                        FormValidation.ExcelTable(dt, null, "Excel output");
                         worksheet.Cells["A1"].LoadFromDataTable(dt, true);
                         worksheet.Cells.AutoFitColumns(22, 55);
                     }
                     str_excelFileName = $@"{strFolderPath}\ConfigurationMode_{strFileName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
-                    pck.SaveAs(new System.IO.FileInfo(str_excelFileName));
+                    FormValidation.WriteAtomically(str_excelFileName, temporary => pck.SaveAs(new FileInfo(temporary)));
                     return true;
                 }
             }
@@ -1152,13 +1193,16 @@ namespace SPI_Data_Comp_Tool
                     foreach (DataTable dt in ds.Tables)
                     {
                         //worksheet.Cells["A1"].LoadFromDataTable(dt, true);
+                        FormValidation.ExcelTable(dt, null, "Combined configuration output");
+                        FormValidation.Require((long)int_Col + dt.Columns.Count - 1 <= 16384, null,
+                            "The combined configuration worksheet exceeds Excel's 16,384-column limit.");
                         worksheet.Cells[1, int_Col].LoadFromDataTable(dt, true);
                         int_Col += dt.Columns.Count;
                     }
 
                     worksheet.Cells.AutoFitColumns(22, 55);
                     str_excelFileName = $@"{strFolderPath}\ConfigurationMode_{strFileName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
-                    pck.SaveAs(new System.IO.FileInfo(str_excelFileName));
+                    FormValidation.WriteAtomically(str_excelFileName, temporary => pck.SaveAs(new FileInfo(temporary)));
                     return true;
                 }
             }
@@ -1211,6 +1255,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateDuplicacyInputs()) return;
                 boolPreMergingDuplicacyTest = false;
                 lb_link.Visible = false;
                 llb_File.Visible = false;
@@ -1223,7 +1268,10 @@ namespace SPI_Data_Comp_Tool
 
                 if (openFileDialogData.boolFileSelected)
                 {
-                    dsTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                    DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
+                    if (!FormValidation.Check(this, () => ValidateDuplicacyWorkbook(candidate),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                    dsTableList = candidate;
 
                     if (dsTableList != null && dsTableList.Tables.Count > 0 && dsTableList.Tables[0].Rows.Count > 0)
                     {
@@ -1237,6 +1285,8 @@ namespace SPI_Data_Comp_Tool
                             folderBrowserDialog1.Description = "Select Folder To Save All Excel Output";
                             if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
                             {
+                                if (!FormValidation.Check(this, () => FormValidation.ExistingDirectory(folderBrowserDialog1.SelectedPath,
+                                    btn_ListTableExcel, "Output folder"), message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                                 strFolderPath = folderBrowserDialog1.SelectedPath;
                                 lb_link.Visible = true;
                                 llb_File.Text = strFolderPath;
@@ -1325,6 +1375,12 @@ namespace SPI_Data_Comp_Tool
             {
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
                 if (!connection.AddChecks(InputCheck.For(this)).Report()) return;
+                if (!FormValidation.Check(this, () =>
+                {
+                    FormValidation.IsBusy(backgroundWorker1, btn_Connect_Reference_ID);
+                    connection.ValidateInput();
+                }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                dBConnectionStatus_SRC.boolConnection = dBConnectionStatus_TRG.boolConnection = false;
                 string str_DBName = tb_SRC_DBName.Text.Trim();
                 //string str_SchemaName = tb_SchemaName.Text.Trim();
 
@@ -1332,12 +1388,12 @@ namespace SPI_Data_Comp_Tool
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Source Oracle...");
 
-                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                 }
                 else if (rb_SRC_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Source SQL...");
-                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                    dBConnectionStatus_SRC = dBConnectionStatus_SRC.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                 }
 
                 Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_SRC.strConnectionMSG, (!dBConnectionStatus_SRC.boolConnection), -1, Color.DarkBlue);
@@ -1348,12 +1404,12 @@ namespace SPI_Data_Comp_Tool
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target Oracle...");
 
-                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                 }
                 else if (rb_TRG_SQL.Checked)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target SQL...");
-                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                    dBConnectionStatus_TRG = dBConnectionStatus_TRG.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                 }
                 Common_Data.DisplayMessage(rtb_Log, dBConnectionStatus_TRG.strConnectionMSG, (!dBConnectionStatus_TRG.boolConnection), -1, Color.DarkBlue);
 
@@ -1361,6 +1417,42 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex)
             {
                 DisplayError(ex);
+            }
+        }
+        internal bool ValidateDuplicacyInputs()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker1, btn_ListTableExcel);
+                connection.ValidateInput();
+                FormValidation.Require(dBConnectionStatus_SRC != null && dBConnectionStatus_SRC.boolConnection
+                    && dBConnectionStatus_TRG != null && dBConnectionStatus_TRG.boolConnection, btn_Connect_Reference_ID,
+                    "Test both current database connections before checking duplicacy or configuration.");
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true));
+        }
+
+        internal void ValidateDuplicacyWorkbook(DataSet candidate)
+        {
+            FormValidation.Require(candidate != null && candidate.Tables.Count > 0, btn_ListTableExcel,
+                "The workbook contains no duplicacy/configuration list.");
+            DataTable list = candidate.Tables[0];
+            FormValidation.Table(list, btn_ListTableExcel, "Duplicacy list");
+            string[] columns = cb_ConfigurationMode.Checked
+                ? new[] { "TABLE_NAME", "PRIMARY_KEY", "DUPLICACY_COLUMNS", "OUTPUT_COLUMNS" }
+                : new[] { "TABLE_NAME", "PRIMARY_KEY", "DUPLICACY_COLUMNS" };
+            FormValidation.Columns(list, columns, btn_ListTableExcel, "Duplicacy list");
+            bool where = list.Columns.Contains("WHERE_CLAUSE");
+            bool values = list.Columns.Contains("WHERE_CLAUSE_VALUE");
+            FormValidation.Require(where == values, btn_ListTableExcel,
+                "Provide both WHERE_CLAUSE and WHERE_CLAUSE_VALUE columns, or neither.");
+            foreach (DataRow row in list.Rows)
+            {
+                foreach (string column in columns)
+                    FormValidation.Require(!string.IsNullOrWhiteSpace(Convert.ToString(row[column])), btn_ListTableExcel,
+                        "Duplicacy/configuration rows require nonblank table and column names.");
+                if (where) FormValidation.Require(string.IsNullOrWhiteSpace(Convert.ToString(row["WHERE_CLAUSE"]))
+                    == string.IsNullOrWhiteSpace(Convert.ToString(row["WHERE_CLAUSE_VALUE"])), btn_ListTableExcel,
+                    "Each filter requires both a column and its values.");
             }
         }
     }

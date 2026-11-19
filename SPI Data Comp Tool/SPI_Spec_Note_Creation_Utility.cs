@@ -15,12 +15,10 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class SPI_Spec_Note_Creation_Utility : Form
     {
-        private int int_SpecColCount, itemi;
-        private string str_Note = string.Empty;
         public delegate void GetExcelData(DataSet ds, string fileName = null);
         private event GetExcelData getExcelDataEvent;
 
-        private DataTable dt_SpecNote, dt_rowHeight;
+        private DataTable dt_SpecNote;
         private DataSet ds_SpecNote;
 
         private SaveFileDialogFile sfdf;
@@ -35,27 +33,29 @@ namespace SPI_Data_Comp_Tool
             dt_SpecNote = new DataTable();
             ds_SpecNote = new DataSet();
             sfdf = new SaveFileDialogFile();
-            dt_rowHeight = new DataTable();
         }
 
         private void SetExcelData(DataSet ds, string fileName = null)
         {
             try
             {
-                if(ds.Tables.Count > 0 && ds.Tables[0]!=null)
+                if (FormValidation.Check(this, () => ExcelFileReadCustomControl.ValidateWorkbook(ds, excelFileReadCustomControl1),
+                    message => lbl_Status.Text = message))
                 {
-                    dataGridView1.DataSource = ds.Tables[0];
+                    DataSet candidate = ds.Copy();
+                    ds_SpecNote?.Dispose();
+                    ds_SpecNote = candidate;
+                    dt_SpecNote = new DataTable();
+                    dataGridView1.DataSource = ds_SpecNote.Tables[0];
                     lbl_Status.Text = ds.Tables[0].TableName + " Loaded Successfully";
                     if(fileName != null)
                     {
-                        ds_SpecNote = ds.Copy();
                         lbl_Status.Text = fileName + " Loaded Successfully";
                     }
                 }
                 else
                 {
-                    dataGridView1.DataSource = null;
-                    lbl_Status.Text = "File Not Selected.";
+                    // Keep the last valid input and result on an invalid reload.
                 }
             }
             catch(Exception ex)
@@ -64,15 +64,17 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        public SPI_Spec_Note_Creation_Utility(DataSet ds)
+        public SPI_Spec_Note_Creation_Utility(DataSet ds) : this()
         {
-            InitializeComponent();
+            SetExcelData(ds);
         }
 
         private void btn_GenerateExcel_Click(object sender, EventArgs e)
         {
             try
             {
+                if (!FormValidation.Check(this, () => FormValidation.Table(dt_SpecNote, btn_GenerateExcel,
+                    "Generated notes"), message => lbl_Status.Text = message)) return;
                 sfdf.SaveFileDialogExcelFile("Enter File Name", "SPEC_NOTE_OUTPUT",dt_SpecNote);
                 if(sfdf.BoolFileSaveStatus)
                 {
@@ -90,55 +92,44 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if(ds_SpecNote.Tables.Count > 0 && ds_SpecNote.Tables[0].Rows.Count > 0)
+                DataTable candidate = null;
+                if (!FormValidation.Check(this, () =>
                 {
-                    if(ds_SpecNote.Tables[0].Columns[0].ColumnName == "CMPNT_ID")
-                    {
-                        dt_SpecNote = ds_SpecNote.Tables[0].Copy();
-                        dt_SpecNote.Columns.Add("NOTE", typeof(string)).SetOrdinal(3);
-                        dt_SpecNote.Columns.Add("LengthNote", typeof(Int32)).SetOrdinal(4);
-                        int_SpecColCount = dt_SpecNote.Columns.Count;
-
-                        foreach(DataRow dr in dt_SpecNote.Rows)
-                        {
-                            str_Note = string.Empty;
-                            for (itemi = 4; itemi < int_SpecColCount; itemi++)
-                            {
-                                if(dr[itemi].ToString().Trim() != "" & dr[itemi].ToString().Trim() != "*")
-                                {
-                                    str_Note = str_Note + dt_SpecNote.Columns[itemi].ColumnName + ":" + dr[itemi] + "\n";
-                                }
-                            }
-                            str_Note = str_Note.Substring(0, str_Note.Length - 1);
-                            dr["NOTE"] = str_Note;
-                            dr["LengthNote"] = str_Note.Length;
-                        }
-
-                        int_SpecColCount = dt_SpecNote.Columns.Count;
-
-                        for (itemi = int_SpecColCount - 1; itemi >= 5; itemi--)
-                        {
-                            dt_SpecNote.Columns.RemoveAt(itemi);
-                        }
-
-                        dt_SpecNote.AcceptChanges();
-                        dataGridView1.DataSource = null;
-                        dataGridView1.DataSource = dt_SpecNote;
-                    }
-                    else
-                    {
-                        lbl_Status.Text = "SPEC columns are not proper";
-                    }
-                }
-                else
-                {
-                    lbl_Status.Text = "SPEC Data Not Found";
-                }
+                    ExcelFileReadCustomControl.ValidateWorkbook(ds_SpecNote, excelFileReadCustomControl1);
+                    candidate = BuildNotes(ds_SpecNote.Tables[0], btn_Spec_Create);
+                }, message => lbl_Status.Text = message)) return;
+                dt_SpecNote = candidate;
+                dataGridView1.DataSource = dt_SpecNote;
+                lbl_Status.Text = "Notes generated successfully.";
             }
             catch (Exception ex)
             {
                 lbl_Status.Text = ex.Message.ToString();
             }
+        }
+
+        internal static DataTable BuildNotes(DataTable input, Control field)
+        {
+            FormValidation.Table(input, field, "Specification input");
+            FormValidation.Require(input.Columns.Count >= 3 && input.Columns[0].ColumnName == "CMPNT_ID", field,
+                "Specification input must begin with CMPNT_ID and contain the three identifier columns.");
+            FormValidation.Require(!input.Columns.Contains("NOTE") && !input.Columns.Contains("LengthNote"), field,
+                "Load the original input; NOTE and LengthNote are generated output columns.");
+            DataTable result = input.Copy();
+            result.Columns.Add("NOTE", typeof(string));
+            result.Columns.Add("LengthNote", typeof(int));
+            foreach (DataRow row in result.Rows)
+            {
+                string note = string.Join("\n", input.Columns.Cast<DataColumn>().Skip(3)
+                    .Where(column => !string.IsNullOrWhiteSpace(row[column.ColumnName].ToString()) && row[column.ColumnName].ToString().Trim() != "*")
+                    .Select(column => column.ColumnName + ":" + row[column.ColumnName]));
+                FormValidation.Require(note.Length <= 32767, field, "A generated note exceeds Excel's 32,767-character cell limit.");
+                row["NOTE"] = note;
+                row["LengthNote"] = note.Length;
+            }
+            foreach (string name in input.Columns.Cast<DataColumn>().Skip(3).Select(column => column.ColumnName).ToArray())
+                result.Columns.Remove(name);
+            return result;
         }
     }
 }

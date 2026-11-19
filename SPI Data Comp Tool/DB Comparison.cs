@@ -30,6 +30,7 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class DB_Comparison_Form : Form
     {
+        private IDisposable operationInputs;
         #region string variables
 
         private string str_oracle_dbSource = string.Empty;
@@ -178,12 +179,29 @@ namespace SPI_Data_Comp_Tool
         private System.Windows.Forms.TextBox tb_TRG_Password => connection.Target.Password;
 
         private SaveFileDialogFile saveFileDialogFile;
+        private bool comparisonInputsLoaded;
+        private bool comparisonPrepared;
 
         public DB_Comparison_Form()
         {
             InitializeComponent();
+            FormClosing += (sender, args) =>
+            {
+                if (backgroundWorker1.IsBusy)
+                {
+                    args.Cancel = true;
+                    FormValidation.Check(this, () => FormValidation.Reject(btn_Cancel,
+                        "Wait for the current operation to finish or cancel it before closing this window."),
+                        message => FormHelpers.ShowText(lblExpressionStatus, message, Color.Red));
+                }
+            };
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => DisplayError(lblExpressionStatus, error);
+            connection.InputChanged += (sender, args) => InvalidateComparisonInputs();
+            cb_SRC_TableName.TextChanged += (sender, args) => InvalidateComparisonInputs();
+            cb_TRG_TableName.TextChanged += (sender, args) => InvalidateComparisonInputs();
+            clb_ReferenceID.ItemCheck += (sender, args) => { comparisonPrepared = false; };
+            cbL_SRC_Cols.ItemCheck += (sender, args) => { comparisonPrepared = false; };
             UiTheme.Apply(this, btnGenerateOutput);
 
             try
@@ -321,48 +339,11 @@ namespace SPI_Data_Comp_Tool
         }
         private bool ValidateMyControls()
         {
-            try
+            return FormValidation.Check(this, () =>
             {
-
-                if (rb_SRC_oracle.Checked)
-                {
-                    return (CheckLengthOfTextBox(tb_SRC_DefaultPort) && CheckLengthOfTextBox(tb_SRC_DataSource) && CheckLengthOfTextBox(tb_SRC_DBName) && CheckLengthOfTextBox(tb_SRC_UserName) && CheckLengthOfTextBox(tb_SRC_Password));
-                }
-                else if (rb_SRC_SQL.Checked)
-                {
-                    if (cb_WindowAuthentication_SRC.Checked)
-                    {
-                        return (CheckLengthOfTextBox(tb_SRC_DataSource) && CheckLengthOfTextBox(tb_SRC_DBName));
-                    }
-                    else
-                    {
-                        return (CheckLengthOfTextBox(tb_SRC_DataSource) && CheckLengthOfTextBox(tb_SRC_DBName) && CheckLengthOfTextBox(tb_SRC_UserName) && CheckLengthOfTextBox(tb_SRC_Password));
-                    }
-                }
-
-                if (rb_TRG_Oracle.Checked)
-                {
-                    return (CheckLengthOfTextBox(tb_TRG_DefaultPort) && CheckLengthOfTextBox(tb_TRG_DataSource) && CheckLengthOfTextBox(tb_TRG_DBName) && CheckLengthOfTextBox(tb_TRG_UserName) && CheckLengthOfTextBox(tb_TRG_Password));
-                }
-                else if (rb_TRG_SQL.Checked)
-                {
-                    if (cb_WindowAuthentication_TRG.Checked)
-                    {
-                        return (CheckLengthOfTextBox(tb_TRG_DataSource) && CheckLengthOfTextBox(tb_TRG_DBName));
-                    }
-                    else
-                    {
-                        return (CheckLengthOfTextBox(tb_TRG_DataSource) && CheckLengthOfTextBox(tb_TRG_DBName) && CheckLengthOfTextBox(tb_TRG_UserName) && CheckLengthOfTextBox(tb_TRG_Password));
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-                return false;
-            }
+                FormValidation.IsBusy(backgroundWorker1, btn_Connect_Reference_ID);
+                connection.ValidateInput();
+            }, message => FormHelpers.ShowText(lblExpressionStatus, message, Color.Red));
         }
         private DataSet connect_Oracle_DB(string columnNames = " * ")
         {
@@ -376,10 +357,7 @@ namespace SPI_Data_Comp_Tool
 
                 if (rb_SRC_oracle.Checked)
                 {
-                    strOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_SRC_DataSource.Text + " )(PORT = " + tb_SRC_DefaultPort.Text + "))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_SRC_DBName.Text + ")));"
-                        + "User Id=" + tb_SRC_UserName.Text + ";Password=" + tb_SRC_Password.Text + ";";
+                    strOracleConnection = ConnectionStrings.Build("oracle", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
 
                     oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
                     oracleDA.Fill(dt_oracle);
@@ -388,16 +366,7 @@ namespace SPI_Data_Comp_Tool
 
                 if (rb_SRC_SQL.Checked)
                 {
-                    if (cb_WindowAuthentication_TRG.CheckState == CheckState.Checked)
-                    {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; Integrated Security = true ";
-                    }
-                    else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
-                    {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; User ID = " + tb_SRC_UserName.Text + "; " + "Password = " + tb_SRC_Password.Text + ";";
-                    }
+                    strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
 
                     sqlDA = new SqlDataAdapter(strQuery, strSQLConnection);
                     sqlDA.Fill(dt_oracle);
@@ -427,10 +396,7 @@ namespace SPI_Data_Comp_Tool
 
                 if (rb_TRG_Oracle.Checked)
                 {
-                    strSQLConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_TRG_DataSource.Text + " )(PORT = " + tb_TRG_DefaultPort.Text + "))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_TRG_DBName.Text + ")));"
-                        + "User Id=" + tb_TRG_UserName.Text + ";Password=" + tb_TRG_Password.Text + ";";
+                    strOracleConnection = ConnectionStrings.Build("oracle", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
 
                     oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
                     dt_sql = new DataTable();
@@ -442,13 +408,11 @@ namespace SPI_Data_Comp_Tool
                 {
                     if (cb_WindowAuthentication_TRG.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
                     else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; User ID = " + tb_TRG_UserName.Text + "; " + "Password = " + tb_TRG_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
 
                     dt_sql = new DataTable();
@@ -708,13 +672,11 @@ namespace SPI_Data_Comp_Tool
 
                 if (cb_WindowAuthentication_TRG.CheckState == CheckState.Checked)
                 {
-                    strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                    + "; Integrated Security = true ";
+                    strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                 }
                 else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
                 {
-                    strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                    + "; User ID = " + tb_TRG_UserName.Text + "; " + "Password = " + tb_TRG_Password.Text + ";";
+                    strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                 }
 
                 dt_sql = new DataTable();
@@ -780,8 +742,10 @@ namespace SPI_Data_Comp_Tool
 
         private void btn_Connect_Reference_ID_Click(object sender, EventArgs e)
         {
+            if (!ValidateTableLoadInputs()) return;
             try
             {
+                comparisonInputsLoaded = comparisonPrepared = false;
                 resetLabelsToDefaultValue();
                 boolStatus = true;
                 clearCheckBoxList(clb_ReferenceID);
@@ -836,6 +800,7 @@ namespace SPI_Data_Comp_Tool
                         }
                     }
                     dsAllColumns = ds.Clone();
+                    comparisonInputsLoaded = ds.Tables.Count == 2 && ds.Tables[0].Columns.Count > 0 && ds.Tables[1].Columns.Count > 0;
                 }
                 else
                 {
@@ -957,6 +922,7 @@ namespace SPI_Data_Comp_Tool
         }
         private void btn_Set_Click(object sender, EventArgs e)
         {
+            if (!ValidateComparisonInputs(false)) return;
             try
             {
                 resetLabelsToDefaultValue();
@@ -1002,6 +968,7 @@ namespace SPI_Data_Comp_Tool
                     toggleCondition(true);
                     statusChangeforSetButton(false);
                     lblExpressionStatus.Text = "All Set";
+                    comparisonPrepared = true;
                 }
                 else if (clb_ReferenceID.CheckedItems.Count == 0)
                 {
@@ -1126,6 +1093,7 @@ namespace SPI_Data_Comp_Tool
         }
         private void btnGenerateOutput_Click(object sender, EventArgs e)
         {
+            if (!ValidateComparisonInputs(true)) return;
             try
             {
                 resetLabelsToDefaultValue();
@@ -1135,6 +1103,13 @@ namespace SPI_Data_Comp_Tool
                 btn_Cancel.Enabled = true;
 
                 saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Output File", $"{common_Data.RemoveSpecialCharacters(cb_SRC_TableName.Text)}_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx");
+                if (!saveFileDialogFile.BoolFileSaveStatus || !FormValidation.Check(this, () =>
+                    FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath, btnGenerateOutput, "Output workbook", ".xlsx"),
+                    message => FormHelpers.ShowText(lblExpressionStatus, message, Color.Red)))
+                {
+                    toggleCondition(true);
+                    return;
+                }
 
                 myException_BG = new Exception();
 
@@ -1187,7 +1162,7 @@ namespace SPI_Data_Comp_Tool
                         int_Count_Comparison = 0;
                         start_Time = DateTime.Now;
                         timer1.Enabled = true;
-                        backgroundWorker1.RunWorkerAsync();
+                        FormValidation.StartWorker(this, backgroundWorker1, ref operationInputs, btn_Cancel);
                     }
                 }
             }
@@ -1442,6 +1417,7 @@ namespace SPI_Data_Comp_Tool
                 using (ExcelPackage pck = new ExcelPackage())
                 {
                     worksheet = pck.Workbook.Worksheets.Add("Mismatch");
+                    FormValidation.ExcelTable(dtUnmatched, null, "Excel output");
                     worksheet.Cells["A1"].LoadFromDataTable(dtUnmatched, true);
                     worksheet.Cells.AutoFitColumns(22, 55);
 
@@ -1495,7 +1471,7 @@ namespace SPI_Data_Comp_Tool
                     //DisplayDebugMsg("Fourth and last worksheet written");
 
                     //strFileNameWithPath = $@"{strFolderPath}\{dtSRC.TableName}_Output_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
-                    pck.SaveAs(new System.IO.FileInfo(saveFileDialogFile.Str_saveFileNameWithPath));
+                    FormValidation.WriteAtomically(saveFileDialogFile.Str_saveFileNameWithPath, temporary => pck.SaveAs(new FileInfo(temporary)));
                     strFilePathChangeSave = saveFileDialogFile.Str_saveFileNameWithPath;
                     boolStatus = true;
                     //DisplayMessage($"File Saved : {strFileNameWithPath}");
@@ -1770,6 +1746,7 @@ namespace SPI_Data_Comp_Tool
                     using (ExcelPackage pck = new ExcelPackage())
                     {
                         worksheet = pck.Workbook.Worksheets.Add("Mismatch");
+                        FormValidation.ExcelTable(dt_unmatched_Capture, null, "Excel output");
                         worksheet.Cells["A1"].LoadFromDataTable(dt_unmatched_Capture, true);
                         worksheet.Cells.AutoFitColumns(22, 55);
 
@@ -1817,11 +1794,13 @@ namespace SPI_Data_Comp_Tool
 
                         backgroundWorker1.ReportProgress(103);
 
-                        pck.SaveAs(new System.IO.FileInfo(saveFileDialogFile.Str_saveFileNameWithPath));
+                        FormValidation.WriteAtomically(saveFileDialogFile.Str_saveFileNameWithPath, temporary => pck.SaveAs(new FileInfo(temporary)));
                     }
                 }
                 else if (Properties.Settings.Default.XL_Excel_Save)
                 {
+                    foreach (DataTable output in new[] { dt_unmatched_Capture, dt_oracle_only, dt_sql_only, dt_transpose })
+                        FormValidation.ExcelTable(output, null, "Comparison output");
                     wb = new XLWorkbook();
                     wb.Worksheets.Add(dt_unmatched_Capture, "Mismatch");
                     wb.Worksheets.Add(dt_oracle_only, "Source rows only");
@@ -1842,11 +1821,10 @@ namespace SPI_Data_Comp_Tool
 
                     strFilePathChangeSave = saveFileDialogFile.Str_saveFileNameWithPath;
 
-                    wb.SaveAs(strFilePathChangeSave);
+                    FormValidation.WriteAtomically(strFilePathChangeSave, temporary => wb.SaveAs(temporary));
 
                     backgroundWorker1.ReportProgress(125);
 
-                    wb.Save();
                 }
 
                 strFilePathChangeSave = saveFileDialogFile.Str_saveFileNameWithPath;
@@ -1963,9 +1941,11 @@ namespace SPI_Data_Comp_Tool
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
-                if (e.Cancelled & e.Error != null)
+                if (e.Cancelled)
                 {
                     lblStatus.Text = "Process Cancelled";
                 }
@@ -2081,6 +2061,11 @@ namespace SPI_Data_Comp_Tool
 
         private void btn_Load_SRC_Table_Click(object sender, EventArgs e)
         {
+            if (!FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker1, btn_Load_SRC_Table);
+                connection.Source.ValidateInput();
+            }, message => FormHelpers.ShowText(lblExpressionStatus, message, Color.Red))) return;
             try
             {
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
@@ -2090,11 +2075,7 @@ namespace SPI_Data_Comp_Tool
                 if (rb_SRC_oracle.Checked)
                 {
                     strQuery = "SELECT * FROM all_tables where OWNER != 'SYS' ORDER BY OWNER, TABLE_NAME";
-
-                    strOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_SRC_DataSource.Text + " )(PORT = " + tb_SRC_DefaultPort.Text + "))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_SRC_DBName.Text + ")));"
-                        + "User Id=" + tb_SRC_UserName.Text + ";Password=" + tb_SRC_Password.Text + ";";
+                    strOracleConnection = ConnectionStrings.Build("oracle", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
 
                     oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
                     dt_oracle = new DataTable();
@@ -2110,13 +2091,11 @@ namespace SPI_Data_Comp_Tool
 
                     if (cb_WindowAuthentication_SRC.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
                     }
                     else if (cb_WindowAuthentication_SRC.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; User ID = " + tb_SRC_UserName.Text + "; " + "Password = " + tb_SRC_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
                     }
 
                     dt_sql = new DataTable();
@@ -2251,6 +2230,11 @@ namespace SPI_Data_Comp_Tool
 
         private void btn_Load_TRG_Table_Click(object sender, EventArgs e)
         {
+            if (!FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker1, btn_Load_TRG_Table);
+                connection.Target.ValidateInput();
+            }, message => FormHelpers.ShowText(lblExpressionStatus, message, Color.Red))) return;
             try
             {
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
@@ -2260,11 +2244,7 @@ namespace SPI_Data_Comp_Tool
                 if (rb_TRG_Oracle.Checked)
                 {
                     strQuery = "SELECT * FROM all_tables where OWNER != 'SYS' ORDER BY OWNER, TABLE_NAME";
-
-                    strOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_TRG_DataSource.Text + " )(PORT = " + tb_TRG_DefaultPort.Text + "))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_TRG_DBName.Text + ")));"
-                        + "User Id=" + tb_TRG_UserName.Text + ";Password=" + tb_TRG_Password.Text + ";";
+                    strOracleConnection = ConnectionStrings.Build("oracle", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
 
                     oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
                     dt_oracle = new DataTable();
@@ -2279,13 +2259,11 @@ namespace SPI_Data_Comp_Tool
 
                     if (cb_WindowAuthentication_TRG.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
                     else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; User ID = " + tb_TRG_UserName.Text + "; " + "Password = " + tb_TRG_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
 
                     dt_sql = new DataTable();
@@ -2570,6 +2548,43 @@ namespace SPI_Data_Comp_Tool
             {
                 lblExpressionStatus.Text = ex.Message.ToString();
             }
+        }
+
+        private void InvalidateComparisonInputs()
+        {
+            comparisonInputsLoaded = comparisonPrepared = false;
+        }
+
+        internal bool ValidateTableLoadInputs()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker1, btn_Connect_Reference_ID);
+                connection.ValidateInput();
+                FormValidation.Required(cb_SRC_TableName, "source table name");
+                FormValidation.Required(cb_TRG_TableName, "target table name");
+            }, message => FormHelpers.ShowText(lblExpressionStatus, message, Color.Red));
+        }
+
+        internal bool ValidateComparisonInputs(bool requirePrepared)
+        {
+            return FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker1, btnGenerateOutput);
+                FormValidation.Require(comparisonInputsLoaded && ds != null && ds.Tables.Count == 2,
+                    btn_Connect_Reference_ID, "Load both tables again after changing connection or table selections.");
+                string[] keys = clb_ReferenceID.CheckedItems.Cast<object>().Select(Convert.ToString).ToArray();
+                string[] compared = cbL_SRC_Cols.CheckedItems.Cast<object>().Select(Convert.ToString)
+                    .Where(name => !keys.Contains(name)).ToArray();
+                FormValidation.Columns(ds.Tables[0], keys, clb_ReferenceID, "source reference-key");
+                FormValidation.Columns(ds.Tables[1], keys, clb_ReferenceID, "target reference-key");
+                FormValidation.Columns(ds.Tables[0], compared, cbL_SRC_Cols, "source comparison");
+                FormValidation.Columns(ds.Tables[1], compared, cbL_SRC_Cols, "target comparison");
+                if (requirePrepared) FormValidation.Require(comparisonPrepared, btn_Set,
+                    "Click Set again after changing the reference keys or comparison columns.");
+                if (cb_IncludeRule.Checked) FormValidation.Require(common_Data.GetRulesStatus(), cb_IncludeRule,
+                    "Import valid comparison rules, or clear Include rules.");
+            }, message => FormHelpers.ShowText(lblExpressionStatus, message, Color.Red));
         }
 
         private void statusChangeforSetButton(bool enabledStatus)

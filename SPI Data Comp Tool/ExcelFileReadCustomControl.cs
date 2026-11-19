@@ -34,8 +34,12 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                ds = LoadDataExcel();
-                GetExcelData.DynamicInvoke(ds,openFileDialogData.strFileNameWithPath);
+                DataSet candidate = LoadDataExcel();
+                if (candidate == null) return;
+                if (!FormValidation.Check(this, () => FormValidation.Require(GetExcelData != null,
+                    btn_Excel, "This workbook control has no destination."), message => lbl_ExcelFileName.Text = message)) return;
+                GetExcelData.DynamicInvoke(candidate, openFileDialogData.strFileNameWithPath);
+                ds = candidate;
             }
             catch (Exception ex)
             {
@@ -60,22 +64,34 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 openFileDialogData = openFileDialogData.openFileDialog();
-                lbl_ExcelFileName.Text = openFileDialogData.strFileNameWithPath;
                 if(openFileDialogData.boolFileSelected)
                 {
-                    ds = common_Data.LoadExcelFromDataReader(lbl_ExcelFileName.Text);
+                    string path = null;
+                    if (!FormValidation.Check(this, () => path = FormValidation.ReadableFile(
+                        openFileDialogData.strFileNameWithPath, btn_Excel, "Workbook", ".xlsx", ".xlsm"),
+                        message => lbl_ExcelFileName.Text = message)) return null;
+                    DataSet candidate = common_Data.LoadExcelFromDataReader(path);
+                    if (!FormValidation.Check(this, () => ValidateWorkbook(candidate, btn_Excel),
+                        message => lbl_ExcelFileName.Text = message)) { candidate?.Dispose(); return null; }
+                    lbl_ExcelFileName.Text = path;
+                    return candidate;
                 }
                 else
                 {
-                    ds.Tables.Clear();
-                    ds.Clear();
+                    return null; // Cancelling must not discard the previously loaded workbook.
                 }
             }
             catch (Exception)
             {
                 throw;
             }
-            return ds;
+        }
+
+        internal static void ValidateWorkbook(DataSet candidate, Control field)
+        {
+            FormValidation.Require(candidate != null && candidate.Tables.Count > 0, field,
+                "The workbook contains no readable worksheets.");
+            FormValidation.Table(candidate.Tables[0], field, "First worksheet");
         }
 
         //private OpenFileDialogData openFileDialog(string str_title = "Browse Excel Files")

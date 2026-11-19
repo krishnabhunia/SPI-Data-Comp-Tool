@@ -21,6 +21,7 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class SPIDeltaChangeTrackerOptimised : Form
     {
+        private IDisposable operationInputs;
         #region string variables
 
         private string str_oracle_dbSource = string.Empty;
@@ -92,6 +93,7 @@ namespace SPI_Data_Comp_Tool
 
         private bool boolCompareResult; //, boolTest;
         private bool boolCompare_List;
+        private bool operationFailed;
         //private bool boolIgnoreCase;
 
 
@@ -152,6 +154,23 @@ namespace SPI_Data_Comp_Tool
         public SPIDeltaChangeTrackerOptimised()
         {
             InitializeComponent();
+            FormClosing += (sender, args) =>
+            {
+                if (backgroundWorker2.IsBusy)
+                {
+                    args.Cancel = true;
+                    FormValidation.Check(this, () => FormValidation.Reject(btn_Cancel,
+                        "Wait for the current operation to finish or cancel it before closing this window."),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true));
+                }
+            };
+            foreach (TextBox field in new[] { tb_SRC_DataSource, tb_SRC_DBName, tb_SRC_UserName, tb_SRC_Password, tb_SRC_DefaultPort,
+                tb_TRG_DataSource, tb_TRG_DBName, tb_TRG_UserName, tb_TRG_Password, tb_TRG_DefaultPort })
+                field.TextChanged += (sender, args) => InvalidateTrackerConnections();
+            foreach (RadioButton field in new[] { rb_SRC_oracle, rb_SRC_SQL, rb_TRG_Oracle, rb_TRG_SQL })
+                field.CheckedChanged += (sender, args) => InvalidateTrackerConnections();
+            foreach (CheckBox field in new[] { cb_WindowAuthentication_SRC, cb_WindowAuthentication_TRG, cb_SRC_DefaultPort, cb_TRG_DefaultPort })
+                field.CheckedChanged += (sender, args) => InvalidateTrackerConnections();
 
             try
             {
@@ -284,7 +303,7 @@ namespace SPI_Data_Comp_Tool
                         + "User Id=" + tb_oracle_username.Text + ";Password=" + tb_oracle_pwd.Text + ";";
                         */
 
-                    strOracleConnection = $"Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={ tb_SRC_DataSource.Text.Trim()})(PORT={ tb_SRC_DefaultPort.Text.Trim()}))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME={tb_SRC_DBName.Text})));User Id={tb_SRC_UserName.Text.Trim()};Password={tb_SRC_Password.Text.Trim()};";
+                    strOracleConnection = $"Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={ tb_SRC_DataSource.Text.Trim()})(PORT={ tb_SRC_DefaultPort.Text.Trim()}))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME={tb_SRC_DBName.Text})));User Id={tb_SRC_UserName.Text.Trim()};Password={tb_SRC_Password.Text};";
 
                     Common_Data.DisplayMessage(rtb_Log, strOracleConnection);
 
@@ -304,13 +323,11 @@ namespace SPI_Data_Comp_Tool
                     Common_Data.DisplayMessage(rtb_Log, strQuery);
                     if (cb_WindowAuthentication_SRC.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
                     }
                     else if (cb_WindowAuthentication_SRC.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; User ID = " + tb_SRC_UserName.Text + "; " + "Password = " + tb_SRC_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
                     }
                     Common_Data.DisplayMessage(rtb_Log, strSQLConnection);
                     sqlDA = new SqlDataAdapter(strQuery, strSQLConnection);
@@ -358,13 +375,11 @@ namespace SPI_Data_Comp_Tool
                     Common_Data.DisplayMessage(rtb_Log, "Connecting SQL");
                     if (cb_WindowAuthentication_TRG.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
                     else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; User ID = " + tb_TRG_UserName.Text + "; " + "Password = " + tb_TRG_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
                     Common_Data.DisplayMessage(rtb_Log, strSQLConnection);
 
@@ -486,13 +501,11 @@ namespace SPI_Data_Comp_Tool
 
                 if (cb_WindowAuthentication_TRG.CheckState == CheckState.Checked)
                 {
-                    strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                    + "; Integrated Security = true ";
+                    strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                 }
                 else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
                 {
-                    strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                    + "; User ID = " + tb_TRG_UserName.Text + "; " + "Password = " + tb_TRG_Password.Text + ";";
+                    strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                 }
 
                 dt_Target = new DataTable();
@@ -1220,11 +1233,14 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateTrackerInputs()) return;
                 resetLabelsToDefaultValue();
                 toggleCondition(false);
                 Common_Data.DisplayMessage(rtb_Log, "Pls wait, Processing started");
                 btn_Cancel.Enabled = true;
                 boolStatus = true;
+                operationFailed = false;
+                strFilePathChangeSave = string.Empty;
                 ds_CompleteSet = new DataSet();
 
                 if (!(backgroundWorker2.IsBusy))
@@ -1232,7 +1248,7 @@ namespace SPI_Data_Comp_Tool
                     str_Where_Col = cb_DateCol.Text.ToString().Trim();
                     str_Where_Val_Oracle = dateTimePicker_Date.Value.ToString("dd-MMM-yy");
                     str_Where_Val_SQL = dateTimePicker_Date.Value.ToString("yyyy-MM-dd");
-                    backgroundWorker2.RunWorkerAsync();
+                    FormValidation.StartWorker(this, backgroundWorker2, ref operationInputs, btn_Cancel);
                     timer1.Enabled = true;
                     timer1.Start();
                 }
@@ -1601,6 +1617,8 @@ namespace SPI_Data_Comp_Tool
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
                 if (e.Cancelled)
@@ -1725,6 +1743,11 @@ namespace SPI_Data_Comp_Tool
             {
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
                 if (!InputCheck.For(this).Connection("Source", rb_SRC_oracle.Checked, cb_WindowAuthentication_SRC.Checked, tb_SRC_DefaultPort, tb_SRC_DataSource, tb_SRC_DBName, tb_SRC_UserName, tb_SRC_Password).Report()) return;
+                if (!FormValidation.Check(this, () =>
+                {
+                    FormValidation.IsBusy(backgroundWorker2, btn_Load_SRC_Table);
+                    ValidateTrackerConnection(true);
+                }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                 resetLabelsToDefaultValue();
                 //UpdateLabel(lblStatus, );
                 Common_Data.DisplayMessage(rtb_Log, "Pls Wait, Loading !!!");
@@ -1732,10 +1755,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     strQuery = "SELECT * FROM all_tables where OWNER != 'SYS' ORDER BY OWNER, TABLE_NAME";
                     Common_Data.DisplayMessage(rtb_Log, strQuery);
-                    strOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_SRC_DataSource.Text + " )(PORT = " + tb_SRC_DefaultPort.Text + "))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_SRC_DBName.Text + ")));"
-                        + "User Id=" + tb_SRC_UserName.Text + ";Password=" + tb_SRC_Password.Text + ";";
+                    strOracleConnection = ConnectionStrings.Build("oracle", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
                     Common_Data.DisplayMessage(rtb_Log, strOracleConnection);
                     oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
                     dt_Source = new DataTable();
@@ -1751,13 +1771,11 @@ namespace SPI_Data_Comp_Tool
                     Common_Data.DisplayMessage(rtb_Log, strQuery);
                     if (cb_WindowAuthentication_SRC.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
                     }
                     else if (cb_WindowAuthentication_SRC.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    + "; User ID = " + tb_SRC_UserName.Text + "; " + "Password = " + tb_SRC_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_SRC_DefaultPort.Text);
                     }
                     Common_Data.DisplayMessage(rtb_Log, strSQLConnection);
                     dt_Target = new DataTable();
@@ -1792,6 +1810,11 @@ namespace SPI_Data_Comp_Tool
             {
                 // stop here when an input is missing or wrong: marks at the fields, reasons in the log
                 if (!InputCheck.For(this).Connection("Target", rb_TRG_Oracle.Checked, cb_WindowAuthentication_TRG.Checked, tb_TRG_DefaultPort, tb_TRG_DataSource, tb_TRG_DBName, tb_TRG_UserName, tb_TRG_Password).Report()) return;
+                if (!FormValidation.Check(this, () =>
+                {
+                    FormValidation.IsBusy(backgroundWorker2, btn_Load_TRG_Table);
+                    ValidateTrackerConnection(false);
+                }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                 resetLabelsToDefaultValue();
                 //UpdateLabel(lblStatus, "Pls Wait, Loading !!!");
                 Common_Data.DisplayMessage(rtb_Log, "Pls Wait, Loading !!!");
@@ -1799,10 +1822,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     strQuery = "SELECT * FROM all_tables where OWNER != 'SYS' ORDER BY OWNER, TABLE_NAME";
                     Common_Data.DisplayMessage(rtb_Log, strQuery);
-                    strOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_TRG_DataSource.Text + " )(PORT = " + tb_TRG_DefaultPort.Text + "))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_TRG_DBName.Text + ")));"
-                        + "User Id=" + tb_TRG_UserName.Text + ";Password=" + tb_TRG_Password.Text + ";";
+                    strOracleConnection = ConnectionStrings.Build("oracle", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     Common_Data.DisplayMessage(rtb_Log, strOracleConnection);
                     oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
                     dt_Source = new DataTable();
@@ -1817,13 +1837,11 @@ namespace SPI_Data_Comp_Tool
                     Common_Data.DisplayMessage(rtb_Log, strQuery);
                     if (cb_WindowAuthentication_TRG.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
                     else if (cb_WindowAuthentication_TRG.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_TRG_DataSource.Text + ";Initial Catalog = " + tb_TRG_DBName.Text
-                        + "; User ID = " + tb_TRG_UserName.Text + "; " + "Password = " + tb_TRG_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_TRG_DataSource.Text, tb_TRG_DBName.Text, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text, tb_TRG_Password.Text, tb_TRG_DefaultPort.Text);
                     }
                     Common_Data.DisplayMessage(rtb_Log, strSQLConnection);
                     dt_Target = new DataTable();
@@ -2008,6 +2026,12 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, () =>
+                {
+                    FormValidation.IsBusy(backgroundWorker2, btn_ListTableExcel);
+                    if (strFor == null || strFor.ToUpperInvariant() == "SRC") ValidateTrackerConnection(true);
+                    if (strFor == null || strFor.ToUpperInvariant() == "TRG") ValidateTrackerConnection(false);
+                }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                 if (strFor == null || strFor.ToUpper() == "SRC")
                 {
                     str_DBName = tb_SRC_DBName.Text.Trim();
@@ -2016,12 +2040,12 @@ namespace SPI_Data_Comp_Tool
                     if (rb_SRC_oracle.Checked)
                     {
                         Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Source Oracle...", false);
-                        dbSRCConnection = dbConnection.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                        dbSRCConnection = dbConnection.DatabaseConnection(rb_SRC_oracle.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                     }
                     else if (rb_SRC_SQL.Checked)
                     {
                         Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Source SQL...", false);
-                        dbSRCConnection = dbConnection.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text.Trim(), tb_SRC_DefaultPort.Text.Trim());
+                        dbSRCConnection = dbConnection.DatabaseConnection(rb_SRC_SQL.Text, tb_SRC_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_SRC.Checked, tb_SRC_UserName.Text.Trim(), tb_SRC_Password.Text, tb_SRC_DefaultPort.Text.Trim());
                     }
                     Common_Data.DisplayMessage(rtb_Log, dbSRCConnection.strConnectionMSG, (!dbSRCConnection.boolConnection), -1, Color.DarkBlue);
 
@@ -2040,12 +2064,12 @@ namespace SPI_Data_Comp_Tool
                     if (rb_TRG_Oracle.Checked)
                     {
                         Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target Oracle...", false);
-                        dbTRGConnection = dbConnection.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                        dbTRGConnection = dbConnection.DatabaseConnection(rb_TRG_Oracle.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                     }
                     else if (rb_TRG_SQL.Checked)
                     {
                         Common_Data.DisplayMessage(rtb_Log, "Trying to connect to Target SQL...", false);
-                        dbTRGConnection = dbConnection.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text.Trim(), tb_TRG_DefaultPort.Text.Trim());
+                        dbTRGConnection = dbConnection.DatabaseConnection(rb_TRG_SQL.Text, tb_TRG_DataSource.Text.Trim(), str_DBName, cb_WindowAuthentication_TRG.Checked, tb_TRG_UserName.Text.Trim(), tb_TRG_Password.Text, tb_TRG_DefaultPort.Text.Trim());
                     }
                     Common_Data.DisplayMessage(rtb_Log, dbTRGConnection.strConnectionMSG, (!dbTRGConnection.boolConnection), -1, Color.DarkBlue);
                     if (dbTRGConnection.exceptionConnection != null)
@@ -2080,8 +2104,15 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, () =>
+                {
+                    FormValidation.IsBusy(backgroundWorker2, btn_ListTableExcel);
+                    ValidateTrackerConnection(true);
+                    ValidateTrackerConnection(false);
+                }, message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
                 Common_Data.DisplayMessage(rtb_Log, "Connecting to DB");
                 ConnectToDB();
+                if (!dbSRCConnection.boolConnection || !dbTRGConnection.boolConnection) return;
                 Common_Data.DisplayMessage(rtb_Log, "Process Done with DB");
 
                 btnGenerateOutput.Enabled = false;
@@ -2090,7 +2121,10 @@ namespace SPI_Data_Comp_Tool
 
                 if (openFileDialogData.boolFileSelected)
                 {
-                    dsTableList = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath, "Table List");
+                    DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath, "Table List");
+                    if (!FormValidation.Check(this, () => ValidateTrackerWorkbook(candidate),
+                        message => Common_Data.DisplayMessage(rtb_Log, message, true))) return;
+                    dsTableList = candidate;
 
                     if (dsTableList != null && dsTableList.Tables.Count > 0 && dsTableList.Tables[0].Rows.Count > 0)
                     {
@@ -2376,6 +2410,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     /*
                     worksheet = pck.Workbook.Worksheets.Add("Mismatch");
+                    FormValidation.ExcelTable(dtUnmatched, null, "Excel output");
                     worksheet.Cells["A1"].LoadFromDataTable(dtUnmatched, true);
                     worksheet.Cells.AutoFitColumns(22, 55);
 
@@ -2458,7 +2493,7 @@ namespace SPI_Data_Comp_Tool
                     strFilePathChangeSave = $@"{llbl_Folder_path.Text}\{common_Data.RemoveSpecialCharacters(str_SRC_TableName)}_{common_Data.RemoveSpecialCharacters(str_TRG_TableName)}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}.xlsx";
                     //backgroundWorker2.ReportProgress(125);
 
-                    pck.SaveAs(new System.IO.FileInfo(strFilePathChangeSave));
+                    FormValidation.WriteAtomically(strFilePathChangeSave, temporary => pck.SaveAs(new FileInfo(temporary)));
                     backgroundWorker2.ReportProgress(0, new BackGroundWorkerUserObjectForReport(0, 1, $"File Saved : {strFilePathChangeSave}"));
 
                     //backgroundWorker2.ReportProgress(130);
@@ -2468,6 +2503,7 @@ namespace SPI_Data_Comp_Tool
 
             catch (Exception ex)
             {
+                operationFailed = true;
                 backgroundWorker2.ReportProgress(5, new BackGroundWorkerUserObjectForReport(ex));
             }
 
@@ -2498,6 +2534,7 @@ namespace SPI_Data_Comp_Tool
                 }
 
                 worksheet = pck.Workbook.Worksheets.Add(dt.TableName);
+                FormValidation.ExcelTable(dt, null, "Excel output");
                 worksheet.Cells["A1"].LoadFromDataTable(dt, true);
                 worksheet.Cells.AutoFitColumns(22, 55);
 
@@ -2654,6 +2691,8 @@ namespace SPI_Data_Comp_Tool
 
         private void backgroundWorker2_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
                 if (e.Cancelled)
@@ -2667,6 +2706,10 @@ namespace SPI_Data_Comp_Tool
                     //lblExpressionStatus.Text = e.Error.Message.ToString();
                     //lblStatus.Text = e.Error.Message.ToString();
                     Common_Data.DisplayError(rtb_Log, e.Error);
+                }
+                else if (operationFailed)
+                {
+                    Common_Data.DisplayMessage(rtb_Log, "Delta tracking finished with errors; review the log. Partial outputs may remain.", true);
                 }
                 //else if (strFilePathChangeSave != "" && boolStatus && cb_ListProcess.Checked)
                 else if (strFilePathChangeSave != "" && boolStatus)
@@ -2977,6 +3020,50 @@ namespace SPI_Data_Comp_Tool
         //    }
 
         //}
+
+        private void InvalidateTrackerConnections()
+        {
+            if (dbSRCConnection != null) dbSRCConnection.boolConnection = false;
+            if (dbTRGConnection != null) dbTRGConnection.boolConnection = false;
+        }
+
+        private void ValidateTrackerConnection(bool source)
+        {
+            if (source) ConnectionSide.ValidateFields("Source", rb_SRC_oracle, rb_SRC_SQL, cb_WindowAuthentication_SRC,
+                tb_SRC_DataSource, tb_SRC_DBName, tb_SRC_UserName, tb_SRC_Password, tb_SRC_DefaultPort);
+            else ConnectionSide.ValidateFields("Target", rb_TRG_Oracle, rb_TRG_SQL, cb_WindowAuthentication_TRG,
+                tb_TRG_DataSource, tb_TRG_DBName, tb_TRG_UserName, tb_TRG_Password, tb_TRG_DefaultPort);
+        }
+
+        internal bool ValidateTrackerInputs()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker2, btnGenerateOutput);
+                ValidateTrackerConnection(true);
+                ValidateTrackerConnection(false);
+                FormValidation.Require(dbSRCConnection != null && dbSRCConnection.boolConnection
+                    && dbTRGConnection != null && dbTRGConnection.boolConnection, btn_ListTableExcel,
+                    "Load the table list again to test the current source and target connections.");
+                ValidateTrackerWorkbook(dsTableList);
+                FormValidation.Required(cb_DateCol, "date-filter column");
+                FormValidation.ExistingDirectory(llbl_Folder_path.Text, llbl_Folder_path, "Output folder");
+                if (cb_IncludeRule.Checked) FormValidation.Require(common_Data.GetRulesStatus(), cb_IncludeRule,
+                    "Import valid rules, or clear Include rules before comparing.");
+            }, message => Common_Data.DisplayMessage(rtb_Log, message, true));
+        }
+
+        internal void ValidateTrackerWorkbook(DataSet candidate)
+        {
+            FormValidation.Require(candidate != null && candidate.Tables.Count > 0, btn_ListTableExcel, "Load a workbook containing a table list.");
+            DataTable table = candidate.Tables[0];
+            FormValidation.Table(table, btn_ListTableExcel, "Table list");
+            FormValidation.Columns(table, new[] { "src_table_names", "trg_table_names", "primary_key_columns", "ignore_columns" }, btn_ListTableExcel, "Table list");
+            foreach (DataRow row in table.Rows)
+                foreach (string column in new[] { "src_table_names", "trg_table_names", "primary_key_columns" })
+                    FormValidation.Require(!string.IsNullOrWhiteSpace(Convert.ToString(row[column])), btn_ListTableExcel,
+                        "Every table-list row needs source, target and reference-key column names.");
+        }
 
     }
 }
