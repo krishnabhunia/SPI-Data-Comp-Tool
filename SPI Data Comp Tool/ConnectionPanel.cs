@@ -49,6 +49,9 @@ namespace SPI_Data_Comp_Tool
 
             Source = new ConnectionSide("Source");
             Target = new ConnectionSide("Target");
+            // each half keeps its own colour in the theme, whatever a window calls it
+            UiTheme.MarkSide(Source.Group, true);
+            UiTheme.MarkSide(Target.Group, false);
             CopyToTarget = new Button { Text = "Copy →", Size = new Size(84, 30), Margin = new Padding(0, 0, 0, 8) };
             CopyToSource = new Button { Text = "← Copy", Size = new Size(84, 30), Margin = new Padding(0) };
             copyButtons = new FlowLayoutPanel

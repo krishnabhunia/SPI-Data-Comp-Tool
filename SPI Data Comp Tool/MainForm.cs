@@ -17,13 +17,20 @@ namespace SPI_Data_Comp_Tool
             // source, so it protected nothing. The main window now opens ready to use.
             UnlockMainWindow();
             InitializeUpdates();
-            UiTheme.Apply(this, btn_Open_DB_Comparison);
+            // the header band and the status bar take their colours from the theme chosen in Settings
+            UiTheme.MarkHeader(pnl_Header);
+            UiTheme.MarkStatus(pnl_Status);
+            UiTheme.Apply(this);
         }
 
         private void MyInitialization()
         {
-            label2.Text = "Compares two databases (Oracle or SQL Server) or two Excel files and reports the differences, for SPI data analysis.";
-            label3.Text = "Use only on data you are allowed to access. Opening a tool again returns to its active window. Hold Ctrl when opening a tool for a separate session.";
+            label3.Text = "Use only on data you are allowed to access. Every other tool is in the menus above. Opening a tool again returns to its active window; hold Ctrl when opening a tool for a separate session.";
+            // the four tools most people start with; each opens the same window as its menu entry
+            tile_CompareDb.Click += (sender, e) => OpenWindow(() => new DB_Comparison_Form());
+            tile_CompareExcel.Click += (sender, e) => OpenWindow(() => new Excel_Excel_Comparison());
+            tile_DeltaTracker.Click += (sender, e) => OpenWindow(() => new SPIDeltaChangeTrackerOptimised());
+            tile_ExportExcel.Click += (sender, e) => OpenWindow(() => new SQL_DB_To_Excel());
         }
 
         private void OpenWindow<T>(Func<T> create, string mode = "", bool allowSeparateSession = true) where T : Form
@@ -73,22 +80,7 @@ namespace SPI_Data_Comp_Tool
             Application.Exit();
         }
 
-        private void btn_Exit_Logout_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
         private void compareExcelToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new Excel_Excel_Comparison());
-        }
-
-        private void btn_Open_DB_Comparison_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new DB_Comparison_Form());
-        }
-
-        private void btn_Excel_Comparison_Click(object sender, EventArgs e)
         {
             OpenWindow(() => new Excel_Excel_Comparison());
         }

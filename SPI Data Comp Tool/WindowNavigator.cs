@@ -23,6 +23,7 @@ namespace SPI_Data_Comp_Tool
             }
 
             T window = create();
+            UiTheme.EnsureApplied(window);   // every tool window gets the theme chosen in Settings
             if (!newWindow)
             {
                 windows[key] = window;

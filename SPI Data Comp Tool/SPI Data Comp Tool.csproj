@@ -315,7 +315,11 @@
     <Compile Include="..\tests\UpdateChecks.cs">
       <Link>Tests\UpdateChecks.cs</Link>
     </Compile>
+    <Compile Include="..\tests\ThemeChecks.cs">
+      <Link>Tests\ThemeChecks.cs</Link>
+    </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="ThemeControls.cs" />
     <Compile Include="UiTheme.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MainForm.cs">
@@ -497,8 +501,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\app_banner.png" />
-    <None Include="Resources\compare_diagram.png" />
     <None Include="Resources\about_side.png" />
   </ItemGroup>
   <ItemGroup>

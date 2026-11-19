@@ -89,6 +89,8 @@ namespace SPI_Data_Comp_Tool
         public ViewForMultiReference()
         {
             InitializeComponent();
+            // on Load, so the lists the other constructor fills are themed too
+            Load += (sender, e) => UiTheme.Apply(this);
 
             dsSource = new DataSet();
             dsTarget = new DataSet();
