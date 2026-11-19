@@ -12,6 +12,9 @@ TEXTS = {
     "tab_Rules": "Comparison rules",
     "tab_Updates": "Updates",
     "gb_SaveExcel": "Save Excel files with",
+    "gb_Theme": "Colour theme",
+    "lbl_Theme": "Theme",
+    "lbl_ThemeHelp": "Changes the colours of every open window at once and is remembered for next time.",
     "rb_EPPlus": "EPPlus (recommended, no Excel needed)",
     "rb_XLSave": "Microsoft Excel (needs Excel installed)",
     "lbl_RulesHelp": "Import the rules workbook used by database and Excel comparisons. A successful import is saved immediately.",
@@ -25,6 +28,9 @@ TEXTS = {
 }
 
 PROPS = {
+    "cb_Theme": {"DropDownStyle": "System.Windows.Forms.ComboBoxStyle.DropDownList", "AccessibleName": '"Colour theme"'},
+    "swatch_Theme": {"AccessibleName": '"Colours of the chosen theme"',
+                     "AccessibleRole": "System.Windows.Forms.AccessibleRole.Graphic"},
     "tb_RulesPath": {"ReadOnly": "true", "AccessibleName": '"Comparison rules file"'},
     "btn_Close": {"DialogResult": "System.Windows.Forms.DialogResult.Cancel"},
     "lbl_RulesStatus": {"AutoEllipsis": "true"},
@@ -32,11 +38,22 @@ PROPS = {
 
 LAYOUT = T("tlp_Root", cols=["100%"], rows=["100%", "140", "auto"], cells=[
     (TABS("tabs_Settings", new="TabControl", pages=[
-        G("tab_General", new="TabPage", child=G("gb_SaveExcel", T(
-            "tlp_SaveExcel", cols=["100%"], rows=["auto", "auto"], autosize=True, cells=[
-                (C("rb_EPPlus", autosize=True, anchor="Left"), 0, 0),
-                (C("rb_XLSave", autosize=True, anchor="Left"), 0, 1),
-            ]), dock="Top", autosize=True, margin=0)),
+        G("tab_General", new="TabPage", child=T("tlp_General", cols=["100%"], rows=["92", "112", "100%"], cells=[
+            (G("gb_SaveExcel", T(
+                "tlp_SaveExcel", cols=["100%"], rows=["auto", "auto"], autosize=True, cells=[
+                    (C("rb_EPPlus", autosize=True, anchor="Left"), 0, 0),
+                    (C("rb_XLSave", autosize=True, anchor="Left"), 0, 1),
+                ]), margin=(0, 0, 0, 12)), 0, 0),
+            # the colour theme of every window (see UiTheme.cs); applied at once, remembered for next time
+            (G("gb_Theme", new="GroupBox", child=T(
+                "tlp_Theme", cols=["auto", "auto", "100%"], rows=["auto", "auto"], autosize=True, cells=[
+                    (C("lbl_Theme", new="Label", autosize=True, anchor="Left", margin=(0, 0, 12, 0)), 0, 0),
+                    (C("cb_Theme", new="ComboBox", size=(200, 23), anchor="Left", margin=0), 1, 0),
+                    (C("swatch_Theme", new="SPI_Data_Comp_Tool.ThemeSwatch", size=(240, 22), anchor="Left",
+                       margin=(12, 0, 0, 0)), 2, 0),
+                    (C("lbl_ThemeHelp", new="Label", autosize=True, dock="Fill", margin=(0, 10, 0, 0)), 0, 1, 3),
+                ]), margin=0), 0, 1),
+        ])),
         G("tab_Rules", new="TabPage", child=T("tlp_Rules", cols=["auto", "100%"],
             rows=["auto", "auto", "auto", "100%"], cells=[
                 (C("lbl_RulesHelp", new="Label", autosize=True, dock="Fill", margin=(0, 0, 0, 12)), 0, 0, 2),

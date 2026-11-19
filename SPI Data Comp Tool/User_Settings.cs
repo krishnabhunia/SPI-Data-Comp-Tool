@@ -39,6 +39,10 @@ namespace SPI_Data_Comp_Tool
                 lbl_RulesStatus.Text = string.IsNullOrWhiteSpace(tb_RulesPath.Text)
                     ? "No comparison rules file selected."
                     : "Saved file selected. It will be read when a comparison uses rules.";
+                // list the colour themes and show the one in use; choosing another applies it at once
+                cb_Theme.Items.AddRange(UiTheme.All);
+                cb_Theme.SelectedItem = UiTheme.Current;
+                cb_Theme.SelectedIndexChanged += cb_Theme_SelectedIndexChanged;
                 if (showRules) ShowRules();
                 UpdateAcceptButton();
             }
@@ -171,6 +175,24 @@ namespace SPI_Data_Comp_Tool
                 // Preserve that file format; do not silently reinterpret or reorder the workbook.
                 if (rule["RuleType"].ToString().Trim() == "3" && rules.Columns.Count < 10)
                     throw new InvalidOperationException("Rule type 3 requires the conditional source column, target column, source value and target value in columns 7–10.");
+            }
+        }
+
+        private void cb_Theme_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var palette = cb_Theme.SelectedItem as UiPalette;
+            if (initializing || palette == null || palette == UiTheme.Current) return;
+            try
+            {
+                string notSaved = UiTheme.Use(palette);
+                swatch_Theme.Invalidate();
+                lbl_ThemeHelp.Text = notSaved.Length == 0
+                    ? palette.Title + " is now used in every open window and is remembered for next time."
+                    : palette.Title + " is used until the app closes. The choice could not be saved: " + notSaved;
+            }
+            catch (Exception ex)
+            {
+                Common_Data.DisplayError(rtb_Log, ex);
             }
         }
 

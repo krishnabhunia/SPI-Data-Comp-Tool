@@ -15,7 +15,7 @@ namespace SPI_Data_Comp_Tool
         public AboutBox1()
         {
             InitializeComponent();
-            UiTheme.SetIcon(this);
+            UiTheme.Apply(this);
 
             try
             {
