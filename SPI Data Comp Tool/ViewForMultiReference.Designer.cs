@@ -651,7 +651,7 @@
             this.Controls.Add(this.groupBox7);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ViewForMultiReference";
-            this.Text = "ViewForMultiReference";
+            this.Text = "Multi-reference comparison";
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);

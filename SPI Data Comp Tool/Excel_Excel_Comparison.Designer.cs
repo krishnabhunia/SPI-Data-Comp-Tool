@@ -622,7 +622,7 @@
             this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Excel_Excel_Comparison";
-            this.Text = "Excel_Excel_Comparison";
+            this.Text = "Compare Excel files";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.Load += new System.EventHandler(this.Excel_Excel_Comparison_Load);
             this.groupBox1.ResumeLayout(false);

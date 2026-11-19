@@ -19,7 +19,7 @@ class FormValidationContracts(unittest.TestCase):
         for path in APP.glob("*.cs"):
             forms.update(re.findall(r"\bclass\s+(\w+)\s*:\s*Form\b", path.read_text(encoding="utf-8-sig")))
         documented = set(re.findall(r"^\| `(\w+)` \|", (ROOT / "docs/VALIDATION.md").read_text(), re.MULTILINE))
-        self.assertEqual(len(forms), 21)
+        self.assertEqual(len(forms), 22)   # 21 tools and dialogs + ToolGroupWindow, which holds tools as tabs
         self.assertTrue(forms <= documented, forms - documented)
 
     def test_all_new_runtime_suites_are_built_and_run(self):
