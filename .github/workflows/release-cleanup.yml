@@ -1,0 +1,48 @@
+name: Release clean-up (run by hand)
+# One-off housekeeping that only the repository owner starts: Actions > Release clean-up > Run workflow.
+# It lists what it would delete. It deletes only when the box "confirm" holds the word DELETE.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DELETE to delete. Leave empty to only list what would be deleted.'
+        required: false
+        default: ''
+permissions:
+  contents: write
+jobs:
+  clean-up:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Old screenshot zips and leftover test builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CONFIRM: ${{ inputs.confirm }}
+          # test builds published by mistake: a wrong major bump, and a beta that came out after its normal version
+          STRAY_TAGS: v3.0.0-beta001 v2.5.1-beta001
+        run: |
+          set -euo pipefail
+          delete=false; [ "${CONFIRM}" = "DELETE" ] && delete=true
+          echo "### Release clean-up ($([ "$delete" = true ] && echo deleting || echo 'list only - nothing deleted'))" >> "$GITHUB_STEP_SUMMARY"
+
+          # 1) screenshot zips attached to earlier releases (builds no longer make them)
+          gh api "repos/${GH_REPO}/releases" --paginate \
+            --jq '.[] | .tag_name as $t | .assets[] | select(.name | endswith("_screenshots.zip")) | "\(.id) \($t) \(.name)"' > assets.txt
+          echo "Screenshot zips found: $(wc -l < assets.txt)" | tee -a "$GITHUB_STEP_SUMMARY"
+          while read -r id tag name; do
+            [ -z "${id}" ] && continue
+            echo "- ${tag}: ${name}" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$delete" = true ]; then gh api -X DELETE "repos/${GH_REPO}/releases/assets/${id}"; fi
+          done < assets.txt
+
+          # 2) leftover test builds: the release and its tag
+          for tag in ${STRAY_TAGS}; do
+            if gh release view "${tag}" >/dev/null 2>&1; then
+              echo "- leftover test build: ${tag}" | tee -a "$GITHUB_STEP_SUMMARY"
+              if [ "$delete" = true ]; then gh release delete "${tag}" --yes --cleanup-tag; fi
+            else
+              echo "- ${tag}: already gone" | tee -a "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          if [ "$delete" = true ]; then echo "Done. Deleted files cannot be restored." >> "$GITHUB_STEP_SUMMARY"; fi
