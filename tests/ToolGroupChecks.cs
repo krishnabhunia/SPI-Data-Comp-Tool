@@ -31,6 +31,16 @@ namespace SPI_Data_Comp_Tool
                     lines.Add("FAIL " + group + ": " + ex.Message.Replace("\r", " ").Replace("\n", " "));
                 }
             }
+            try
+            {
+                BusyToolKeepsEveryTab();
+                lines.Add("ok   a busy tool keeps the window and every tab");
+            }
+            catch (Exception ex)
+            {
+                failed++;
+                lines.Add("FAIL a busy tool keeps the window and every tab: " + ex.Message.Replace("\r", " ").Replace("\n", " "));
+            }
             lines.Add(failed == 0 ? "All group window checks passed." : failed + " group window check(s) failed.");
             File.WriteAllLines(outFile, lines);
             return failed == 0 ? 0 : 1;
@@ -82,6 +92,47 @@ namespace SPI_Data_Comp_Tool
                 Require(window.IsDisposed || !window.Visible, "The group window did not close.");
             }
             Require(tools.All(tool => tool.IsDisposed), "Closing the group window left a tool open.");
+        }
+
+        /// <summary>A stand-in tool that refuses to close while it is "busy".</summary>
+        private sealed class ProbeTool : Form
+        {
+            public bool Busy;
+            public int Asked;
+            protected override void OnFormClosing(FormClosingEventArgs e)
+            {
+                Asked++;
+                if (Busy) e.Cancel = true;
+                base.OnFormClosing(e);
+            }
+        }
+
+        private static void BusyToolKeepsEveryTab()
+        {
+            var first = new ProbeTool();
+            var busy = new ProbeTool { Busy = true };
+            var last = new ProbeTool();
+            using (var window = new ToolGroupWindow("Probe"))
+            {
+                window.AddTool("First", typeof(ProbeTool), "first", () => first);
+                window.AddTool("Busy", typeof(ProbeTool), "busy", () => busy);
+                window.AddTool("Last", typeof(ProbeTool), "last", () => last);
+                var tabs = (TabControl)window.Controls.Find("tabs_Tools", true).Single();
+                window.ShowInTaskbar = false;
+                window.Show();
+                for (int i = 0; i < 3; i++) { tabs.SelectedIndex = i; Application.DoEvents(); }
+                tabs.SelectedIndex = 0;
+                window.Close();
+                Application.DoEvents();
+                Require(!window.IsDisposed && window.Visible, "The window closed although a tool was busy.");
+                Require(!first.IsDisposed && !busy.IsDisposed && !last.IsDisposed && ReferenceEquals(window.ToolAt(0), first)
+                    && ReferenceEquals(window.ToolAt(2), last), "A tab lost its tool although the window stayed open.");
+                Require(tabs.SelectedIndex == 1, "The busy tool was not shown.");
+                busy.Busy = false;
+                window.Close();
+                Application.DoEvents();
+                Require(first.IsDisposed && busy.IsDisposed && last.IsDisposed, "Closing the window left a tool open.");
+            }
         }
 
         private static string ModeOf(TabPage page)
