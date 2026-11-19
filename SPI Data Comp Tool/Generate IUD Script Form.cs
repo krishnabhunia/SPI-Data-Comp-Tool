@@ -13,7 +13,7 @@ using System.IO;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class Generate_IUD_Script_Form : Form
+    public partial class Generate_IUD_Script_Form : WorkspacePageForm
     {
         private OpenFileDialogData openFileDialogData;
         private DataSet dsGenerateScript;

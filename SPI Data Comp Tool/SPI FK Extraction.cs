@@ -13,7 +13,7 @@ using System.Diagnostics;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class SPI_FK_Extraction : Form
+    public partial class SPI_FK_Extraction : WorkspacePageForm
     {
         Common_Data common_Data;
         private OpenFileDialogData openFileDialogData;

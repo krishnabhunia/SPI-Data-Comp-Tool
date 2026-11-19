@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class MergeLogsExport : Form
+    public partial class MergeLogsExport : WorkspacePageForm
     {
         private SaveFileDialogFile saveFileDialogFile;
         private Common_Data common_Data;

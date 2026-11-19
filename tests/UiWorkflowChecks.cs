@@ -78,29 +78,7 @@ namespace SPI_Data_Comp_Tool
 
         private static void CheckNavigation(Action<string> passed)
         {
-            var navigator = new WindowNavigator();
-            using (var owner = new Form())
-            {
-                owner.Show();
-                int created = 0;
-                Func<Form> create = () => { created++; return new Form(); };
-                var first = navigator.Open(owner, create, "check");
-                var repeat = navigator.Open(owner, create, "check");
-                Require(ReferenceEquals(first, repeat) && created == 1, "Repeated navigation created a second window.");
-                first.WindowState = FormWindowState.Minimized;
-                navigator.Open(owner, create, "check");
-                Require(first.WindowState != FormWindowState.Minimized, "An existing minimized window was not restored.");
-                var configuration = navigator.Open(owner, create, "configuration");
-                Require(!ReferenceEquals(first, configuration), "Different operating modes were incorrectly combined.");
-                var separate = navigator.Open(owner, create, "check", true);
-                Require(!ReferenceEquals(first, separate) && ReferenceEquals(first, navigator.Open(owner, create, "check")),
-                    "A separate session replaced the default tool window.");
-                separate.Close();
-                first.Close();
-                Require(!ReferenceEquals(first, navigator.Open(owner, create, "check")), "A closed window could not be reopened.");
-                owner.Close();
-            }
-            passed("Window navigation reuses active tools, restores minimized windows, keeps operating modes separate and supports explicit parallel sessions.");
+            WorkspaceUiChecks.Run(passed);
         }
 
         private static void CheckSettings(Action<string> passed)

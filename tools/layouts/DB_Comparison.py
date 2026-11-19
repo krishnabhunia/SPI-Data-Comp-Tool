@@ -6,8 +6,13 @@ DESIGNER = "DB Comparison.Designer.cs"
 FORM_NAME = "DB_Comparison_Form"
 CLIENT = (1180, 700)
 MINIMUM = (980, 620)
-FROZEN = ["groupBox15", "groupBox16"]          # hidden helper boxes the code still uses; left untouched
-DROP = PANEL_DROP + ["label15", "lbl_SRC_Platform", "lbl_SRC_Port", "lbl_TRG_Platform", "lbl_TRG_Port"]
+FROZEN = ["groupBox15"]  # hidden comparison helper controls still used by the engine
+DROP = PANEL_DROP + [
+    "label15", "lbl_SRC_Platform", "lbl_SRC_Port", "lbl_TRG_Platform", "lbl_TRG_Port",
+    # Retire the hidden dummy-profile prototype; the real shared profile picker remains.
+    "groupBox16", "lbl_ProfileStatus", "label10", "tb_ProfileName",
+    "btn_SaveProfile", "btn_LoadProfile", "treeView1",
+]
 
 TEXTS = {
     "groupBox14": "Connection", "cb_FullName": "Show full names in lists",

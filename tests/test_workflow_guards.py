@@ -79,12 +79,17 @@ class WorkflowGuards(unittest.TestCase):
     def test_window_navigation_preserves_modes_and_explicit_parallel_sessions(self):
         navigation = (PROJ / "WindowNavigator.cs").read_text()
         main = (PROJ / "MainForm.cs").read_text(encoding="utf-8-sig")
-        self.assertIn('typeof(T).FullName + ":" + mode', navigation)
+        catalog = (PROJ / "WorkspaceCatalog.cs").read_text()
+        self.assertIn("Dictionary<WorkspaceKind, WorkspaceForm>", navigation)
         self.assertIn("FormClosed +=", navigation)
-        self.assertIn("newWindow = false", navigation)
+        self.assertIn("bool separateSession = false", navigation)
+        self.assertIn("separateSession && task.AllowSeparateSession", navigation)
         self.assertIn("ModifierKeys & Keys.Control", main)
-        self.assertIn('new Pre_Merging_Duplicacy_Form(), "check"', main)
-        self.assertIn('new Pre_Merging_Duplicacy_Form(true), "configuration", false', main)
+        self.assertIn('"premerge.duplicates"', catalog)
+        self.assertIn('"premerge.configuration"', catalog)
+        self.assertIn('() => new Pre_Merging_Duplicacy_Form()', catalog)
+        self.assertIn('() => new Pre_Merging_Duplicacy_Form(true), false)', catalog)
+        self.assertIn("TryPrepareCloseAll(e.CloseReason)", main)
         self.assertNotIn("MyException", main)
 
 

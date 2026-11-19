@@ -17,9 +17,11 @@ class FormValidationContracts(unittest.TestCase):
     def test_every_form_is_in_the_validation_inventory(self):
         forms = set()
         for path in APP.glob("*.cs"):
-            forms.update(re.findall(r"\bclass\s+(\w+)\s*:\s*Form\b", path.read_text(encoding="utf-8-sig")))
+            forms.update(re.findall(r"(?<!abstract )\bclass\s+(\w+)\s*:\s*(?:Form|WorkspacePageForm)\b",
+                                    path.read_text(encoding="utf-8-sig")))
         documented = set(re.findall(r"^\| `(\w+)` \|", (ROOT / "docs/VALIDATION.md").read_text(), re.MULTILINE))
-        self.assertEqual(len(forms), 21)
+        self.assertEqual(len(forms), 22)  # 21 retained implementations plus one lazy workspace host
+        self.assertNotIn("WorkspacePageForm", forms)  # abstract lifecycle bridge, not an extra window
         self.assertTrue(forms <= documented, forms - documented)
 
     def test_all_new_runtime_suites_are_built_and_run(self):

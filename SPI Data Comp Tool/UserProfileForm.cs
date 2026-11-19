@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class UserProfileForm : Form
+    public partial class UserProfileForm : WorkspacePageForm
     {
         private string strQuery;
         private string str_DBName;

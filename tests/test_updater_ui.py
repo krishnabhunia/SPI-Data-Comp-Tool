@@ -21,10 +21,11 @@ class UpdaterUiContracts(unittest.TestCase):
         self.assertIn("internal sealed class UpdatesControl : UserControl", source("UpdatesControl.cs"))
         main = source("MainForm.cs")
         entry = main.split("internal User_Settings ShowUpdatesSettings()", 1)[1].split("private void checkForUpdates", 1)[0]
-        self.assertIn("windows.Open(this, () => new User_Settings())", entry)
+        self.assertIn('workspaces.Open(this, "settings.preferences")', entry)
         self.assertIn("settings.ShowUpdates();", entry)
         self.assertNotIn("new Form", entry)
-        self.assertIn("this.checkForUpdatesToolStripMenuItem", source("MainForm.Designer.cs"))
+        self.assertIn('Name = "checkForUpdatesToolStripMenuItem"', main)
+        self.assertIn('"settings.preferences"', source("WorkspaceCatalog.cs"))
 
     def test_opening_and_navigation_never_check_download_or_install(self):
         ui = source("UpdatesControl.cs")

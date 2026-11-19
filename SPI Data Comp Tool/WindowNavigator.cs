@@ -1,50 +1,86 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    /// <summary>One active window per workflow, without discarding its in-progress state.</summary>
-    internal sealed class WindowNavigator
+    /// <summary>One default workspace per task group, with explicit independent parallel sessions.</summary>
+    internal sealed class WorkspaceNavigator
     {
-        private readonly Dictionary<string, Form> windows = new Dictionary<string, Form>();
+        private readonly Dictionary<WorkspaceKind, WorkspaceForm> defaults = new Dictionary<WorkspaceKind, WorkspaceForm>();
+        private readonly List<WorkspaceForm> workspaces = new List<WorkspaceForm>();
+        private readonly Dictionary<string, WorkspaceTask> tasks;
+        private readonly List<WorkspaceTask> orderedTasks;
 
-        public T Open<T>(IWin32Window owner, Func<T> create, string mode = "", bool newWindow = false) where T : Form
+        internal WorkspaceNavigator(IEnumerable<WorkspaceTask> definitions = null)
         {
-            string key = typeof(T).FullName + ":" + mode;
-            Form existing;
-            if (!newWindow && windows.TryGetValue(key, out existing) && !existing.IsDisposed)
-            {
-                if (existing.WindowState == FormWindowState.Minimized)
-                    existing.WindowState = FormWindowState.Normal;
-                existing.BringToFront();
-                existing.Activate();
-                return (T)existing;
-            }
+            orderedTasks = (definitions ?? WorkspaceCatalog.Tasks).ToList();
+            tasks = orderedTasks.ToDictionary(item => item.Key);
+        }
 
-            T window = create();
-            UiTheme.EnsureApplied(window);   // every tool window gets the theme chosen in Settings
-            if (!newWindow)
+        internal IReadOnlyList<WorkspaceForm> LoadedWorkspaces => workspaces.Where(window => !window.IsDisposed).ToList().AsReadOnly();
+
+        internal WorkspacePageForm Open(IWin32Window owner, string routeKey, bool separateSession = false)
+        {
+            WorkspaceTask task;
+            if (!tasks.TryGetValue(routeKey, out task)) throw new ArgumentException("Unknown workspace task: " + routeKey, nameof(routeKey));
+            bool separate = separateSession && task.AllowSeparateSession;
+            WorkspaceForm window = null;
+            bool created = separate || !defaults.TryGetValue(task.Workspace, out window) || window.IsDisposed;
+            if (created)
             {
-                windows[key] = window;
+                window = new WorkspaceForm(task.Workspace, orderedTasks.Where(item => item.Workspace == task.Workspace));
+                WorkspaceForm captured = window;
+                window.NavigateTask = (item, newSession) => Open(owner, item.Key, newSession);
+                workspaces.Add(window);
+                if (!separate) defaults[task.Workspace] = window;
                 window.FormClosed += (sender, args) =>
                 {
-                    Form current;
-                    if (windows.TryGetValue(key, out current) && ReferenceEquals(current, window))
-                        windows.Remove(key);
+                    workspaces.Remove(captured);
+                    WorkspaceForm current;
+                    if (defaults.TryGetValue(task.Workspace, out current) && ReferenceEquals(current, captured))
+                        defaults.Remove(task.Workspace);
                 };
             }
             try
             {
-                window.Show(owner);
-                return window;
+                UiTheme.EnsureApplied(window);
+                var page = window.OpenTask(routeKey);
+                if (!window.Visible)
+                {
+                    if (owner == null) window.Show();
+                    else window.Show(owner);
+                }
+                if (window.WindowState == FormWindowState.Minimized) window.WindowState = FormWindowState.Normal;
+                window.BringToFront();
+                window.Activate();
+                return page;
             }
             catch
             {
-                if (!newWindow) windows.Remove(key);
-                window.Dispose();
+                if (created)
+                {
+                    workspaces.Remove(window);
+                    if (!separate) defaults.Remove(task.Workspace);
+                    window.Dispose();
+                }
                 throw;
             }
+        }
+
+        internal bool TryPrepareCloseAll(CloseReason reason)
+        {
+            // Do not close the first workspace before knowing whether a later one vetoes exit.
+            foreach (var workspace in LoadedWorkspaces)
+                if (!workspace.TryPrepareWorkspaceClose(reason))
+                {
+                    if (workspace.WindowState == FormWindowState.Minimized) workspace.WindowState = FormWindowState.Normal;
+                    workspace.BringToFront();
+                    workspace.Activate();
+                    return false;
+                }
+            return true;
         }
     }
 }

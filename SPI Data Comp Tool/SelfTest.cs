@@ -18,6 +18,7 @@ namespace SPI_Data_Comp_Tool
     ///                                                          .exe by Costura) and writes ok / FAIL per library;
     ///                                                          exit code 1 if any fails
     ///   "SPI Data Comp Tool.exe" --check-ui OUT_FILE           runs synthetic UI/profile regressions without databases
+    ///   "SPI Data Comp Tool.exe" --check-workspace-exit OUT_FILE tests successful application exit in an isolated process
     ///   "SPI Data Comp Tool.exe" --check-themes OUT_FILE       builds every window in every colour theme and checks
     ///                                                          that its text stays readable (tests/ThemeChecks.cs)
     /// </summary>
@@ -53,6 +54,11 @@ namespace SPI_Data_Comp_Tool
             if (args[0] == "--check-ui" && args.Length >= 2)
             {
                 Environment.ExitCode = UiWorkflowChecks.Run(args[1]);
+                return true;
+            }
+            if (args[0] == "--check-workspace-exit" && args.Length >= 2)
+            {
+                Environment.ExitCode = WorkspaceUiChecks.RunExitProbe(args[1]);
                 return true;
             }
             if (args[0] == "--check-themes" && args.Length >= 2)
