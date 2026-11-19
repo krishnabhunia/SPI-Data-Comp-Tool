@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.IO;
@@ -96,7 +97,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_RulesStatus.Text = "Rules were not changed. " + ex.Message;
+                lbl_RulesStatus.Text = Common_Data.RedactConnectionCredentials("Rules were not changed. " + ex.Message);
                 lbl_RulesStatus.ForeColor = Color.DarkRed;
                 Common_Data.DisplayError(rtb_Log, ex);
             }
@@ -106,6 +107,10 @@ namespace SPI_Data_Comp_Tool
         {
             if (string.IsNullOrWhiteSpace(fileName))
                 throw new ArgumentException("Select a rules workbook first.", nameof(fileName));
+            if (!string.Equals(Path.GetExtension(fileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Comparison rules must be an .xlsx workbook.");
+            using (var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+                if (stream.Length == 0) throw new InvalidDataException("The rules workbook is empty.");
             // Parse into a candidate first; a bad workbook must not replace the saved rules.
             DataSet candidate = new Common_Data().GetDatasetRules(fileName);
             try
@@ -150,8 +155,18 @@ namespace SPI_Data_Comp_Tool
                 if (!rules.Columns.Contains(column))
                     throw new InvalidOperationException("The rules workbook is missing the required column " + column + ".");
 
+            var identifiers = new HashSet<string>(StringComparer.Ordinal);
             foreach (DataRow rule in rules.Rows)
             {
+                string identifier = rule["srno"].ToString();
+                if (string.IsNullOrWhiteSpace(identifier) || !identifiers.Add(identifier))
+                    throw new InvalidOperationException("Every comparison rule needs a nonempty, unique srno value.");
+                string ruleType = rule["RuleType"].ToString().Trim();
+                if (ruleType != "1" && ruleType != "2" && ruleType != "3")
+                    throw new InvalidOperationException("Comparison RuleType must be 1, 2 or 3.");
+                if ((ruleType == "2" || ruleType == "3") &&
+                    (string.IsNullOrWhiteSpace(rule["Source_ColName"].ToString()) || string.IsNullOrWhiteSpace(rule["Target_Colname"].ToString())))
+                    throw new InvalidOperationException("Rule types 2 and 3 require Source_ColName and Target_Colname.");
                 // The existing type-3 evaluator reads conditional fields by position (indexes6–9).
                 // Preserve that file format; do not silently reinterpret or reorder the workbook.
                 if (rule["RuleType"].ToString().Trim() == "3" && rules.Columns.Count < 10)

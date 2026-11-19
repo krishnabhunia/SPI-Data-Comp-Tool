@@ -36,7 +36,7 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex)
             {
                 lbl_LoginStatus.Text = "Unable to open window";
-                MessageBox.Show(this, ex.Message, "Unable to open window", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, Common_Data.RedactConnectionCredentials(ex.Message), "Unable to open window", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -110,7 +110,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_LoginStatus.Text = ex.Message.ToString();
+                FormHelpers.ShowError(lbl_LoginStatus, ex);
             }
         }
 

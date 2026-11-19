@@ -55,7 +55,6 @@ namespace SPI_Data_Comp_Tool
 
         private SqlDataAdapter sqlDA;
         private OracleDataAdapter oracleDA;
-        private static int int_Static_Percentage;
         private DataSet ds;
 
 
@@ -209,16 +208,17 @@ namespace SPI_Data_Comp_Tool
 
         internal static void UpdateProgressBar(ProgressBar pg, int int_c, int int_tc)
         {
-            try
-            {
-                int_Static_Percentage = (int_c * 100) / int_tc;
-                pg.Value = int_Static_Percentage;
-                pg.Update();
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            if (pg == null) throw new ArgumentNullException(nameof(pg));
+            if (pg.IsDisposed) return;
+            int percent = ProgressPercentage(int_c, int_tc);
+            pg.Value = pg.Minimum + (int)(((long)pg.Maximum - pg.Minimum) * percent / 100L);
+            pg.Update();
+        }
+
+        internal static int ProgressPercentage(int completed, int total)
+        {
+            if (total <= 0 || completed <= 0) return 0;
+            return (int)Math.Min(100L, (long)completed * 100L / total);
         }
         internal static void DisplayDebugMsg(RichTextBox rtb_Log, string strMsg)
         {
@@ -966,47 +966,17 @@ namespace SPI_Data_Comp_Tool
         }
         public DataSet LoadExcelFromDataReader(string str_file_to_load_path, string dataTableName = null)
         {
-            DataSet dsResult = new DataSet();
             try
             {
-                FileStream stream = File.Open(str_file_to_load_path, FileMode.Open, FileAccess.Read);
-                IExcelDataReader excelReader = ExcelReaderFactory.CreateOpenXmlReader(stream);
-
-                dsResult = excelReader.AsDataSet();
-
-                string str_columnName = string.Empty;
-
-                foreach (DataTable dt in dsResult.Tables)
-                {
-                    foreach (DataColumn dc in dt.Columns.Cast<DataColumn>().ToArray())
-                    {
-                        str_columnName = dt.Rows[0][dc.ColumnName.ToString()].ToString();
-                        if (str_columnName != null && str_columnName != "")
-                        {
-                            dc.Caption = str_columnName;
-                            dc.ColumnName = str_columnName;
-                        }
-                        else
-                        {
-                            dt.Columns.Remove(dc);
-                        }
-                    }
-                    dt.Rows.RemoveAt(0);
-                    if (dataTableName != null)
-                    {
-                        dt.TableName = dataTableName;
-                        dataTableName = null;
-                    }
-                }
-                dsResult.AcceptChanges();
-                excelReader.Close();
+                // Comparison/customisation callers historically retain header spelling and spaces.
+                // Reuse the same schema/file checks without changing those presentation values.
+                return ReadExcel.LoadWorkbook(str_file_to_load_path, dataTableName, false);
             }
             catch (Exception ex)
             {
                 myExceptionData = ex;
-                throw ex;
+                throw;
             }
-            return dsResult;
         }
 
         public void OpenRuleForm()
@@ -1129,10 +1099,10 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 dBConnection.strConnectionString = string.Empty;
+                strConnection = ConnectionStrings.Build(str_DBType, str_ServerName, str_DBName, boolWinAuthType,
+                    str_Username, str_Password, str_OraclePortNo);
                 if (str_DBType.ToLower() == "oracle")
                 {
-                    strConnection = $"Data Source=(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP) (HOST = {str_ServerName} )(PORT = {str_OraclePortNo})) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = {str_DBName}))); User Id={str_Username};Password={str_Password};";
-
                     using (OracleConnection oracleConnection = new OracleConnection(strConnection))
                     {
                         oracleConnection.Open();
@@ -1156,15 +1126,6 @@ namespace SPI_Data_Comp_Tool
                 }
                 else if (str_DBType.ToLower() == "sql")
                 {
-                    if (boolWinAuthType)
-                    {
-                        strConnection = $"Data Source = {str_ServerName};Initial Catalog = {str_DBName}; Integrated Security = true ";
-                    }
-                    else
-                    {
-                        strConnection = $"Data Source = {str_ServerName};Initial Catalog = {str_DBName}; User ID = {str_Username};Password = {str_Password};";
-                    }
-
                     using (SqlConnection sqlConn = new SqlConnection(strConnection))
                     {
                         sqlConn.Open();
@@ -1770,14 +1731,19 @@ namespace SPI_Data_Comp_Tool
                 {
                     CheckFileExists = false,
                     Filter = $"{strExtension} files (*.{strExtension})|*.{strExtension}",
+                    DefaultExt = strExtension.TrimStart('.'),
+                    AddExtension = true,
+                    CheckPathExists = true,
+                    OverwritePrompt = true,
                     Title = str_Title,
                     FileName = excelFileNameSaved,
                 };
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
+                    saveFileDialogFile.Str_saveFileNameWithPath = FormValidation.OutputFile(saveFileDialog.FileName,
+                        null, "output", strExtension);
                     saveFileDialogFile.BoolFileSaveStatus = true;
-                    saveFileDialogFile.Str_saveFileNameWithPath = saveFileDialog.FileName;
                 }
                 else
                 {
@@ -1800,15 +1766,20 @@ namespace SPI_Data_Comp_Tool
                 {
                     CheckFileExists = false,
                     Filter = "xlsx files (*.xlsx)|*.xlsx",
+                    DefaultExt = "xlsx",
+                    AddExtension = true,
+                    CheckPathExists = true,
+                    OverwritePrompt = true,
                     Title = str_Title,
                     FileName = excelFileNameSaved,
                 };
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
+                    saveFileDialogFile.Str_saveFileNameWithPath = FormValidation.OutputFile(saveFileDialog.FileName,
+                        null, "Excel output", ".xlsx");
                     saveFileDialogFile.BoolFileSaveStatus = true;
-                    saveFileDialogFile.Str_saveFileNameWithPath = saveFileDialog.FileName;
-                    saveFileDialogFile.Str_OnlyPath = saveFileDialog.FileName.Substring(0, saveFileDialog.FileName.LastIndexOf(@"\"));
+                    saveFileDialogFile.Str_OnlyPath = Path.GetDirectoryName(saveFileDialogFile.Str_saveFileNameWithPath);
                 }
                 else
                 {
@@ -1826,23 +1797,30 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                BoolFileSaveStatus = false;
+                FormValidation.ExcelTable(dt, null, "Excel output");
                 saveFileDialog = new SaveFileDialog
                 {
                     CheckFileExists = false,
                     Filter = "xlsx files (*.xlsx)|*.xlsx",
+                    DefaultExt = "xlsx",
+                    AddExtension = true,
+                    CheckPathExists = true,
+                    OverwritePrompt = true,
                     Title = str_Title,
                     FileName = excelFileNameSaved,
                 };
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
+                    FormValidation.OutputFile(saveFileDialog.FileName, null, "Excel output", ".xlsx");
                     #region epplus code assembly
 
                     ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
 
                     using (ExcelPackage pck = new ExcelPackage())
                     {
-                        ExcelWorksheet worksheet = pck.Workbook.Worksheets.Add(excelFileNameSaved);
+                        ExcelWorksheet worksheet = pck.Workbook.Worksheets.Add(FormValidation.WorksheetNameFromFile(excelFileNameSaved));
                         worksheet.Cells["A1"].LoadFromDataTable(dt, true);
 
                         worksheet.Cells.AutoFitColumns();
@@ -1850,7 +1828,7 @@ namespace SPI_Data_Comp_Tool
                         {
                             worksheet.Row(i).Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Distributed;
                         }
-                        pck.SaveAs(new System.IO.FileInfo(saveFileDialog.FileName));
+                        FormValidation.WriteAtomically(saveFileDialog.FileName, temporary => pck.SaveAs(new FileInfo(temporary)));
 
                         Str_saveFileNameWithPath = saveFileDialog.FileName;
                         BoolFileSaveStatus = true;
@@ -1875,16 +1853,23 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                BoolFileSaveStatus = false;
+                FormValidation.Workbook(ds, null, "Excel output");
                 saveFileDialog = new SaveFileDialog
                 {
                     CheckFileExists = false,
                     Filter = "xlsx files (*.xlsx)|*.xlsx",
+                    DefaultExt = "xlsx",
+                    AddExtension = true,
+                    CheckPathExists = true,
+                    OverwritePrompt = true,
                     Title = str_Title,
                     FileName = excelFileNameSaved,
                 };
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
+                    FormValidation.OutputFile(saveFileDialog.FileName, null, "Excel output", ".xlsx");
                     #region epplus code assembly
                     ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
                     using (ExcelPackage pck = new ExcelPackage())
@@ -1895,7 +1880,7 @@ namespace SPI_Data_Comp_Tool
                             worksheet.Cells["A1"].LoadFromDataTable(dt, true);
                             worksheet.Cells.AutoFitColumns();
                         }
-                        pck.SaveAs(new System.IO.FileInfo(saveFileDialog.FileName));
+                        FormValidation.WriteAtomically(saveFileDialog.FileName, temporary => pck.SaveAs(new FileInfo(temporary)));
                         Str_saveFileNameWithPath = saveFileDialog.FileName;
                         BoolFileSaveStatus = true;
                     }
@@ -2551,6 +2536,9 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                FormValidation.ExcelTable(dataTable, null, "Excel output");
+                FormValidation.WorksheetName(strSheetName, null);
+                FormValidation.OutputFile(strPathFileName, null, "Excel output", ".xlsx");
                 ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
 
                 using (ExcelPackage pck = new ExcelPackage())
@@ -2571,7 +2559,8 @@ namespace SPI_Data_Comp_Tool
                         }
 
                         worksheet.Cells.AutoFitColumns(22, 55);
-                        pck.SaveAs(new System.IO.FileInfo(strPathFileName));
+                        FormValidation.WriteAtomically(strPathFileName,
+                            temporary => pck.SaveAs(new System.IO.FileInfo(temporary)));
 
                         return true;
                     }
@@ -2673,6 +2662,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                FormValidation.Workbook(ds, null, "Excel export");
+                FormValidation.OutputFile(strFileName, null, "Excel output", ".xlsx");
                 ds = Common_Data.ChangeColumnToDefaultDataType(ds);
                 ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
 
@@ -2694,7 +2685,7 @@ namespace SPI_Data_Comp_Tool
                         worksheet.Cells.AutoFitColumns(22, 55);
                     }
 
-                    pck.SaveAs(new System.IO.FileInfo(strFileName));
+                    FormValidation.WriteAtomically(strFileName, temporary => pck.SaveAs(new FileInfo(temporary)));
                     return true;
                 }
             }
@@ -2708,49 +2699,33 @@ namespace SPI_Data_Comp_Tool
     {
         public static DataSet LoadExcelFromDataReader(string str_file_to_load_path, string dataTableName = null)
         {
-            DataSet dsResult = new DataSet();
+            return LoadWorkbook(str_file_to_load_path, dataTableName, true);
+        }
+
+        internal static DataSet LoadWorkbook(string str_file_to_load_path, string dataTableName, bool normalizeNames)
+        {
+            DataSet dsResult = null;
             try
             {
-                using (FileStream stream = File.Open(str_file_to_load_path, FileMode.Open, FileAccess.Read))
+                // Preserve the existing IOException contract for missing/locked files. Validate the
+                // actual workbook before returning any candidate to a form or replacing its data.
+                if (string.IsNullOrWhiteSpace(str_file_to_load_path))
+                    throw new InvalidDataException("Select an Excel workbook first.");
+                string extension = Path.GetExtension(str_file_to_load_path);
+                if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(extension, ".xlsm", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("Select an .xlsx or .xlsm workbook. Other formats are not supported by this reader.");
+                using (FileStream stream = new FileStream(str_file_to_load_path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
+                    if (stream.Length == 0) throw new InvalidDataException("The Excel workbook is empty.");
                     using (IExcelDataReader excelReader = ExcelReaderFactory.CreateOpenXmlReader(stream))
                     {
                         dsResult = excelReader.AsDataSet();
-                        excelReader.Close();
-
-                        string str_columnName = string.Empty;
-
-                        if (dsResult.Tables.Count > 0)
-                        {
-                            foreach (DataTable dt in dsResult.Tables.Cast<DataTable>().ToArray())
-                            {
-                                if (dt.Columns.Count > 0 && dt.Rows.Count > 0)
-                                {
-                                    foreach (DataColumn dc in dt.Columns.Cast<DataColumn>().ToArray())
-                                    {
-                                        str_columnName = dt.Rows[0][dc.ColumnName.ToString()].ToString().Trim().ToUpper();
-                                        if (str_columnName == null || str_columnName == "" || str_columnName == string.Empty)
-                                        {
-                                            dt.Columns.Remove(dc);
-                                            //break;
-                                        }
-                                        else
-                                        {
-                                            dc.ColumnName = str_columnName;
-                                            dc.Caption = str_columnName;
-                                        }
-                                    }
-                                    dt.Rows.RemoveAt(0);
-                                }
-                                else
-                                {
-                                    dsResult.Tables.Remove(dt);
-                                }
-                            }
-                        }
-
+                        NormalizeWorkbookHeaders(dsResult, normalizeNames);
                         if (dataTableName != null && dsResult.Tables.Count > 0)
                         {
+                            if (string.IsNullOrWhiteSpace(dataTableName))
+                                throw new InvalidDataException("The imported table needs a non-empty name.");
                             dsResult.Tables[0].TableName = dataTableName;
                         }
                         dsResult.AcceptChanges();
@@ -2758,11 +2733,63 @@ namespace SPI_Data_Comp_Tool
                 }
 
             }
-            catch (Exception ex)
+            catch
             {
-                throw ex;
+                dsResult?.Dispose();
+                throw;
             }
             return dsResult;
+        }
+
+        internal static void NormalizeWorkbookHeaders(DataSet workbook, bool normalizeNames = true)
+        {
+            if (workbook == null) throw new InvalidDataException("The workbook could not be read.");
+            foreach (DataTable table in workbook.Tables.Cast<DataTable>().ToArray())
+            {
+                if (table.Columns.Count == 0 || table.Rows.Count == 0)
+                {
+                    workbook.Tables.Remove(table);
+                    table.Dispose();
+                    continue;
+                }
+                var names = new Dictionary<DataColumn, string>();
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (DataColumn column in table.Columns)
+                {
+                    string original = Convert.ToString(table.Rows[0][column], System.Globalization.CultureInfo.InvariantCulture);
+                    string key = original.Trim();
+                    string name = normalizeNames ? key.ToUpperInvariant() : original;
+                    if (key.Length == 0)
+                    {
+                        if (table.Rows.Cast<DataRow>().Skip(1).Any(row =>
+                            !string.IsNullOrWhiteSpace(Convert.ToString(row[column], System.Globalization.CultureInfo.InvariantCulture))))
+                            throw new InvalidDataException("A worksheet contains data under a blank column header. Add the missing header before importing.");
+                        names.Add(column, null); // A completely unused spacer column is safe to omit.
+                    }
+                    else
+                    {
+                        if (!seen.Add(key))
+                            throw new InvalidDataException("A worksheet contains duplicate column headers after trimming/ignoring case. Rename the duplicate headers before importing.");
+                        names.Add(column, name);
+                    }
+                }
+                // Avoid collisions with ExcelDataReader's temporary Column0/Column1 names.
+                foreach (DataColumn column in names.Keys)
+                    column.ColumnName = "__SPI_HEADER_" + Guid.NewGuid().ToString("N");
+                foreach (var item in names)
+                {
+                    if (item.Value == null) table.Columns.Remove(item.Key);
+                    else { item.Key.ColumnName = item.Value; item.Key.Caption = item.Value; }
+                }
+                table.Rows.RemoveAt(0);
+                if (table.Columns.Count == 0)
+                {
+                    workbook.Tables.Remove(table);
+                    table.Dispose();
+                }
+            }
+            if (workbook.Tables.Count == 0)
+                throw new InvalidDataException("The workbook has no worksheets with column headers.");
         }
     }
     public class GlobalDebug
@@ -2807,10 +2834,10 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 dBConnectionStatus.strDBType = str_DBType;
+                dBConnectionStatus.strConnectionString = ConnectionStrings.Build(str_DBType, str_ServerName,
+                    str_DBName, boolWinAuthType, str_Username, str_Password, str_OraclePortNo);
                 if (str_DBType.ToLower() == "oracle")
                 {
-                    dBConnectionStatus.strConnectionString = $"Data Source=(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP) (HOST = {str_ServerName} )(PORT = {str_OraclePortNo})) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = {str_DBName}))); User Id={str_Username};Password={str_Password};";
-
                     using (OracleConnection oracleConnection = new OracleConnection(dBConnectionStatus.strConnectionString))
                     {
                         oracleConnection.Open();
@@ -2831,15 +2858,6 @@ namespace SPI_Data_Comp_Tool
                 }
                 else if (str_DBType.ToLower() == "sql")
                 {
-                    if (boolWinAuthType)
-                    {
-                        dBConnectionStatus.strConnectionString = $"Data Source = {str_ServerName};Initial Catalog = {str_DBName}; Integrated Security = true ";
-                    }
-                    else
-                    {
-                        dBConnectionStatus.strConnectionString = $"Data Source = {str_ServerName};Initial Catalog = {str_DBName}; User ID = {str_Username};Password = {str_Password};";
-                    }
-
                     using (SqlConnection sqlConn = new SqlConnection(dBConnectionStatus.strConnectionString))
                     {
                         sqlConn.Open();
@@ -2868,7 +2886,7 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex)
             {
                 dBConnectionStatus.boolConnection = false;
-                dBConnectionStatus.strConnectionMSG = ex.Message.ToString();
+                dBConnectionStatus.strConnectionMSG = Common_Data.RedactConnectionCredentials(ex.Message);
                 dBConnectionStatus.exceptionConnection = ex;
                 return dBConnectionStatus;
             }

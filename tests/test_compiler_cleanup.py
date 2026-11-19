@@ -25,7 +25,8 @@ class CompilerCleanup(unittest.TestCase):
             with self.subTest(symbol=name):
                 self.assertNotRegex(src, rf"\b{name}\b")
         self.assertIn("using (ExcelPackage pck = new ExcelPackage())", src)
-        self.assertIn("pck.SaveAs(new System.IO.FileInfo(strFilePathChangeSave));", src)
+        self.assertIn("FormValidation.WriteAtomically(strFilePathChangeSave,", src)
+        self.assertIn("temporary => pck.SaveAs(new FileInfo(temporary))", src)
         self.assertIn("delete_current_row_from_target_table", src)
         self.assertIn("private void backgroundWorker2_DoWork", src)
 

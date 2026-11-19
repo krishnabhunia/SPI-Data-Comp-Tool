@@ -8,6 +8,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 using DataTable = System.Data.DataTable;
 
@@ -15,6 +16,7 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class SQL_DB_To_Excel : Form
     {
+        private IDisposable operationInputs;
         private string strQuery;
         private string strSQLConnection;
         private string str_CompleteTableName;
@@ -48,15 +50,30 @@ namespace SPI_Data_Comp_Tool
         private DBTOExcel dBTOExcel;
 
         private List<string> lstTableDetails;
+        private bool tablesLoaded;
+        private string[] exportEntries;
+        private string exportFolder;
+        private bool exportSkipEmpty;
 
         public SQL_DB_To_Excel()
         {
             InitializeComponent();
+            FormClosing += (sender, args) =>
+            {
+                if (backgroundWorker1.IsBusy || backgroundWorker2.IsBusy)
+                {
+                    args.Cancel = true;
+                    FormValidation.Check(this, () => FormValidation.Reject(btn_Cancel,
+                        "Wait for the current operation to finish or cancel it before closing this window."),
+                        message => DisplayMessage(message));
+                }
+            };
             connection.Mode = ConnectionMode.SourceOnly;
             connection.Source.Title = "Database";
             connection.ProfileHalf = rb_TRG.Checked ? ProfileHalf.Target : ProfileHalf.Source;
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => DisplayError(error);
+            connection.InputChanged += (sender, args) => { tablesLoaded = false; };
             UiTheme.Apply(this, btn_ExportToExcel);
 
             ds = new DataSet();
@@ -114,10 +131,17 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateExportInputs()) return;
+                myException = null;
+                exportEntries = new string[clb_TableList.CheckedItems.Count];
+                for (int index = 0; index < exportEntries.Length; index++)
+                    exportEntries[index] = Convert.ToString(clb_TableList.CheckedItems[index]);
+                exportFolder = linkLabel1.Text;
+                exportSkipEmpty = cb_SkipEmptyTable.Checked;
                 if (!(backgroundWorker2.IsBusy))
                 {
                     toggleControls(false);
-                    backgroundWorker2.RunWorkerAsync();
+                    FormValidation.StartWorker(this, backgroundWorker2, ref operationInputs, btn_Cancel);
                 }
             }
             catch (Exception ex)
@@ -161,6 +185,10 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                connection.Enabled = boolEnableStatus;
+                btn_ExportToExcel.Enabled = boolEnableStatus;
+                tb_Find.Enabled = boolEnableStatus;
+                linkLabel1.Enabled = boolEnableStatus;
                 cb_UserProfileList.Enabled = boolEnableStatus;
                 rb_Oracle.Enabled = boolEnableStatus;
                 rb_SQL.Enabled = boolEnableStatus;
@@ -197,6 +225,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!ValidateLoadInputs()) return;
+                tablesLoaded = false;
                 tb_Find.ResetText();
                 cb_SelectAll.CheckState = CheckState.Unchecked;
                 cb_SelectAll.Update();
@@ -205,7 +235,7 @@ namespace SPI_Data_Comp_Tool
                 if (!(backgroundWorker1.IsBusy))
                 {
                     toggleControls(false);
-                    backgroundWorker1.RunWorkerAsync();
+                    FormValidation.StartWorker(this, backgroundWorker1, ref operationInputs, btn_Cancel);
                 }
             }
             catch (Exception ex)
@@ -413,11 +443,7 @@ namespace SPI_Data_Comp_Tool
                     {
                         strQuery = $"select * from all_tables where {TableToExclude()} AND ROWNUM <= 50 ORDER BY OWNER, TABLE_NAME";
                     }
-
-                    strSQLConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                        "(HOST = " + tb_SRC_DataSource.Text + " )(PORT = " + tb_DefaultPort.Text + "))"
-                        + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_SRC_DBName.Text + ")));"
-                        + "User Id=" + tb_SRC_UserName.Text + ";Password=" + tb_SRC_Password.Text + ";";
+                    strSQLConnection = ConnectionStrings.Build("oracle", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_windowsAuthentication.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_DefaultPort.Text);
 
                     oracleDA = new OracleDataAdapter(strQuery, strSQLConnection);
                     oracleDA.Fill(dt_oracle);
@@ -452,13 +478,11 @@ namespace SPI_Data_Comp_Tool
                     strQuery = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_SCHEMA, TABLE_NAME";
                     if (cb_windowsAuthentication.CheckState == CheckState.Checked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                        + "; Integrated Security = true ";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_windowsAuthentication.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_DefaultPort.Text);
                     }
                     else if (cb_windowsAuthentication.CheckState == CheckState.Unchecked)
                     {
-                        strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                        + "; User ID = " + tb_SRC_UserName.Text + "; " + "Password = " + tb_SRC_Password.Text + ";";
+                        strSQLConnection = ConnectionStrings.Build("sql", tb_SRC_DataSource.Text, tb_SRC_DBName.Text, cb_windowsAuthentication.Checked, tb_SRC_UserName.Text, tb_SRC_Password.Text, tb_DefaultPort.Text);
                     }
 
                     dt_sql = new DataTable();
@@ -562,8 +586,12 @@ namespace SPI_Data_Comp_Tool
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
+                tablesLoaded = e.Error == null && !e.Cancelled && myException == null;
+                if (e.Error != null) { DisplayError(e.Error); return; }
                 if (e.Cancelled && myException == null)
                 {
                     DisplayMessage("All Progress cancelled");
@@ -673,11 +701,10 @@ namespace SPI_Data_Comp_Tool
                 #region epplus code assembly
                 ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
 
-                CheckedListBox.CheckedItemCollection clb_cic = clb_TableList.CheckedItems;
-                int_totalCount = clb_cic.Count;
+                int_totalCount = exportEntries.Length;
                 string itemCheck;
 
-                foreach (var item in clb_cic)
+                foreach (string item in exportEntries)
                 {
                     if (backgroundWorker2.CancellationPending)
                     {
@@ -687,40 +714,35 @@ namespace SPI_Data_Comp_Tool
                     }
 
                     int_count++;
-                    itemCheck = (item.ToString().Substring(0, item.ToString().IndexOf('['))).Trim();
-
-                    bool boolRowsCount = Int32.TryParse((item.ToString().Substring(item.ToString().IndexOf('[') + 1, item.ToString().IndexOf(']') - item.ToString().IndexOf('[') - 1)).Trim(), out int int_Rows_Count);
+                    int int_Rows_Count;
+                    FormValidation.Require(TryParseTableEntry(item, out itemCheck, out int_Rows_Count), null,
+                        "Reload the table list: its table/count entry is invalid.");
 
                     //if (cb_SkipEmptyTable.Checked && ds.Tables[itemCheck.ToString()].Rows.Count == 0)
                     //{
                     //    continue;
                     //}
 
-                    if (cb_SkipEmptyTable.Checked && int_Rows_Count == 0)
+                    if (exportSkipEmpty && int_Rows_Count == 0)
                     {
                         continue;
                     }
 
                     using (ExcelPackage pck = new ExcelPackage())
                     {
-                        worksheet = pck.Workbook.Worksheets.Add(itemCheck.ToString());
-                        worksheet.Cells["A1"].LoadFromDataTable(LoadTable(itemCheck.ToString()), true);
+                        DataTable table = LoadTable(itemCheck);
+                        FormValidation.ExcelTable(table, null, "Export table " + itemCheck);
+                        worksheet = pck.Workbook.Worksheets.Add(FormValidation.WorksheetNameFromFile(itemCheck + ".xlsx"));
+                        worksheet.Cells["A1"].LoadFromDataTable(table, true);
 
                         //DetectDateColumnAndFormat();
 
                         worksheet.Cells.AutoFitColumns();
 
-                        SaveFileDialog saveFileDialogExcel = new SaveFileDialog
-                        {
-                            CheckFileExists = false,
-                            Filter = "xlsx files (*.xlsx)|*.xlsx",
-                            Title = "Save As Excel File",
-                            FileName = linkLabel1.Text + @"\" + item.ToString() + ".xlsx",
-                        };
+                        string output = Path.Combine(exportFolder, item + ".xlsx");
+                        FormValidation.WriteAtomically(output, temporary => pck.SaveAs(new FileInfo(temporary)));
 
-                        pck.SaveAs(new System.IO.FileInfo(saveFileDialogExcel.FileName));
-
-                        UpdateProgressBarReport(backgroundWorker2, int_count, int_totalCount, $" {int_count}/{int_totalCount}, Saving File :- {saveFileDialogExcel.FileName}");
+                        UpdateProgressBarReport(backgroundWorker2, int_count, int_totalCount, $" {int_count}/{int_totalCount}, Saving File :- {output}");
                     }
                 }
 
@@ -779,13 +801,16 @@ namespace SPI_Data_Comp_Tool
 
         private void backgroundWorker2_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
         {
+            operationInputs?.Dispose();
+            operationInputs = null;
             try
             {
+                if (e.Error != null) { DisplayError(e.Error); return; }
                 if (e.Cancelled && myException == null)
                 {
                     DisplayMessage("All Progress cancelled");
                 }
-                else if (!(e.Cancelled))
+                else if (!e.Cancelled && myException == null)
                 {
                     UpdateProgressBar(1, 1, "All Excel File Saved Successfully");
                     Process.Start(linkLabel1.Text);
@@ -845,5 +870,50 @@ namespace SPI_Data_Comp_Tool
                 DisplayError(ex);
             }
         }
+        internal bool ValidateLoadInputs()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker1, btn_Connect);
+                FormValidation.IsBusy(backgroundWorker2, btn_ExportToExcel);
+                connection.Source.ValidateInput();
+            }, DisplayMessage);
+        }
+
+        internal bool ValidateExportInputs()
+        {
+            return FormValidation.Check(this, () =>
+            {
+                FormValidation.IsBusy(backgroundWorker1, btn_Connect);
+                FormValidation.IsBusy(backgroundWorker2, btn_ExportToExcel);
+                connection.Source.ValidateInput();
+                FormValidation.Require(tablesLoaded, btn_Connect, "Load the table list again after changing the connection.");
+                FormValidation.Require(clb_TableList.CheckedItems.Count > 0, clb_TableList, "Select at least one table to export.");
+                FormValidation.ExistingDirectory(linkLabel1.Text, linkLabel1, "Output folder");
+                foreach (object item in clb_TableList.CheckedItems)
+                {
+                    string label = Convert.ToString(item);
+                    FormValidation.Require(lstTableDetails.Contains(label), clb_TableList, "A selected table is no longer in the loaded list.");
+                    string table;
+                    int rows;
+                    FormValidation.Require(TryParseTableEntry(label, out table, out rows), clb_TableList,
+                        "Reload the table list: its table/count entry is invalid.");
+                    FormValidation.OutputFile(Path.Combine(linkLabel1.Text, label + ".xlsx"), linkLabel1, "Export workbook", ".xlsx");
+                }
+            }, DisplayMessage);
+        }
+
+        internal static bool TryParseTableEntry(string label, out string table, out int rows)
+        {
+            table = string.Empty;
+            rows = 0;
+            if (string.IsNullOrEmpty(label) || !label.EndsWith(" ]", StringComparison.Ordinal)) return false;
+            int suffix = label.LastIndexOf("  [ ", StringComparison.Ordinal);
+            if (suffix <= 0 || label.Length - suffix - 6 <= 0) return false;
+            table = label.Substring(0, suffix);
+            string count = label.Substring(suffix + 4, label.Length - suffix - 6);
+            return !string.IsNullOrWhiteSpace(table) && int.TryParse(count, out rows) && rows >= 0;
+        }
+
     }
 }

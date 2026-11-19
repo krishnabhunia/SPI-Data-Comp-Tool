@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Globalization;
+using System.IO;
 
 namespace SPI_Data_Comp_Tool
 {
@@ -50,63 +52,24 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                boolGenerate = false;
-                strTableName = string.Empty;
-                strFullPathFileName = string.Empty;
-
-                openFileDialogData = openFileDialogData.openFileDialog(strOpenDialog);
-
-                if (openFileDialogData.boolFileSelected)
+                var selectedFile = new OpenFileDialogData().openFileDialog(strOpenDialog);
+                if (selectedFile.boolFileSelected)
                 {
+                    if (!FormValidation.Check(this, () => FormValidation.ReadableFile(selectedFile.strFileNameWithPath,
+                        btn_ListTableExcel, "Input workbook", ".xlsx", ".xlsm"), ReportValidation)) return;
+                    DataSet candidate = ReadExcel.LoadExcelFromDataReader(selectedFile.strFileNameWithPath);
+                    if (!FormValidation.Check(this, () => ValidateScriptWorkbook(candidate), ReportValidation))
+                    { candidate?.Dispose(); return; }
+                    openFileDialogData = selectedFile;
                     Common_Data.DisplayMessage(rtb_Log, $"File Read : {openFileDialogData.strFileNameWithPath}");
-                    dsGenerateScript = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
-
-                    if (dsGenerateScript.Tables.Count > 0)
-                    {
-                        dtGenerateScript = dsGenerateScript.Tables[0];
-                        //dtGenerateScript = common_Data.RemoveColumn(dtGenerateScript, "DBType");
-                    }
-                    else
-                    {
-                        Common_Data.DisplayMessage(rtb_Log, "No Excel Sheet Fetched", true);
-                        return;
-                    }
-
-                    if (dtGenerateScript != null)
-                    {
-                        if (dtGenerateScript.Rows.Count > 0)
-                        {
-                            strInsertColName = string.Empty;
-                            strTableName = dtGenerateScript.TableName;
-
-                            ListCols = (from DataColumn col in dtGenerateScript.Columns select col).ToList();
-
-                            if (strScriptFor == "InsertScriptFor")
-                            {
-                                cb_SelectSheet.Items.Clear();
-                                cb_SelectSheet.Items.AddRange(dsGenerateScript.Tables.Cast<DataTable>().Select(x => x.TableName.ToString()).ToArray());
-                            }
-                            else if (strScriptFor == "UpdateScriptFor" || strScriptFor == "DeleteScriptFor")
-                            {
-                                cb_SelectSheet.Items.Clear();
-                                cb_SelectSheet.Items.AddRange(dsGenerateScript.Tables.Cast<DataTable>().Select(x => x.TableName.ToString()).ToArray());
-
-                                boolGenerate = false;
-                                clb_Checked.Items.Clear();
-                                clb_Checked.Items.AddRange(ListCols.Select(x => x.ColumnName).ToArray());
-
-                                RemoveCustomiseDBType();
-                            }
-                        }
-                        else
-                        {
-                            Common_Data.DisplayMessage(rtb_Log, "No rows to generate insert scripts");
-                        }
-                    }
+                    SetWorkbook(candidate);
+                    if (dtGenerateScript.Rows.Count == 0)
+                        Common_Data.DisplayMessage(rtb_Log, "The selected worksheet has headers but no data. Select another worksheet before generating scripts.");
                 }
                 else
                 {
-                    Common_Data.DisplayMessage(rtb_Log, $"No File Selected", true);
+                    Common_Data.DisplayMessage(rtb_Log, "Import cancelled; the previous input and generated output are unchanged.");
+                    return;
                 }
 
                 if (boolGenerate)
@@ -125,6 +88,39 @@ namespace SPI_Data_Comp_Tool
             {
                 Common_Data.DisplayError(rtb_Log, ex);
             }
+        }
+
+        private void ValidateScriptWorkbook(DataSet candidate)
+        {
+            FormValidation.Require(candidate != null && candidate.Tables.Count > 0, btn_ListTableExcel,
+                "The workbook contains no readable worksheets.");
+            foreach (DataTable table in candidate.Tables)
+                FormValidation.Table(table, btn_ListTableExcel, "Worksheet " + table.TableName, false);
+        }
+
+        internal void SetWorkbook(DataSet candidate)
+        {
+            // A header-only first sheet must not hide a populated later sheet. Import validates
+            // the workbook structure; Generate validates the currently selected sheet's rows.
+            ValidateScriptWorkbook(candidate);
+            dsGenerateScript = candidate;
+            dtGenerateScript = null;
+            boolGenerate = false;
+            strTableName = strFullPathFileName = strInsertColName = string.Empty;
+            ListCols = new List<DataColumn>();
+            cb_SelectSheet.Items.Clear();
+            clb_Checked.Items.Clear();
+            cb_SelectSheet.Items.AddRange(candidate.Tables.Cast<DataTable>().Select(table => table.TableName).ToArray());
+            cb_SelectSheet.SelectedIndex = 0;
+            llb_File.ResetText();
+            llb_File.Visible = false;
+        }
+
+        internal string OutputWorksheetName()
+        {
+            // SQL identifiers may contain brackets or exceed Excel's 31-character sheet limit.
+            // Retain the original Excel sheet name independently of the generated SQL target.
+            return FormValidation.WorksheetName(Convert.ToString(cb_SelectSheet.SelectedItem), cb_SelectSheet);
         }
 
         private void RemoveCustomiseDBType()
@@ -156,6 +152,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (cb_SelectSheet.SelectedIndex < 0 || cb_SelectSheet.SelectedIndex >= dsGenerateScript.Tables.Count) return;
                 if (rb_Insert.Checked)
                 {
                     dtGenerateScript = dsGenerateScript.Tables[cb_SelectSheet.SelectedIndex];
@@ -169,7 +166,7 @@ namespace SPI_Data_Comp_Tool
                     ListCols = (from DataColumn col in dtGenerateScript.Columns select col).ToList();
                     
                     clb_Checked.Items.Clear();
-                    clb_Checked.Items.AddRange(ListCols.Select(x => x.ColumnName).Where(x => x.ToUpper() != "DBTYPE").ToArray());
+                    clb_Checked.Items.AddRange(InputColumns(dtGenerateScript));
                 }
             }
             catch (Exception ex)
@@ -185,7 +182,7 @@ namespace SPI_Data_Comp_Tool
                 //dtGenerateScript = common_Data.RemoveColumn(dtGenerateScript, "DBType");
                 if (rb_FromFileName.Checked)
                 {
-                    strTableName = openFileDialogData.SimpleFileName_WithoutExt;
+                    strTableName = openFileDialogData.SimpleFileName_WithoutExt ?? string.Empty;
 
                     if (strTableName.IndexOf("_Output", 0, StringComparison.OrdinalIgnoreCase) > 0)
                     {
@@ -212,7 +209,7 @@ namespace SPI_Data_Comp_Tool
                 //dtGenerateScript = common_Data.RemoveColumn(dtGenerateScript, "DBType");
                 if (rb_FromFileName.Checked)
                 {
-                    strTableName = openFileDialogData.SimpleFileName_WithoutExt;
+                    strTableName = openFileDialogData.SimpleFileName_WithoutExt ?? string.Empty;
 
                     if (strTableName.IndexOf("_Output", 0, StringComparison.OrdinalIgnoreCase) > 0)
                     {
@@ -305,12 +302,14 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, ValidateGenerationInput, ReportValidation)) return;
                 strScriptFor = "InsertScriptFor";
 
-                saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Excel File", $"{strScriptFor}_{strTableName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}");
+                saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Excel File", $"{strScriptFor}_{common_Data.RemoveSpecialCharacters(OutputWorksheetName())}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}");
 
                 if (saveFileDialogFile.BoolFileSaveStatus)
                 {
+                    if (!FormValidation.Check(this, ValidateOutput, ReportValidation)) return;
                     strFullPathFileName = saveFileDialogFile.Str_saveFileNameWithPath;
                     Common_Data.DisplayMessage(rtb_Log, $"Table identified as : '{strTableName}', TableName is read from the 1st sheet name of excel workbook");
 
@@ -376,6 +375,8 @@ namespace SPI_Data_Comp_Tool
                 {
                     btn_Script.Text = "Generate Delete Scripts";
                 }
+                if (dsGenerateScript != null && cb_SelectSheet.SelectedIndex >= 0)
+                    cb_SelectSheetInsert_SelectedIndexChanged(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -411,8 +412,11 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                boolGenerate = false;
                 string strInsertScripts = string.Empty;
-                strInsertColName = string.Join(", ", ListCols.Where(y => y.ColumnName.ToUpper() != "DBTYPE").Select(x => string.Join(", ", x.ColumnName)));
+                dtGenerateScript = dtGenerateScript.Copy();
+                string[] inputColumns = InputColumns(dtGenerateScript);
+                strInsertColName = string.Join(", ", inputColumns.Select(QuoteColumn));
 
                 dtGenerateScript = common_Data.RemoveColumn(dtGenerateScript, "Insert_Scripts");
 
@@ -422,28 +426,18 @@ namespace SPI_Data_Comp_Tool
                     Common_Data.DisplayMessage(rtb_Log, "Generating Insert Scripts");
                     dtGenerateScript.Columns.Add("Insert_Scripts", typeof(string));
 
-                    strTableName = tb_TableName.Text;
+                    strTableName = tb_TableName.Text.Trim();
 
                     foreach (DataRow dr in dtGenerateScript.Rows)
                     {
                         strInsertValues = string.Empty;
-                        strInsertValues = string.Join(", ", ListCols.Where(y => y.ColumnName.ToUpper() != "DBTYPE").Select(x => string.Join(", ", $"N'{dr[x.ColumnName].ToString().Trim()}'")));
+                        strInsertValues = string.Join(", ", inputColumns.Select(column => SqlLiteral(dr[column])));
                         strInsertScripts = $"Insert Into {strTableName} ({strInsertColName}) Values ({strInsertValues})";
-
-                        if (strInsertScripts.Contains("N''"))
-                        {
-                            strInsertScripts = strInsertScripts.Replace("N''", "NULL");
-                        }
-
-                        while (strInsertScripts.Contains("  "))
-                        {
-                            strInsertScripts = strInsertScripts.Replace("  ", " ");
-                        }
 
                         dr["Insert_Scripts"] = strInsertScripts;
                     }
 
-                    if (WriteExcel.ExportToExcel(dtGenerateScript, strTableName, strFullPathFileName))
+                    if (WriteExcel.ExportToExcel(dtGenerateScript, OutputWorksheetName(), strFullPathFileName))
                     {
                         boolGenerate = true;
                         Common_Data.DisplayMessage(rtb_Log, $"Insert Script File is Saved Successfully in : {strFullPathFileName}");
@@ -527,6 +521,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, ValidateGenerationInput, ReportValidation)) return;
                 boolGenerate = false;
 
                 if (rb_Update.Checked)
@@ -540,18 +535,15 @@ namespace SPI_Data_Comp_Tool
                     strScriptFor = "DeleteScriptFor";
                 }
 
-                saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Excel File", $"{strScriptFor}_{strTableName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}");
+                saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Excel File", $"{strScriptFor}_{common_Data.RemoveSpecialCharacters(OutputWorksheetName())}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}");
 
                 if (saveFileDialogFile.BoolFileSaveStatus)
                 {
+                    if (!FormValidation.Check(this, ValidateOutput, ReportValidation)) return;
+                    dtGenerateScript = dtGenerateScript.Copy();
                     strFullPathFileName = saveFileDialogFile.Str_saveFileNameWithPath;
                     IEnumerable<object> notCheckedValuesEnum = (from object item in clb_Checked.Items where !clb_Checked.CheckedItems.Contains(item) select item);
                     IEnumerable<object> checkedValuesEnum = (from object item in clb_Checked.CheckedItems select item);
-
-                    if (checkedValuesEnum.Count() == 0)
-                    {
-                        Common_Data.DisplayMessage(rtb_Log, $"Pls Note, No checkbox selected, so scripts will be generated without 'WHERE' clause !!!", true);
-                    }
 
                     strTableName = tb_TableName.Text;
 
@@ -566,23 +558,13 @@ namespace SPI_Data_Comp_Tool
                             {
                                 continue;
                             }
-                            strSetClause = $" SET {string.Join(" , ", notCheckedValuesEnum.Select(x => string.Join(" = ", x, $"N'{dr[x.ToString()].ToString().Trim()}'")))} ";
+                            strSetClause = $" SET {string.Join(" , ", notCheckedValuesEnum.Select(x => QuoteColumn(x.ToString()) + " = " + SqlLiteral(dr[x.ToString()])))} ";
                             strWhereClause = string.Empty;
                             if (checkedValuesEnum.Count() > 0)
                             {
-                                strWhereClause = $" WHERE {string.Join(" AND ", checkedValuesEnum.Select(x => string.Join(" = ", x, $"N'{dr[x.ToString()].ToString().Trim()}'")))} ";
+                                strWhereClause = " WHERE " + string.Join(" AND ", checkedValuesEnum.Select(x => SqlPredicate(x.ToString(), dr[x.ToString()])));
                             }
                             strUpdateTable = $"{strUpdateClause}{strSetClause}{strWhereClause}";
-
-                            if (strUpdateTable.Contains("N''"))
-                            {
-                                strUpdateTable = strUpdateTable.Replace("N''", "NULL");
-                            }
-
-                            while (strUpdateTable.Contains("  "))
-                            {
-                                strUpdateTable = strUpdateTable.Replace("  ", " ");
-                            }
 
                             dr["Update_Scripts"] = strUpdateTable;
                         }
@@ -599,19 +581,9 @@ namespace SPI_Data_Comp_Tool
                             strWhereClause = string.Empty;
                             if (checkedValuesEnum.Count() > 0)
                             {
-                                strWhereClause = $" WHERE {string.Join(" AND ", checkedValuesEnum.Select(x => string.Join(" = ", x, $"N'{dr[x.ToString()].ToString().Trim()}'")))} ";
+                                strWhereClause = " WHERE " + string.Join(" AND ", checkedValuesEnum.Select(x => SqlPredicate(x.ToString(), dr[x.ToString()])));
                             }
                             strUpdateTable = $"{strUpdateClause}{strWhereClause}";
-
-                            if (strUpdateTable.Contains("N''"))
-                            {
-                                strUpdateTable = strUpdateTable.Replace("N''", "NULL");
-                            }
-
-                            if (strUpdateTable.Contains("  "))
-                            {
-                                strUpdateTable = strUpdateTable.Replace("  ", " ");
-                            }
 
                             dr["Delete_Scripts"] = strUpdateTable;
                         }
@@ -623,13 +595,14 @@ namespace SPI_Data_Comp_Tool
                         boolGenerate = false;
                     }
 
-                    if (boolGenerate && WriteExcel.ExportToExcel(dtGenerateScript, strTableName, strFullPathFileName))
+                    if (boolGenerate && WriteExcel.ExportToExcel(dtGenerateScript, OutputWorksheetName(), strFullPathFileName))
                     {
                         boolGenerate = true;
                         Common_Data.DisplayMessage(rtb_Log, $"Script File is Saved Successfully in : {strFullPathFileName}");
                     }
                     else
                     {
+                        boolGenerate = false;
                         Common_Data.DisplayMessage(rtb_Log, $"There is some problem is saving the file", true);
                     }
 
@@ -664,6 +637,8 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                if (!FormValidation.Check(this, () => FormValidation.ReadableFile(strFullPathFileName, llb_File,
+                    "Generated workbook", ".xlsx"), ReportValidation)) return;
                 Common_Data.DisplayMessage(rtb_Log, $"Opening File :{strFullPathFileName}");
                 Process.Start(strFullPathFileName);
             }
@@ -671,6 +646,84 @@ namespace SPI_Data_Comp_Tool
             {
                 Common_Data.DisplayError(rtb_Log, ex);
             }
+        }
+
+        private void ReportValidation(string message) { Common_Data.DisplayMessage(rtb_Log, message, true); }
+
+        private static string[] InputColumns(DataTable table)
+        {
+            return table.Columns.Cast<DataColumn>().Select(column => column.ColumnName)
+                .Where(name => !new[] { "DBTYPE", "INSERT_SCRIPTS", "UPDATE_SCRIPTS", "DELETE_SCRIPTS" }
+                    .Contains(name.ToUpperInvariant())).ToArray();
+        }
+
+        internal void ValidateGenerationInput()
+        {
+            FormValidation.Require(new[] { rb_Insert.Checked, rb_Update.Checked, rb_Delete.Checked }.Count(value => value) == 1,
+                btn_Script, "Choose exactly one script type.");
+            FormValidation.Selection(cb_SelectSheet, "Worksheet");
+            FormValidation.Table(dtGenerateScript, cb_SelectSheet, "Selected worksheet");
+            FormValidation.Required(tb_TableName, "Table name");
+            ValidateTableName(tb_TableName.Text, tb_TableName);
+            string[] columns = InputColumns(dtGenerateScript);
+            FormValidation.Require(columns.Length > 0, cb_SelectSheet, "The worksheet has no data columns to generate scripts.");
+            if (rb_Update.Checked || rb_Delete.Checked)
+            {
+                string[] keys = clb_Checked.CheckedItems.Cast<string>().ToArray();
+                FormValidation.Require(keys.Length > 0, clb_Checked, "Select at least one WHERE column; unrestricted UPDATE/DELETE scripts are not generated.");
+                FormValidation.Columns(dtGenerateScript, keys, clb_Checked, "WHERE columns");
+                FormValidation.Require(keys.All(key => columns.Contains(key)), clb_Checked, "Generated script columns cannot be used as WHERE columns.");
+                if (rb_Update.Checked)
+                    FormValidation.Require(columns.Except(keys).Any(), clb_Checked, "Leave at least one data column for the UPDATE SET clause.");
+            }
+        }
+
+        private void ValidateOutput()
+        {
+            string output = FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath, btn_Script, "Output workbook", ".xlsx");
+            FormValidation.DifferentFiles(output, openFileDialogData.strFileNameWithPath, btn_Script);
+        }
+
+        internal static void ValidateTableName(string name, Control field)
+        {
+            // Do not accept an executable SQL fragment in the table-name box. Quoted identifiers
+            // are kept intact, including spaces/dots inside square brackets or double quotes.
+            bool bracket = false, quoted = false, hasPart = false;
+            int parts = 1;
+            string text = (name ?? string.Empty).Trim();
+            FormValidation.Require(text.Length > 0, field, "Enter a table name.");
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (bracket)
+                {
+                    if (c == ']') { if (i + 1 < text.Length && text[i + 1] == ']') i++; else bracket = false; }
+                    continue;
+                }
+                if (quoted)
+                {
+                    if (c == '"') { if (i + 1 < text.Length && text[i + 1] == '"') i++; else quoted = false; }
+                    continue;
+                }
+                if (c == '[' || c == '"') { FormValidation.Require(!hasPart, field, "Use one identifier per table-name component."); bracket = c == '['; quoted = c == '"'; hasPart = true; }
+                else if (c == '.') { FormValidation.Require(hasPart && ++parts <= 4, field, "Enter a valid schema-qualified table name."); hasPart = false; }
+                else { FormValidation.Require(char.IsLetterOrDigit(c) || c == '_' || c == '@' || c == '#' || c == '$', field,
+                        "Use a table name, not a SQL expression; quote names containing spaces."); hasPart = true; }
+            }
+            FormValidation.Require(hasPart && !bracket && !quoted, field, "Complete the table name and its identifier quotes.");
+        }
+
+        internal static string QuoteColumn(string name) { return "[" + name.Replace("]", "]]") + "]"; }
+        internal static string SqlLiteral(object value)
+        {
+            if (value == null || value == DBNull.Value) return "NULL";
+            string text = value is DateTime ? ((DateTime)value).ToString("yyyy-MM-ddTHH:mm:ss.fffffff", CultureInfo.InvariantCulture)
+                : Convert.ToString(value, CultureInfo.InvariantCulture);
+            return "N'" + text.Replace("'", "''") + "'";
+        }
+        internal static string SqlPredicate(string column, object value)
+        {
+            return QuoteColumn(column) + (value == null || value == DBNull.Value ? " IS NULL" : " = " + SqlLiteral(value));
         }
 
         //private void DisplayError(Exception ex = null)

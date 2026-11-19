@@ -23,6 +23,11 @@ namespace SPI_Data_Comp_Tool
                 ProfileWorkflowChecks.Run(passed);
                 ImportSchemaChecks.Run(passed);
                 CredentialRedactionChecks.Run(passed);
+                CoreValidationChecks.Run(passed);
+                ConnectionValidationChecks.Run(passed);
+                DatabaseFormValidationChecks.Run(passed);
+                ExcelFormValidationChecks.Run(passed);
+                AnalysisValidationChecks.Run(passed);
                 CheckNavigation(passed);
                 CheckSettings(passed);
                 CheckAnalysis(passed);

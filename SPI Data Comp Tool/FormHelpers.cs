@@ -69,12 +69,22 @@ namespace SPI_Data_Comp_Tool
         /// </summary>
         internal static DataTable Transpose(DataTable source)
         {
-            DataTable transposed = new DataTable();
-            transposed.Columns.Add(source.Columns[0].ColumnName.ToString());
-
-            foreach (DataRow dr in source.Rows)
+            if (source == null || source.Columns.Count < 2 || source.Rows.Count == 0)
+                throw new ArgumentException("Load a comparison summary with data before transposing it.");
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { source.Columns[0].ColumnName };
+            for (int rowIndex = 0; rowIndex < source.Rows.Count; rowIndex++)
             {
-                transposed.Columns.Add(dr[0].ToString());
+                string name = Convert.ToString(source.Rows[rowIndex][0]);
+                if (string.IsNullOrWhiteSpace(name) || !names.Add(name)
+                    || (rowIndex > 0 && (string.Equals(name, "Column Names", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(name, "Summarize Count", StringComparison.OrdinalIgnoreCase))))
+                    throw new ArgumentException("Summary row names must be non-empty and unique before transposing.");
+            }
+            DataTable transposed = new DataTable();
+            transposed.Columns.Add("Column Names");
+            for (int rowIndex = 0; rowIndex < source.Rows.Count; rowIndex++)
+            {
+                transposed.Columns.Add(rowIndex == 0 ? "Summarize Count" : source.Rows[rowIndex][0].ToString());
             }
 
             for (int rCount = 1; rCount <= source.Columns.Count - 1; rCount++)
@@ -88,8 +98,6 @@ namespace SPI_Data_Comp_Tool
                 }
                 transposed.Rows.Add(dr);
             }
-            transposed.Columns[0].ColumnName = "Column Names";
-            transposed.Columns[1].ColumnName = "Summarize Count";
             return transposed;
         }
 
@@ -99,7 +107,9 @@ namespace SPI_Data_Comp_Tool
         /// </summary>
         internal static void FormatTableSheet(IXLWorksheet sheet, DataTable table)
         {
-            sheet.Tables.FirstOrDefault().SetShowAutoFilter(false);
+            if (sheet == null) throw new ArgumentNullException(nameof(sheet));
+            FormValidation.ExcelTable(table, null, "Excel output");
+            sheet.Tables.FirstOrDefault()?.SetShowAutoFilter(false);
             sheet.Columns().AdjustToContents();
 
             for (int col = 1; col <= table.Columns.Count; col++)
@@ -132,6 +142,14 @@ namespace SPI_Data_Comp_Tool
         /// </summary>
         internal static string FillTableNames(ComboBox comboBox, DataTable tables, string dbType)
         {
+            if (comboBox == null) throw new ArgumentNullException(nameof(comboBox));
+            if (tables == null) throw new ArgumentException("Load the database table list first.");
+            if (dbType != "oracle" && dbType != "sql")
+                throw new ArgumentException("Select Oracle or SQL Server before loading table names.");
+            string[] required = dbType == "oracle" ? new[] { "OWNER", "TABLE_NAME" }
+                : new[] { "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME" };
+            if (required.Any(column => !tables.Columns.Contains(column)))
+                throw new ArgumentException("The database table list is missing its required catalog/schema/name columns.");
             if (!tables.Columns.Contains("CompleteName"))
             {
                 tables.Columns.Add("CompleteName");

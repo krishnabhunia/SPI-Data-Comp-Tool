@@ -271,6 +271,8 @@
     </Compile>
     <Compile Include="ConnectionSide.cs" />
     <Compile Include="FormHelpers.cs" />
+    <Compile Include="FormValidation.cs" />
+    <Compile Include="ConnectionStrings.cs" />
     <Compile Include="SelfTest.cs" />
     <Compile Include="WindowNavigator.cs" />
     <Compile Include="ProfileStore.cs" />
@@ -285,6 +287,21 @@
     </Compile>
     <Compile Include="..\tests\CredentialRedactionChecks.cs">
       <Link>Tests\CredentialRedactionChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\CoreValidationChecks.cs">
+      <Link>Tests\CoreValidationChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\ConnectionValidationChecks.cs">
+      <Link>Tests\ConnectionValidationChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\DatabaseFormValidationChecks.cs">
+      <Link>Tests\DatabaseFormValidationChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\ExcelFormValidationChecks.cs">
+      <Link>Tests\ExcelFormValidationChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\AnalysisValidationChecks.cs">
+      <Link>Tests\AnalysisValidationChecks.cs</Link>
     </Compile>
     <Compile Include="..\tests\UpdateFeedChecks.cs">
       <Link>Tests\UpdateFeedChecks.cs</Link>

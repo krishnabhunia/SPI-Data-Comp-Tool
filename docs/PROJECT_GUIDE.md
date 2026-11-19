@@ -152,6 +152,11 @@ Versions are automatic - nobody edits a version number by hand. `tools/release.p
 The source has forms for database comparison, Excel comparison, delta change tracking and database-to-Excel export. Exact connection strings, supported server versions, data-size limits and complete workflows must be validated manually: the repository does not supply safe integration fixtures for all operations.
 
 ## Verification
+
+### Form input validation
+
+All 21 current Forms and the shared input controls have an explicit validation inventory. See [VALIDATION.md](VALIDATION.md) for action gates, supported inputs, file/export safeguards, five added Windows validation suites and the manual acceptance boundaries. Read-only screens retain navigation/open-close coverage rather than artificial required fields.
+
 The GitHub Actions workflow (`build.yml`) runs on pull requests, pushes to `master` and on demand. It checks this guide, runs the complete Python regression suite and generated-layout check, and rejects committed credentials/signing keys. Both Any CPU and x64 Windows builds treat warnings as errors. Actions are pinned to reviewed Node 24 releases rather than relying on forced execution of deprecated Node 20 actions.
 
 `--check-ui <log-file>` runs real Windows controls against synthetic data: profile snapshots and failed file writes, profile selection and import schemas, window reuse and independent modes, Settings startup/failed import, embedded Analysis and failed reload preservation. It also exercises updater version/feed parsing, bounded verified downloads with fake transport, staged portable replacement and preference migration, and the update controls with fake services. The retained `--check-updates <log-file>` entry point exercises the same canonical updater rather than a second implementation. These updater checks never install a live release, access a database or save real user preferences. `--open-form` must successfully open every eligible form; a failed form fails the build. No pictures are taken or published. Portable dependency loading and 64-bit installer install/uninstall checks remain enabled. **Read CI results** rather than assuming success. Live Oracle/SQL Server connectivity, real customer workbooks, all comparison outcomes, real-user UAC/SmartScreen and older Windows/.NET installations still require manual acceptance tests.

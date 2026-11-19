@@ -117,6 +117,56 @@ namespace SPI_Data_Comp_Tool
             get { return Oracle.Checked ? Oracle.Text : Sql.Text; }
         }
 
+        /// <summary>Checks the entered values before a connection is attempted; never opens a database.</summary>
+        internal void ValidateInput(bool requireCredentials = true)
+        {
+            ValidateInput(title, requireCredentials);
+        }
+
+        internal void ValidateInput(string label, bool requireCredentials = true)
+        {
+            FormValidation.Require(!sqlServerOnly || Sql.Checked, Sql, label + " supports SQL Server only.");
+            ValidateFields(label, Oracle, Sql, WindowsLogin, DataSource, Database, User, Password, Port, requireCredentials);
+        }
+
+        /// <summary>Also used by the remaining legacy layouts with separate connection controls.</summary>
+        internal static void ValidateFields(string label, RadioButton oracle, RadioButton sql, CheckBox windowsLogin,
+            Control dataSource, Control database, Control user, Control password, Control port, bool requireCredentials = true)
+        {
+            FormValidation.Require(oracle.Checked != sql.Checked, oracle, "Select one database platform for " + label + ".");
+            FormValidation.Require(!oracle.Checked || !windowsLogin.Checked, windowsLogin,
+                label + " Windows authentication is available only for SQL Server.");
+            foreach (Control field in windowsLogin.Checked ? new[] { dataSource, database } : new[] { dataSource, database, user })
+                FormValidation.Require(!ContainsControlCharacters(field.Text), field,
+                    label + " connection fields cannot contain line breaks or control characters.");
+            if (oracle.Checked)
+            {
+                FormValidation.Port(port, label + " Oracle port");
+                // This application builds a TCP descriptor, not a free-form TNS descriptor.
+                FormValidation.Require(dataSource.Text.IndexOfAny(new[] { '(', ')', '=' }) < 0, dataSource,
+                    label + " must contain an Oracle host name or address, not a connection descriptor.");
+                FormValidation.Require(database.Text.IndexOfAny(new[] { '(', ')', '=' }) < 0, database,
+                    label + " must contain an Oracle service name, not a connection descriptor.");
+            }
+            if (!requireCredentials) return;
+            FormValidation.Required(dataSource, label + " data source");
+            FormValidation.Required(database, label + " database or service");
+            if (!windowsLogin.Checked)
+            {
+                FormValidation.Required(user, label + " username");
+                // A password's leading/trailing spaces are significant. Do not trim or echo it.
+                FormValidation.Require(password.Text.Length > 0, password, "Enter the " + label + " password.");
+            }
+        }
+
+        internal static bool ContainsControlCharacters(string value)
+        {
+            if (value == null) return false;
+            foreach (char character in value)
+                if (char.IsControl(character)) return true;
+            return false;
+        }
+
         /// <summary>Oracle: port options on, no Windows login. SQL Server: Windows login possible, no port.</summary>
         public void ApplyPlatform()
         {
