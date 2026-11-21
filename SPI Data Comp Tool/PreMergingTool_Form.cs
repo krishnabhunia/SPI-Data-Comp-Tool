@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class PreMergingTool_Form : Form
+    public partial class PreMergingTool_Form : WorkspacePageForm
     {
         private OpenFileDialogData openFileDialogData;
         private SaveFileDialogFile saveFileDialogFile;

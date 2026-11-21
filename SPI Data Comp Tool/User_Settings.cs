@@ -8,7 +8,7 @@ using System.Windows.Forms;
 namespace SPI_Data_Comp_Tool
 {
     /// <summary>Application preferences, comparison rules and updates share one settings window.</summary>
-    public partial class User_Settings : Form
+    public partial class User_Settings : WorkspacePageForm
     {
         private bool initializing = true;
 

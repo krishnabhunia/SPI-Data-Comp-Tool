@@ -217,11 +217,16 @@ namespace SPI_Data_Comp_Tool
         /// <summary>Takes every setting from the other half (the Copy buttons).</summary>
         public void CopyFrom(ConnectionSide other)
         {
-            Oracle.Checked = other.Oracle.Checked;
-            Sql.Checked = other.Sql.Checked;
-            WindowsLogin.Checked = other.WindowsLogin.Checked;
-            DefaultPort.Checked = other.DefaultPort.Checked;
-            Port.Text = other.Port.Text;
+            // Disabled radio buttons can still be assigned programmatically. Honour the receiver's
+            // provider restriction just as Apply(profile) does, including Oracle -> SQL-only copies.
+            Oracle.Checked = !sqlServerOnly && other.Oracle.Checked;
+            Sql.Checked = sqlServerOnly || other.Sql.Checked;
+            WindowsLogin.Checked = Sql.Checked && other.WindowsLogin.Checked;
+            DefaultPort.Checked = Oracle.Checked && other.DefaultPort.Checked;
+            // Keep a custom Oracle port draft verbatim; validation, not Copy, decides its validity.
+            Port.Text = Oracle.Checked ? other.Port.Text : string.Empty;
+            Port.Enabled = Oracle.Checked;
+            Port.ReadOnly = !Oracle.Checked || DefaultPort.Checked;
             DataSource.Text = other.DataSource.Text;
             Database.Text = other.Database.Text;
             User.Text = other.User.Text;
@@ -239,9 +244,13 @@ namespace SPI_Data_Comp_Tool
             }
             Oracle.Checked = oracle;
             Sql.Checked = sql;
-            WindowsLogin.Checked = windowsLogin;
-            DefaultPort.Checked = defaultPort;
-            Port.Text = oracle ? (port == 0 ? OracleDefaultPort : port.ToString()) : string.Empty;
+            WindowsLogin.Checked = Sql.Checked && windowsLogin;
+            DefaultPort.Checked = Oracle.Checked && defaultPort;
+            Port.Text = Oracle.Checked ? (port == 0 ? OracleDefaultPort : port.ToString()) : string.Empty;
+            // A saved Oracle profile may be applied to a SQL-only workflow. Keep the supported
+            // provider visible and do not leave its inactive Oracle-port controls editable.
+            Port.Enabled = Oracle.Checked;
+            Port.ReadOnly = !Oracle.Checked || DefaultPort.Checked;
             DataSource.Text = dataSource;
             Database.Text = database;
             User.Text = user;

@@ -64,7 +64,7 @@ class EveryWindowCanBeOpened(unittest.TestCase):
             self.assertFalse((PROJ / name).exists(), name)
         project = text("SPI Data Comp Tool.csproj").replace("SPIDeltaChangeTrackerOptimised", "")
         self.assertNotIn("SPIDeltaChangeTracker", project)
-        self.assertIn("new SPIDeltaChangeTrackerOptimised()", code("MainForm.cs"))
+        self.assertIn("new SPIDeltaChangeTrackerOptimised()", code("WorkspaceCatalog.cs"))
 
     def test_main_menu_has_no_hidden_entries(self) -> None:
         hidden = re.findall(r"this\.(\w+ToolStripMenuItem)\.Visible = false;", text("MainForm.Designer.cs"))
@@ -75,7 +75,7 @@ class EveryWindowCanBeOpened(unittest.TestCase):
         windows = {}
         for name, src in sources.items():
             if not name.endswith(".Designer.cs"):
-                for m in re.finditer(r"class\s+(\w+)\s*:\s*(?:Form|UserControl)\b", src):
+                for m in re.finditer(r"(?<!abstract )class\s+(\w+)\s*:\s*(?:Form|WorkspacePageForm|UserControl)\b", src):
                     windows[m.group(1)] = name
         self.assertGreaterEqual(len(windows), 20)
         for window, home in windows.items():

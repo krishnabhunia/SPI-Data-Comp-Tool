@@ -27,28 +27,74 @@ namespace SPI_Data_Comp_Tool
         private DataSet ds;
         private bool loading;
 
+        // Keep the workflow's field names while using the common connection presentation.
+        private TextBox tb_oracle_dsource => connection.Source.DataSource;
+        private TextBox tb_oracle_dbName => connection.Source.Database;
+        private TextBox tb_oracle_username => connection.Source.User;
+        private TextBox tb_oracle_pwd => connection.Source.Password;
+        private TextBox tb_sql_dsource => connection.Target.DataSource;
+        private TextBox tb_sql_dbName => connection.Target.Database;
+        private TextBox tb_sql_username => connection.Target.User;
+        private TextBox tb_sql_pwd => connection.Target.Password;
+        private RadioButton rb_SRC_oracle => connection.Source.Oracle;
+        private RadioButton rb_SRC_SQL => connection.Source.Sql;
+
+        private const string DefaultSpecificationQuery = @"SELECT
+SPEC_FORM.SPEC_FORM_CNUM,
+SPEC_FORM.SPEC_NAME,
+SPEC_FORMAT_ATTRIBUTES.COLUMN_NAME,
+SPEC_FORMAT.FORMAT_NAME,
+SPEC_FORMAT_ATTRIBUTES.HEADER_TEXT
+FROM
+(SPEC_FORM INNER JOIN SPEC_FORMAT ON SPEC_FORM.SPEC_FORM_ID = SPEC_FORMAT.SPEC_FORM_ID)
+INNER JOIN SPEC_FORMAT_ATTRIBUTES ON SPEC_FORMAT.FORMAT_ID = SPEC_FORMAT_ATTRIBUTES.FORMAT_ID
+
+GROUP BY
+SPEC_FORM.SPEC_FORM_CNUM,
+SPEC_FORM.SPEC_NAME,
+SPEC_FORMAT_ATTRIBUTES.COLUMN_NAME,
+SPEC_FORMAT.FORMAT_NAME,
+SPEC_FORMAT_ATTRIBUTES.HEADER_TEXT
+
+ORDER BY
+SPEC_FORM.SPEC_FORM_CNUM";
+
         public bool HasLoadedData { get { return boolStatus && ds.Tables.Count == 2; } }
         public event EventHandler DataLoadStateChanged;
 
         public OracleAndSQLConnection()
         {
             InitializeComponent();
-
-
-            lbl_Oracle_SQL_Connection.Text = string.Empty;
+            connection.Target.SqlServerOnly = true;
+            // Keep existing automation/control lookup names; accessible captions remain descriptive.
+            tb_oracle_dsource.Name = "tb_oracle_dsource";
+            tb_oracle_dbName.Name = "tb_oracle_dbName";
+            tb_oracle_username.Name = "tb_oracle_username";
+            tb_oracle_pwd.Name = "tb_oracle_pwd";
+            tb_sql_dsource.Name = "tb_sql_dsource";
+            tb_sql_dbName.Name = "tb_sql_dbName";
+            tb_sql_username.Name = "tb_sql_username";
+            tb_sql_pwd.Name = "tb_sql_pwd";
             lbl_Oracle_SQL_Connection.Text = string.Empty;
 
             myException = new Exception();
             ds = new DataSet();
 
+            tb_querybox.Text = DefaultSpecificationQuery;
             UseQueryForCheckBoxFunction();
-            foreach (TextBox field in new[] { tb_oracle_dsource, tb_oracle_dbName, tb_oracle_username, tb_oracle_pwd,
-                tb_sql_dsource, tb_sql_dbName, tb_sql_username, tb_sql_pwd, tb_Source_tableName, tb_destination_tableName, tb_querybox })
+            connection.InputChanged += InvalidateLoadedData;
+            connection.ProfileApplied += (sender, details) =>
+            {
+                tb_Source_tableName.Text = details.str_SRC_TableName;
+                tb_destination_tableName.Text = details.str_TRG_TableName;
+            };
+            connection.Failed += (sender, error) => lbl_Oracle_SQL_Connection.Text = Common_Data.RedactConnectionCredentials(error.Message);
+            foreach (TextBox field in new[] { tb_Source_tableName, tb_destination_tableName, tb_querybox })
                 field.TextChanged += InvalidateLoadedData;
-            rb_SRC_oracle.CheckedChanged += InvalidateLoadedData;
-            rb_SRC_SQL.CheckedChanged += InvalidateLoadedData;
             cb_query.CheckedChanged += InvalidateLoadedData;
             Disposed += (sender, e) => ds?.Dispose();
+            try { new Common_Data().ReadUserProfile(connection.ProfileList); }
+            catch (Exception error) { lbl_Oracle_SQL_Connection.Text = Common_Data.RedactConnectionCredentials(error.Message); }
         }
 
         private void InvalidateLoadedData(object sender, EventArgs e)
@@ -61,24 +107,7 @@ namespace SPI_Data_Comp_Tool
         internal void ValidateInput()
         {
             FormValidation.Require(!loading, btn_Connect_Reference_ID, "Wait for the current load to finish.");
-            FormValidation.Require(rb_SRC_oracle.Checked != rb_SRC_SQL.Checked, rb_SRC_oracle, "Select a source database platform.");
-            foreach (TextBox field in new[] { tb_oracle_dsource, tb_oracle_dbName, tb_oracle_username,
-                tb_sql_dsource, tb_sql_dbName, tb_sql_username })
-            {
-                FormValidation.Required(field, field == tb_oracle_dsource || field == tb_sql_dsource ? "database server" :
-                    field == tb_oracle_dbName || field == tb_sql_dbName ? "database or service name" : "database username");
-                FormValidation.Require(!ConnectionSide.ContainsControlCharacters(field.Text), field,
-                    "Connection names cannot contain line breaks or control characters.");
-            }
-            FormValidation.Require(tb_oracle_pwd.Text.Length > 0, tb_oracle_pwd, "Enter the source database password.");
-            FormValidation.Require(tb_sql_pwd.Text.Length > 0, tb_sql_pwd, "Enter the target database password.");
-            if (rb_SRC_oracle.Checked)
-            {
-                FormValidation.Require(tb_oracle_dsource.Text.IndexOfAny(new[] { '(', ')', '=' }) < 0, tb_oracle_dsource,
-                    "Enter an Oracle host name or address, not a connection descriptor.");
-                FormValidation.Require(tb_oracle_dbName.Text.IndexOfAny(new[] { '(', ')', '=' }) < 0, tb_oracle_dbName,
-                    "Enter an Oracle service name, not a connection descriptor.");
-            }
+            connection.ValidateInput();
             if (cb_query.Checked) FormValidation.Required(tb_querybox, "the query to run on both databases");
             else
             {
@@ -163,7 +192,7 @@ namespace SPI_Data_Comp_Tool
                 if (rb_SRC_oracle.Checked)
                 {
                     strOracleConnection = ConnectionStrings.Build("Oracle", tb_oracle_dsource.Text.Trim(), tb_oracle_dbName.Text.Trim(),
-                        false, tb_oracle_username.Text.Trim(), tb_oracle_pwd.Text, "1521");
+                        false, tb_oracle_username.Text.Trim(), tb_oracle_pwd.Text, connection.Source.Port.Text);
                     using (var adapter = new OracleDataAdapter(strQuery, strOracleConnection)) adapter.Fill(dt_oracle);
                     strSourceName = "Source Oracle 11G";
                 }
@@ -171,7 +200,7 @@ namespace SPI_Data_Comp_Tool
                 if (rb_SRC_SQL.Checked)
                 {
                     strSQLConnection = ConnectionStrings.Build("SQL", tb_oracle_dsource.Text.Trim(), tb_oracle_dbName.Text.Trim(),
-                        false, tb_oracle_username.Text.Trim(), tb_oracle_pwd.Text, null);
+                        connection.Source.WindowsLogin.Checked, tb_oracle_username.Text.Trim(), tb_oracle_pwd.Text, null);
                     using (var adapter = new SqlDataAdapter(strQuery, strSQLConnection)) adapter.Fill(dt_oracle);
                     strSourceName = "Source SQL";
                 }
@@ -190,26 +219,13 @@ namespace SPI_Data_Comp_Tool
 
         private void controlEnableToggle(bool boolEnabledCase)
         {
-            tb_oracle_dbName.Enabled = boolEnabledCase;
-            tb_oracle_dsource.Enabled = boolEnabledCase;
-            tb_oracle_username.Enabled = boolEnabledCase;
-            tb_oracle_pwd.Enabled = boolEnabledCase;
-            tb_Source_tableName.Enabled = boolEnabledCase;
-
-            tb_sql_dbName.Enabled = boolEnabledCase;
-            tb_sql_dsource.Enabled = boolEnabledCase;
-            tb_sql_username.Enabled = boolEnabledCase;
-            tb_sql_pwd.Enabled = boolEnabledCase;
-            tb_destination_tableName.Enabled = boolEnabledCase;
-
-            rb_SRC_oracle.Enabled = boolEnabledCase;
-            rb_SRC_SQL.Enabled = boolEnabledCase;
+            // Disable the container, not individual fields: platform/authentication enablement survives a load.
+            connection.Enabled = boolEnabledCase;
             cb_query.Enabled = boolEnabledCase;
             tb_querybox.Enabled = boolEnabledCase && cb_query.Checked;
             tb_Source_tableName.Enabled = boolEnabledCase && !cb_query.Checked;
             tb_destination_tableName.Enabled = boolEnabledCase && !cb_query.Checked;
-
-
+            btn_ResetQuery.Enabled = boolEnabledCase && cb_query.Checked;
             btn_Connect_Reference_ID.Enabled = boolEnabledCase;
             if (!(boolEnabledCase))
             {
@@ -307,7 +323,7 @@ namespace SPI_Data_Comp_Tool
                 }
 
                 strSQLConnection = ConnectionStrings.Build("SQL", tb_sql_dsource.Text.Trim(), tb_sql_dbName.Text.Trim(),
-                    false, tb_sql_username.Text.Trim(), tb_sql_pwd.Text, null);
+                    connection.Target.WindowsLogin.Checked, tb_sql_username.Text.Trim(), tb_sql_pwd.Text, null);
 
                 dt_sql = new DataTable();
                 using (var adapter = new SqlDataAdapter(strQuery, strSQLConnection)) adapter.Fill(dt_sql);
@@ -325,49 +341,16 @@ namespace SPI_Data_Comp_Tool
 
         private void UseQueryForCheckBoxFunction()
         {
-            try
-            {
-                if (cb_query.CheckState == CheckState.Checked)
-                {
-                    tb_querybox.Enabled = true;
-                    tb_querybox.Text = @"SELECT
-SPEC_FORM.SPEC_FORM_CNUM, 
-SPEC_FORM.SPEC_NAME, 
-SPEC_FORMAT_ATTRIBUTES.COLUMN_NAME, 
-SPEC_FORMAT.FORMAT_NAME, 
-SPEC_FORMAT_ATTRIBUTES.HEADER_TEXT
-FROM
-(SPEC_FORM INNER JOIN SPEC_FORMAT ON SPEC_FORM.SPEC_FORM_ID = SPEC_FORMAT.SPEC_FORM_ID)
-INNER JOIN SPEC_FORMAT_ATTRIBUTES ON SPEC_FORMAT.FORMAT_ID = SPEC_FORMAT_ATTRIBUTES.FORMAT_ID
+            // Switching modes must not erase either draft. Resetting the template is explicit.
+            tb_querybox.Enabled = !loading && cb_query.Checked;
+            btn_ResetQuery.Enabled = !loading && cb_query.Checked;
+            tb_Source_tableName.Enabled = !loading && !cb_query.Checked;
+            tb_destination_tableName.Enabled = !loading && !cb_query.Checked;
+        }
 
-GROUP BY
-SPEC_FORM.SPEC_FORM_CNUM, 
-SPEC_FORM.SPEC_NAME, 
-SPEC_FORMAT_ATTRIBUTES.COLUMN_NAME, 
-SPEC_FORMAT.FORMAT_NAME, 
-SPEC_FORMAT_ATTRIBUTES.HEADER_TEXT
-
-ORDER BY
-SPEC_FORM.SPEC_FORM_CNUM";
-
-                    tb_Source_tableName.Enabled = false;
-                    tb_Source_tableName.ResetText();
-
-                    tb_destination_tableName.Enabled = false;
-                    tb_destination_tableName.ResetText();
-                }
-                else if (cb_query.CheckState == CheckState.Unchecked)
-                {
-                    tb_querybox.Enabled = false;
-                    tb_querybox.ResetText();
-                    tb_Source_tableName.Enabled = true;
-                    tb_destination_tableName.Enabled = true;
-                }
-            }
-            catch (Exception)
-            {
-
-            }
+        private void btn_ResetQuery_Click(object sender, EventArgs e)
+        {
+            tb_querybox.Text = DefaultSpecificationQuery;
         }
         private void cb_query_CheckedChanged(object sender, EventArgs e)
         {
@@ -380,31 +363,6 @@ SPEC_FORM.SPEC_FORM_CNUM";
                 lbl_Oracle_SQL_Connection.Text = ex.Message.ToString();
             }
         }
-
-        private void rb_oracle_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                groupBox1.Text = "Source: Oracle Connection and Settings";
-            }
-            catch (Exception ex)
-            {
-                lbl_Oracle_SQL_Connection.Text = ex.Message.ToString();
-            }
-        }
-
-        private void rb_sql_CheckedChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                groupBox1.Text = "Source: SQL Connection and Settings";
-            }
-            catch (Exception ex)
-            {
-                lbl_Oracle_SQL_Connection.Text = ex.Message.ToString();
-            }
-        }
-
 
     }
 }

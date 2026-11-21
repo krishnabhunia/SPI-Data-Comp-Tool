@@ -9,8 +9,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
 using System.Threading;
-using Newtonsoft;
-using Newtonsoft.Json;
 using Oracle.ManagedDataAccess.Client;
 using ClosedXML;
 using ClosedXML.Excel;
@@ -19,7 +17,6 @@ using System.Diagnostics;
 using _Excel = Microsoft.Office.Interop.Excel;
 using DataTable = System.Data.DataTable;
 using form = System.Windows.Forms;
-using Newtonsoft.Json.Linq;
 using System.IO;
 using Timer = System.Windows.Forms.Timer;
 using Label = System.Windows.Forms.Label;
@@ -28,7 +25,7 @@ using OfficeOpenXml;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class DB_Comparison_Form : Form
+    public partial class DB_Comparison_Form : WorkspacePageForm
     {
         private IDisposable operationInputs;
         #region string variables
@@ -771,8 +768,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     if (cb_ColumnMapping.Checked)
                     {
-                        ViewForMultiReference viewForMultiReference = new ViewForMultiReference(ds, ds);
-                        viewForMultiReference.Show();
+                        WorkspaceCatalog.OpenAdvancedMapping(this, () => new ViewForMultiReference(ds, ds));
                         lblExpressionStatus.Text = "Column mapping opted and Data loaded successfully in column mapping form";
                     }
                     else
@@ -2097,111 +2093,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void btn_LoadProfile_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                //JObject jObject2;
-                string str_UserProfile_Json_File = $@"{Path.Combine(Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.FullName)}\UserProfile\userProfile.json";
-
-                OpenFileDialogData_OBJ = OpenFileDialogData_OBJ.openFileDialog("Browser Json File", "json");
-
-                if (OpenFileDialogData_OBJ.boolFileSelected)
-                {
-                    str_UserProfile_Json_File = OpenFileDialogData_OBJ.strFileNameWithPath;
-                    using (var reader = new StreamReader(str_UserProfile_Json_File))
-                    {
-                        using (var jsonReader = new JsonTextReader(reader))
-                        {
-                            var root = JToken.Load(jsonReader);
-                            DisplayTreeView(root, Path.GetFileNameWithoutExtension(str_UserProfile_Json_File));
-                        }
-                    }
-                }
-                else
-                {
-                    DisplayMessage(lbl_ProfileStatus, "File Not Selected");
-                }
-
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void DisplayTreeView(JToken root, string rootName)
-        {
-            treeView1.BeginUpdate();
-            try
-            {
-                treeView1.Nodes.Clear();
-                var tNode = treeView1.Nodes[treeView1.Nodes.Add(new TreeNode(rootName))];
-                tNode.Tag = root;
-
-                AddNode(root, tNode);
-
-                if (true)
-                {
-                    treeView1.ExpandAll();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            finally
-            {
-                treeView1.EndUpdate();
-            }
-        }
-
-        private void AddNode(JToken token, TreeNode inTreeNode)
-        {
-            try
-            {
-                if (token == null)
-                    return;
-                if (token is JValue)
-                {
-                    var childNode = inTreeNode.Nodes[inTreeNode.Nodes.Add(new TreeNode(token.ToString()))];
-                    childNode.Tag = token;
-                }
-                else if (token is JObject)
-                {
-                    var obj = (JObject)token;
-                    foreach (var property in obj.Properties())
-                    {
-                        var childNode = inTreeNode.Nodes[inTreeNode.Nodes.Add(new TreeNode(property.Name))];
-                        childNode.Tag = property;
-                        AddNode(property.Value, childNode);
-                    }
-                }
-                else if (token is JArray)
-                {
-                    var array = (JArray)token;
-                    for (int i = 0; i < array.Count; i++)
-                    {
-                        var childNode = inTreeNode.Nodes[inTreeNode.Nodes.Add(new TreeNode(i.ToString()))];
-                        childNode.Tag = array[i];
-                        AddNode(array[i], childNode);
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine(string.Format("{0} not implemented", token.Type)); // JConstructor, JRaw
-                    if (Debugger.IsAttached)
-                    {
-                        DisplayMessage(lbl_ProfileStatus, $"{token.Type} not implemented", Color.Red);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
         private void btn_Load_TRG_Table_Click(object sender, EventArgs e)
         {
             if (!FormValidation.Check(this, () =>
@@ -2346,78 +2237,6 @@ namespace SPI_Data_Comp_Tool
                 lblStatus.Text = ex1.Message.ToString();
             }
         }
-        //public class JsonData
-        //{
-        //    public string str_ProfileName1 { get; set; }
-        //    public JsonDataDB jsonDataDB { get; set; }
-        //}
-        public class JsonData
-        {
-            public dynamic str_ProfileName1 { get; set; }
-            public DB source { get; set; }
-            public DB target { get; set; }
-        }
-
-        public class DB
-        {
-            public string str_dbType { get; set; }
-            public string str_dbSource { get; set; }
-            public string str_dbName { get; set; }
-            public string str_dbUsername { get; set; }
-            public string str_dbTablename { get; set; }
-        }
-
-        private void btn_SaveProfile_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (Debugger.IsAttached)
-                {
-                    Random random = new Random(500);
-                    tb_ProfileName.Text = random.Next(100, 10000).ToString();
-                }
-
-                List<JsonData> _Jsondata = new List<JsonData>();
-                //string str_ProfileName = tb_ProfileName.Text;
-
-                dynamic dynamic_obj;
-                dynamic_obj = tb_ProfileName.Text;
-
-                _Jsondata.Add(new JsonData()
-                {
-                    str_ProfileName1 = dynamic_obj,
-
-                    source = new DB
-                    {
-                        str_dbType = "a1",
-                        str_dbSource = "b1",
-                        str_dbName = "c1",
-                        str_dbUsername = "d1",
-                        str_dbTablename = "e1"
-                    },
-                    target = new DB
-                    {
-                        str_dbType = "a2",
-                        str_dbSource = "b2",
-                        str_dbName = "c2",
-                        str_dbUsername = "d2",
-                        str_dbTablename = "e2"
-                    }
-                });
-
-                using (StreamWriter file = File.CreateText(@"D:\path.json"))
-                {
-                    JsonSerializer serializer = new JsonSerializer();
-                    //serialize object directly into file stream
-                    serializer.Serialize(file, _Jsondata);
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
         private void cb_FullName_CheckedChanged(object sender, EventArgs e)
         {
             try

@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class CustomisedExcel : Form
+    public partial class CustomisedExcel : WorkspacePageForm
     {
         string str_CustomisedExcelName;
         private DataSet dsCustomisedExcel;

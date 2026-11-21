@@ -13,7 +13,7 @@ using System.IO;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class Execute_Excel_Scripts_Form : Form
+    public partial class Execute_Excel_Scripts_Form : WorkspacePageForm
     {
         private OpenFileDialogData openFileDialogData;
         private DataTable dtGenerateScript, dtExecute;

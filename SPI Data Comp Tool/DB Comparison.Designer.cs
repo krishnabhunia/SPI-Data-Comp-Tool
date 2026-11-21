@@ -92,14 +92,7 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.lb_IgnoredCol_SRC = new System.Windows.Forms.ListBox();
             this.groupBox10 = new System.Windows.Forms.GroupBox();
-            this.treeView1 = new System.Windows.Forms.TreeView();
             this.groupBox15 = new System.Windows.Forms.GroupBox();
-            this.groupBox16 = new System.Windows.Forms.GroupBox();
-            this.lbl_ProfileStatus = new System.Windows.Forms.Label();
-            this.label10 = new System.Windows.Forms.Label();
-            this.tb_ProfileName = new System.Windows.Forms.TextBox();
-            this.btn_SaveProfile = new System.Windows.Forms.Button();
-            this.btn_LoadProfile = new System.Windows.Forms.Button();
             this.cb_TRG_TableName = new System.Windows.Forms.ComboBox();
             this.btn_Load_TRG_Table = new System.Windows.Forms.Button();
             this.label17 = new System.Windows.Forms.Label();
@@ -152,7 +145,6 @@
             this.groupBox11.SuspendLayout();
             this.tlp_Progress.SuspendLayout();
             this.groupBox15.SuspendLayout();
-            this.groupBox16.SuspendLayout();
             this.SuspendLayout();
             // 
             // tlp_Root
@@ -911,13 +903,6 @@
             this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
             this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
             // 
-            // treeView1
-            // 
-            this.treeView1.Location = new System.Drawing.Point(15, 126);
-            this.treeView1.Name = "treeView1";
-            this.treeView1.Size = new System.Drawing.Size(219, 737);
-            this.treeView1.TabIndex = 31;
-            // 
             // groupBox15
             // 
             this.groupBox15.Controls.Add(this.dataGridView1);
@@ -930,67 +915,6 @@
             this.groupBox15.TabStop = false;
             this.groupBox15.Text = "Hidden Controls";
             this.groupBox15.Visible = false;
-            // 
-            // groupBox16
-            // 
-            this.groupBox16.Controls.Add(this.lbl_ProfileStatus);
-            this.groupBox16.Controls.Add(this.label10);
-            this.groupBox16.Controls.Add(this.tb_ProfileName);
-            this.groupBox16.Controls.Add(this.btn_SaveProfile);
-            this.groupBox16.Controls.Add(this.btn_LoadProfile);
-            this.groupBox16.Controls.Add(this.treeView1);
-            this.groupBox16.Location = new System.Drawing.Point(1361, 12);
-            this.groupBox16.Name = "groupBox16";
-            this.groupBox16.Size = new System.Drawing.Size(249, 871);
-            this.groupBox16.TabIndex = 32;
-            this.groupBox16.TabStop = false;
-            this.groupBox16.Text = "Profile";
-            this.groupBox16.Visible = false;
-            // 
-            // btn_LoadProfile
-            // 
-            this.btn_LoadProfile.Location = new System.Drawing.Point(159, 67);
-            this.btn_LoadProfile.Name = "btn_LoadProfile";
-            this.btn_LoadProfile.Size = new System.Drawing.Size(75, 23);
-            this.btn_LoadProfile.TabIndex = 32;
-            this.btn_LoadProfile.Text = "Load Profile";
-            this.btn_LoadProfile.UseVisualStyleBackColor = true;
-            this.btn_LoadProfile.Click += new System.EventHandler(this.btn_LoadProfile_Click);
-            // 
-            // btn_SaveProfile
-            // 
-            this.btn_SaveProfile.Location = new System.Drawing.Point(16, 64);
-            this.btn_SaveProfile.Name = "btn_SaveProfile";
-            this.btn_SaveProfile.Size = new System.Drawing.Size(75, 23);
-            this.btn_SaveProfile.TabIndex = 33;
-            this.btn_SaveProfile.Text = "Save Profile";
-            this.btn_SaveProfile.UseVisualStyleBackColor = true;
-            this.btn_SaveProfile.Click += new System.EventHandler(this.btn_SaveProfile_Click);
-            // 
-            // label10
-            // 
-            this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(15, 20);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(139, 13);
-            this.label10.TabIndex = 35;
-            this.label10.Text = "Enter Profile Name To Save";
-            // 
-            // tb_ProfileName
-            // 
-            this.tb_ProfileName.Location = new System.Drawing.Point(16, 41);
-            this.tb_ProfileName.Name = "tb_ProfileName";
-            this.tb_ProfileName.Size = new System.Drawing.Size(218, 20);
-            this.tb_ProfileName.TabIndex = 34;
-            // 
-            // lbl_ProfileStatus
-            // 
-            this.lbl_ProfileStatus.AutoSize = true;
-            this.lbl_ProfileStatus.Location = new System.Drawing.Point(15, 98);
-            this.lbl_ProfileStatus.Name = "lbl_ProfileStatus";
-            this.lbl_ProfileStatus.Size = new System.Drawing.Size(69, 13);
-            this.lbl_ProfileStatus.TabIndex = 36;
-            this.lbl_ProfileStatus.Text = "Profile Status";
             // 
             // timer1
             // 
@@ -1010,7 +934,6 @@
             this.Padding = new System.Windows.Forms.Padding(12, 12, 12, 12);
             this.Controls.Add(this.tlp_Root);
             this.Controls.Add(this.groupBox15);
-            this.Controls.Add(this.groupBox16);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.tlp_Root.ResumeLayout(false);
             this.tlp_Root.PerformLayout();
@@ -1064,8 +987,6 @@
             this.tlp_Progress.PerformLayout();
             this.groupBox15.ResumeLayout(false);
             this.groupBox15.PerformLayout();
-            this.groupBox16.ResumeLayout(false);
-            this.groupBox16.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1122,20 +1043,13 @@
         private System.Windows.Forms.Button btn_RuleForm;
         private System.Windows.Forms.GroupBox groupBox10;
         private System.Windows.Forms.GroupBox groupBox11;
-        private System.Windows.Forms.TreeView treeView1;
         private System.Windows.Forms.GroupBox groupBox15;
-        private System.Windows.Forms.GroupBox groupBox16;
-        private System.Windows.Forms.Button btn_LoadProfile;
         private System.Windows.Forms.CheckBox cb_ColumnMapping;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.ListBox lb_IgnoredCol_TRG;
         private System.Windows.Forms.ListBox lb_IgnoredCol_SRC;
         private System.Windows.Forms.ListBox lb_TRG_Cols;
-        private System.Windows.Forms.Button btn_SaveProfile;
-        private System.Windows.Forms.Label label10;
-        private System.Windows.Forms.TextBox tb_ProfileName;
-        private System.Windows.Forms.Label lbl_ProfileStatus;
         private System.Windows.Forms.ComboBox cb_TRG_TableName;
         private System.Windows.Forms.Button btn_Load_TRG_Table;
         private System.Windows.Forms.Label label17;
