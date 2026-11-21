@@ -511,7 +511,9 @@ namespace SPI_Data_Comp_Tool
                 if (duration)
                 {
                     TimeSpan span = TimeSpan.FromDays(day) + TimeSpan.FromMilliseconds(milliseconds);
-                    cell.Value = ((long)Math.Floor(span.TotalHours)).ToString(CultureInfo.InvariantCulture) + span.ToString(@"\:mm\:ss", CultureInfo.InvariantCulture);
+                    // Keep the fraction: 1.1 s and 1.9 s must not both read as 0:00:01.
+                    cell.Value = ((long)Math.Floor(span.TotalHours)).ToString(CultureInfo.InvariantCulture)
+                        + span.ToString(milliseconds % 1000 == 0 ? @"\:mm\:ss" : @"\:mm\:ss\.ffffff", CultureInfo.InvariantCulture);
                     cell.Kind = "duration";
                     return true;
                 }

@@ -278,6 +278,19 @@ namespace SPI_Data_Comp_Tool
             Require(warned.Identical && warned.Notes.Count == 2 && Status(warned, "Primary key: rows with a blank key value") == "WARN"
                 && Status(warned, "Primary key: rows with a repeated key value") == "WARN", "blank and repeated keys must be warnings, not differences");
 
+            // A row that holds only formulas without a saved result, under a blank key, is still paired and compared.
+            IdentityResult formulas = Compare(
+                Book(folder, "formula-a.xlsx", new[] { R("ID", "Value"), R(null, "=1+1"), R(7, "x") }),
+                Book(folder, "formula-b.xlsx", new[] { R("ID", "Value"), R(null, "=1+2"), R(7, "x") }), o => o.KeyA = new[] { "id" });
+            Require(formulas.Notes.Any(note => note.Contains("no saved result")), "this check needs formulas without a saved result");
+            Require(formulas.Count("formulas") == 1 && !formulas.Identical && (string)formulas.Data[0][KindAt] == "Formula differs"
+                && (string)formulas.Data[0][KeyAt] == WorkbookIdentityEngine.BlankText, "a formula-only row under a blank key was left out of key matching");
+            IdentityResult extra = Compare(
+                Book(folder, "formula-c.xlsx", new[] { R("ID", "Value"), R(7, "x") }),
+                Book(folder, "formula-d.xlsx", new[] { R("ID", "Value"), R(7, "x"), R(null, "=1+2") }), o => o.KeyA = new[] { "id" });
+            Require(extra.Count("rows_only") == 1 && (string)extra.Data[0][KindAt] == "Row only in File B" && ((string)extra.Data[0][ValueB]).Contains("Value==1+2"),
+                "a formula-only row that exists in one file must be listed");
+
             Rejected<ArgumentException>(() => Compare(a, b, o => o.KeyA = new[] { "nope" }), "a key column that does not exist");
             Rejected<ArgumentException>(() => Compare(a, b, o => { o.KeyA = new[] { "emp id", "name" }; o.KeyB = new[] { "emp id" }; }), "a key with a different column count per file");
             passed("Primary keys pair rows across reordering, insertion and deletion; composite and differently named keys work; bad keys are refused.");
@@ -327,6 +340,14 @@ namespace SPI_Data_Comp_Tool
             Rejected<ArgumentException>(() => Compare(first, second, o => o.SheetA = "Missing"), "a sheet that does not exist");
             Rejected<OperationCanceledException>(() => WorkbookIdentityEngine.Compare(first, second, null, null, () => true), "a cancelled comparison");
 
+            // Elapsed-time cells keep their fraction, so 1.1 s and 1.9 s are different values.
+            Func<double, string, string> timed = (seconds, name) => Book(folder, name, new[] { R("Run", "Took"), R("a", seconds / 86400.0) },
+                sheet => sheet.Cell("B2").Style.NumberFormat.Format = "[h]:mm:ss.000");
+            IdentityResult durations = Compare(timed(1.1, "took-a.xlsx"), timed(1.9, "took-b.xlsx"));
+            Require(durations.Count("values") == 1 && (string)durations.Data[0][ValueA] == "0:00:01.100000" && (string)durations.Data[0][ValueB] == "0:00:01.900000",
+                "durations that differ by a fraction of a second must not compare as equal");
+            Require(Compare(timed(3725, "took-c.xlsx"), timed(3725, "took-d.xlsx")).Identical, "equal durations must be identical");
+
             int reported = -1;
             WorkbookIdentityEngine.Compare(first, second, null, (percent, message) => reported = Math.Max(reported, percent));
             Require(reported == 100, "progress must end at 100");
@@ -367,6 +388,22 @@ namespace SPI_Data_Comp_Tool
             foreach (string check in new[] { "Column widths", "Merged cells", "Freeze panes", "Hidden rows", "Cell comments" })
                 Require(Status(res, check) == "DIFF", check + " must be reported as different");
             Require(Status(res, "Hidden columns") == "MATCH" && res.Count("layout") == 4 && res.Count("extras") == 1, "layout counts are wrong");
+
+            // A comment, a link and a hidden row below the last value belong to no record: a workbook must still equal itself.
+            Func<string, string> outside = name => Book(folder, name, new[] { R("ID", "Name"), R(1, "Asha"), R(2, "Sana") }, sheet =>
+            {
+                sheet.Cell("A10").Comment.AddText("reviewed");
+                sheet.Cell("D12").Hyperlink = new XLHyperlink("https://example.com/notes");
+                sheet.Row(14).Hide();
+                sheet.Cell("B2").Comment.AddText("inside");
+            });
+            string noteA = outside("outside-a.xlsx"), noteB = outside("outside-b.xlsx");
+            Require(Compare(noteA, noteB).Identical && Compare(noteA, noteB, o => o.KeyA = new[] { "id" }).Identical,
+                "comments, links and hidden rows outside the data must not make equal workbooks differ");
+            string noteC = Book(folder, "outside-c.xlsx", new[] { R("ID", "Name"), R(1, "Asha"), R(2, "Sana") }, sheet => sheet.Cell("A10").Comment.AddText("changed"));
+            IdentityResult noted = Compare(noteA, noteC);
+            Require(Status(noted, "Cell comments") == "DIFF" && Status(noted, "Hyperlinks") == "DIFF" && Status(noted, "Hidden rows") == "DIFF",
+                "a changed comment, a missing link and a missing hidden row outside the data must be reported");
 
             IdentityResult skipped = Compare(a, b, o => { o.CompareFormats = false; o.CompareLayout = false; });
             Require(skipped.Identical && skipped.Formats.Count == 0 && skipped.Skipped.Contains("fmt_font") && skipped.Skipped.Contains("layout")

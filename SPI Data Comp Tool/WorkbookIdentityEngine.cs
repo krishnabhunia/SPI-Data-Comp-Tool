@@ -372,7 +372,8 @@ namespace SPI_Data_Comp_Tool
             var rows = new SortedSet<int>();
             foreach (var item in sheet.Cells)
             {
-                if (item.Value.Value == null) continue;
+                // A formula without a saved result has no value, but its row still exists and must be paired.
+                if (item.Value.Value == null && item.Value.Formula == null) continue;
                 int row = (int)(item.Key >> 15);
                 if (row > headerRow) rows.Add(row);
             }
@@ -408,7 +409,8 @@ namespace SPI_Data_Comp_Tool
                 var parts = new List<string>();
                 foreach (Header header in headers)
                 {
-                    string value = sheet.Cell(entry.Key, header.Col).Value;
+                    IdentityCell cell = sheet.Cell(entry.Key, header.Col);
+                    string value = cell.Value ?? cell.Formula;
                     if (value != null) parts.Add((header.Raw ?? BlankText) + "=" + value);
                 }
                 if (parts.Count == 0) continue;
@@ -748,8 +750,9 @@ namespace SPI_Data_Comp_Tool
                 Check(res, scope, "Freeze panes", Show(A.Freeze), Show(B.Freeze), A.Freeze == B.Freeze, "layout");
                 Check(res, scope, "Auto-filter range", Show(A.Filter), Show(B.Filter), A.Filter == B.Filter, "layout");
                 CheckSet(res, scope, "Hidden columns", A.HiddenColumns, B.HiddenColumns, "layout");
+                // Rows below the last value of File B belong to no record, so they keep their own number.
                 CheckSet(res, scope, "Hidden rows", A.HiddenRows.Select(row => Num(row)).ToList(),
-                    B.HiddenRows.Select(row => b2a.ContainsKey(row) ? Num(b2a[row]) : Num(row) + " (File B row)").ToList(), "layout");
+                    B.HiddenRows.Select(row => b2a.ContainsKey(row) ? Num(b2a[row]) : row > B.LastRow ? Num(row) : Num(row) + " (File B row)").ToList(), "layout");
                 Check(res, scope, "Sheet visibility", Show(A.State), Show(B.State), A.State == B.State, "layout");
 
                 // A cell address in File B -> the address of the matching cell in File A.
@@ -757,7 +760,12 @@ namespace SPI_Data_Comp_Tool
                 {
                     int row, col;
                     if (!IdentityWorkbook.SplitReference(address, out row, out col)) return address;
-                    return colB2A.ContainsKey(col) && b2a.ContainsKey(row) ? Letter(colB2A[col]) + Num(b2a[row]) : address + " (File B cell)";
+                    bool rowPaired = b2a.ContainsKey(row), colPaired = colB2A.ContainsKey(col);
+                    if (rowPaired && colPaired) return Letter(colB2A[col]) + Num(b2a[row]);
+                    // Inside File B's data, an unpaired row or column has no partner in File A. Outside it (a note
+                    // below the last row, say) there is no record to pair, so the cell keeps its own address.
+                    if (row <= B.LastRow && col <= B.LastCol) return address + " (File B cell)";
+                    return Letter(colPaired ? colB2A[col] : col) + Num(rowPaired ? b2a[row] : row);
                 };
                 Func<Dictionary<string, string>, Dictionary<string, string>> moved = map =>
                 {
