@@ -173,22 +173,22 @@ namespace SPI_Data_Comp_Tool
         {
             using (var form = new Form())
             {
-                var password = new TextBox();
+                var server = new TextBox();
                 var next = new Button();
-                form.Controls.Add(password);
+                form.Controls.Add(server);
                 form.Controls.Add(next);
                 var flow = new StepFlow(form, null)
                     .Add("Connection", "Fill in the connection", () => StepFlow.Passes(() =>
-                        FormValidation.Require(password.Text.Length > 0, password, "Enter the Source password.")))
+                        FormValidation.Require(server.Text.Length > 0, server, "Enter the Source data source.")))
                     .Add("Next", "Go on", () => false, next);
                 flow.Refresh();
-                Require(flow.NextText().Contains("Enter the Source password."), "The strip must say what the open step still needs: " + flow.NextText());
-                Require(flow.LockedText(flow.Steps[1]).Contains("Enter the Source password"), "A locked step must say what is still missing.");
-                password.Text = "x";
+                Require(flow.NextText().Contains("Enter the Source data source."), "The strip must say what the open step still needs: " + flow.NextText());
+                Require(flow.LockedText(flow.Steps[1]).Contains("Enter the Source data source"), "A locked step must say what is still missing.");
+                server.Text = "db-host";
                 flow.Refresh();
-                Require(!flow.NextText().Contains("password"), "A done step must not keep its old reason.");
+                Require(!flow.NextText().Contains("data source"), "A done step must not keep its old reason.");
             }
-            passed("The step strip says what the current step still needs (e.g. a profile without a saved password)");
+            passed("The step strip says what the current step still needs (e.g. the password a profile does not save)");
         }
 
         private static IEnumerable<ConnectionPanel> Panels(Control root)
