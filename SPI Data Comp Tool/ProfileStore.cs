@@ -74,13 +74,87 @@ namespace SPI_Data_Comp_Tool
         // read inside this boundary and never repair/overwrite that file as a side effect.
         internal static ProfileLoadResult LoadRememberedProfiles(Func<string> readPath)
         {
-            try { return LoadSavedProfiles(readPath()); }
+            try { return LoadWithRememberedFallback(readPath()); }
             catch (Exception error) when (error is ConfigurationErrorsException ||
                 error is SettingsPropertyWrongTypeException || error is SettingsPropertyNotFoundException ||
                 error is IOException || error is UnauthorizedAccessException || error is SecurityException ||
                 (error is TypeInitializationException && error.InnerException is ConfigurationErrorsException))
             {
                 return LoadFailure(null, "The saved profile setting could not be read. Your settings file has not been changed.");
+            }
+        }
+
+        /// <summary>
+        /// A new copy of the app (a new download folder) starts with an empty ProfilePathUser setting.
+        /// When the setting is empty or names a file that no longer exists, the last profiles file
+        /// chosen on this Windows account is used instead; it is never written into the settings.
+        /// </summary>
+        private static ProfileLoadResult LoadWithRememberedFallback(string path)
+        {
+            bool usable = !string.IsNullOrWhiteSpace(path) && File.Exists(path);
+            if (!usable)
+            {
+                string remembered = ReadRememberedPath();
+                if (remembered != null && !string.Equals(remembered, path, StringComparison.OrdinalIgnoreCase) && File.Exists(remembered))
+                {
+                    ProfileLoadResult fallback = LoadSavedProfiles(remembered);
+                    if (fallback.Loaded)
+                        return new ProfileLoadResult(remembered, true, false, (string.IsNullOrWhiteSpace(path)
+                            ? "This copy of the app has no saved profile file yet; "
+                            : "The saved profile file " + path + " could not be found; ") +
+                            "using the last one chosen on this computer. " + fallback.Message);
+                }
+            }
+            ProfileLoadResult result = LoadSavedProfiles(path);
+            if (result.Loaded) RememberPath(path);
+            return result;
+        }
+
+        /// <summary>Build checks only: where the remembered path is kept instead of the user's AppData.</summary>
+        internal static string RememberedPathFileOverride;
+
+        /// <summary>The last profiles file chosen on this Windows account, kept beside theme.txt. Null while the build checks run.</summary>
+        internal static string RememberedPathFile
+        {
+            get
+            {
+                if (RememberedPathFileOverride != null) return RememberedPathFileOverride;
+                return SelfTest.IsRunning ? null : Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "SPI Data Comparison Tool", "profile-path.txt");
+            }
+        }
+
+        internal static string ReadRememberedPath()
+        {
+            try
+            {
+                string file = RememberedPathFile;
+                if (file == null || !File.Exists(file) || new FileInfo(file).Length > 32768) return null;
+                string path = File.ReadAllText(file).Trim();
+                return path.Length == 0 || path.IndexOf('\0') >= 0 ? null : path;
+            }
+            catch (Exception)
+            {
+                return null;   // a missing or unreadable reminder is not worth an error
+            }
+        }
+
+        /// <summary>Remembers the chosen profiles file for other copies of the app. Best effort.</summary>
+        internal static void RememberPath(string path)
+        {
+            try
+            {
+                string file = RememberedPathFile;
+                if (file == null || string.IsNullOrWhiteSpace(path)) return;
+                string full = Path.GetFullPath(path);
+                if (string.Equals(ReadRememberedPath(), full, StringComparison.OrdinalIgnoreCase)) return;
+                Directory.CreateDirectory(Path.GetDirectoryName(file));
+                File.WriteAllText(file, full, new UTF8Encoding(false));
+            }
+            catch (Exception)
+            {
+                // the profiles still work in this copy; only another copy would not find them
             }
         }
 

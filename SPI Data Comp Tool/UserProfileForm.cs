@@ -646,6 +646,7 @@ namespace SPI_Data_Comp_Tool
             {
                 Properties.Settings.Default.ProfilePathUser = path;
                 Properties.Settings.Default.Save();
+                ProfileStore.RememberPath(path);   // a new copy of the app finds the same file
             }
             catch
             {
