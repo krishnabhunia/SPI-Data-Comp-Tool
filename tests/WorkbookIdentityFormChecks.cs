@@ -18,8 +18,11 @@ namespace SPI_Data_Comp_Tool
         {
             string folder = Path.Combine(Path.GetTempPath(), "spi-identity-form-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(folder);
+            SynchronizationContext before = SynchronizationContext.Current;
+            bool automatic = WindowsFormsSynchronizationContext.AutoInstall;
             try
             {
+                KeepUiContext();
                 string a = Book(folder, "form-a.xlsx", new[]
                 {
                     R("ID", "Name", "Amount"), R(1, "Asha", 10.5), R(2, "Sana", 20), R(3, "Ravi", 30),
@@ -37,11 +40,26 @@ namespace SPI_Data_Comp_Tool
             }
             finally
             {
+                SynchronizationContext.SetSynchronizationContext(before);
+                WindowsFormsSynchronizationContext.AutoInstall = automatic;
                 if (Directory.Exists(folder)) Directory.Delete(folder, true);
             }
         }
 
         // ------------------------------------------------------------------ helpers
+        /// <summary>
+        /// The app runs inside Application.Run, so a background worker always reports back on the window's thread.
+        /// These checks have no running message loop: they pump with DoEvents, and Windows Forms removes its
+        /// synchronisation context every time DoEvents returns. A worker started after that would report back on
+        /// a pool thread, at the same time as the check reads the window. Keeping one context for the whole suite
+        /// gives the checks the same single-threaded order the app has.
+        /// </summary>
+        private static void KeepUiContext()
+        {
+            WindowsFormsSynchronizationContext.AutoInstall = false;
+            SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
+        }
+
         private static void Require(bool valid, string message)
         {
             if (!valid) throw new InvalidOperationException("Workbook identity form check failed: " + message);
