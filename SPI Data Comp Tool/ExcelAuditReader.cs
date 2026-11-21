@@ -482,6 +482,12 @@ namespace SPI_Data_Comp_Tool
                 if (!Regex.IsMatch(raw, @"^\d{4}-\d{2}-\d{2}") || !DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out value))
                     throw new ExcelAuditException("Invalid ISO date at " + result.Address + ".");
                 result.Kind = "Date"; result.Value = raw; result.Canonical = value.Ticks.ToString(CultureInfo.InvariantCulture);
+                if (Regex.IsMatch(raw, @"\.\d{8,}", RegexOptions.CultureInvariant))
+                {
+                    // DateTime rounds beyond seven fractional digits; never hide a saved precision difference.
+                    result.Canonical = "HighPrecisionISO:" + raw;
+                    Warn("An ISO date exceeds DateTime's seven fractional-second digits; its exact saved text is compared, but cross-representation timestamp equality is not inferred.");
+                }
                 if (value.Kind != DateTimeKind.Unspecified) Warn("Timezone-bearing ISO dates are compared as saved timestamps; workbook timezone interpretation is not inferred.");
             }
             else if (!string.IsNullOrEmpty(raw))

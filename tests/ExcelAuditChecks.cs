@@ -244,6 +244,13 @@ namespace SPI_Data_Comp_Tool
                         }
                     Require(Compare(options()).DataCount == 0, "Elapsed duration was incorrectly treated as a calendar date.");
                 });
+                check("High-precision ISO dates cannot round into a false match", () =>
+                {
+                    Make(a, Rows(Row("Timestamp"), Row(D("2026-11-21T08:00:00.12345671"))));
+                    Make(b, Rows(Row("Timestamp"), Row(D("2026-11-21T08:00:00.12345672"))));
+                    var r = Compare(options());
+                    Require(r.DataCount == 1 && !r.Complete && !r.Matches, "Sub-tick ISO precision was silently rounded away.");
+                });
                 check("Cancellation is propagated and comparison inputs remain unchanged", () =>
                 {
                     Make(a, Rows(Row("ID", "Value"), Row("1", "A")));
@@ -353,6 +360,7 @@ namespace SPI_Data_Comp_Tool
         private static object[][] Rows(params object[][] values) => values;
         private static FixtureCell N(string value) => new FixtureCell { Kind = "Number", Value = value };
         private static FixtureCell F(string value) => new FixtureCell { Kind = "Formula", Value = value };
+        private static FixtureCell D(string value) => new FixtureCell { Kind = "Date", Value = value };
         private static FixtureCell S(object value, uint style) => new FixtureCell { Value = value, Style = style };
         private static void Require(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
         private static void Rejected(Action action)
@@ -444,6 +452,7 @@ namespace SPI_Data_Comp_Tool
                         }
                         string text = Convert.ToString(value, CultureInfo.InvariantCulture);
                         if (kind == "Formula") { cell.CellFormula = new CellFormula(text); cell.CellValue = new CellValue("2"); }
+                        else if (kind == "Date") { cell.DataType = CellValues.Date; cell.CellValue = new CellValue(text); }
                         else if (kind == "Number" || value is int || value is double || value is decimal)
                         { cell.DataType = CellValues.Number; cell.CellValue = new CellValue(text); }
                         else if (value is bool) { cell.DataType = CellValues.Boolean; cell.CellValue = new CellValue((bool)value ? "1" : "0"); }
