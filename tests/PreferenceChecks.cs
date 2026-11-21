@@ -3,6 +3,7 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using System.Xml.Linq;
 using OfficeOpenXml;
 
 namespace SPI_Data_Comp_Tool
@@ -249,15 +250,25 @@ namespace SPI_Data_Comp_Tool
             string application = Path.Combine(folder, "fixture.exe.config");
             string local = Path.Combine(folder, "user.config");
             string roaming = Path.Combine(folder, "absent-roaming.config");
-            string applicationText = "<configuration><configSections><sectionGroup name=\"userSettings\" " +
-                "type=\"" + typeof(UserSettingsGroup).AssemblyQualifiedName + "\"><section name=\"" + UpdatePreferences.SettingsSection +
-                "\" type=\"" + typeof(ClientSettingsSection).AssemblyQualifiedName + "\" allowExeDefinition=\"MachineToLocalUser\" " +
-                "requirePermission=\"false\" /></sectionGroup></configSections></configuration>";
-            string valid = "<configuration><userSettings><" + UpdatePreferences.SettingsSection + ">" +
-                "<setting name=\"RuleFilePath\" serializeAs=\"String\"><value>fixture-rules.xlsx</value></setting>" +
-                "<setting name=\"EPPlus_Excel_Save\" serializeAs=\"String\"><value>False</value></setting>" +
-                "<setting name=\"XL_Excel_Save\" serializeAs=\"String\"><value>True</value></setting>" +
-                "</" + UpdatePreferences.SettingsSection + "></userSettings></configuration>";
+            var declaration = new XElement("sectionGroup",
+                new XAttribute("name", "userSettings"),
+                new XAttribute("type", typeof(UserSettingsGroup).AssemblyQualifiedName),
+                new XElement("section",
+                    new XAttribute("name", UpdatePreferences.SettingsSection),
+                    new XAttribute("type", typeof(ClientSettingsSection).AssemblyQualifiedName),
+                    new XAttribute("allowExeDefinition", "MachineToLocalUser"),
+                    new XAttribute("requirePermission", "false")));
+            string applicationText = new XDocument(new XElement("configuration",
+                new XElement("configSections", declaration))).ToString();
+            // Use normal indented configuration XML, as the real settings writer does.
+            // SettingValueElement calls XmlDocument.ReadNode, which advances past </value>;
+            // the enclosing Framework parser then calls Read again. Without whitespace,
+            // that skips </setting> and misreads the following sibling as a nested setting.
+            string valid = new XDocument(new XElement("configuration",
+                new XElement("userSettings", new XElement(UpdatePreferences.SettingsSection,
+                    FixtureSetting("RuleFilePath", "fixture-rules.xlsx"),
+                    FixtureSetting("EPPlus_Excel_Save", "False"),
+                    FixtureSetting("XL_Excel_Save", "True"))))).ToString();
             File.WriteAllText(application, applicationText);
             File.WriteAllText(local, valid);
             var store = new MappedConfigStore(application, local, roaming);
@@ -287,6 +298,12 @@ namespace SPI_Data_Comp_Tool
                 Require(store.Writes == 0 && File.ReadAllText(local) == valid && File.ReadAllText(application) == applicationText
                     && !File.Exists(roaming), "Recovering from unavailable configuration changed a fixture file.");
             }
+        }
+
+        private static XElement FixtureSetting(string name, string value)
+        {
+            return new XElement("setting", new XAttribute("name", name), new XAttribute("serializeAs", "String"),
+                new XElement("value", value));
         }
     }
 }
