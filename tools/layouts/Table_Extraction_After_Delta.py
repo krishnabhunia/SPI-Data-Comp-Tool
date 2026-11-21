@@ -34,9 +34,10 @@ STATUS = T("tlp_Status", cols=["100%", "auto"], rows=["auto", "100%"], cells=[
     (C("rtb_Log", dock="Fill", margin=(0, 8, 0, 0)), 0, 1, 2),
 ])
 
-LAYOUT = T("tlp_Root", cols=["100%", "400"], rows=["auto", "100%"], cells=[
+LAYOUT = T("tlp_Root", cols=["100%", "400"], rows=["auto", "auto", "100%"], cells=[
+    (C("step_Strip", new="SPI_Data_Comp_Tool.StepStrip", dock="Fill", size=(800, 66), margin=(0, 0, 0, 12)), 0, 0, 2),
     (connection_box("gb_DBConnection", below=[
-        C("btn_TestDBConnection", size=(170, 30), anchor="Right", margin=(0, 8, 0, 0))]), 0, 0),
-    (G("groupBox1", INPUT, margin=0), 1, 0),
-    (G("groupBox10", STATUS, margin=(0, 12, 0, 0)), 0, 1, 2),
+        C("btn_TestDBConnection", size=(170, 30), anchor="Right", margin=(0, 8, 0, 0))]), 0, 1),
+    (G("groupBox1", INPUT, margin=0), 1, 1),
+    (G("groupBox10", STATUS, margin=(0, 12, 0, 0)), 0, 2, 2),
 ])

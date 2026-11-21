@@ -22,11 +22,12 @@ LOG = T("tlp_Log", cols=["100%", "auto"], rows=["auto", "auto", "100%"], cells=[
     (C("rtb_Log", dock="Fill", margin=0), 0, 2, 2),
 ])
 
-LAYOUT = T("tlp_Root", cols=["100%", "240"], rows=["auto", "100%"], cells=[
+LAYOUT = T("tlp_Root", cols=["100%", "240"], rows=["auto", "auto", "100%"], cells=[
+    (C("step_Strip", new="SPI_Data_Comp_Tool.StepStrip", dock="Fill", size=(800, 66), margin=(0, 0, 0, 12)), 0, 0, 2),
     (connection_box("gb_DBConnection", below=[
-        C("btn_TestDBConnection", size=(150, 30), anchor="Right", margin=(0, 8, 0, 0))]), 0, 0),
+        C("btn_TestDBConnection", size=(150, 30), anchor="Right", margin=(0, 8, 0, 0))]), 0, 1),
     (G("groupBox1", T("tlp_Run", cols=["100%"], rows=["auto", "100%"], cells=[
         (C("btn_ImportExcel", dock="Fill", size=(160, 36), margin=0), 0, 0),
-    ]), margin=0), 1, 0),
-    (G("gb_Logs", LOG, margin=(0, 12, 0, 0)), 0, 1, 2),
+    ]), margin=0), 1, 1),
+    (G("gb_Logs", LOG, margin=(0, 12, 0, 0)), 0, 2, 2),
 ])

@@ -41,6 +41,11 @@ namespace SPI_Data_Comp_Tool
             check("Compare Excel files: a new source locks the later steps and keeps keys and columns (R2)", ExcelKeepsChoices);
             check("Compare databases: target, tables, load, keys, columns, set and compare unlock in order", DatabaseSteps);
             check("Compare list tables: steps follow the Databases / Excel folders tab", ListSteps);
+            check("Delta change tracker: target, table list, date filter and compare unlock in order", TrackerSteps);
+            check("Delta change legacy ID: test connection, then map", LegacySteps);
+            check("SPI FK extraction: test connection, then import", ForeignKeySteps);
+            check("Table extraction after delta: source or Excel sheet, target, test, run", ExtractionSteps);
+            check("Spec note creation: workbook, create notes, export", SpecNoteSteps);
             check("step strip is readable in every theme", StripColours);
 
             lines.Add(failed == 0 ? "step checks passed" : failed + " step check(s) failed");
@@ -238,6 +243,132 @@ namespace SPI_Data_Comp_Tool
                 flow.Refresh();
                 Locked(form, "clb_ReferenceID", "cbL_SRC_Cols", "btn_Set", "btnGenerateOutput");
                 Require(keys.GetItemChecked(0) && columns.GetItemChecked(1), "a changed table cleared the keys and columns");
+            }
+        }
+
+        private static void TrackerSteps()
+        {
+            using (var form = new SPIDeltaChangeTrackerOptimised())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                var connection = Find<ConnectionPanel>(form, "connection");
+                Fill(connection.Source, false);
+                Fill(connection.Target, false);
+                flow.Refresh();
+                Require(!connection.Target.Group.Enabled, "Target connection open while Source is empty");
+                Locked(form, "btn_ListTableExcel", "btn_Load_SRC_Table", "cb_DateCol", "llbl_Folder_path", "btnGenerateOutput");
+                Fill(connection.Source, true); flow.Refresh();
+                Require(connection.Target.Group.Enabled, "Target connection did not unlock after Source");
+                Locked(form, "btn_ListTableExcel");
+                Fill(connection.Target, true); flow.Refresh();
+                Open(form, "btn_ListTableExcel", "btn_Load_SRC_Table");
+                Locked(form, "cb_DateCol", "btnGenerateOutput");
+
+                var src = Get<DBConnectionStatus>(form, "dbSRCConnection");
+                var trg = Get<DBConnectionStatus>(form, "dbTRGConnection");
+                src.boolConnection = trg.boolConnection = true;
+                var list = new DataSet();
+                list.Tables.Add(new DataTable());
+                list.Tables[0].Columns.Add("src_table_names");
+                list.Tables[0].Rows.Add("T1");
+                Set(form, "dsTableList", list);
+                flow.Refresh();
+                Open(form, "cb_DateCol", "llbl_Folder_path");
+                Find<ComboBox>(form, "cb_DateCol").Text = "CHG_DATE";
+                Find<LinkLabel>(form, "llbl_Folder_path").Text = Path.GetTempPath();
+                flow.Refresh();
+                Open(form, "btnGenerateOutput", "cb_IgnoreCase");
+
+                connection.Source.DataSource.Text = "other";   // changed connection: test again through the table list
+                flow.Refresh();
+                Locked(form, "cb_DateCol", "btnGenerateOutput");
+                Open(form, "btn_ListTableExcel");
+            }
+        }
+
+        private static void LegacySteps()
+        {
+            using (var form = new SPIDeltaChangeLegacyID())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                var connection = Find<ConnectionPanel>(form, "connection");
+                Fill(connection.Source, false); flow.Refresh();
+                Locked(form, "btn_Connect_Reference_ID", "btn_ListTableExcel");
+                Fill(connection.Source, true); flow.Refresh();
+                Open(form, "btn_Connect_Reference_ID");
+                Locked(form, "btn_ListTableExcel");
+                Get<DBConnectionStatus>(form, "dBConnectionStatus_SRC").boolConnection = true; flow.Refresh();
+                Open(form, "btn_ListTableExcel");
+            }
+        }
+
+        private static void ForeignKeySteps()
+        {
+            using (var form = new SPI_FK_Extraction())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                var connection = Find<ConnectionPanel>(form, "connection");
+                Fill(connection.Source, false); flow.Refresh();
+                Locked(form, "btn_TestDBConnection", "btn_ImportExcel");
+                Fill(connection.Source, true); flow.Refresh();
+                Open(form, "btn_TestDBConnection");
+                Locked(form, "btn_ImportExcel");
+                var status = new DBConnectionStatus { boolConnection = true };
+                Set(form, "dbSRCConnection", status);
+                Set(form, "boolSRCConnection", true);
+                flow.Refresh();
+                Open(form, "btn_ImportExcel");
+            }
+        }
+
+        private static void ExtractionSteps()
+        {
+            using (var form = new Table_Extraction_After_Delta_Form())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                var connection = Find<ConnectionPanel>(form, "connection");
+                Fill(connection.Source, false);
+                Fill(connection.Target, false);
+                flow.Refresh();
+                Require(!connection.Target.Group.Enabled, "Target connection open while Source is empty");
+                Locked(form, "btn_TestDBConnection", "btn_Excel", "btnOLDvsNew", "btn_Chg_Num", "btn_Chg_NumVsChg_Num");
+                Fill(connection.Source, true); flow.Refresh();
+                Require(connection.Target.Group.Enabled, "Target connection did not unlock after Source");
+                Locked(form, "btn_TestDBConnection");
+                Fill(connection.Target, true); flow.Refresh();
+                Open(form, "btn_TestDBConnection");
+                Locked(form, "btn_Excel", "btn_Chg_Num");
+                Get<DBConnectionStatus>(form, "dBConnectionStatus_SRC").boolConnection = true;
+                Get<DBConnectionStatus>(form, "dBConnectionStatus_TRG").boolConnection = true;
+                flow.Refresh();
+                Open(form, "btn_Excel", "btnOLDvsNew", "btn_Chg_Num", "btn_Chg_NumVsChg_Num");
+            }
+        }
+
+        private static void SpecNoteSteps()
+        {
+            using (var form = new SPI_Spec_Note_Creation_Utility())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                flow.Refresh();
+                Locked(form, "btn_Spec_Create", "btn_GenerateExcel");
+                var input = new DataSet();
+                var table = new DataTable("Spec");
+                foreach (string column in new[] { "CMPNT_ID", "B", "C", "Size" }) table.Columns.Add(column);
+                table.Rows.Add("1", "b", "c", "2in");
+                input.Tables.Add(table);
+                Set(form, "ds_SpecNote", input);
+                flow.Refresh();
+                Open(form, "btn_Spec_Create");
+                Locked(form, "btn_GenerateExcel");
+                Set(form, "dt_SpecNote", SPI_Spec_Note_Creation_Utility.BuildNotes(table, form));
+                flow.Refresh();
+                Open(form, "btn_GenerateExcel");
             }
         }
 

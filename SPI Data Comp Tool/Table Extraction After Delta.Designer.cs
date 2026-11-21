@@ -58,6 +58,7 @@
             this.bgw_Chg_Num = new System.ComponentModel.BackgroundWorker();
             this.bgw_Chg_numVsChg_Num = new System.ComponentModel.BackgroundWorker();
             this.tlp_Root = new System.Windows.Forms.TableLayoutPanel();
+            this.step_Strip = new SPI_Data_Comp_Tool.StepStrip();
             this.tlp_Connection = new System.Windows.Forms.TableLayoutPanel();
             this.connection = new SPI_Data_Comp_Tool.ConnectionPanel();
             this.tlp_Input = new System.Windows.Forms.TableLayoutPanel();
@@ -86,16 +87,27 @@
             this.tlp_Root.ColumnCount = 2;
             this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 400F));
-            this.tlp_Root.RowCount = 2;
+            this.tlp_Root.RowCount = 3;
+            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_Root.Controls.Add(this.gb_DBConnection, 0, 0);
-            this.tlp_Root.Controls.Add(this.groupBox1, 1, 0);
-            this.tlp_Root.Controls.Add(this.groupBox10, 0, 1);
+            this.tlp_Root.Controls.Add(this.step_Strip, 0, 0);
+            this.tlp_Root.SetColumnSpan(this.step_Strip, 2);
+            this.tlp_Root.Controls.Add(this.gb_DBConnection, 0, 1);
+            this.tlp_Root.Controls.Add(this.groupBox1, 1, 1);
+            this.tlp_Root.Controls.Add(this.groupBox10, 0, 2);
             this.tlp_Root.SetColumnSpan(this.groupBox10, 2);
             this.tlp_Root.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Root.AutoSize = false;
             this.tlp_Root.TabIndex = 0;
+            // 
+            // step_Strip
+            // 
+            this.step_Strip.Name = "step_Strip";
+            this.step_Strip.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.step_Strip.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
+            this.step_Strip.Size = new System.Drawing.Size(800, 66);
+            this.step_Strip.TabIndex = 1;
             // 
             // gb_DBConnection
             // 
@@ -108,7 +120,7 @@
             this.gb_DBConnection.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.gb_DBConnection.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.gb_DBConnection.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_DBConnection.TabIndex = 1;
+            this.gb_DBConnection.TabIndex = 2;
             // 
             // tlp_Connection
             // 
@@ -123,7 +135,7 @@
             this.tlp_Connection.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Connection.AutoSize = true;
             this.tlp_Connection.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Connection.TabIndex = 2;
+            this.tlp_Connection.TabIndex = 3;
             // 
             // connection
             // 
@@ -131,7 +143,7 @@
             this.connection.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.connection.AutoSize = true;
             this.connection.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.connection.TabIndex = 3;
+            this.connection.TabIndex = 4;
             // 
             // btn_TestDBConnection
             // 
@@ -142,7 +154,7 @@
             this.btn_TestDBConnection.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
             this.btn_TestDBConnection.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
             this.btn_TestDBConnection.Size = new System.Drawing.Size(170, 30);
-            this.btn_TestDBConnection.TabIndex = 4;
+            this.btn_TestDBConnection.TabIndex = 5;
             // 
             // groupBox1
             // 
@@ -153,7 +165,7 @@
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox1.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.groupBox1.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox1.TabIndex = 5;
+            this.groupBox1.TabIndex = 6;
             // 
             // tlp_Input
             // 
@@ -171,7 +183,7 @@
             this.tlp_Input.Controls.Add(this.flp_Timer, 0, 3);
             this.tlp_Input.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Input.AutoSize = false;
-            this.tlp_Input.TabIndex = 6;
+            this.tlp_Input.TabIndex = 7;
             // 
             // gb_Selective
             // 
@@ -184,7 +196,7 @@
             this.gb_Selective.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.gb_Selective.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
             this.gb_Selective.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_Selective.TabIndex = 7;
+            this.gb_Selective.TabIndex = 8;
             // 
             // tlp_Selective
             // 
@@ -199,7 +211,7 @@
             this.tlp_Selective.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Selective.AutoSize = true;
             this.tlp_Selective.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Selective.TabIndex = 8;
+            this.tlp_Selective.TabIndex = 9;
             // 
             // cb_CHG_NUM_From_Excel
             // 
@@ -210,7 +222,7 @@
             this.cb_CHG_NUM_From_Excel.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_CHG_NUM_From_Excel.AutoSize = true;
             this.cb_CHG_NUM_From_Excel.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_CHG_NUM_From_Excel.TabIndex = 9;
+            this.cb_CHG_NUM_From_Excel.TabIndex = 10;
             // 
             // cb_ExcelSheetName
             // 
@@ -223,7 +235,7 @@
             this.cb_ExcelSheetName.SelectedIndexChanged += new System.EventHandler(this.cb_ExcelSheetName_SelectedIndexChanged);
             this.cb_ExcelSheetName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.cb_ExcelSheetName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_ExcelSheetName.TabIndex = 10;
+            this.cb_ExcelSheetName.TabIndex = 11;
             // 
             // tabControl1
             // 
@@ -238,7 +250,7 @@
             this.tabControl1.Selected += new System.Windows.Forms.TabControlEventHandler(this.tabControl1_Selected);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.tabControl1.TabIndex = 11;
+            this.tabControl1.TabIndex = 12;
             // 
             // btn_Cancel
             // 
@@ -249,7 +261,7 @@
             this.btn_Cancel.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.btn_Cancel.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
             this.btn_Cancel.Size = new System.Drawing.Size(100, 30);
-            this.btn_Cancel.TabIndex = 12;
+            this.btn_Cancel.TabIndex = 13;
             // 
             // flp_Timer
             // 
@@ -262,7 +274,7 @@
             this.flp_Timer.AutoSize = true;
             this.flp_Timer.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flp_Timer.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.flp_Timer.TabIndex = 13;
+            this.flp_Timer.TabIndex = 14;
             // 
             // label1
             // 
@@ -270,7 +282,7 @@
             this.label1.Text = "Elapsed";
             this.label1.AutoSize = true;
             this.label1.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
-            this.label1.TabIndex = 14;
+            this.label1.TabIndex = 15;
             // 
             // lblTimer
             // 
@@ -278,7 +290,7 @@
             this.lblTimer.Text = "";
             this.lblTimer.AutoSize = true;
             this.lblTimer.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.lblTimer.TabIndex = 15;
+            this.lblTimer.TabIndex = 16;
             // 
             // groupBox10
             // 
@@ -289,7 +301,7 @@
             this.groupBox10.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox10.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
             this.groupBox10.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox10.TabIndex = 16;
+            this.groupBox10.TabIndex = 17;
             // 
             // tlp_Status
             // 
@@ -306,7 +318,7 @@
             this.tlp_Status.SetColumnSpan(this.rtb_Log, 2);
             this.tlp_Status.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Status.AutoSize = false;
-            this.tlp_Status.TabIndex = 17;
+            this.tlp_Status.TabIndex = 18;
             // 
             // progressBar1
             // 
@@ -314,7 +326,7 @@
             this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.progressBar1.Margin = new System.Windows.Forms.Padding(0, 4, 8, 4);
             this.progressBar1.Size = new System.Drawing.Size(300, 14);
-            this.progressBar1.TabIndex = 18;
+            this.progressBar1.TabIndex = 19;
             // 
             // btn_Clear_Reset
             // 
@@ -324,7 +336,7 @@
             this.btn_Clear_Reset.Text = "Clear / Reset";
             this.btn_Clear_Reset.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_Clear_Reset.Size = new System.Drawing.Size(110, 30);
-            this.btn_Clear_Reset.TabIndex = 19;
+            this.btn_Clear_Reset.TabIndex = 20;
             // 
             // rtb_Log
             // 
@@ -334,7 +346,7 @@
             this.rtb_Log.Text = "";
             this.rtb_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtb_Log.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.rtb_Log.TabIndex = 20;
+            this.rtb_Log.TabIndex = 21;
             // 
             // btn_Excel
             // 
@@ -501,6 +513,8 @@
         }
 
         #endregion
+
+        private SPI_Data_Comp_Tool.StepStrip step_Strip;
 
         private System.Windows.Forms.TableLayoutPanel tlp_Root;
         private System.Windows.Forms.TableLayoutPanel tlp_Connection;

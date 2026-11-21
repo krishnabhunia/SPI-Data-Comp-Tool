@@ -33,6 +33,22 @@ namespace SPI_Data_Comp_Tool
             dt_SpecNote = new DataTable();
             ds_SpecNote = new DataSet();
             sfdf = new SaveFileDialogFile();
+            BuildSteps();
+        }
+
+        private StepFlow steps;   // controlled steps, see BuildSteps
+        private bool exported;
+
+        /// <summary>Controlled steps: Workbook, Create notes, Export. A step unlocks when the one before is done.</summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, step_Strip)
+                .Add("Workbook", "Import the specification workbook",
+                    () => ds_SpecNote != null && ds_SpecNote.Tables.Count > 0 && ds_SpecNote.Tables[0].Rows.Count > 0)
+                .Add("Create notes", "Create and show the notes",
+                    () => dt_SpecNote != null && dt_SpecNote.Columns.Contains("NOTE") && dt_SpecNote.Rows.Count > 0, btn_Spec_Create)
+                .Add("Export", "Export the notes to Excel", () => exported, btn_GenerateExcel);
+            steps.Refresh();
         }
 
         private void SetExcelData(DataSet ds, string fileName = null)
@@ -46,6 +62,7 @@ namespace SPI_Data_Comp_Tool
                     ds_SpecNote?.Dispose();
                     ds_SpecNote = candidate;
                     dt_SpecNote = new DataTable();
+                    exported = false;
                     dataGridView1.DataSource = ds_SpecNote.Tables[0];
                     lbl_Status.Text = ds.Tables[0].TableName + " Loaded Successfully";
                     if(fileName != null)
@@ -62,6 +79,7 @@ namespace SPI_Data_Comp_Tool
             {
                 lbl_Status.Text = ex.Message.ToString();
             }
+            steps?.Refresh();
         }
 
         public SPI_Spec_Note_Creation_Utility(DataSet ds) : this()
@@ -80,6 +98,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     Process.Start(sfdf.Str_saveFileNameWithPath);
                     lbl_Status.Text = "Saved and opening file : " + sfdf.Str_saveFileNameWithPath;
+                    exported = true;
                 }
             }
             catch (Exception ex)
@@ -99,6 +118,7 @@ namespace SPI_Data_Comp_Tool
                     candidate = BuildNotes(ds_SpecNote.Tables[0], btn_Spec_Create);
                 }, message => lbl_Status.Text = message)) return;
                 dt_SpecNote = candidate;
+                exported = false;
                 dataGridView1.DataSource = dt_SpecNote;
                 lbl_Status.Text = "Notes generated successfully.";
             }

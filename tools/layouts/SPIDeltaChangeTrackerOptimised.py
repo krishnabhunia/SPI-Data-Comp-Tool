@@ -57,17 +57,18 @@ PROGRESS = T("tlp_Progress", cols=["100%", "auto", "auto", "auto"], rows=["auto"
     (C("lblTimer", autosize=True, anchor="Left", minsize=(80, 0), margin=0), 3, 0),
 ])
 
-LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "100%", "auto"], cells=[
+LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "auto", "100%", "auto"], cells=[
+    (C("step_Strip", new="SPI_Data_Comp_Tool.StepStrip", dock="Fill", size=(800, 66), margin=(0, 0, 0, 12)), 0, 0),
     (T("tlp_Top", cols=["100%", "320"], rows=["auto"], autosize=True, cells=[
         (G("groupBox14", T("tlp_Connection", cols=["100%"], rows=["auto", "auto"], autosize=True, cells=[
             (panel(), 0, 0),
             (TABLES, 0, 1),
         ]), autosize=True, margin=(0, 0, 12, 0)), 0, 0),
         (G("groupBox3", RUN, margin=0), 1, 0),
-    ]), 0, 0),
+    ]), 0, 1),
     (G("gb_Debug", T("tlp_Log", cols=["100%", "auto"], rows=["100%"], cells=[
         (C("rtb_Log", dock="Fill", minsize=(0, 130), margin=(0, 0, 8, 0)), 0, 0),
         (C("btn_Clear", size=(95, 30), anchor="Top, Right", margin=0), 1, 0),
-    ]), margin=(0, 12, 0, 0)), 0, 1),
-    (G("groupBox11", PROGRESS, autosize=True, margin=(0, 12, 0, 0)), 0, 2),
+    ]), margin=(0, 12, 0, 0)), 0, 2),
+    (G("groupBox11", PROGRESS, autosize=True, margin=(0, 12, 0, 0)), 0, 3),
 ])

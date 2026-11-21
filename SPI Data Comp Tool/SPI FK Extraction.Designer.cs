@@ -39,6 +39,7 @@
             this.gb_DBConnection = new System.Windows.Forms.GroupBox();
             this.btn_TestDBConnection = new System.Windows.Forms.Button();
             this.tlp_Root = new System.Windows.Forms.TableLayoutPanel();
+            this.step_Strip = new SPI_Data_Comp_Tool.StepStrip();
             this.tlp_Connection = new System.Windows.Forms.TableLayoutPanel();
             this.connection = new SPI_Data_Comp_Tool.ConnectionPanel();
             this.tlp_Run = new System.Windows.Forms.TableLayoutPanel();
@@ -58,16 +59,27 @@
             this.tlp_Root.ColumnCount = 2;
             this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 240F));
-            this.tlp_Root.RowCount = 2;
+            this.tlp_Root.RowCount = 3;
+            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_Root.Controls.Add(this.gb_DBConnection, 0, 0);
-            this.tlp_Root.Controls.Add(this.groupBox1, 1, 0);
-            this.tlp_Root.Controls.Add(this.gb_Logs, 0, 1);
+            this.tlp_Root.Controls.Add(this.step_Strip, 0, 0);
+            this.tlp_Root.SetColumnSpan(this.step_Strip, 2);
+            this.tlp_Root.Controls.Add(this.gb_DBConnection, 0, 1);
+            this.tlp_Root.Controls.Add(this.groupBox1, 1, 1);
+            this.tlp_Root.Controls.Add(this.gb_Logs, 0, 2);
             this.tlp_Root.SetColumnSpan(this.gb_Logs, 2);
             this.tlp_Root.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Root.AutoSize = false;
             this.tlp_Root.TabIndex = 0;
+            // 
+            // step_Strip
+            // 
+            this.step_Strip.Name = "step_Strip";
+            this.step_Strip.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.step_Strip.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
+            this.step_Strip.Size = new System.Drawing.Size(800, 66);
+            this.step_Strip.TabIndex = 1;
             // 
             // gb_DBConnection
             // 
@@ -80,7 +92,7 @@
             this.gb_DBConnection.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.gb_DBConnection.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.gb_DBConnection.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_DBConnection.TabIndex = 1;
+            this.gb_DBConnection.TabIndex = 2;
             // 
             // tlp_Connection
             // 
@@ -95,7 +107,7 @@
             this.tlp_Connection.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Connection.AutoSize = true;
             this.tlp_Connection.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Connection.TabIndex = 2;
+            this.tlp_Connection.TabIndex = 3;
             // 
             // connection
             // 
@@ -103,7 +115,7 @@
             this.connection.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.connection.AutoSize = true;
             this.connection.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.connection.TabIndex = 3;
+            this.connection.TabIndex = 4;
             // 
             // btn_TestDBConnection
             // 
@@ -114,7 +126,7 @@
             this.btn_TestDBConnection.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
             this.btn_TestDBConnection.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
             this.btn_TestDBConnection.Size = new System.Drawing.Size(150, 30);
-            this.btn_TestDBConnection.TabIndex = 4;
+            this.btn_TestDBConnection.TabIndex = 5;
             // 
             // groupBox1
             // 
@@ -125,7 +137,7 @@
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox1.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.groupBox1.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox1.TabIndex = 5;
+            this.groupBox1.TabIndex = 6;
             // 
             // tlp_Run
             // 
@@ -138,7 +150,7 @@
             this.tlp_Run.Controls.Add(this.btn_ImportExcel, 0, 0);
             this.tlp_Run.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Run.AutoSize = false;
-            this.tlp_Run.TabIndex = 6;
+            this.tlp_Run.TabIndex = 7;
             // 
             // btn_ImportExcel
             // 
@@ -149,7 +161,7 @@
             this.btn_ImportExcel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_ImportExcel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_ImportExcel.Size = new System.Drawing.Size(160, 36);
-            this.btn_ImportExcel.TabIndex = 7;
+            this.btn_ImportExcel.TabIndex = 8;
             // 
             // gb_Logs
             // 
@@ -160,7 +172,7 @@
             this.gb_Logs.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gb_Logs.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
             this.gb_Logs.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_Logs.TabIndex = 8;
+            this.gb_Logs.TabIndex = 9;
             // 
             // tlp_Log
             // 
@@ -180,7 +192,7 @@
             this.tlp_Log.SetColumnSpan(this.rtb_Log, 2);
             this.tlp_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Log.AutoSize = false;
-            this.tlp_Log.TabIndex = 9;
+            this.tlp_Log.TabIndex = 10;
             // 
             // progressBar1
             // 
@@ -188,7 +200,7 @@
             this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.progressBar1.Margin = new System.Windows.Forms.Padding(0, 4, 8, 4);
             this.progressBar1.Size = new System.Drawing.Size(300, 14);
-            this.progressBar1.TabIndex = 10;
+            this.progressBar1.TabIndex = 11;
             // 
             // btn_ClearLogs
             // 
@@ -199,7 +211,7 @@
             this.btn_ClearLogs.Text = "Clear log";
             this.btn_ClearLogs.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_ClearLogs.Size = new System.Drawing.Size(110, 30);
-            this.btn_ClearLogs.TabIndex = 11;
+            this.btn_ClearLogs.TabIndex = 12;
             // 
             // lbl_Progress
             // 
@@ -208,7 +220,7 @@
             this.lbl_Progress.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_Progress.AutoSize = true;
             this.lbl_Progress.Margin = new System.Windows.Forms.Padding(0, 4, 0, 4);
-            this.lbl_Progress.TabIndex = 12;
+            this.lbl_Progress.TabIndex = 13;
             // 
             // rtb_Log
             // 
@@ -218,7 +230,7 @@
             this.rtb_Log.Text = "";
             this.rtb_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtb_Log.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.rtb_Log.TabIndex = 13;
+            this.rtb_Log.TabIndex = 14;
             // 
             // SPI_FK_Extraction
             // 
@@ -253,6 +265,8 @@
         }
 
         #endregion
+
+        private SPI_Data_Comp_Tool.StepStrip step_Strip;
 
         private System.Windows.Forms.TableLayoutPanel tlp_Root;
         private System.Windows.Forms.TableLayoutPanel tlp_Connection;

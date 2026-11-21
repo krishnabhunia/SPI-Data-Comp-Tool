@@ -25,6 +25,11 @@ WINDOWS = {
     "Excel_Excel_Comparison": ("Excel_Excel_Comparison.cs", "Excel_Excel_Comparison.Designer.cs"),
     "DB_Comparison": ("DB Comparison.cs", "DB Comparison.Designer.cs"),
     "Compare_Multiples_Forms": ("Compare_Multiples_Forms.cs", "Compare_Multiples_Forms.Designer.cs"),
+    "SPIDeltaChangeTrackerOptimised": ("SPIDeltaChangeTrackerOptimised.cs", "SPIDeltaChangeTrackerOptimised.Designer.cs"),
+    "SPIDeltaChangeLegacyID": ("SPIDeltaChangeLegacyID.cs", "SPIDeltaChangeLegacyID.Designer.cs"),
+    "SPI_FK_Extraction": ("SPI FK Extraction.cs", "SPI FK Extraction.Designer.cs"),
+    "Table_Extraction_After_Delta": ("Table Extraction After Delta.cs", "Table Extraction After Delta.Designer.cs"),
+    "SPI_Spec_Note_Creation_Utility": ("SPI_Spec_Note_Creation_Utility.cs", "SPI_Spec_Note_Creation_Utility.Designer.cs"),
 }
 
 
@@ -38,7 +43,7 @@ class ControlledSteps(unittest.TestCase):
         self.assertIn("'--check-steps'", workflow)
         self.assertIn("throw 'step checks failed'", workflow)
 
-    def test_every_batch_one_window_has_a_strip_and_builds_its_steps(self):
+    def test_every_step_window_has_a_strip_and_builds_its_steps(self):
         for layout, (code, designer) in WINDOWS.items():
             with self.subTest(window=layout):
                 spec = (ROOT / "tools/layouts" / (layout + ".py")).read_text(encoding="utf-8")
@@ -89,7 +94,24 @@ class ControlledSteps(unittest.TestCase):
     def test_locked_controls_cannot_be_enabled_by_window_code(self):
         engine = read("StepFlow.cs")
         self.assertIn("watched.EnabledChanged += (sender, args) => KeepLocked(watched);", engine)
-        self.assertIn("if (busy || step.State == StepState.Locked)", engine)
+        self.assertIn("if (Busy || step.State == StepState.Locked)", engine)
+
+    def test_batch_two_windows_lock_their_later_steps(self):
+        cases = {
+            "SPIDeltaChangeTrackerOptimised.cs": [('"Target connection"', "connection.Target.Group"), ('"Table list"', "btn_ListTableExcel"),
+                                                  ('"Compare"', "btnGenerateOutput")],
+            "SPIDeltaChangeLegacyID.cs": [('"Test connection"', "btn_Connect_Reference_ID"), ('"Map legacy IDs"', "btn_ListTableExcel")],
+            "SPI FK Extraction.cs": [('"Test connection"', "btn_TestDBConnection"), ('"Import Excel"', "btn_ImportExcel")],
+            "Table Extraction After Delta.cs": [('"Target connection"', "connection.Target.Group"), ('"Run"', "btn_Chg_NumVsChg_Num")],
+            "SPI_Spec_Note_Creation_Utility.cs": [('"Create notes"', "btn_Spec_Create"), ('"Export"', "btn_GenerateExcel")],
+        }
+        for name, pairs in cases.items():
+            steps = body(read(name), "private void BuildSteps()")
+            for title, control in pairs:
+                with self.subTest(window=name, step=title):
+                    start = steps.index(title)
+                    end = steps.find(".Add(", start)
+                    self.assertIn(control, steps[start:end if end > 0 else len(steps)])
 
     def test_strip_is_drawn_from_the_theme(self):
         self.assertIn("c is TileButton || c is GlyphIcon || c is StepStrip", read("UiTheme.cs"))
