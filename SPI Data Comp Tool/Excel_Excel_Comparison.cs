@@ -121,6 +121,11 @@ namespace SPI_Data_Comp_Tool
         private bool isLoading;
         private DataSet dsUnmatched;
 
+        // Controlled steps: source -> target -> load -> keys -> columns -> validate -> compare.
+        private StepFlow steps;
+        private OpenFileDialogData chosenFirst, chosenSecond;   // chosen but maybe not loaded yet
+        private bool compareFinished;
+
         public Excel_Excel_Comparison()
         {
             InitializeComponent();
@@ -211,6 +216,11 @@ namespace SPI_Data_Comp_Tool
             cb_Primary_Key.CheckedChanged += (sender, args) => InvalidateComparison();
             cb_IncludeRule.CheckedChanged += (sender, args) => InvalidateComparison();
             cb_IgnoreCase.CheckedChanged += (sender, args) => InvalidateComparison();
+            cb_IncludeDiff_Columns.CheckedChanged += (sender, args) => InvalidateComparison();
+            cb_MultiReference.CheckedChanged += (sender, args) => InvalidateLoad();
+            btn_FirstExcelSheet.Click += btn_FirstExcelSheet_Click;
+            btn_SecondExcelSheet.Click += btn_SecondExcelSheet_Click;
+            BuildSteps();
             FormClosing += (sender, args) =>
             {
                 if (isLoading || backgroundWorker1.IsBusy || backgroundWorkerInstrument.IsBusy)
@@ -223,17 +233,7 @@ namespace SPI_Data_Comp_Tool
 
         private void btn_FirstExcelSheet_Click(object sender, EventArgs e)
         {
-            try
-            {
-                openFileDialogData.openFileDialog();
-                firstExcel = openFileDialogData.strFileNameWithPath;
-                lbl_FirstExcelFileName.Text = firstExcel;
-                boolStatus = checkDuplicateSameFile(firstExcel, secondExcel);
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
+            ChooseWorkbook(true);
         }
 
         //private OpenFileDialogData openFileDialog(string str_title = "Browse Excel Files")
@@ -271,17 +271,68 @@ namespace SPI_Data_Comp_Tool
 
         private void btn_SecondExcelSheet_Click(object sender, EventArgs e)
         {
+            ChooseWorkbook(false);
+        }
+
+        /// <summary>Steps 1 and 2: choose the source, then the target workbook. A new choice unloads the data (keys and columns are kept for the next load).</summary>
+        private void ChooseWorkbook(bool source)
+        {
             try
             {
-                openFileDialogData.openFileDialog();
-                secondExcel = openFileDialogData.strFileNameWithPath;
-                lbl_SecondExcelFileName.Text = secondExcel;
-                boolStatus = checkDuplicateSameFile(firstExcel, secondExcel);
+                if (!FormValidation.Check(this, ValidateIdle, message => DisplayMessage(message, true))) return;
+                var file = new OpenFileDialogData().openFileDialog(source ? "Select Source Excel File" : "Select Target Excel File");
+                if (!file.boolFileSelected) return;
+                OpenFileDialogData other = source ? chosenSecond : chosenFirst;
+                if (other != null && !checkDuplicateSameFile(file.strFileNameWithPath, other.strFileNameWithPath)) return;
+                if (source)
+                {
+                    chosenFirst = file;
+                    lbl_FirstExcelFileName.Text = file.strFileNameWithPath;
+                }
+                else
+                {
+                    chosenSecond = file;
+                    lbl_SecondExcelFileName.Text = file.strFileNameWithPath;
+                }
+                InvalidateLoad();
             }
             catch (Exception ex)
             {
                 DisplayError(ex);
             }
+        }
+
+        /// <summary>The chosen workbooks are not the loaded ones any more: load again before keys, columns and compare.</summary>
+        private void InvalidateLoad()
+        {
+            bool wasLoaded = boolSelectedBothFile;
+            boolSelectedBothFile = false;
+            InvalidateComparison();
+            if (wasLoaded) lbl_LoadStatus.Text = "Load both files again to use this choice. Your keys and columns are kept where the names still match.";
+            if (steps != null) steps.Refresh();
+        }
+
+        private bool BothChosen
+        {
+            get { return chosenFirst != null && chosenFirst.boolFileSelected && chosenSecond != null && chosenSecond.boolFileSelected; }
+        }
+
+        private void BuildSteps()
+        {
+            Func<bool> singleSheet = () => !cb_MultiReference.Checked;   // with different column names the mapping continues in its own task
+            steps = new StepFlow(this, step_Strip)
+                .Add("Source workbook", "Choose the source workbook", () => chosenFirst != null && chosenFirst.boolFileSelected, btn_FirstExcelSheet)
+                .Add("Target workbook", "Choose the target workbook", () => chosenSecond != null && chosenSecond.boolFileSelected, btn_SecondExcelSheet)
+                .Add(() => "Load both files", () => cb_MultiReference.Checked ? "Load both files; the mapping opens in the Multi-reference comparison task" : "Load both files",
+                    () => boolSelectedBothFile, null, btn_SelectLoad, cb_MultiReference)
+                .Add(() => "Reference key", () => "Tick at least one reference key", () => clb_reference_ID.CheckedItems.Count > 0, singleSheet,
+                    clb_reference_ID, cb_Primary_Key)
+                .Add(() => "Columns to compare", () => "Tick at least one column to compare",
+                    () => StepFlow.CheckedNames(clb_firstExcel).Except(StepFlow.CheckedNames(clb_reference_ID)).Any(), singleSheet, clb_firstExcel, cb_select_first_clb, clb_secondExcel)
+                .Add(() => "Options and validate", () => "Choose the options and validate", () => boolValidate, singleSheet,
+                    cb_IncludeDiff_Columns, cb_IgnoreCase, cb_IncludeRule, btn_RuleForm, btn_Validate)
+                .Add(() => "Compare", () => "Compare and generate the Excel report", () => compareFinished, singleSheet, btn_Compare);
+            steps.Refresh();
         }
 
         private bool checkDuplicateSameFile(string filename1, string filename2)
@@ -599,15 +650,18 @@ namespace SPI_Data_Comp_Tool
         {
             if (!FormValidation.Check(this, ValidateIdle, message => DisplayMessage(message, true))) return;
             bool loadingSucceeded = false;
+            string restoredText = string.Empty;
             isLoading = true;
             changeEnabledStatus(false);
             try
             {
-                var sourceFile = new OpenFileDialogData().openFileDialog("Select First Excel File");
-                if (!sourceFile.boolFileSelected) return;
-                var targetFile = new OpenFileDialogData().openFileDialog("Select Second Excel File");
-                if (!targetFile.boolFileSelected) return;
-                if (!checkDuplicateSameFile(sourceFile.strFileNameWithPath, targetFile.strFileNameWithPath)) return;
+                if (!FormValidation.Check(this, () => FormValidation.Require(BothChosen, BothChosen ? btn_SelectLoad : chosenFirst == null ? btn_FirstExcelSheet : btn_SecondExcelSheet,
+                    "Choose the source and the target workbook first."), message => DisplayMessage(message, true))) return;
+                OpenFileDialogData sourceFile = chosenFirst;
+                OpenFileDialogData targetFile = chosenSecond;
+                List<string> keysBefore = StepFlow.CheckedNames(clb_reference_ID).ToList();
+                List<string> columnsBefore = StepFlow.CheckedNames(clb_firstExcel).ToList();
+                List<string> targetColumnsBefore = StepFlow.CheckedNames(clb_secondExcel).ToList();
                 if (!FormValidation.Check(this, () =>
                 {
                     FormValidation.ReadableFile(sourceFile.strFileNameWithPath, btn_SelectLoad, "Source workbook", ".xlsx", ".xlsm");
@@ -654,10 +708,18 @@ namespace SPI_Data_Comp_Tool
                     LoadCheckListBox(clb_reference_ID, dt_firstTable);
                     LoadCheckListBox(clb_firstExcel, dt_firstTable);
                     LoadCheckListBox(clb_secondExcel, dt_secondTable);
-                    if (clb_firstExcel.Items.Count > 0) cb_select_first_clb.Checked = true;
+                    if (keysBefore.Count > 0 || columnsBefore.Count > 0)
+                    {
+                        // Reload after a change: keep the earlier choices where the same column names still exist.
+                        int kept = StepFlow.Restore(clb_reference_ID, keysBefore) + StepFlow.Restore(clb_firstExcel, columnsBefore);
+                        StepFlow.Restore(clb_secondExcel, targetColumnsBefore);
+                        toggleCheckBoxCheckedState();
+                        restoredText = kept > 0 ? " Earlier keys and columns that still exist are ticked again." : " None of the earlier keys or columns exist in these files.";
+                    }
+                    else if (clb_firstExcel.Items.Count > 0) cb_select_first_clb.Checked = true;
                 }
                 lbl_Parameter.Text = "Rows: " + source.Rows.Count + "; Columns: " + source.Columns.Count;
-                lbl_LoadStatus.Text = "Loaded successfully. Select keys and columns, then validate.";
+                lbl_LoadStatus.Text = "Loaded successfully. Select keys and columns, then validate." + restoredText;
                 loadingSucceeded = true;
             }
             catch (Exception ex)
@@ -689,6 +751,7 @@ namespace SPI_Data_Comp_Tool
             }
             boolValidate = true;
             btn_Compare.Enabled = true;
+            if (steps != null) steps.Refresh();
             DisplayMessage("Inputs validated. Compare rechecks them before starting.");
         }
 
@@ -713,6 +776,8 @@ namespace SPI_Data_Comp_Tool
                 clb_reference_ID.Enabled = clb_firstExcel.Enabled = clb_secondExcel.Enabled = boolEnabledStatus;
                 cb_IncludeRule.Enabled = boolEnabledStatus;
                 btn_RuleForm.Enabled = boolEnabledStatus;
+
+                if (steps != null) steps.Busy = !boolEnabledStatus;
 
                 if (boolEnabledStatus)
                 {
@@ -1928,6 +1993,7 @@ namespace SPI_Data_Comp_Tool
                     lbl_Status.Text = $"File Opened : {saveFileDialogFile.Str_saveFileNameWithPath}";
                     Logs.EnterLogsWithTime(lbl_Status.Text);
                     lbl_Percentage.Text = $"File Successfully written and opened";
+                    compareFinished = true;
                 }
                 else
                 {
@@ -1955,6 +2021,7 @@ namespace SPI_Data_Comp_Tool
                 changeEnabledStatus(true);
                 btn_Compare.Enabled = boolValidate;
                 timer1.Enabled = false;
+                if (steps != null) steps.Refresh();
             }
         }
 
@@ -2091,8 +2158,10 @@ namespace SPI_Data_Comp_Tool
         private void InvalidateComparison()
         {
             boolValidate = false;
+            compareFinished = false;
             btn_Compare.Enabled = false;
             btn_Validate.Enabled = boolSelectedBothFile && !isLoading;
+            if (steps != null) steps.Later();
         }
 
         private void ValidateIdle()

@@ -179,6 +179,16 @@ jobs:
           if (-not $p.WaitForExit(180000)) { & tools/ci_window_report.ps1 -ProcessId $p.Id; Stop-Process -Id $p.Id -Force; throw 'theme checks timed out' }
           if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
           if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'theme checks failed' }
+      - name: Controlled step checks
+        shell: pwsh
+        run: |
+          # a later step stays locked until the one before is done; an earlier change locks the later steps again
+          $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
+          $log = Join-Path $env:RUNNER_TEMP 'step-checks.txt'
+          $p = Start-Process $exe -ArgumentList '--check-steps', "`"$log`"" -PassThru
+          if (-not $p.WaitForExit(120000)) { & tools/ci_window_report.ps1 -ProcessId $p.Id; Stop-Process -Id $p.Id -Force; throw 'step checks timed out' }
+          if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
+          if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'step checks failed' }
       - name: Group window checks
         shell: pwsh
         run: |

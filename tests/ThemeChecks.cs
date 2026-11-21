@@ -346,7 +346,7 @@ namespace SPI_Data_Comp_Tool
         {
             foreach (Control c in parent.Controls)
             {
-                if (c is TileButton || c is GlyphIcon || c is ThemeSwatch || c is ToolStrip) continue;   // drawn from the theme itself
+                if (c is TileButton || c is GlyphIcon || c is ThemeSwatch || c is StepStrip || c is ToolStrip) continue;   // drawn from the theme itself (StepChecks checks the step strip)
                 bool enabled = EnabledWithParents(c);
                 if (c is Button)
                 {

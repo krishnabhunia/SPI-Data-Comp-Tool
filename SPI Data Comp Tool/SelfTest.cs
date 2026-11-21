@@ -22,6 +22,8 @@ namespace SPI_Data_Comp_Tool
     ///   "SPI Data Comp Tool.exe" --check-workspace-exit OUT_FILE tests successful application exit in an isolated process
     ///   "SPI Data Comp Tool.exe" --check-groups OUT_FILE       checks grouped-tool routes and safe workspace closure
     ///                                                          (tests/ToolGroupChecks.cs)
+    ///   "SPI Data Comp Tool.exe" --check-steps OUT_FILE        checks the controlled steps (a later step stays locked until
+    ///                                                           the one before is done) in the step-by-step windows
     ///   "SPI Data Comp Tool.exe" --check-themes OUT_FILE       builds every window in every colour theme and checks
     ///                                                          that its text stays readable (tests/ThemeChecks.cs)
     /// </summary>
@@ -72,6 +74,11 @@ namespace SPI_Data_Comp_Tool
             if (args[0] == "--check-groups" && args.Length >= 2)
             {
                 Environment.ExitCode = ToolGroupChecks.Run(args[1]);
+                return true;
+            }
+            if (args[0] == "--check-steps" && args.Length >= 2)
+            {
+                Environment.ExitCode = StepChecks.Run(args[1]);
                 return true;
             }
             if (args[0] == "--check-themes" && args.Length >= 2)

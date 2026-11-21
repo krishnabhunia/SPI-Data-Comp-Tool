@@ -178,6 +178,8 @@ namespace SPI_Data_Comp_Tool
         private SaveFileDialogFile saveFileDialogFile;
         private bool comparisonInputsLoaded;
         private bool comparisonPrepared;
+        private bool compareFinished;
+        private StepFlow steps;   // controlled steps, see BuildSteps
 
         public DB_Comparison_Form()
         {
@@ -197,9 +199,13 @@ namespace SPI_Data_Comp_Tool
             connection.InputChanged += (sender, args) => InvalidateComparisonInputs();
             cb_SRC_TableName.TextChanged += (sender, args) => InvalidateComparisonInputs();
             cb_TRG_TableName.TextChanged += (sender, args) => InvalidateComparisonInputs();
-            clb_ReferenceID.ItemCheck += (sender, args) => { comparisonPrepared = false; };
-            cbL_SRC_Cols.ItemCheck += (sender, args) => { comparisonPrepared = false; };
+            clb_ReferenceID.ItemCheck += (sender, args) => { comparisonPrepared = compareFinished = false; };
+            cbL_SRC_Cols.ItemCheck += (sender, args) => { comparisonPrepared = compareFinished = false; };
+            cb_ColumnMapping.CheckedChanged += (sender, args) => InvalidateComparisonInputs();
+            cb_IgnoreCase.CheckedChanged += (sender, args) => { comparisonPrepared = compareFinished = false; steps?.Later(); };
+            cb_IncludeRule.CheckedChanged += (sender, args) => { comparisonPrepared = compareFinished = false; steps?.Later(); };
             UiTheme.Apply(this, btnGenerateOutput);
+            BuildSteps();
 
             try
             {
@@ -737,9 +743,41 @@ namespace SPI_Data_Comp_Tool
             return dt_returnDataTable;
         }
 
+        /// <summary>
+        /// Controlled steps: Source connection, Target connection, Source table, Target table, Load,
+        /// Reference key, Columns, Set and validate, Compare. A step unlocks when the one before is done.
+        /// </summary>
+        private void BuildSteps()
+        {
+            Func<bool> sameNames = () => !cb_ColumnMapping.Checked;   // with different column names the mapping continues in its own task
+            steps = new StepFlow(this, step_Strip)
+                .Add("Source connection", "Fill in the source connection", () => StepFlow.Passes(() => connection.Source.ValidateInput()))
+                .Add("Target connection", "Fill in the target connection", () => StepFlow.Passes(() => connection.Target.ValidateInput()),
+                    connection.Target.Group)
+                .Add("Source table", "Choose or type the source table", () => cb_SRC_TableName.Text.Trim().Length > 0,
+                    cb_SRC_TableName, btn_Load_SRC_Table)
+                .Add("Target table", "Choose or type the target table", () => cb_TRG_TableName.Text.Trim().Length > 0,
+                    cb_TRG_TableName, btn_Load_TRG_Table)
+                .Add(() => "Load", () => cb_ColumnMapping.Checked ? "Connect and load; the mapping opens in the Multi-reference comparison task"
+                    : "Connect and load both tables", () => comparisonInputsLoaded, null, btn_Connect_Reference_ID, cb_ColumnMapping)
+                .Add(() => "Reference key", () => "Tick at least one reference key", () => clb_ReferenceID.CheckedItems.Count > 0, sameNames,
+                    clb_ReferenceID, cb_PrimaryKey)
+                .Add(() => "Columns", () => "Tick at least one column to compare",
+                    () => StepFlow.CheckedNames(cbL_SRC_Cols).Except(StepFlow.CheckedNames(clb_ReferenceID)).Any(), sameNames,
+                    cbL_SRC_Cols, cb_selectAll_toggle)
+                .Add(() => "Set and validate", () => "Choose the options, then set and validate", () => comparisonPrepared, sameNames,
+                    cb_IncludeRule, btn_RuleForm, cb_IgnoreCase, btn_Set)
+                .Add(() => "Compare", () => "Compare and generate the Excel report", () => compareFinished, sameNames, btnGenerateOutput);
+            connection.InputChanged += (sender, args) => steps.Later();
+            connection.ProfileApplied += (sender, args) => steps.Later();
+            steps.Refresh();
+        }
+
         private void btn_Connect_Reference_ID_Click(object sender, EventArgs e)
         {
             if (!ValidateTableLoadInputs()) return;
+            List<string> keysBefore = StepFlow.CheckedNames(clb_ReferenceID);
+            List<string> columnsBefore = StepFlow.CheckedNames(cbL_SRC_Cols);
             try
             {
                 comparisonInputsLoaded = comparisonPrepared = false;
@@ -802,7 +840,16 @@ namespace SPI_Data_Comp_Tool
                 {
                     lblExpressionStatus.Text = "Some Error in SQL or Oracle";
                 }
-                cb_selectAll_toggle.Checked = true;
+                if (!cb_ColumnMapping.Checked && (keysBefore.Count > 0 || columnsBefore.Count > 0))
+                {
+                    // Reloaded after an earlier step changed: keep the keys and columns whose names still exist.
+                    int kept = StepFlow.Restore(clb_ReferenceID, keysBefore) + StepFlow.Restore(cbL_SRC_Cols, columnsBefore);
+                    lblExpressionStatus.Text += kept > 0 ? ". Earlier keys and columns that still exist are ticked again." : ". None of the earlier keys or columns exist in these tables.";
+                }
+                else
+                {
+                    cb_selectAll_toggle.Checked = true;
+                }
             }
             catch (Exception ex)
             {
@@ -877,6 +924,7 @@ namespace SPI_Data_Comp_Tool
                 lb_TRG_Cols.SelectionMode = SelectionMode.None;
                 clb_ReferenceID.SelectionMode = SelectionMode.One;
             }
+            if (steps != null) steps.Busy = !enabledStatus;
 
         }
 
@@ -1953,6 +2001,7 @@ namespace SPI_Data_Comp_Tool
                 else if (strFilePathChangeSave != "" && boolStatus)
                 {
                     lblStatus.Text = "Done and Opening file in path " + strFilePathChangeSave;
+                    compareFinished = true;
                     lbl_PercentageShow.Text = lbl_PercentageShow.Text + " Done ";
                     //displayElapsedTime();
                     llbl_File_path.Text = strFilePathChangeSave;
@@ -2345,7 +2394,8 @@ namespace SPI_Data_Comp_Tool
 
         private void InvalidateComparisonInputs()
         {
-            comparisonInputsLoaded = comparisonPrepared = false;
+            comparisonInputsLoaded = comparisonPrepared = compareFinished = false;
+            steps?.Later();
         }
 
         internal bool ValidateTableLoadInputs()
