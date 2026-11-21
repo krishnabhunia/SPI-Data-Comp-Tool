@@ -551,7 +551,7 @@ namespace SPI_Data_Comp_Tool
                 Require(ReferenceEquals(settings, main.ShowUpdatesSettings()) && Application.OpenForms.OfType<User_Settings>().Count() == 1,
                     "Help created a duplicate Settings/Updates window.");
                 var tabs = Find<TabControl>(settings, "tabs_Settings");
-                Require(tabs.TabPages.Count == 3 && tabs.SelectedTab.Name == "tab_Updates" && settings.AcceptButton == null,
+                Require(tabs.TabPages.Count == 4 && tabs.SelectedTab.Name == "tab_Updates" && settings.AcceptButton == null,
                     "Help did not open Updates or Enter can implicitly start an action.");
                 Require(tabs.TabPages.Cast<TabPage>().Count(tab => tab.Name == "tab_Updates") == 1 &&
                     settings.Controls.Find("updatesControl", true).Length == 1,

@@ -41,6 +41,16 @@ namespace SPI_Data_Comp_Tool
                 failed++;
                 lines.Add("FAIL a busy tool keeps the window and every tab: " + ex.Message.Replace("\r", " ").Replace("\n", " "));
             }
+            try
+            {
+                ProfilesInSettings();
+                lines.Add("ok   Settings holds User profiles as a tab");
+            }
+            catch (Exception ex)
+            {
+                failed++;
+                lines.Add("FAIL Settings holds User profiles as a tab: " + ex.Message.Replace("\r", " ").Replace("\n", " "));
+            }
             lines.Add(failed == 0 ? "All group window checks passed." : failed + " group window check(s) failed.");
             File.WriteAllLines(outFile, lines);
             return failed == 0 ? 0 : 1;
@@ -133,6 +143,35 @@ namespace SPI_Data_Comp_Tool
                 Application.DoEvents();
                 Require(first.IsDisposed && busy.IsDisposed && last.IsDisposed, "Closing the window left a tool open.");
             }
+        }
+
+        private static void ProfilesInSettings()
+        {
+            UserProfileForm profiles;
+            using (var settings = new User_Settings())
+            {
+                var tabs = (TabControl)settings.Controls.Find("tabs_Settings", true).Single();
+                var log = (GroupBox)settings.Controls.Find("gb_Logs", true).Single();
+                settings.ShowInTaskbar = false;
+                settings.Show();
+                Application.DoEvents();
+                Require(tabs.SelectedTab.Name == "tab_General" && log.Visible, "Settings did not open on General with its log.");
+                profiles = settings.ShowProfiles();
+                Application.DoEvents();
+                Require(tabs.SelectedTab.Name == "tab_Profiles" && profiles != null && !profiles.TopLevel && profiles.Visible
+                    && profiles.FormBorderStyle == FormBorderStyle.None && profiles.Dock == DockStyle.Fill
+                    && settings.Controls.Find("tlp_Profiles", true).Single().Controls.Contains(profiles),
+                    "User profiles is not shown inside the Profiles tab.");
+                Require(!log.Visible && settings.AcceptButton == null, "The Profiles tab did not get the whole window.");
+                Require(settings.Width <= Screen.FromControl(settings).WorkingArea.Width
+                    && settings.Height <= Screen.FromControl(settings).WorkingArea.Height, "Settings grew beyond the screen.");
+                tabs.SelectedIndex = 0;
+                Application.DoEvents();
+                Require(log.Visible, "Leaving Profiles did not bring the Settings log back.");
+                Require(ReferenceEquals(settings.ShowProfiles(), profiles), "Returning to Profiles built the window again.");
+                settings.Close();
+            }
+            Require(profiles.IsDisposed, "Closing Settings left User profiles open.");
         }
 
         private static string ModeOf(TabPage page)

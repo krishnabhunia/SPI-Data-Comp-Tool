@@ -198,7 +198,13 @@ namespace SPI_Data_Comp_Tool
 
         private void userProfileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenWindow(() => new UserProfileForm(), allowSeparateSession: false);
+            // User profiles is a tab of Settings; the same key as File > Settings, so never a second window
+            try { windows.Open(this, () => new User_Settings()).ShowProfiles(); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, Common_Data.RedactConnectionCredentials(ex.Message), "Unable to open Profiles",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void configurationToolStripMenuItem_Click(object sender, EventArgs e)

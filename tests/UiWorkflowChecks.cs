@@ -130,8 +130,9 @@ namespace SPI_Data_Comp_Tool
                     Application.DoEvents();
                     tabs.SelectedIndex = 0;
                     Application.DoEvents();
-                    Require(tabs.TabPages.Count == 3 && tabs.TabPages[0].Name == "tab_General" && tabs.TabPages[1].Name == "tab_Rules"
-                        && tabs.TabPages[2].Name == "tab_Updates", "The consolidated Settings window has missing sections.");
+                    Require(tabs.TabPages.Count == 4 && tabs.TabPages[0].Name == "tab_General" && tabs.TabPages[1].Name == "tab_Rules"
+                        && tabs.TabPages[2].Name == "tab_Updates" && tabs.TabPages[3].Name == "tab_Profiles",
+                        "The consolidated Settings window has missing sections.");
                     settings.Close();
                 }
             }

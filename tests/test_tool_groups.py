@@ -59,6 +59,22 @@ class ToolGroups(unittest.TestCase):
         self.assertGreaterEqual(closing.count("e.Cancel = true;"), 2)
         self.assertIn("Math.Min(screen.Width", window)                                      # never larger than the screen
 
+    def test_user_profiles_is_a_tab_of_settings(self) -> None:
+        designer = code("User_Settings.Designer.cs")
+        self.assertIn("this.tabs_Settings.Controls.Add(this.tab_Profiles);", designer)
+        self.assertLess(designer.index("this.tabs_Settings.Controls.Add(this.tab_Updates);"),
+                        designer.index("this.tabs_Settings.Controls.Add(this.tab_Profiles);"))   # the earlier tabs keep their places
+        settings = code("User_Settings.cs")
+        fill = settings.split("private void FillProfiles()", 1)[1].split("public void ShowUpdates()", 1)[0]
+        self.assertIn("if (profiles != null && !profiles.IsDisposed) return;", fill)              # built once
+        self.assertLess(fill.index("form.TopLevel = false;"), fill.index("tlp_Profiles.Controls.Add(form, 0, 0);"))
+        self.assertIn("Math.Min(screen.Width", fill)                                               # never larger than the screen
+        self.assertIn("form.Dispose();", fill)
+        main = code("MainForm.cs")
+        handler = main.split("private void userProfileToolStripMenuItem_Click", 1)[1].split("private void", 1)[0]
+        self.assertIn("windows.Open(this, () => new User_Settings()).ShowProfiles();", handler)   # one Settings window
+        self.assertNotIn("OpenWindow(() => new UserProfileForm()", main)
+
     def test_windows_have_readable_titles(self) -> None:
         for designer in sorted(PROJ.glob("*.Designer.cs")):
             titles = re.findall(r'^\s*this\.Text = "([^"]*)";', designer.read_text(encoding="utf-8-sig"), re.M)

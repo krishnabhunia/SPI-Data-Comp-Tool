@@ -11,6 +11,7 @@ TEXTS = {
     "tab_General": "General",
     "tab_Rules": "Comparison rules",
     "tab_Updates": "Updates",
+    "tab_Profiles": "Profiles",
     "gb_SaveExcel": "Save Excel files with",
     "gb_Theme": "Colour theme",
     "lbl_Theme": "Theme",
@@ -64,6 +65,8 @@ LAYOUT = T("tlp_Root", cols=["100%"], rows=["100%", "140", "auto"], cells=[
             ])),
         G("tab_Updates", new="TabPage", child=C("updatesControl", new="SPI_Data_Comp_Tool.UpdatesControl",
             dock="Fill", margin=0)),
+        # the User profiles window is shown inside this tab the first time it is opened (User_Settings.cs)
+        G("tab_Profiles", new="TabPage", child=T("tlp_Profiles", cols=["100%"], rows=["100%"], cells=[])),
     ]), 0, 0),
     (G("gb_Logs", T("tlp_Logs", cols=["auto", "100%"], rows=["100%", "auto"], cells=[
         (C("rtb_Log", dock="Fill", margin=(0, 0, 0, 8)), 0, 0, 2),

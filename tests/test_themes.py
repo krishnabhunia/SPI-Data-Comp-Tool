@@ -53,7 +53,7 @@ class Themes(unittest.TestCase):
         self.assertIn("this.tlp_General.Controls.Add(this.gb_Theme, 0, 1);", designer)
         self.assertIn("this.tlp_Theme.Controls.Add(this.cb_Theme, 1, 0);", designer)
         self.assertIn("this.cb_Theme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;", designer)
-        self.assertEqual(len(re.findall(r"this\.tabs_Settings\.Controls\.Add\(", designer)), 3)
+        self.assertEqual(len(re.findall(r"this\.tabs_Settings\.Controls\.Add\(", designer)), 4)   # the theme picker added no tab; Profiles did later
         settings = code("User_Settings.cs")
         self.assertIn("cb_Theme.Items.AddRange(UiTheme.All);", settings)
         self.assertIn("cb_Theme.SelectedItem = UiTheme.Current;", settings)

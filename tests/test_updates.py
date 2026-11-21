@@ -74,7 +74,7 @@ class Updater(unittest.TestCase):
         self.assertEqual(designer.count("this.tabs_Settings.Controls.Add(this.tab_Updates);"), 1)
         self.assertEqual(designer.count("new SPI_Data_Comp_Tool.UpdatesControl()"), 1)
         checks = text(REPO / "tests" / "UiWorkflowChecks.cs")
-        self.assertIn("tabs.TabPages.Count == 3", checks)
+        self.assertIn("tabs.TabPages.Count == 4", checks)   # General, Comparison rules, Updates, Profiles
         for index, name in enumerate(("tab_General", "tab_Rules", "tab_Updates")):
             self.assertIn(f'tabs.TabPages[{index}].Name == "{name}"', checks)
 
