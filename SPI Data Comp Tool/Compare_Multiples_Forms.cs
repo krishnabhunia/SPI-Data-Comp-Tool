@@ -99,6 +99,32 @@ namespace SPI_Data_Comp_Tool
         private DataSet dsRules;
         //private CheckRules checkRules;
         private DataSet dsAllColumns;
+        private StepFlow steps;   // controlled steps, see BuildSteps
+        private bool compareFinished;
+
+        /// <summary>
+        /// Controlled steps. Databases tab: Connections, Table list, Output folder, Compare.
+        /// Excel folders tab: Source folder, Target folder, Table list, Output folder, Compare.
+        /// </summary>
+        private void BuildSteps()
+        {
+            Func<bool> databases = () => tabControl1.SelectedTab == tabPage_DB;
+            Func<bool> folders = () => tabControl1.SelectedTab == tabPage_Excel;
+            steps = new StepFlow(this, step_Strip)
+                .Add(() => "Connections", () => "Test both connections", () => boolLoadDataBase && boolSRCConnection && boolTRGConnection, databases)
+                .Add(() => "Source folder", () => "Choose the source workbook folder",
+                    () => boolSRC_ExcelFile && System.IO.Directory.Exists(llb_Excel_SRC.Text), folders, llb_Excel_SRC)
+                .Add(() => "Target folder", () => "Choose the target workbook folder",
+                    () => boolTRG_ExcelFile && System.IO.Directory.Exists(llb_Excel_TRG.Text), folders, llb_Excel_TRG)
+                .Add("Table list", "Choose the list-table Excel", () => boolExcelFileList, btn_ListTableExcel)
+                .Add("Output folder", "Choose the output folder",
+                    () => boolFolderPathSelected && System.IO.Directory.Exists(l_lbl_outputFolder.Text), l_lb_Output_Set, l_lbl_outputFolder)
+                .Add("Compare", "Choose the options, then compare and generate Excel", () => compareFinished,
+                    cb_PK_As_ReferenceKey, cb_IncludeDiff_Columns, cb_IgnoreCase, cb_IncludeRule, btn_RuleForm, btn_Compare);
+            steps.Watch(tabControl1, btn_TestDBConnection);
+            steps.Refresh();
+        }
+
         public Compare_Multiples_List_Tables_Forms()
         {
             InitializeComponent();
@@ -114,8 +140,9 @@ namespace SPI_Data_Comp_Tool
             };
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
-            connection.InputChanged += (sender, args) => { boolLoadDataBase = boolSRCConnection = boolTRGConnection = false; };
+            connection.InputChanged += (sender, args) => { boolLoadDataBase = boolSRCConnection = boolTRGConnection = compareFinished = false; steps?.Later(); };
             UiTheme.Apply(this, btn_Compare);
+            BuildSteps();
 
             try
             {
@@ -1492,6 +1519,7 @@ namespace SPI_Data_Comp_Tool
                         Common_Data.DisplayMessage(rtb_Log, "Summary List of All Tables Saved Successfully !!!");
                     }
                     Common_Data.DisplayMessage(rtb_Log, "List Processed Completed SuccessFully, Output Folder can be opened now !!!", false, -1, Color.DarkGreen);
+                    compareFinished = true;
                     UpdateProgressBar(1, 1, "tableupdate");
                 }
                 else if (e.Cancelled)
@@ -1506,6 +1534,10 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex)
             {
                 Common_Data.DisplayError(rtb_Log, ex);
+            }
+            finally
+            {
+                steps.Busy = false;
             }
         }
 
@@ -1771,7 +1803,10 @@ namespace SPI_Data_Comp_Tool
                         timer1.Enabled = true;
                         boolSelectTabDB = tabControl1.SelectedTab == tabPage_DB ? true : false;
                         boolSelectTabExcel = tabControl1.SelectedTab == tabPage_Excel ? true : false;
-                        FormValidation.StartWorker(this, bgw_List, ref operationInputs, btnCancel);
+                        compareFinished = false;
+                        steps.Busy = true;
+                        try { FormValidation.StartWorker(this, bgw_List, ref operationInputs, btnCancel); }
+                        catch { steps.Busy = false; throw; }
                     }
                     else
                     {

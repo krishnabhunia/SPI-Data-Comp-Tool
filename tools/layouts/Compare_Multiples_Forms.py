@@ -55,8 +55,9 @@ LOG = T("tlp_Log", cols=["100%", "auto"], rows=["auto", "auto", "100%"], cells=[
     (C("rtb_Log", dock="Fill", margin=0), 0, 2, 2),
 ])
 
-LAYOUT = T("tlp_Root", cols=["100%", "360"], rows=["auto", "100%"], cells=[
-    (TABS_NODE, 0, 0),
-    (G("groupBox1", COMPARE, margin=0), 1, 0),
-    (G("gb_Logs", LOG, margin=(0, 12, 0, 0)), 0, 1, 2),
+LAYOUT = T("tlp_Root", cols=["100%", "360"], rows=["auto", "auto", "100%"], cells=[
+    (C("step_Strip", new="SPI_Data_Comp_Tool.StepStrip", dock="Fill", size=(800, 66), margin=(0, 0, 0, 12)), 0, 0, 2),
+    (TABS_NODE, 0, 1),
+    (G("groupBox1", COMPARE, margin=0), 1, 1),
+    (G("gb_Logs", LOG, margin=(0, 12, 0, 0)), 0, 2, 2),
 ])

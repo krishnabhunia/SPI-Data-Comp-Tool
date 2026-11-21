@@ -12,6 +12,8 @@ namespace SPI_Data_Comp_Tool
         Sheet,
         Delta,
         Export,
+        Check,
+        Lock,
     }
 
     internal static class Glyphs
@@ -44,6 +46,15 @@ namespace SPI_Data_Comp_Tool
                             break;
                         case Glyph.Delta:
                             g.DrawPolygon(pen, new[] { new PointF(12f, 4f), new PointF(21f, 20f), new PointF(3f, 20f) });
+                            break;
+                        case Glyph.Check:
+                            g.DrawLines(pen, new[] { new PointF(5f, 12.5f), new PointF(10f, 17.5f), new PointF(19f, 7f) });
+                            break;
+                        case Glyph.Lock:
+                            g.DrawRectangle(pen, 6f, 11f, 12f, 9f);
+                            g.DrawArc(pen, 8.5f, 4f, 7f, 10f, 180f, 180f);
+                            g.DrawLine(pen, 8.5f, 9f, 8.5f, 11f);
+                            g.DrawLine(pen, 15.5f, 9f, 15.5f, 11f);
                             break;
                         default:
                             g.DrawLine(pen, 12f, 15f, 12f, 4f);
