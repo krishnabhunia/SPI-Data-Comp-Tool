@@ -29,9 +29,15 @@ Historical betas remain available for deliberate selection, but a high version n
 | Running copy | Selected download | What happens |
 |---|---|---|
 | Registered 64-bit installation | The selected version's `_x64_setup.exe` | The existing installer updates the same directory with the same per-user/all-users scope. Normal Windows User Account Control and SmartScreen checks still apply. The application restarts only after setup succeeds and the executable version is verified. |
-| Portable copy | The selected version's `.zip` | Only the application's executable, matching configuration and known PNID templates are staged and replaced. The current executable filename is retained, even if it contains an older version number. Unknown/user files are not deleted. A portable copy is not converted to an installed copy. |
+| Portable copy | The selected version's `.zip` | The application's executable and matching configuration are staged and replaced. The exact historical report-file allowlist is also accepted when present in a selected older package, preserving downgrade compatibility. The current executable filename is retained, even if it contains an older version number. Unknown/user files are not deleted. A portable copy is not converted to an installed copy. |
 
 Install detection uses the exact Inno Setup application identifier and installation directory, not just a folder name or the presence of an uninstaller. An installed update requires 64-bit Windows; the existing portable application is Any CPU. If a portable folder is not writable, move/extract the portable application to a user-writable location and update there; the updater does not circumvent filesystem permissions.
+
+### Compatibility after SQL Scripts retirement
+
+New source trees, application build output and installers contain no SQL report templates. A new portable distribution generates exactly two **zero-byte** files: `portable/PNID_Reports/Source/instrument.txt` and `portable/PNID_Reports/Target_IPEP/instrument.txt`. Already-released updaters require those paths before accepting an upgrade. These empty compatibility files contain no SQL and are unused by the current application; a clean installed copy does not need them.
+
+The current updater also accepts a portable archive containing only the executable and matching configuration. For downgrades, it retains the exact allowlist of 19 historical report filenames; if any such entries exist, both `instrument.txt` compatibility paths are required. Existing file replacement, backup and rollback rules still apply. The removal does not perform a cleanup of report folders or files already present in a user's installation or portable directory.
 
 ## Preferences and data
 
@@ -53,7 +59,7 @@ The update helper waits for the exact parent process to exit; it does not kill i
 - Downloads are streamed to a unique cache directory and checked against the release's SHA-256 manifest. Installation rechecks the package before using it. Cancelled/incomplete downloads are removed; a feed instance cleans up only its own download directories when Settings closes.
 - ZIP entries are validated before applying files: traversal, unexpected files, duplicate destinations, alternate data streams, links and excessive sizes are rejected. The ZIP's known installer sibling is validated but never applied by the portable route.
 - The installer is currently **unsigned**. SHA-256 detects corruption or a mismatch with the published manifest; it is **not** publisher/code-signing authentication. Never bypass an unexpected Windows warning automatically. A compromised repository or release account remains outside this integrity guarantee.
-- The target framework remains .NET Framework 4.6.2. Runtime configuration opts into strong cryptography and operating-system-selected TLS, without changing machine-wide registry settings or disabling certificate verification.
+- The application requires .NET Framework 4.8 or later. The installer checks that prerequisite before changing application files; portable update preflight checks the declared runtime in the downloaded configuration. When upgrading from an older portable build, install .NET Framework 4.8 first or use the installer: older updater code cannot perform the new check. See [migration guidance](FRAMEWORK_MIGRATION.md). Runtime configuration retains strong cryptography and operating-system-selected TLS without changing machine-wide registry settings or disabling certificate verification.
 - Downgrading to a version without this feature removes the update page. A later upgrade from that older version requires manual installation again.
 - The configured offline workspace checks cover a preferences-only Settings workspace, a hidden profile page and hosted background workers. They validate installation eligibility without installing a release; inspect the exact commit's Actions result rather than treating this guide as a passing test record.
 

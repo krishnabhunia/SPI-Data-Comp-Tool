@@ -25,12 +25,11 @@ WINDOWS = {
     "Excel_Excel_Comparison": ("Excel_Excel_Comparison.cs", "Excel_Excel_Comparison.Designer.cs"),
     "DB_Comparison": ("DB Comparison.cs", "DB Comparison.Designer.cs"),
     "Compare_Multiples_Forms": ("Compare_Multiples_Forms.cs", "Compare_Multiples_Forms.Designer.cs"),
-    "Execute_Excel_Scripts_Form": ("Execute Excel Scripts Form.cs", "Execute Excel Scripts Form.Designer.cs"),
     "SQL_DB_To_Excel": ("SQL_DB_To_Excel.cs", "SQL_DB_To_Excel.Designer.cs"),
 }
 
 # windows without a generated layout attach the strip at run time
-ATTACHED = ("Generate IUD Script Form.cs", "CustomisedExcel.cs")
+ATTACHED = ("CustomisedExcel.cs",)
 
 
 class ControlledSteps(unittest.TestCase):
@@ -63,10 +62,8 @@ class ControlledSteps(unittest.TestCase):
         self.assertIn("c.Dock == DockStyle.None", attach)
         self.assertIn("body.BringToFront();", attach)
 
-    def test_script_and_report_windows_lock_their_later_steps(self):
+    def test_report_windows_lock_their_later_steps(self):
         cases = {
-            "Generate IUD Script Form.cs": [('"Workbook"', "btn_ListTableExcel"), ('"Generate"', "btn_Script")],
-            "Execute Excel Scripts Form.cs": [('"Test connection"', "btnTestConnecton"), ('"Execute"', "btn_Execute"), ('"Report"', "btn_PNID_Report")],
             "SQL_DB_To_Excel.cs": [('"Load tables"', "btn_Connect"), ('"Export"', "btn_ExportToExcel")],
             "CustomisedExcel.cs": [('"Columns"', "checkedListBox1"), ('"Create"', "btn_CreateExcel")],
         }

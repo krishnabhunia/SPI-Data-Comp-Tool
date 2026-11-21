@@ -16,7 +16,6 @@ namespace SPI_Data_Comp_Tool
             label3.Text = "Choose a workspace. Each task keeps its own inputs and results. Reopen a task to return to it; hold Ctrl for a separate session.";
             BuildWorkspaceMenus();
             btn_WorkspaceComparison.Click += (sender, e) => OpenTask("comparison.database");
-            btn_WorkspaceScripts.Click += (sender, e) => OpenTask("scripts.generate");
             btn_WorkspaceReports.Click += (sender, e) => OpenTask("reports.database");
             btn_WorkspaceSettings.Click += (sender, e) => OpenTask("settings.preferences");
             lbl_LoginStatus.Text = GlobalDebug.ISGlobalDebug(Environment.UserName, string.Empty) ? "Developer mode" : "Ready";
@@ -25,7 +24,7 @@ namespace SPI_Data_Comp_Tool
             UiTheme.MarkStatus(pnl_Status);
             UiTheme.Apply(this);
             foreach (var button in new[] { btn_WorkspaceComparison,
-                btn_WorkspaceScripts, btn_WorkspaceReports, btn_WorkspaceSettings }) button.UseMnemonic = false;
+                btn_WorkspaceReports, btn_WorkspaceSettings }) button.UseMnemonic = false;
         }
 
         private void BuildWorkspaceMenus()

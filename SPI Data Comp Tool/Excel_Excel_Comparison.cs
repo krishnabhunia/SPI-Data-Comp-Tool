@@ -29,9 +29,7 @@ namespace SPI_Data_Comp_Tool
         private string str_constr;
         private string str_wsName;
         private string strQuery;
-        private string str_Reference_ID;
         private string fileNameWithPath;
-        private string str_RowFilter;
         private string cellValue;
 
         private string str_Data_Source_To_Compare;
@@ -61,7 +59,6 @@ namespace SPI_Data_Comp_Tool
 
         private DataSet ds_Instrument_Input_File;
 
-        private DataView dv_secondTableDataView;
         DateTime dateTime1;// = new DateTime();
 
         private bool boolValidate, boolInstrumentFileGenerationStatus;
@@ -87,7 +84,6 @@ namespace SPI_Data_Comp_Tool
 
         private DataGridView dataGridView11;
 
-        private string str_boolCheckedDC;
 
         private int cellCol, headRow, alternateRow;
 
@@ -138,9 +134,7 @@ namespace SPI_Data_Comp_Tool
             str_constr = string.Empty;
             str_wsName = string.Empty;
             strQuery = string.Empty;
-            str_Reference_ID = string.Empty;
             fileNameWithPath = string.Empty;
-            str_RowFilter = string.Empty;
 
             Econ = new OleDbConnection();
             ds = new DataSet();
@@ -191,7 +185,7 @@ namespace SPI_Data_Comp_Tool
 
             saveFileDialogFile = new SaveFileDialogFile();
 
-            if (Debugger.IsAttached)
+            if (GlobalDebug.boolIsGlobalDebug)
             {
                 btnLoad.Visible = true;
 
@@ -203,7 +197,7 @@ namespace SPI_Data_Comp_Tool
 
             lbl_InstrumentText.Text = "The Below Button will generate Required Item Tag and Short Item Tag for specific Input Source File which doesn't have any Unique reference ID other that Item Tag which get matched with Target Input File. Pls use this in old datasets.";
 
-            if (Debugger.IsAttached)
+            if (GlobalDebug.boolIsGlobalDebug)
             {
                 button1.Visible = true;
                 btn_TestSystemMemoryOutException.Visible = true;
@@ -533,24 +527,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private string generateRowFilterString(DataRow dr)
-        {
-            try
-            {
-                str_Reference_ID = string.Empty;
-                foreach (var a in clb_reference_ID.CheckedItems)
-                {
-                    //str_Reference_ID = str_Reference_ID + a.ToString() + " = '" + dr[a.ToString()] + "' AND ";
-                    str_Reference_ID = str_Reference_ID + FilterPredicate(a.ToString(), dr[a.ToString()]) + " AND ";
-                }
-                str_Reference_ID = str_Reference_ID.Substring(0, str_Reference_ID.Length - 4);
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-            return str_Reference_ID;
-        }
 
         private void btn_Generate_Click(object sender, EventArgs e)
         {
@@ -828,7 +804,7 @@ namespace SPI_Data_Comp_Tool
 
                 DisplayMessage("Saving Output File !!!");
 
-                if (!(Debugger.IsAttached))
+                if (!(GlobalDebug.boolIsGlobalDebug))
                 {
                     saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Output File", $"{firstExcelData.SimpleFileName_WithoutExt}_{secondExcelData.SimpleFileName_WithoutExt}_{common_Data.AppendDateInOutputFileName(DateTime.Now).ToString()}");
                 }
@@ -983,46 +959,13 @@ namespace SPI_Data_Comp_Tool
                 dateTime1 = DateTime.Now;
                 dataGridView11 = new DataGridView();
 
-                str_boolCheckedDC = "boolChecked";
 
                 if (boolValidate)
                 {
-                    #region adding a flag column for checking
-
-                    if (dt_reinitialize.Columns.Contains(str_boolCheckedDC))
-                    {
-                        dt_reinitialize.Columns.Remove(str_boolCheckedDC);
-                    }
-
-                    dt_secondTable = new DataTable();
                     dt_secondTable = dt_reinitialize.Copy();
-
-                    if (!(dt_secondTable.Columns.Contains(str_boolCheckedDC)))
-                    {
-                        dt_secondTable.Columns.Add(str_boolCheckedDC, typeof(bool));
-                    }
-
-                    foreach (DataRow dr_TRG in dt_secondTable.Rows)
-                    {
-                        dr_TRG[str_boolCheckedDC] = false;
-                    }
-
-                    if (!(dt_firstTable.Columns.Contains(str_boolCheckedDC)))
-                    {
-                        dt_firstTable.Columns.Add(str_boolCheckedDC);
-                    }
-
-                    foreach (DataRow dr_SRC in dt_firstTable.Rows)
-                    {
-                        dr_SRC[str_boolCheckedDC] = false;
-                    }
-
-                    #endregion
                     dt_secondTable.CaseSensitive = true;
-                    dv_secondTableDataView = new DataView(dt_secondTable);
-
+                    var remainingTargets = new ComparisonRows(dt_secondTable, clb_reference_ID.CheckedItems.Cast<string>());
                     dt_firstTableOnly = dt_firstTable.Clone();
-                    dt_secondTableOnly = dt_secondTable.Copy();
 
                     headRow = -1;
                     cellCol = alternateRow = 0;
@@ -1063,16 +1006,10 @@ namespace SPI_Data_Comp_Tool
                             return;
                         }
 
-                        str_RowFilter = generateRowFilterString(dr);
+                        DataRow targetRow = remainingTargets.TakeNext(dr);
 
-                        str_RowFilter = $"{str_RowFilter} And {str_boolCheckedDC} = 'False'";
-
-                        dv_secondTableDataView.RowFilter = str_RowFilter;
-
-                        if (dv_secondTableDataView.Count > 0)
+                        if (targetRow != null)
                         {
-                            delete_current_row_from_second_table();
-
                             CheckedListBox.CheckedItemCollection cic_firsttableColumns = clb_firstExcel.CheckedItems;
                             CheckedListBox.CheckedItemCollection cic_reference = clb_reference_ID.CheckedItems;
                             foreach (var a in cic_firsttableColumns)
@@ -1082,11 +1019,11 @@ namespace SPI_Data_Comp_Tool
                                 if (!(cic_reference.Contains(a)))
                                 {
                                     str_Data_Source_To_Compare = dr[a.ToString()].ToString().Trim();
-                                    str_Data_Target_To_Compare = dv_secondTableDataView[0][a.ToString()].ToString().Trim();
+                                    str_Data_Target_To_Compare = targetRow[a.ToString()].ToString().Trim();
 
                                     //boolCompareResult = false;
 
-                                    bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, a.ToString(), a.ToString(), dr, dv_secondTableDataView.ToTable().Rows[0], dt_firstTable.Columns, dt_secondTable.Columns);
+                                    bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, a.ToString(), a.ToString(), dr, targetRow, dt_firstTable.Columns, dt_secondTable.Columns);
 
                                     if (boolTest)
                                     {
@@ -1095,7 +1032,7 @@ namespace SPI_Data_Comp_Tool
                                         if (newRow)
                                         {
                                             dt_unmatched_Capture.Rows.Add(dr.ItemArray);
-                                            dt_unmatched_Capture.Rows.Add(dv_secondTableDataView[0].Row.ItemArray);
+                                            dt_unmatched_Capture.Rows.Add(ComparisonRows.ValuesForColumns(targetRow, dt_unmatched_Capture));
                                             headRow += 2;
                                             alternateRow += 2;
                                             newRow = false;
@@ -1118,51 +1055,14 @@ namespace SPI_Data_Comp_Tool
                                 }
                             }
                             newRow = true;
-                            if (dv_secondTableDataView.Count > 1)
-                            {
-                                dv_secondTableDataView[0][str_boolCheckedDC] = true;
-                            }
                         }
                         else
                         {
                             dt_firstTableOnly.Rows.Add(dr.ItemArray);
                         }
-                        //dv_secondTableDataView[0][dc_boolChecked.ColumnName] = true;
                     }
 
-                    #region removing boolChecked Column
-
-                    if (dt_unmatched_Capture.Columns.Contains(str_boolCheckedDC))
-                    {
-                        dt_unmatched_Capture.Columns.Remove(str_boolCheckedDC);
-                    }
-
-                    if (dt_firstTable.Columns.Contains(str_boolCheckedDC))
-                    {
-                        dt_firstTable.Columns.Remove(str_boolCheckedDC);
-                    }
-
-                    if (dt_secondTable.Columns.Contains(str_boolCheckedDC))
-                    {
-                        dt_secondTable.Columns.Remove(str_boolCheckedDC);
-                    }
-
-                    if (dt_firstTableOnly.Columns.Contains(str_boolCheckedDC))
-                    {
-                        dt_firstTableOnly.Columns.Remove(str_boolCheckedDC);
-                    }
-
-                    if (dt_secondTableOnly.Columns.Contains(str_boolCheckedDC))
-                    {
-                        dt_secondTableOnly.Columns.Remove(str_boolCheckedDC);
-                    }
-
-                    if (dt_summarised_difference.Columns.Contains(str_boolCheckedDC))
-                    {
-                        dt_summarised_difference.Columns.Remove(str_boolCheckedDC);
-                    }
-
-                    #endregion
+                    dt_secondTableOnly = remainingTargets.Remaining();
 
                     #region for deleting columns which are not required
 
@@ -1202,7 +1102,7 @@ namespace SPI_Data_Comp_Tool
 
                     Logs.EnterLogsWithTime($"Data in dt_transpose datatable :Rows : {dt_transpose.Rows.Count}, Columns : {dt_transpose.Columns.Count}");
 
-                    if (Properties.Settings.Default.EPPlus_Excel_Save)
+                    if (AppPreferences.ExcelWriter == ExcelWriterMode.EPPlus)
                     {
                         Logs.EnterLogsWithTime($"Saving File with EPPlus started");
                         using (ExcelPackage pck = new ExcelPackage())
@@ -1294,7 +1194,7 @@ namespace SPI_Data_Comp_Tool
                         #endregion
 
                     }
-                    else if (Properties.Settings.Default.XL_Excel_Save)
+                    else
                     {
                         #region Old excel saving code
                         Logs.EnterLogsWithTime($"Saving File with XL Started");
@@ -1420,7 +1320,7 @@ namespace SPI_Data_Comp_Tool
                                 str_Data_Source_To_Compare = dr[dc.ColumnName].ToString().Trim();
                                 str_Data_Target_To_Compare = dataRows_TRG[dc.ColumnName].ToString().Trim();
 
-                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dr, dtSRC.Columns, dtTRG.Columns);
+                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dataRows_TRG, dtSRC.Columns, dtTRG.Columns);
 
                                 if (boolTest)
                                 {
@@ -1429,7 +1329,7 @@ namespace SPI_Data_Comp_Tool
                                     if (boolANewRow)
                                     {
                                         dtUnmatched.Rows.Add(dr.ItemArray);
-                                        dtUnmatched.Rows.Add(dataRows_TRG.ItemArray);
+                                        dtUnmatched.Rows.Add(ComparisonRows.ValuesForColumns(dataRows_TRG, dtUnmatched));
                                         boolANewRow = false;
                                         int_Color_Row += 2;
                                     }
@@ -1485,7 +1385,7 @@ namespace SPI_Data_Comp_Tool
 
                 Logs.EnterLogsWithTime($"Data in dtSummary datatable :Rows : {dtSummary.Rows.Count}, Columns : {dtSummary.Columns.Count}");
 
-                if (Properties.Settings.Default.EPPlus_Excel_Save)
+                if (AppPreferences.ExcelWriter == ExcelWriterMode.EPPlus)
                 {
                     //var r1 = colorPairs.AsQueryable().Skip(1020300).Take(5);
 
@@ -1554,7 +1454,7 @@ namespace SPI_Data_Comp_Tool
                         Logs.EnterLogsWithTime($"Saving File with EPPlus ended under PK");
                     }
                 }
-                else if (Properties.Settings.Default.XL_Excel_Save)
+                else
                 {
                     #region Old excel saving code
                     Logs.EnterLogsWithTime($"Saving File with XL Started");
@@ -1850,23 +1750,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void delete_current_row_from_second_table()
-        {
-            try
-            {
-                DataRow[] rowsDel = dt_secondTableOnly.Select(str_RowFilter);
-
-                foreach (DataRow dr in rowsDel)
-                {
-                    dr.Delete();
-                }
-                dt_secondTableOnly.AcceptChanges();
-            }
-            catch (Exception ex)
-            {
-                myException = ex;
-            }
-        }
 
         private void showElapsedTime()
         {
@@ -1893,7 +1776,7 @@ namespace SPI_Data_Comp_Tool
             {
                 if (myException != null && myException.InnerException != null)
                 {
-                    lbl_Status.Text = myException.Message.ToString();
+                    lbl_Status.Text = Common_Data.RedactConnectionCredentials(myException.Message.ToString());
                     Logs.EnterLogsWithTime(myException.ToString());
                 }
                 if (e.ProgressPercentage <= 100 & e.ProgressPercentage > 0)
@@ -1925,7 +1808,7 @@ namespace SPI_Data_Comp_Tool
                             break;
 
                         case 105:
-                            lbl_Status.Text = e.UserState.ToString();
+                            lbl_Status.Text = Common_Data.RedactConnectionCredentials(e.UserState.ToString());
                             break;
 
                     }
@@ -1941,7 +1824,7 @@ namespace SPI_Data_Comp_Tool
 
                     if (backGroundWorkerUserObjectForReport.strMsg != null)
                     {
-                        lbl_Status.Text = backGroundWorkerUserObjectForReport.strMsg;
+                        lbl_Status.Text = Common_Data.RedactConnectionCredentials(backGroundWorkerUserObjectForReport.strMsg);
                         Logs.EnterLogsWithTime(backGroundWorkerUserObjectForReport.strMsg);
                     }
 
@@ -1983,7 +1866,7 @@ namespace SPI_Data_Comp_Tool
                     llbl_filePath.Visible = true;
                     label1.Visible = true;
 
-                    if (!(Debugger.IsAttached))
+                    if (!(GlobalDebug.boolIsGlobalDebug))
                     {
                         Process.Start(saveFileDialogFile.Str_saveFileNameWithPath);
                     }
@@ -1999,13 +1882,13 @@ namespace SPI_Data_Comp_Tool
                 {
                     if (myException != null && myException.StackTrace != null)
                     {
-                        lbl_Status.Text = myException.Message.ToString();
+                        lbl_Status.Text = Common_Data.RedactConnectionCredentials(myException.Message.ToString());
                         Logs.EnterLogsWithTime(myException.ToString());
                     }
 
                     if (myException_BG != null && myException_BG.StackTrace != null)
                     {
-                        lbl_Status.Text = myException_BG.Message.ToString();
+                        lbl_Status.Text = Common_Data.RedactConnectionCredentials(myException_BG.Message.ToString());
                         Logs.EnterLogsWithTime(myException_BG.ToString());
                     }
                     //Logs.EnterLogsWithTime(myException_BG.ToString());
@@ -2183,8 +2066,6 @@ namespace SPI_Data_Comp_Tool
             {
                 FormValidation.Table(table, btn_SelectLoad, "Worksheet", false);
                 FormValidation.Columns(table, keys.Concat(compared), clb_firstExcel, "Comparison columns");
-                FormValidation.Require(!table.Columns.Contains("boolChecked"), clb_firstExcel,
-                    "Rename the reserved internal column boolChecked before comparing this workbook.");
                 FormValidation.Require(keys.Concat(compared).All(name => !name.Contains(",") && name == name.Trim()), clb_firstExcel,
                     "The comparison engine requires selected headers without commas or leading/trailing spaces. Rename those headers first.");
                 if (cb_Primary_Key.Checked) ValidatePrimaryKeys(table, keys, clb_reference_ID);
@@ -2301,7 +2182,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                lbl_Status.Text = str_Msg;
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(str_Msg);
                 lbl_Status.ForeColor = Color.Black;
                 if (boolError)
                 {
@@ -2346,7 +2227,7 @@ namespace SPI_Data_Comp_Tool
             {
                 if (myException.InnerException != null)
                 {
-                    lbl_Status.Text = myException.Message.ToString();
+                    lbl_Status.Text = Common_Data.RedactConnectionCredentials(myException.Message.ToString());
                 }
                 if (e.ProgressPercentage <= 100)
                 {
@@ -2414,7 +2295,7 @@ namespace SPI_Data_Comp_Tool
                 }
                 else if (myException != null && myException.InnerException != null)
                 {
-                    lbl_Status.Text = myException.Message.ToString();
+                    lbl_Status.Text = Common_Data.RedactConnectionCredentials(myException.Message.ToString());
                 }
                 else
                 {
@@ -2461,9 +2342,10 @@ namespace SPI_Data_Comp_Tool
                 {
                     lblError.Visible = true;
                     lblError.ForeColor = Color.Red;
-                    if (Debugger.IsAttached)
+                    lblError.Text = Common_Data.RedactConnectionCredentials(ex.Message);
+                    if (GlobalDebug.boolIsGlobalDebug)
                     {
-                        lblError.Text = ex.ToString();
+                        lblError.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }
                 }
                 else
@@ -2474,7 +2356,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex1)
             {
-                lblError.Text = ex1.Message.ToString();
+                lblError.Text = Common_Data.RedactConnectionCredentials(ex1.Message.ToString());
             }
             Logs.EnterLogsForError(ex);
         }

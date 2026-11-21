@@ -1,8 +1,10 @@
 # SPI Data Comparison Tool
 
-Generic Windows Forms (.NET Framework 4.6.2) desktop utility for database and Excel comparison, SQL script generation/execution and data exports. It works against Oracle and SQL Server.
+Generic Windows Forms (.NET Framework 4.8) desktop utility for database and Excel comparison, workbook audits and data exports. It works against Oracle and SQL Server.
 
-The main window groups 12 tasks into four workspace tiles: **Comparison**, **SQL Scripts**, **Data & Reports**, and **Settings**. Switching tasks preserves each page's inputs and results. The retired Analysis & Migration and Pre-merge Checks workspaces, their task forms and their dedicated supporting code have been removed. The earlier application is preserved in [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0).
+The main window groups 10 tasks into three workspace tiles: **Comparison**, **Data & Reports**, and **Settings**. Switching tasks preserves each page's inputs and results. The SQL Scripts workspace and both its generation/execution forms have been removed. Database comparison and database-to-Excel export remain available.
+
+The earlier Analysis & Migration and Pre-merge Checks workspaces, their task forms and their dedicated supporting code also remain removed. The application before that retirement is preserved in [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0).
 
 The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes remain available. Choose one on the Settings preferences task's **General** tab; the home tiles, workspaces and loaded pages change colour immediately, without reopening the tasks. Ocean is the default; Midnight is the dark theme.
 
@@ -20,6 +22,7 @@ The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes rem
 | 6 | Current workspace/task map, independent sessions and retirement boundary | [docs/WORKSPACES.md](docs/WORKSPACES.md) |
 | 7 | Separate Excel Sheet Audit: Design A, key mappings, two-sheet report and limits | [docs/EXCEL_SHEET_AUDIT.md](docs/EXCEL_SHEET_AUDIT.md) |
 | 8 | Workbook identity check: are two workbooks identical? Inputs, the five-sheet report and limits | [docs/WORKBOOK_IDENTITY_CHECK.md](docs/WORKBOOK_IDENTITY_CHECK.md) |
+| 9 | Open-issue evidence, remaining acceptance and framework migration plan | [docs/ISSUE_AUDIT.md](docs/ISSUE_AUDIT.md), [docs/FRAMEWORK_MIGRATION.md](docs/FRAMEWORK_MIGRATION.md) |
 
 ## Quick start
 

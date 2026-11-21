@@ -32,22 +32,15 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 // Setting radio buttons during startup must not overwrite saved preferences.
-                rb_XLSave.Checked = Properties.Settings.Default.XL_Excel_Save;
-                rb_EPPlus.Checked = !rb_XLSave.Checked;
+                AppPreferenceValues preferences = AppPreferences.Read();
+                ShowExcelWriter(preferences.ExcelWriter);
                 // Display the saved path only. Opening Settings must not read an Excel workbook.
-                tb_RulesPath.Text = Properties.Settings.Default.RuleFilePath ?? string.Empty;
+                tb_RulesPath.Text = preferences.RuleFilePath;
                 lbl_RulesStatus.Text = string.IsNullOrWhiteSpace(tb_RulesPath.Text)
                     ? "No comparison rules file selected."
                     : "Saved file selected. It will be read when a comparison uses rules.";
-                // list the colour themes and show the one in use; choosing another applies it at once
-                cb_Theme.Items.AddRange(UiTheme.All);
-                cb_Theme.SelectedItem = UiTheme.Current;
-                cb_Theme.SelectedIndexChanged += cb_Theme_SelectedIndexChanged;
-                // another Settings window (opened for the rules) may change the theme: keep this picker in step
-                UiTheme.Changed += Theme_Changed;
-                Disposed += (sender, e) => UiTheme.Changed -= Theme_Changed;
-                if (showRules) ShowRules();
-                UpdateAcceptButton();
+                if (!string.IsNullOrEmpty(preferences.Warning))
+                    Common_Data.DisplayMessage(rtb_Log, preferences.Warning, true);
             }
             catch (Exception ex)
             {
@@ -55,6 +48,14 @@ namespace SPI_Data_Comp_Tool
             }
             finally
             {
+                // Optional settings must never skip unrelated controls or leave a partial form.
+                cb_Theme.Items.AddRange(UiTheme.All);
+                cb_Theme.SelectedItem = UiTheme.Current;
+                cb_Theme.SelectedIndexChanged += cb_Theme_SelectedIndexChanged;
+                UiTheme.Changed += Theme_Changed;
+                Disposed += (sender, e) => UiTheme.Changed -= Theme_Changed;
+                if (showRules) ShowRules();
+                UpdateAcceptButton();
                 initializing = false;
             }
         }
@@ -130,17 +131,11 @@ namespace SPI_Data_Comp_Tool
                 throw;
             }
 
-            string previousPath = Properties.Settings.Default.RuleFilePath;
-            try
+            string warning;
+            if (!AppPreferences.TrySaveRulesPath(fileName, out warning))
             {
-                Properties.Settings.Default.RuleFilePath = fileName;
-                Properties.Settings.Default.Save();
-            }
-            catch
-            {
-                Properties.Settings.Default.RuleFilePath = previousPath;
                 candidate.Dispose();
-                throw;
+                throw new InvalidOperationException(warning);
             }
 
             ImportedRules = candidate;
@@ -223,31 +218,34 @@ namespace SPI_Data_Comp_Tool
 
         private void ExcelChangeSave(string message)
         {
-            bool previousEpplus = Properties.Settings.Default.EPPlus_Excel_Save;
-            bool previousExcel = Properties.Settings.Default.XL_Excel_Save;
             try
             {
-                Properties.Settings.Default.EPPlus_Excel_Save = rb_EPPlus.Checked;
-                Properties.Settings.Default.XL_Excel_Save = rb_XLSave.Checked;
-                Properties.Settings.Default.Save();
-                Common_Data.DisplayMessage(rtb_Log, message);
+                string warning;
+                ExcelWriterMode selected = rb_XLSave.Checked ? ExcelWriterMode.MicrosoftExcel : ExcelWriterMode.EPPlus;
+                if (AppPreferences.TrySaveExcelWriter(selected, out warning))
+                    Common_Data.DisplayMessage(rtb_Log, message);
+                else
+                {
+                    ShowExcelWriter(AppPreferences.ExcelWriter);
+                    Common_Data.DisplayMessage(rtb_Log, warning, true);
+                }
             }
             catch (Exception ex)
             {
-                Properties.Settings.Default.EPPlus_Excel_Save = previousEpplus;
-                Properties.Settings.Default.XL_Excel_Save = previousExcel;
-                initializing = true;
-                try
-                {
-                    rb_XLSave.Checked = previousExcel;
-                    rb_EPPlus.Checked = !previousExcel;
-                }
-                finally
-                {
-                    initializing = false;
-                }
                 Common_Data.DisplayError(rtb_Log, ex);
             }
+        }
+
+        private void ShowExcelWriter(ExcelWriterMode writer)
+        {
+            bool wasInitializing = initializing;
+            initializing = true;
+            try
+            {
+                rb_XLSave.Checked = writer == ExcelWriterMode.MicrosoftExcel;
+                rb_EPPlus.Checked = writer == ExcelWriterMode.EPPlus;
+            }
+            finally { initializing = wasInitializing; }
         }
     }
 }

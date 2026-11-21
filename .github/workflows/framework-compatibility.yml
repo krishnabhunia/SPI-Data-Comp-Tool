@@ -1,0 +1,40 @@
+name: Framework 4.8 compatibility and measurements
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: framework-compatibility-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  framework-48:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: NuGet/setup-nuget@v3
+      - uses: microsoft/setup-msbuild@v3
+      - run: nuget restore "SPI Data Comp Tool.sln" -NonInteractive
+      - name: Build and exercise the adopted .NET Framework 4.8 target
+        shell: pwsh
+        run: ./tools/check_framework_compatibility.ps1
+      - name: Preserve runtime checks and comparison measurements
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: framework48-evidence-${{ matrix.os }}
+          path: ${{ runner.temp }}/framework48-*
+          if-no-files-found: warn
+          retention-days: 30

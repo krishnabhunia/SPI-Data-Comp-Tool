@@ -1,6 +1,6 @@
 # Excel Sheet Audit — Design A
 
-Open **Comparison > Excel Sheet Audit**. This is a new native C# Windows Forms task, separate from **Excel comparison**. It uses the application's existing .NET Framework 4.6.2 and Open XML SDK dependency; it does not install Python, launch Excel, execute formulas/macros, or alter the older comparison engine.
+Open **Comparison > Excel Sheet Audit**. This is a new native C# Windows Forms task, separate from **Excel comparison**. It uses the application's existing .NET Framework 4.8 and Open XML SDK dependency; it does not install Python, launch Excel, execute formulas/macros, or alter the older comparison engine.
 
 ## Run an audit
 

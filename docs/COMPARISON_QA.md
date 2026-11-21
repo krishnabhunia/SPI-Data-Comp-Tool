@@ -1,6 +1,6 @@
 # Comparison and logging regression checklist
 
-> Use **disposable** SQL Server and Oracle databases and synthetic spreadsheets. A passing build or window-opening check does not establish comparison correctness or make data-modifying operations safe for production.
+> Use **disposable** SQL Server and Oracle databases and synthetic spreadsheets. A passing build or window-opening check does not establish comparison correctness or complete workflow coverage.
 
 ## Automated checks
 
@@ -12,17 +12,29 @@ These checks are configured in the repository. Inspect the successful [Actions r
 | **Windows data-integrity source checks** (`.github/workflows/data-integrity-checks.yml`) | Runs the Python regression suite on pull requests | Windows executable interaction or database integration |
 | **Build and checks** (`.github/workflows/build.yml`) | Builds the Windows application, validates generated layouts and runs regression checks | Proof that every business workflow is correct |
 | `--check-ui <log file>` | Executes synthetic Windows UI/profile/import checks: navigation, Settings/Rules, profile candidates, temporary-file writes, and comparison/workbook validation fixtures | Full Oracle/SQL Server integration, production files, or an exhaustive comparison dataset |
+| Comparison correctness suite inside `--check-ui` (`tests/ComparisonCorrectnessChecks.cs`) | Runs the actual Database, List and Excel comparison/report paths on synthetic snapshots; reopens the output workbooks; checks repeated keys, typed/composite keys, source-only/target-only rows, conditional target rules and reordered columns | Live provider reads, Microsoft Excel rendering, arbitrary customer files or universal size limits |
+| `--check-sql-integration <log file>` (`tests/DatabaseIntegrationChecks.cs`) | Creates two uniquely named disposable databases on the dedicated `SPI_Comparison_Checks_CI` LocalDB instance; runs the actual SQL Server Source/Target form loaders, primary/reference comparisons and workbook exports; checks all four Windows/SQL authentication combinations, rejected credentials, database permissions and quoted table names; removes its generated databases/logins/files in `finally` | Oracle integration, production permissions, external-server network failures or interactive Excel fidelity |
+| `--check-startup <log file>` | 40 real workspace-navigation scenarios: all 10 routes with no remembered profile and a valid legacy profile, plus five unavailable/invalid-file cases for the four profile-consuming routes | Live database connectivity, real profile files or complete task output correctness |
 | Workbook identity suite inside `--check-ui` (`tests/WorkbookIdentityChecks.cs`) | Engine and report on synthetic workbooks: value, type, formula, format and layout differences; primary keys; skipped checks; a report that opens without an Excel repair prompt | Real customer workbooks, very large files, or opening the report in Excel itself |
 | `--list-forms` / `--open-form` | Creates, shows and closes every listed window; a failed opening fails the check | Completing the workflow represented by each window |
 | Portable/installer checks | Loads embedded dependencies and smoke-tests the x64 installer and uninstaller | Upgrade/rollback compatibility across all previously released versions or Windows installations |
 
-The UI checks use synthetic data and temporary test files, not real connection profiles or live databases. No screenshots are captured or published. See [PROJECT_GUIDE.md](PROJECT_GUIDE.md) for build/release details and the [release page](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases) for published packages.
+The UI checks use synthetic data and temporary test files, not real connection profiles or live databases. The **separate, explicit** SQL integration command connects only to `(localdb)\SPI_Comparison_Checks_CI`. The CI wrapper must create that dedicated instance and remove it after the test; the command accepts no server/connection-string input and never uses the user's normal `MSSQLLocalDB` instance. Missing LocalDB or a failed database/report/cleanup assertion fails the check instead of silently skipping it. No screenshots are captured or published. See [PROJECT_GUIDE.md](PROJECT_GUIDE.md) for build/release details and the [release page](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases) for published packages.
+
+## Reference-key matching and comparison rules
+
+- In the existing **non-primary-key mode**, repeated keys pair one source row with one available target row in original target order. Each target row can be used once. Extra duplicates remain in the appropriate Source/Target Rows Only worksheet. The engine does not perform a Cartesian join or silently discard unpaired duplicates.
+- This is occurrence-order pairing, not an optimal assignment between duplicate groups. Reordering different values under the same repeated key can produce differences. Use a genuinely unique composite key when rows must match independently of their order.
+- Null reference keys match null reference keys and remain distinct from empty-string keys. Key predicates escape column names and text; dates/decimals use culture-independent literals and large integer/decimal keys retain precision. Explicit primary-key mode continues to require unique, non-null keys.
+- Cell-value comparison retains the legacy rules: values are converted to text and trimmed, the Ignore case option applies, and configured rules may suppress a difference. In particular, null and empty **value cells** both normalize to empty text; the distinct null/empty behavior above concerns reference keys. This change does not redefine existing value-normalization options.
+- Conditional rules evaluate the actual matched target row. Report rows are mapped by column name before export, so different source/target column orders do not put target values under the wrong headers.
+- Repeated-key candidates are cached in original-order queues. A deterministic 2,000-row repeated-key test checks ordering and exhaustion. This is regression coverage, not a claimed upper data-size or performance limit.
 
 ## Rollback-sensitive behaviour
 
 [PR #20](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/pull/20) restored the exact state before PRs #17 and #18 at the owner's request. The application does **not** currently have the A/B application sign-in screen introduced in PR #17. Database connection authentication is a separate concern and must still be tested independently for source and target.
 
-Do **not** assume that the SQL preview, typed execution confirmation, transaction/rollback or cancellation safeguards from PR #18 are present. Any proposal to reintroduce those safeguards or redesign application authentication requires explicit owner approval and a separate reviewed change. This checklist does not restore or substitute for those controls.
+The SQL Scripts workspace and its generation/execution forms are now removed. The historical SQL preview, typed execution confirmation and transaction/rollback design from PR #18 was not restored. Any future proposal to reintroduce script execution or redesign application authentication requires a separate reviewed change; it is outside the current comparison/export acceptance scope.
 
 ## Manual Windows acceptance matrix
 
@@ -39,10 +51,10 @@ The following are **acceptance expectations to verify**, not a record of complet
 | Null vs empty string, case changes, numeric/decimal precision, dates | Behavior matches agreed comparison rules |
 | Connection failure or an exception while a password is present | Neither UI messages nor disk logs reveal connection-string password assignments |
 | Save a database profile while debugger is attached | Saved JSON has blank passwords for both source and target |
-| Execute SQL scripts from an Excel sheet | Use only disposable databases and synthetic records with restricted test accounts; review generated commands outside the app before execution and capture before/after data. Do not assume built-in preview, transaction rollback or cancellation, and **do not test on production** |
+| Current task inventory | Three workspace tiles and 10 task routes are available; retired script-generation/execution forms cannot be opened through menus, workspace routes or a self-test launch |
 
 ## Known follow-ups
 
-- Deterministic end-to-end Oracle/SQL Server/Excel comparison fixtures, measured performance/data-size limits and broader upgrade/rollback testing remain outstanding. See [issue #7](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/7); do not close it solely because builds, releases or UI smoke checks pass.
-- SQL-execution safety remains a separate decision and validation track. See [issue #9](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/9) and the rollback constraints above. Never exercise destructive acceptance scenarios against production.
+- The new suites configure real SQL Server LocalDB-to-workbook acceptance and synthetic Database/List/Excel report correctness checks; use the successful Actions run for the exact commit as execution evidence. Disposable Oracle integration, representative customer performance/capacity acceptance, interactive Microsoft Excel fidelity and broader upgrade/rollback testing remain outstanding. [PERFORMANCE.md](PERFORMANCE.md) describes the separately recorded bounded synthetic measurements. See [issue #7](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/7); do not close it solely because builds, releases or these bounded checks pass.
+- [Issue #9](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/9) concerns the retired SQL-execution workflow. Removing that workflow does not implement or verify its historical safety proposals; any future reintroduction needs its own acceptance plan.
 - Credentials previously committed to Git history require owner-controlled rotation if still active. Removing current literals, masking logs or passing a secrets check does not rotate a credential or erase historical copies.

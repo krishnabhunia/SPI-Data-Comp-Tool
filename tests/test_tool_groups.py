@@ -11,7 +11,6 @@ PROJ = ROOT / "SPI Data Comp Tool"
 ROUTES = {
     "reports.excel": ("DataReports", "CustomisedExcel", ""),
     "reports.logs": ("DataReports", "MergeLogsExport", ""),
-    "scripts.generate": ("Scripts", "Generate_IUD_Script_Form", ""),
 }
 
 

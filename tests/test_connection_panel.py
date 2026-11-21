@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "SPI Data Comp Tool"
 CONVERTED = ("DB Comparison.cs", "UserProfileForm.cs", "Compare_Multiples_Forms.cs",
-             "SQL_DB_To_Excel.cs", "Execute Excel Scripts Form.cs")
+             "SQL_DB_To_Excel.cs")
 # handlers that the panel now owns; a converted window must not grow its own copy again
 COPIED = ("CheckChangeRadioButton", "btn_Copy_SRC_TRG_Click", "btn_TRG_SRC_Click",
           "cb_WindowAuthentication_SRC_CheckedChanged", "cb_UserProfileList_SelectedIndexChanged")

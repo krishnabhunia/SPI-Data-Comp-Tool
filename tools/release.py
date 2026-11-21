@@ -175,7 +175,14 @@ def comment_body(state, repo, tag, sha):
         lines += [f"### Released as `{tag}`", "", f"Merged to master as commit `{short}` · latest release · [release page]({base}/tag/{tag})"]
     else:
         raise SystemExit(f"unknown comment state {state}")
-    lines += ["", "| SrNo. | Download | File |", "|---|---|---|"]
+    lines += [
+        "",
+        "**Requires Microsoft .NET Framework 4.8 or later.** Install the runtime before updating an older portable copy, "
+        "or use the installer, which checks the prerequisite before changing application files. "
+        "[Runtime download](https://dotnet.microsoft.com/download/dotnet-framework/net48).",
+        "",
+        "| SrNo. | Download | File |", "|---|---|---|",
+    ]
     for i, (what, name) in enumerate(release_assets(version), 1):
         lines.append(f"| {i} | {what} | [{name}]({base}/download/{tag}/{name}) |")
     if state == "beta":

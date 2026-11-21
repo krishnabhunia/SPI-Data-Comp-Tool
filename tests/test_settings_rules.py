@@ -54,11 +54,19 @@ class SettingsRules(unittest.TestCase):
         click = src.split("private void btn_ImportRules_Click", 1)[1].split("internal void ImportRulesFile", 1)[0]
         self.assertLess(click.index("DialogResult.OK) return;"), click.index("ImportRulesFile(dialog.FileName)"))
         imp = src.split("internal void ImportRulesFile", 1)[1].split("private void rb_EPPlus_CheckedChanged", 1)[0]
-        self.assertLess(imp.index("GetDatasetRules(fileName)"), imp.index("Properties.Settings.Default.RuleFilePath = fileName;"))
-        self.assertLess(imp.index("Properties.Settings.Default.Save();"), imp.index("ImportedRules = candidate;"))
+        commit = "AppPreferences.TrySaveRulesPath(fileName, out warning)"
+        self.assertLess(imp.index("GetDatasetRules(fileName)"), imp.index(commit))
+        self.assertLess(imp.index(commit), imp.index("ImportedRules = candidate;"))
         self.assertIn("candidate.Tables[0].Rows.Count == 0", imp)
-        self.assertIn("Properties.Settings.Default.RuleFilePath = previousPath;", imp)
-        self.assertLess(imp.index("ValidateRulesCandidate(candidate)"), imp.index("Properties.Settings.Default.Save();"))
+        failed_commit = imp.split(commit, 1)[1].split("ImportedRules = candidate;", 1)[0]
+        self.assertIn("candidate.Dispose();", failed_commit)
+        self.assertIn("throw new InvalidOperationException(warning);", failed_commit)
+        self.assertLess(imp.index("ValidateRulesCandidate(candidate)"), imp.index(commit))
+        preferences = source("AppPreferences.cs")
+        save = preferences.split("internal static bool TrySaveRulesPath", 1)[1].split("internal static bool TrySaveExcelWriter", 1)[0]
+        self.assertLess(save.index("previous = current.RuleFilePath;"), save.index("current.RuleFilePath = path;"))
+        self.assertLess(save.index("current.Save();"), save.index("return true;"))
+        self.assertIn("TryRestore(() => current.RuleFilePath = previous)", save)
 
     def test_rule_schema_matches_the_evaluator_before_persistence(self):
         src = source("User_Settings.cs")

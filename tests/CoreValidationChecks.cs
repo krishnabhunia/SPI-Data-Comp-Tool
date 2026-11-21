@@ -19,6 +19,7 @@ namespace SPI_Data_Comp_Tool
             CheckConnectionStrings(passed);
             CheckTablesAndWorkbook(passed);
             CheckPathsAndAtomicWrites(passed);
+            CheckFilePickerSelection(passed);
             CheckInputLock(passed);
             CheckWorkbookHeaders(passed);
             CheckSharedFormHelpers(passed);
@@ -27,6 +28,40 @@ namespace SPI_Data_Comp_Tool
         private static void Require(bool condition, string message)
         {
             if (!condition) throw new InvalidOperationException(message);
+        }
+
+        private static void CheckFilePickerSelection(Action<string> passed)
+        {
+            using (OpenFileDialog logs = OpenFileDialogData.CreateFileDialog("Synthetic logs", "txt,log"))
+            using (OpenFileDialog profiles = OpenFileDialogData.CreateFileDialog("Synthetic profiles", "json"))
+            {
+                Require(logs.DefaultExt == "txt" && logs.FilterIndex == 1
+                    && logs.Filter == "txt files (*.txt)|*.txt|log files (*.log)|*.log"
+                    && profiles.DefaultExt == "json" && profiles.FilterIndex == 1
+                    && profiles.CheckFileExists && profiles.CheckPathExists,
+                    "The shared file picker has an invalid extension or filter selection.");
+            }
+
+            string directory = Path.Combine(Path.GetTempPath(), "spi-picker-" + Guid.NewGuid().ToString("N"));
+            string[] fileNames = { "a.log", "b.txt", "नाम.profile.JSON", "book.part.xlsx" };
+            string[] expectedNames = { "a", "b", "नाम.profile", "book.part" };
+            string[] expectedExtensions = { ".log", ".txt", ".JSON", ".xlsx" };
+            for (int index = 0; index < fileNames.Length; index++)
+            {
+                string path = Path.Combine(directory, fileNames[index]);
+                OpenFileDialogData selected = OpenFileDialogData.FromSelection(path);
+                Require(selected.boolFileSelected && selected.strFileNameWithPath == path
+                    && selected.PathName_withoutFileName == directory && selected.SimpleFileName == fileNames[index]
+                    && selected.SimpleFileName_WithoutExt == expectedNames[index]
+                    && selected.ExtensionFileName == expectedExtensions[index],
+                    "A short, Unicode or multiple-dot filename was truncated by the shared file picker.");
+            }
+
+            OpenFileDialogData cancelled = OpenFileDialogData.FromSelection(null);
+            Require(!cancelled.boolFileSelected && cancelled.SimpleFileName.Length == 0
+                && cancelled.SimpleFileName_WithoutExt.Length == 0 && cancelled.PathName_withoutFileName.Length == 0,
+                "Cancelling the shared file picker retained the previous selection.");
+            passed("Shared file selection accepts short .log/.txt names, Unicode JSON and multiple-dot workbooks; single/multiple filters are valid and cancellation clears selection.");
         }
 
         private static void Invalid(Action action)
@@ -385,8 +420,22 @@ namespace SPI_Data_Comp_Tool
                 foreach (string column in new[] { "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME" }) metadata.Columns.Add(column);
                 Require(FormHelpers.FillTableNames(choice, metadata, "sql") == null, "An empty valid database table list returned a stale table.");
                 metadata.Rows.Add("synthetic-db", "dbo", "Items");
-                Require(FormHelpers.FillTableNames(choice, metadata, "sql") == "synthetic-db.dbo.Items"
-                    && metadata.Rows[0]["CompleteName"].ToString() == "synthetic-db.dbo.Items", "Valid SQL metadata produced an incorrect table choice.");
+                Require(FormHelpers.FillTableNames(choice, metadata, "sql") == "[synthetic-db].[dbo].[Items]"
+                    && metadata.Rows[0]["CompleteName"].ToString() == "[synthetic-db].[dbo].[Items]", "Valid SQL metadata produced an incorrect table choice.");
+                metadata.Rows.Add("db.with.dot", "schema space", "Order] O'Brien");
+                Require(FormHelpers.FillTableNames(choice, metadata, "sql") == "[db.with.dot].[schema space].[Order]] O'Brien]",
+                    "A SQL table picker treated metadata punctuation as part of the SQL syntax.");
+                metadata.Rows[1]["TABLE_NAME"] = DBNull.Value;
+                InvalidArgument(() => FormHelpers.FillTableNames(choice, metadata, "sql"));
+            }
+            using (var choice = new ComboBox())
+            using (var metadata = new DataTable())
+            {
+                metadata.Columns.Add("OWNER");
+                metadata.Columns.Add("TABLE_NAME");
+                metadata.Rows.Add("MixedCaseOwner", "Order Details.v2");
+                Require(FormHelpers.FillTableNames(choice, metadata, "oracle") == "\"MixedCaseOwner\".\"Order Details.v2\"",
+                    "An Oracle table picker changed the case or boundaries of quoted metadata identifiers.");
             }
             passed("Shared helpers handle empty/large progress safely and reject missing schemas or invalid summary names without erasing existing choices; valid summaries and empty metadata remain usable.");
         }

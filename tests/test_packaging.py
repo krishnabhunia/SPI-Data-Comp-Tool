@@ -38,15 +38,23 @@ class Packaging(unittest.TestCase):
         self.assertIn("ArchitecturesInstallIn64BitMode=x64compatible", iss)
         self.assertIn("ArchitecturesAllowed=x64compatible", iss)
 
-    def test_installer_ships_no_dll_files(self) -> None:
+    def test_installer_ships_application_configuration_and_dependency_notices(self) -> None:
         files = text(ISS).split("[Files]", 1)[1].split("[", 1)[0]
         sources = re.findall(r'Source: "([^"]+)"', files)
-        self.assertTrue(sources)
-        for s in sources:
-            self.assertNotIn(".dll", s.lower())
-            if "*" in s:                                   # a wildcard only for the PNID templates
-                self.assertTrue(s.endswith(r"PNID_Reports\*"), s)
-        self.assertTrue(any(s.endswith(r"PNID_Reports\*") for s in sources))
+        self.assertEqual(sources, [r"{#SourceDir}\{#ExeName}", r"{#SourceDir}\{#ExeName}.config",
+                                   r"{#SourceDir}\THIRD_PARTY_NOTICES.md"])
+
+    def test_portable_compatibility_files_are_generated_empty_and_not_installed(self) -> None:
+        workflow = text(REPO / ".github/workflows/build.yml")
+        package = workflow.split("- name: Package portable build", 1)[1].split("- name: Portable build is one exe", 1)[0]
+        self.assertNotIn('Copy-Item "$src/PNID_Reports"', package)
+        self.assertIn("'Source/instrument.txt','Target_IPEP/instrument.txt'", package)
+        self.assertIn("[IO.File]::WriteAllBytes($anchor, [byte[]]@())", package)
+        self.assertIn("$anchors.Count -ne 2", package)
+        self.assertIn("Where-Object Length -ne 0", package)
+        self.assertIn("Retired SQL templates leaked into the build output", package)
+        self.assertIn("Retired SQL templates leaked into the 64-bit build output", workflow)
+        self.assertIn("Retired SQL templates or portable compatibility anchors leaked into the clean install", workflow)
 
 
 if __name__ == "__main__":

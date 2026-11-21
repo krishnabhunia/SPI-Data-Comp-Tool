@@ -8,7 +8,7 @@ namespace SPI_Data_Comp_Tool
 {
     /// <summary>
     /// Test-only modes used by CI to check a finished build without opening the app by hand.
-    /// They do not connect to databases. CI uses synthetic inputs, temporary test files and output logs;
+    /// All modes except --check-sql-integration stay offline. CI uses synthetic inputs, temporary test files and output logs;
     /// these command-line modes do nothing in normal use.
     ///   "SPI Data Comp Tool.exe" --list-forms OUT_FILE         writes every window type to OUT_FILE, one per line
     ///   "SPI Data Comp Tool.exe" --open-form TYPE OUT_FILE     creates, shows and closes the window TYPE and adds
@@ -18,6 +18,8 @@ namespace SPI_Data_Comp_Tool
     ///                                                          .exe by Costura) and writes ok / FAIL per library;
     ///                                                          exit code 1 if any fails
     ///   "SPI Data Comp Tool.exe" --check-ui OUT_FILE           runs synthetic UI/profile regressions without databases
+    ///   "SPI Data Comp Tool.exe" --check-sql-integration OUT_FILE runs real comparisons only on the dedicated synthetic LocalDB instance
+    ///   "SPI Data Comp Tool.exe" --measure-comparison OUT_FILE records synthetic comparison timing/memory and verifies row counts
     ///   "SPI Data Comp Tool.exe" --check-startup OUT_FILE      opens every task with synthetic saved-profile states
     ///   "SPI Data Comp Tool.exe" --check-excel-audit OUT_FILE  verifies the separate Excel Sheet Audit using temporary workbooks
     ///   "SPI Data Comp Tool.exe" --check-workspace-exit OUT_FILE tests successful application exit in an isolated process
@@ -30,14 +32,14 @@ namespace SPI_Data_Comp_Tool
     /// </summary>
     internal static class SelfTest
     {
-        /// <summary>True while a build check runs: the app then stays offline and saves nothing.</summary>
+        /// <summary>True during explicit checks: normal profiles/preferences are untouched; only the SQL mode opens its dedicated disposable databases.</summary>
         public static bool IsRunning { get; private set; }
 
         public static bool TryRun(string[] args)
         {
             if (args == null || args.Length < 2) return false;
             string[] commands = { "--check-excel-audit", "--check-updates", "--check-inputs", "--list-forms",
-                "--check-assemblies", "--check-ui", "--check-startup", "--check-workspace-exit",
+                "--check-assemblies", "--check-ui", "--check-sql-integration", "--measure-comparison", "--check-startup", "--check-workspace-exit",
                 "--check-groups", "--check-steps", "--check-themes", "--open-form" };
             if (!commands.Contains(args[0], StringComparer.Ordinal) ||
                 (args[0] == "--open-form" && args.Length < 3)) return false;
@@ -77,6 +79,16 @@ namespace SPI_Data_Comp_Tool
             if (args[0] == "--check-ui" && args.Length >= 2)
             {
                 Environment.ExitCode = UiWorkflowChecks.Run(args[1]);
+                return true;
+            }
+            if (args[0] == "--check-sql-integration" && args.Length >= 2)
+            {
+                Environment.ExitCode = DatabaseIntegrationChecks.Run(args[1]);
+                return true;
+            }
+            if (args[0] == "--measure-comparison" && args.Length >= 2)
+            {
+                Environment.ExitCode = ComparisonPerformanceChecks.Run(args[1]);
                 return true;
             }
             if (args[0] == "--check-startup" && args.Length >= 2)

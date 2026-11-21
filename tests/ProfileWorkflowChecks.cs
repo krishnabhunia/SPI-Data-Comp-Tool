@@ -22,6 +22,8 @@ namespace SPI_Data_Comp_Tool
             CheckSavedProfileLoading(passed);
             CheckSavedProfileFailures(passed);
             CheckUnavailableSettings(passed);
+            CheckEditorPersistenceRecovery(passed);
+            CheckEditorFileOwnership(passed);
         }
 
         private static DBC Example(string name, string server)
@@ -66,6 +68,9 @@ namespace SPI_Data_Comp_Tool
             ExpectInvalid(() => ProfileStore.Validate(new List<DBC> { new DBC { profileName = "Incomplete", dbSRC = null } }));
             ExpectInvalid(() => ProfileStore.Validate(new List<DBC> { Example(" ", "one") }));
             ProfileStore.Validate(new List<DBC>());
+            var tooMany = new List<DBC>();
+            for (int i = 0; i <= 10000; i++) tooMany.Add(Example("Profile " + i, "synthetic-server"));
+            ExpectInvalid(() => ProfileStore.Validate(tooMany));
             passed("Invalid/duplicate profile imports are rejected before publication; an empty profile list is valid.");
         }
 
@@ -404,6 +409,192 @@ namespace SPI_Data_Comp_Tool
                 passed("An unreadable remembered setting reports a recovery warning without aborting startup or changing active profiles/settings files.");
             }
             finally { Profile.ProfileList = previous; }
+        }
+
+        private static void CheckEditorPersistenceRecovery(Action<string> passed)
+        {
+            List<DBC> previous = Profile.ProfileList;
+            string previousPath = Properties.Settings.Default.ProfilePathUser;
+            string previousReminder = ProfileStore.RememberedPathFileOverride;
+            string directory = Path.Combine(Path.GetTempPath(), "spi-profile-editor-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                string oldPath = Path.Combine(directory, "old.json");
+                string importedPath = Path.Combine(directory, "imported.JSON");
+                string savedPath = Path.Combine(directory, "saved.json");
+                string oldJson = ProfileStore.SerializeForExport(new[] { Example("Old", "old-server") });
+                string importedJson = ProfileStore.SerializeForExport(new[] { Example("Imported", "imported-server") });
+                File.WriteAllText(oldPath, oldJson);
+                File.WriteAllText(importedPath, importedJson);
+                ProfileStore.RememberedPathFileOverride = Path.Combine(directory, "profile-path.txt");
+                Properties.Settings.Default.ProfilePathUser = oldPath;
+                Profile.ProfileList = null;
+                Action<string> unavailableSettings = path =>
+                {
+                    throw new ConfigurationErrorsException("Synthetic settings persistence failure; no user file was touched.");
+                };
+                using (var editor = new UserProfileForm())
+                {
+                    var panel = (ConnectionPanel)editor.Controls.Find("connection", true)[0];
+                    ProfileLoadResult imported = editor.ImportProfileFile(importedPath, unavailableSettings);
+                    Check(imported.Loaded && imported.HasError && imported.Message.Contains("usable for this session")
+                        && ProfileStore.ActiveCatalog.FilePath == importedPath
+                        && panel.Source.DataSource.Text == "imported-server",
+                        "A valid manual import was blocked or misreported when remembering its path failed.");
+                    Check(Properties.Settings.Default.ProfilePathUser == oldPath && File.ReadAllText(oldPath) == oldJson
+                        && File.ReadAllText(importedPath) == importedJson,
+                        "Manual import changed settings or rewrote a source profile file.");
+                    ProfileCatalog active = ProfileStore.ActiveCatalog;
+                    using (var laterWindow = new ConnectionPanel())
+                    {
+                        ProfileLoadResult reopened = laterWindow.LoadSavedProfiles();
+                        Check(reopened.Loaded && ReferenceEquals(ProfileStore.ActiveCatalog, active)
+                            && (string)laterWindow.ProfileList.Items[0] == "Imported",
+                            "Opening another task reloaded the stale setting and replaced a valid session-only import.");
+                    }
+
+                    // Delete must follow the successfully imported file, not the old setting.
+                    editor.DeleteProfileFile("Imported");
+                    Check(ProfileStore.ReadFile(importedPath).Count == 0 && File.ReadAllText(oldPath) == oldJson,
+                        "Deleting an imported profile targeted the old remembered file.");
+                    File.WriteAllText(importedPath, importedJson);
+                    editor.ImportProfileFile(importedPath, unavailableSettings);
+                    panel.Source.Password.Text = SyntheticManualPassword;
+                    var candidate = ProfileStore.Upsert(Profile.ProfileList, Example("New", "new-server"));
+                    candidate[0].dbSRC.str_Password = SyntheticUnsavedPassword;
+                    ProfileLoadResult saved = editor.SaveProfileFile(savedPath, candidate, "New", unavailableSettings);
+                    Check(saved.Loaded && saved.HasError && ProfileStore.ActiveCatalog.FilePath == savedPath
+                        && ReferenceEquals(Profile.ProfileList, candidate)
+                        && panel.Source.Password.Text == SyntheticManualPassword
+                        && !File.ReadAllText(savedPath).Contains(SyntheticUnsavedPassword),
+                        "A successful file save became unusable after a settings failure, changed entered credentials, or exported a password.");
+                    Check(Properties.Settings.Default.ProfilePathUser == oldPath && File.ReadAllText(oldPath) == oldJson,
+                        "A file save with unavailable settings replaced the old remembered catalog.");
+
+                    string savedJson = File.ReadAllText(savedPath);
+                    active = ProfileStore.ActiveCatalog;
+                    bool rejected = false;
+                    using (var held = new FileStream(savedPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                    {
+                        try { editor.SaveProfileFile(savedPath, ProfileStore.Remove(candidate, "New"), "Imported", unavailableSettings); }
+                        catch (IOException) { rejected = true; }
+                        catch (UnauthorizedAccessException) { rejected = true; }
+                    }
+                    Check(rejected && ReferenceEquals(ProfileStore.ActiveCatalog, active)
+                        && ReferenceEquals(Profile.ProfileList, candidate) && File.ReadAllText(savedPath) == savedJson,
+                        "A failed file save changed the active catalog/file provenance or existing file.");
+                }
+
+                // A new copy has no per-copy setting; its editor must delete from the actual
+                // shared fallback file that loaded, without pretending a setting was saved.
+                File.WriteAllText(importedPath, importedJson);
+                ProfileStore.RememberPath(importedPath);
+                Properties.Settings.Default.ProfilePathUser = string.Empty;
+                Profile.ProfileList = null;
+                using (var editor = new UserProfileForm())
+                {
+                    Check(ProfileStore.ActiveCatalog.FilePath == importedPath, "The editor did not retain its fallback file provenance.");
+                    editor.DeleteProfileFile("Imported");
+                    Check(ProfileStore.ReadFile(importedPath).Count == 0
+                        && Properties.Settings.Default.ProfilePathUser == string.Empty && File.ReadAllText(oldPath) == oldJson,
+                        "A shared-fallback profile could not be deleted from its real file without changing settings.");
+                }
+                passed("Actual editor import/save paths remain usable after settings failures; later tasks retain the session catalog and deletion uses the loaded file, including shared-path fallback.");
+            }
+            finally
+            {
+                Profile.ProfileList = previous;
+                Properties.Settings.Default.ProfilePathUser = previousPath;
+                ProfileStore.RememberedPathFileOverride = previousReminder;
+                Directory.Delete(directory, true);
+            }
+        }
+
+        private static void CheckEditorFileOwnership(Action<string> passed)
+        {
+            List<DBC> previous = Profile.ProfileList;
+            string previousPath = Properties.Settings.Default.ProfilePathUser;
+            string previousReminder = ProfileStore.RememberedPathFileOverride;
+            string directory = Path.Combine(Path.GetTempPath(), "spi-profile-owner-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                string first = Path.Combine(directory, "first.json"), second = Path.Combine(directory, "second.json");
+                string original = ProfileStore.SerializeForExport(new[] { Example("Same name", "same-server") });
+                File.WriteAllText(first, original);
+                File.WriteAllText(second, original); // Identical content must not make these the same owned file.
+                ProfileStore.RememberedPathFileOverride = Path.Combine(directory, "profile-path.txt");
+                Properties.Settings.Default.ProfilePathUser = first;
+                Profile.ProfileList = null;
+                using (var editor = new UserProfileForm())
+                using (var otherWindow = new ConnectionPanel())
+                {
+                    otherWindow.LoadSavedProfiles(second);
+                    ExpectStaleProfile(() => editor.DeleteProfileFile("Same name"));
+                    ExpectStaleProfile(() => editor.SaveProfileFile(first,
+                        ProfileStore.Upsert(Profile.ProfileList, Example("New", "new-server")), "New", path => { }));
+                    Check(File.ReadAllText(first) == original && File.ReadAllText(second) == original,
+                        "A stale editor changed one of two different files with identical profiles.");
+
+                    editor.ImportProfileFile(first, path => { });
+                    ProfileCatalog loaded = ProfileStore.ActiveCatalog;
+                    string externalEdit = ProfileStore.SerializeForExport(new[] { Example("External edit", "external-server") });
+                    File.WriteAllText(first, externalEdit);
+                    ExpectStaleProfile(() => editor.DeleteProfileFile("Same name"));
+                    ExpectStaleProfile(() => editor.SaveProfileFile(first,
+                        ProfileStore.Upsert(Profile.ProfileList, Example("New", "new-server")), "New", path => { }));
+                    Check(ReferenceEquals(ProfileStore.ActiveCatalog, loaded) && File.ReadAllText(first) == externalEdit,
+                        "An edit after loading was overwritten or failure changed catalog ownership.");
+
+                    File.WriteAllText(first, original);
+                    editor.ImportProfileFile(first, path => { });
+                    var beforeDialog = ProfileStore.Upsert(Profile.ProfileList, Example("New", "new-server"));
+                    ExpectStaleProfile(() => editor.SaveSelectedProfile(beforeDialog, "New", () =>
+                    {
+                        editor.ImportProfileFile(second, path => { });
+                        return first;
+                    }, path => { }));
+                    Check(File.ReadAllText(first) == original && File.ReadAllText(second) == original
+                        && ProfileStore.ActiveCatalog.FilePath == second && Profile.ProfileList.Count == 1,
+                        "A same-editor import during Save selection authorized a stale candidate or changed either file.");
+
+                    editor.ImportProfileFile(first, path => { });
+                    var picker = ((ConnectionPanel)editor.Controls.Find("connection", true)[0]).ProfileList;
+                    picker.SelectedIndex = -1;
+                    picker.SelectedIndex = 0;
+                    Check(!editor.DeleteSelectedProfile(name =>
+                    {
+                        editor.ImportProfileFile(second, path => { });
+                        return true;
+                    }) && File.ReadAllText(first) == original && File.ReadAllText(second) == original
+                        && ProfileStore.ActiveCatalog.FilePath == second && Profile.ProfileList.Count == 1,
+                        "A same-editor import redirected confirmed deletion to an unconfirmed catalog.");
+
+                    Profile.ProfileList = new List<DBC>(Profile.ProfileList);
+                    Check(ProfileStore.ActiveCatalog == null,
+                        "Direct catalog replacement retained an unproven delete destination.");
+                    ExpectStaleProfile(() => editor.DeleteProfileFile("Same name"));
+                    Check(File.ReadAllText(first) == original && File.ReadAllText(second) == original,
+                        "An unproven catalog replacement allowed deletion from an older active file.");
+                }
+                passed("Stale editors and same-editor dialog changes cannot redirect save/delete; external edits are preserved and direct list replacement invalidates file provenance.");
+            }
+            finally
+            {
+                Profile.ProfileList = previous;
+                Properties.Settings.Default.ProfilePathUser = previousPath;
+                ProfileStore.RememberedPathFileOverride = previousReminder;
+                Directory.Delete(directory, true);
+            }
+        }
+
+        private static void ExpectStaleProfile(Action action)
+        {
+            bool rejected = false;
+            try { action(); }
+            catch (InvalidOperationException) { rejected = true; }
+            Check(rejected, "A stale profile-file operation was accepted.");
         }
     }
 }

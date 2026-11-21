@@ -14,7 +14,6 @@ class ExcelValidationContracts(unittest.TestCase):
         for name in (
             "Excel_Excel_Comparison.cs", "ViewForMultiReference.cs",
             "CustomisedExcel.cs", "MergeLogsExport.cs",
-            "Generate IUD Script Form.cs", "Execute Excel Scripts Form.cs",
         ):
             with self.subTest(name=name):
                 self.assertIn("FormValidation.Check(", self.read(name))
@@ -26,35 +25,6 @@ class ExcelValidationContracts(unittest.TestCase):
         self.assertIn("clb_firstExcel.ItemCheck +=", source)
         self.assertIn("ValidatePrimaryKeys", source)
         self.assertNotIn("await Task.WhenAll(taskLoadSRCExcelFile, taskLoadTRGExcelFile).ContinueWith", source)
-
-    def test_execution_checks_all_rows_and_retains_query_newlines(self):
-        source = self.read("Execute Excel Scripts Form.cs")
-        self.assertIn("selectedColumns.Length == 1", source)
-        self.assertIn("connection.InputChanged +=", source)
-        self.assertIn("outputs.Add(path)", source)
-        self.assertNotIn('strQuery.Replace("\\r", " ")', source)
-        self.assertNotIn("tb_SRC_Password.Text.Trim()", source)
-
-    def test_generation_cannot_emit_unrestricted_updates(self):
-        source = self.read("Generate IUD Script Form.cs")
-        self.assertIn("keys.Length > 0", source)
-        self.assertIn("columns.Except(keys).Any()", source)
-        self.assertIn("SqlPredicate", source)
-        self.assertIn('text.Replace("\'", "\'\'")', source)
-        self.assertNotIn('strUpdateTable.Replace("  ", " ")', source)
-        self.assertNotIn("scripts will be generated without 'WHERE'", source)
-
-    def test_generation_imports_all_sheets_and_separates_sql_from_excel_names(self):
-        source = self.read("Generate IUD Script Form.cs")
-        self.assertIn("SetWorkbook(candidate);", source)
-        setter = source.split("internal void SetWorkbook(DataSet candidate)", 1)[1].split("internal string OutputWorksheetName()", 1)[0]
-        self.assertIn("ValidateScriptWorkbook(candidate);", setter)
-        self.assertIn("cb_SelectSheet.Items.Clear();", setter)
-        self.assertIn("candidate.Tables.Cast<DataTable>()", setter)
-        self.assertIn("cb_SelectSheet.SelectedIndex = 0;", setter)
-        self.assertNotIn("Rows.Count", setter)
-        self.assertEqual(source.count("WriteExcel.ExportToExcel(dtGenerateScript, OutputWorksheetName(),"), 2)
-        self.assertNotIn("WriteExcel.ExportToExcel(dtGenerateScript, strTableName,", source)
 
     def test_merge_logs_do_not_assume_fixed_log_lines(self):
         logs = self.read("MergeLogsExport.cs")

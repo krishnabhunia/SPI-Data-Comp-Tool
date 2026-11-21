@@ -41,7 +41,6 @@
             this.tlp_Workspaces = new System.Windows.Forms.TableLayoutPanel();
             this.lbl_Start = new System.Windows.Forms.Label();
             this.btn_WorkspaceComparison = new SPI_Data_Comp_Tool.TileButton();
-            this.btn_WorkspaceScripts = new SPI_Data_Comp_Tool.TileButton();
             this.btn_WorkspaceReports = new SPI_Data_Comp_Tool.TileButton();
             this.btn_WorkspaceSettings = new SPI_Data_Comp_Tool.TileButton();
             this.pnl_Status = new System.Windows.Forms.Panel();
@@ -123,7 +122,7 @@
             // lbl_Subtitle
             //
             this.lbl_Subtitle.Name = "lbl_Subtitle";
-            this.lbl_Subtitle.Text = "Oracle, SQL Server and Excel — four connected workspaces";
+            this.lbl_Subtitle.Text = "Oracle, SQL Server and Excel — three connected workspaces";
             this.lbl_Subtitle.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_Subtitle.AutoSize = true;
             this.lbl_Subtitle.Margin = new System.Windows.Forms.Padding(2, 0, 0, 0);
@@ -144,7 +143,7 @@
             this.tlp_Workspaces.Controls.Add(this.lbl_Start, 0, 0);
             this.tlp_Workspaces.SetColumnSpan(this.lbl_Start, 2);
             this.tlp_Workspaces.Controls.Add(this.btn_WorkspaceComparison, 0, 1);
-            this.tlp_Workspaces.Controls.Add(this.btn_WorkspaceScripts, 1, 1);
+            this.tlp_Workspaces.SetColumnSpan(this.btn_WorkspaceComparison, 2);
             this.tlp_Workspaces.Controls.Add(this.btn_WorkspaceReports, 0, 2);
             this.tlp_Workspaces.Controls.Add(this.btn_WorkspaceSettings, 1, 2);
             this.tlp_Workspaces.Controls.Add(this.label3, 0, 3);
@@ -178,18 +177,6 @@
             this.btn_WorkspaceComparison.Hint = "Databases, Excel, batch comparisons and advanced mapping";
             this.btn_WorkspaceComparison.TabIndex = 8;
             //
-            // btn_WorkspaceScripts
-            //
-            this.btn_WorkspaceScripts.Name = "btn_WorkspaceScripts";
-            this.btn_WorkspaceScripts.Text = "SQL Scripts";
-            this.btn_WorkspaceScripts.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.btn_WorkspaceScripts.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
-            this.btn_WorkspaceScripts.Size = new System.Drawing.Size(400, 94);
-            this.btn_WorkspaceScripts.Tone = 3;
-            this.btn_WorkspaceScripts.Glyph = SPI_Data_Comp_Tool.Glyph.Sheet;
-            this.btn_WorkspaceScripts.Hint = "Generate scripts or explicitly execute a workbook";
-            this.btn_WorkspaceScripts.TabIndex = 9;
-            //
             // btn_WorkspaceReports
             //
             this.btn_WorkspaceReports.Name = "btn_WorkspaceReports";
@@ -200,7 +187,7 @@
             this.btn_WorkspaceReports.Tone = 0;
             this.btn_WorkspaceReports.Glyph = SPI_Data_Comp_Tool.Glyph.Export;
             this.btn_WorkspaceReports.Hint = "Database exports, Excel columns and merge logs";
-            this.btn_WorkspaceReports.TabIndex = 10;
+            this.btn_WorkspaceReports.TabIndex = 9;
             //
             // btn_WorkspaceSettings
             //
@@ -212,7 +199,7 @@
             this.btn_WorkspaceSettings.Tone = 1;
             this.btn_WorkspaceSettings.Glyph = SPI_Data_Comp_Tool.Glyph.Database;
             this.btn_WorkspaceSettings.Hint = "Profiles, rules, colour themes and stable/beta updates";
-            this.btn_WorkspaceSettings.TabIndex = 11;
+            this.btn_WorkspaceSettings.TabIndex = 10;
             //
             // label3
             //
@@ -222,7 +209,7 @@
             this.label3.AutoSize = true;
             this.label3.Margin = new System.Windows.Forms.Padding(6, 10, 6, 0);
             this.label3.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
-            this.label3.TabIndex = 12;
+            this.label3.TabIndex = 11;
             //
             // pnl_Status
             //
@@ -233,7 +220,7 @@
             this.pnl_Status.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.pnl_Status.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.pnl_Status.Padding = new System.Windows.Forms.Padding(14, 7, 14, 7);
-            this.pnl_Status.TabIndex = 13;
+            this.pnl_Status.TabIndex = 12;
             //
             // tlp_Status
             //
@@ -248,7 +235,7 @@
             this.tlp_Status.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Status.AutoSize = true;
             this.tlp_Status.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Status.TabIndex = 14;
+            this.tlp_Status.TabIndex = 13;
             //
             // lbl_LoginStatus
             //
@@ -258,7 +245,7 @@
             this.lbl_LoginStatus.AutoSize = true;
             this.lbl_LoginStatus.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.lbl_LoginStatus.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
-            this.lbl_LoginStatus.TabIndex = 15;
+            this.lbl_LoginStatus.TabIndex = 14;
             //
             // lbl_Version
             //
@@ -268,7 +255,7 @@
             this.lbl_Version.AutoSize = true;
             this.lbl_Version.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.lbl_Version.ForeColor = System.Drawing.Color.FromArgb(90, 90, 90);
-            this.lbl_Version.TabIndex = 16;
+            this.lbl_Version.TabIndex = 15;
             //
             // menuStrip1
             //
@@ -326,7 +313,6 @@
         private System.Windows.Forms.TableLayoutPanel tlp_Header;
         private System.Windows.Forms.TableLayoutPanel tlp_Workspaces;
         private SPI_Data_Comp_Tool.TileButton btn_WorkspaceComparison;
-        private SPI_Data_Comp_Tool.TileButton btn_WorkspaceScripts;
         private SPI_Data_Comp_Tool.TileButton btn_WorkspaceReports;
         private SPI_Data_Comp_Tool.TileButton btn_WorkspaceSettings;
         private System.Windows.Forms.TableLayoutPanel tlp_Root;

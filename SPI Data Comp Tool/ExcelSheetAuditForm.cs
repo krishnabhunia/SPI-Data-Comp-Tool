@@ -795,6 +795,7 @@ namespace SPI_Data_Comp_Tool
         private void SetStatus(string message, bool error = false)
         {
             if (IsDisposed || Disposing) return;
+            message = Common_Data.RedactConnectionCredentials(message);
             phase.Text = message;
             phase.ForeColor = UiTheme.Readable(error ? Color.Red : Color.Black);
             AppendLog(message);
@@ -803,6 +804,7 @@ namespace SPI_Data_Comp_Tool
         private void AppendLog(string message)
         {
             if (IsDisposed || Disposing) return;
+            message = Common_Data.RedactConnectionCredentials(message);
             if (log.TextLength > 24000) log.Text = log.Text.Substring(log.TextLength - 16000);
             log.AppendText(DateTime.Now.ToString("HH:mm:ss", CultureInfo.CurrentCulture) + "  " + message + Environment.NewLine);
             log.SelectionStart = log.TextLength;

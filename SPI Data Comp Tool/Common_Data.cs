@@ -51,8 +51,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private SqlDataAdapter sqlDA;
-        private OracleDataAdapter oracleDA;
         private DataSet ds;
 
 
@@ -69,8 +67,6 @@ namespace SPI_Data_Comp_Tool
                 strConnection = string.Empty;
 
                 boolColorAlternate = true;
-                sqlDA = new SqlDataAdapter();
-                oracleDA = new OracleDataAdapter();
                 ds = new DataSet();
             }
             catch (Exception ex)
@@ -188,7 +184,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 DisplayMessage(rtb_Log, ex.Message.ToString(), true);
-                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(rtb_Log, ex.ToString(), true);
                 }
@@ -196,7 +192,7 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex1)
             {
                 DisplayMessage(rtb_Log, ex1.Message.ToString(), true);
-                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(rtb_Log, ex1.ToString(), true);
                 }
@@ -221,7 +217,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(rtb_Log, $"Debug Msg : {strMsg}", false, -1, Color.BlueViolet);
                 }
@@ -347,112 +343,6 @@ namespace SPI_Data_Comp_Tool
         }
 
 
-        internal DataTable FillDataTable(DataTable dt, DBConnectionStatus dBConnectionStatus)
-        {
-            try
-            {
-                dt.Reset();
-                if (dBConnectionStatus.strDBType.ToLower() == "oracle")
-                {
-                    using (oracleDA = new OracleDataAdapter(dBConnectionStatus.strCMDText, dBConnectionStatus.strConnectionString))
-                    {
-                        oracleDA.SelectCommand.CommandTimeout = 0;
-                        oracleDA.Fill(dt);
-                    }
-                }
-
-                if (dBConnectionStatus.strDBType.ToLower() == "sql")
-                {
-                    using (sqlDA = new SqlDataAdapter(dBConnectionStatus.strCMDText, dBConnectionStatus.strConnectionString))
-                    {
-                        sqlDA.SelectCommand.CommandTimeout = 0;
-                        sqlDA.Fill(dt);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-
-            return dt;
-        }
-
-        internal DataSet FillDataTable(DataSet ds, DBConnectionStatus dBConnectionStatus)
-        {
-            try
-            {
-                ds.Reset();
-                if (dBConnectionStatus.strDBType.ToLower() == "oracle")
-                {
-                    using (oracleDA = new OracleDataAdapter(dBConnectionStatus.strCMDText, dBConnectionStatus.strConnectionString))
-                    {
-                        oracleDA.SelectCommand.CommandTimeout = 0;
-                        oracleDA.Fill(ds);
-                    }
-                }
-
-                if (dBConnectionStatus.strDBType.ToLower() == "sql")
-                {
-                    using (sqlDA = new SqlDataAdapter(dBConnectionStatus.strCMDText, dBConnectionStatus.strConnectionString))
-                    {
-                        sqlDA.SelectCommand.CommandTimeout = 0;
-                        sqlDA.Fill(ds);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-
-            return ds;
-        }
-
-        private OracleConnection oracleConnection;
-        private OracleCommand oracleCommand;
-
-        private SqlConnection sqlConnection;
-        private SqlCommand sqlCommand;
-        private int int_ExecutedRows;
-        internal int ExecuteNonQuery(DBConnectionStatus dBConnectionStatus)
-        {
-            try
-            {
-                int_ExecutedRows = 0;
-                if (dBConnectionStatus.strDBType.ToLower() == "oracle")
-                {
-                    using (oracleConnection = new OracleConnection(dBConnectionStatus.strConnectionString))
-                    {
-                        using (oracleCommand = new OracleCommand(dBConnectionStatus.strCMDText, oracleConnection))
-                        {
-                            oracleConnection.Open();
-                            int_ExecutedRows = oracleCommand.ExecuteNonQuery();
-                            oracleConnection.Close();
-                        }
-                    }
-                }
-
-                if (dBConnectionStatus.strDBType.ToLower() == "sql")
-                {
-                    using (sqlConnection = new SqlConnection(dBConnectionStatus.strConnectionString))
-                    {
-                        using (sqlCommand = new SqlCommand(dBConnectionStatus.strCMDText, sqlConnection))
-                        {
-                            sqlConnection.Open();
-                            return sqlCommand.ExecuteNonQuery();
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-
-            return int_ExecutedRows;
-        }
-
         public static bool StringNotNullOrEmpty(string str, string strContains = null, bool boolStartsWith = false, bool boolEndsWith = false)
         {
             try
@@ -494,34 +384,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        public static string GetComboBoxValue(ComboBox comboBox)
-        {
-            try
-            {
-                if (comboBox.SelectedValue != null && comboBox.SelectedValue.ToString() != "")
-                {
-                    return comboBox.SelectedValue.ToString().Trim();
-                }
-                else if (comboBox.Text != null && comboBox.Text != "")
-                {
-                    return comboBox.Text.Trim();
-                }
-                else if (comboBox.SelectedText != null && comboBox.SelectedText != "")
-                {
-                    return comboBox.SelectedText.Trim();
-                }
-                else if (comboBox.SelectedItem != null && comboBox.SelectedItem.ToString() != "")
-                {
-                    return comboBox.SelectedItem.ToString().Trim();
-                }
-
-                throw new Exception("No table able to detect from ComboBox");
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
         public ComboBox ReadUserProfile(ComboBox cb_UserProfileList)
         {
             ProfileStore.LoadSavedProfiles();
@@ -951,7 +813,7 @@ namespace SPI_Data_Comp_Tool
                 }
                 else
                 {
-                    str_RuleFileName = Properties.Settings.Default.RuleFilePath.ToString();
+                    str_RuleFileName = AppPreferences.RuleFilePath;
                 }
 
                 dsRules = LoadExcelFromDataReader(str_RuleFileName, "Rules for comparison");
@@ -976,7 +838,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                str_RuleFileName = Properties.Settings.Default.RuleFilePath.ToString();
+                str_RuleFileName = AppPreferences.RuleFilePath;
 
                 if (Common_Data.StringNotNullOrEmpty(str_RuleFileName, ".xlsx", false, true))
                 {
@@ -1505,7 +1367,6 @@ namespace SPI_Data_Comp_Tool
     public class OpenFileDialogData
     {
         private Exception myExceptionData;
-        private OpenFileDialogData openFileDialogData;// = new OpenFileDialogData();
         public bool boolFileSelected { get; private set; }
         public string strFileNameWithPath { get; private set; }
         public string SimpleFileName { get; set; }
@@ -1517,6 +1378,7 @@ namespace SPI_Data_Comp_Tool
             boolFileSelected = false;
             strFileNameWithPath = string.Empty;
             SimpleFileName = string.Empty;
+            SimpleFileName_WithoutExt = string.Empty;
             PathName_withoutFileName = string.Empty;
             ExtensionFileName = string.Empty;
 
@@ -1550,45 +1412,48 @@ namespace SPI_Data_Comp_Tool
         }
         public OpenFileDialogData openFileDialog(string str_title = "Browse Files", string DefaultExtension = "xlsx")
         {
-            openFileDialogData = new OpenFileDialogData();
-
-            OpenFileDialog openFileDialog1 = new OpenFileDialog
+            using (OpenFileDialog dialog = CreateFileDialog(str_title, DefaultExtension))
             {
-                InitialDirectory = @"D:\",
-                Title = str_title,
+                return FromSelection(dialog.ShowDialog() == DialogResult.OK ? dialog.FileName : null);
+            }
+        }
 
+        internal static OpenFileDialog CreateFileDialog(string title, string extensions)
+        {
+            string[] choices = (extensions ?? string.Empty).Split(new[] { ',', '|' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(value => value.Trim().TrimStart('.')).Where(value => value.Length > 0).ToArray();
+            if (choices.Length == 0) throw new ArgumentException("At least one file extension is required.", "extensions");
+            return new OpenFileDialog
+            {
+                Title = title,
                 CheckFileExists = true,
                 CheckPathExists = true,
-
-                DefaultExt = DefaultExtension,
-                Filter = $"{DefaultExtension} files (*.{DefaultExtension})|*.{DefaultExtension}",
-
-                FilterIndex = 2,
+                DefaultExt = choices[0],
+                Filter = string.Join("|", choices.Select(value => $"{value} files (*.{value})|*.{value}")),
+                FilterIndex = 1,
                 RestoreDirectory = true,
-
                 ReadOnlyChecked = true,
                 ShowReadOnly = true
             };
+        }
 
-            if (DefaultExtension.Contains(',') || DefaultExtension.Contains('|'))
+        internal static OpenFileDialogData FromSelection(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
             {
-                openFileDialog1.Filter = string.Join("|", DefaultExtension.Split(',').Select(x => $"{x} files (*.{x})|*.{x}").AsEnumerable());
+                return new OpenFileDialogData { strFileNameWithPath = "File Not Selected" };
             }
-
-            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            // The filter can contain several extensions. Derive names from the selected file,
+            // never from the length of that filter (for example, "a.log" with "txt,log").
+            return new OpenFileDialogData
             {
-                openFileDialogData.strFileNameWithPath = openFileDialog1.FileName.ToString();
-                openFileDialogData.PathName_withoutFileName = Path.GetDirectoryName(openFileDialog1.FileName.ToString());
-                openFileDialogData.SimpleFileName = openFileDialog1.SafeFileName.ToString();
-                openFileDialogData.SimpleFileName_WithoutExt = openFileDialog1.SafeFileName.ToString().Remove(openFileDialog1.SafeFileName.Length - DefaultExtension.Length - 1, DefaultExtension.Length + 1);
-                openFileDialogData.boolFileSelected = true;
-            }
-            else
-            {
-                openFileDialogData.strFileNameWithPath = "File Not Selected";
-                openFileDialogData.boolFileSelected = false;
-            }
-            return openFileDialogData;
+                strFileNameWithPath = fileName,
+                PathName_withoutFileName = Path.GetDirectoryName(fileName),
+                SimpleFileName = Path.GetFileName(fileName),
+                SimpleFileName_WithoutExt = Path.GetFileNameWithoutExtension(fileName),
+                ExtensionFileName = Path.GetExtension(fileName),
+                boolFileSelected = true
+            };
         }
     }
 
@@ -1863,11 +1728,11 @@ namespace SPI_Data_Comp_Tool
         public static bool boolIsGlobalDebug { get; private set; }
         public static bool ISGlobalDebug(string strUN, string strPassWD)
         {
-            // Developer mode is switched on only by an attached debugger or by an explicit
-            // opt-in environment variable. It used to be granted to hard-coded Windows user
-            // names and a hard-coded password, which anyone reading this public source could reuse.
-            if (!SelfTest.IsRunning && (Debugger.IsAttached ||
-                string.Equals(Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG"), "1", StringComparison.Ordinal)))
+            // Release builds cannot activate developer shortcuts through an environment
+            // variable or attached debugger. These arguments are legacy call-site compatibility,
+            // not a username/password authentication mechanism.
+            if (DeveloperModeAllowed(SelfTest.IsRunning, Debugger.IsAttached,
+                Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG")))
             {
                 strUserName = Environment.UserName;
                 strPassword = "";
@@ -1882,6 +1747,17 @@ namespace SPI_Data_Comp_Tool
                 return false;
             }
         }
+        internal static bool DeveloperModeAllowed(bool runningChecks, bool debuggerAttached, string requested)
+        {
+#if DEBUG
+            return !runningChecks && (debuggerAttached ||
+                string.Equals(requested, "1", StringComparison.Ordinal));
+#else
+            // This is a build policy, not an authorization boundary against code modified by
+            // somebody who controls the machine. Database permissions remain authoritative.
+            return false;
+#endif
+        }
     }
 
     public class DBConnectionStatus
@@ -1890,7 +1766,6 @@ namespace SPI_Data_Comp_Tool
         public bool boolConnection { get; set; }
         public string strConnectionMSG { get; set; }
         public string strConnectionString { get; set; }
-        public string strCMDText { get; set; }
         public Exception exceptionConnection { get; set; }
         public DBConnectionStatus DatabaseConnection(string str_DBType, string str_ServerName, string str_DBName, bool boolWinAuthType, string str_Username, string str_Password, string str_OraclePortNo)
         {

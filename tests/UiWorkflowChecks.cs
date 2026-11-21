@@ -27,6 +27,8 @@ namespace SPI_Data_Comp_Tool
                 bool validationPassed = RunValidationSuite("Core", () => { CoreValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Connections", () => { ConnectionValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Profile loading", () => { ProfileLoadChecks.Run(passed); }, messages);
+                validationPassed &= RunValidationSuite("Comparison correctness", () => { ComparisonCorrectnessChecks.Run(passed); }, messages);
+                validationPassed &= RunValidationSuite("Application preferences", () => { PreferenceChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Database forms", () => { DatabaseFormValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Excel forms", () => { ExcelFormValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Workbook identity", () => { WorkbookIdentityChecks.Run(passed); }, messages);

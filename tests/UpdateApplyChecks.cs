@@ -28,6 +28,10 @@ namespace SPI_Data_Comp_Tool
                 Require(UpdateVersion.TryParse("9.8.7", out version), "Synthetic version could not be parsed.");
                 CheckArchiveGuards(root, version);
                 passed("Update ZIP guards reject traversal, alternate data streams, duplicate paths, link attributes, unsupported files and oversized entries.");
+                CheckPackageVariants(root, version);
+                passed("Core-only portable packages and two empty upgrade-compatibility anchors are accepted; partial legacy packages still fail validation.");
+                CheckRuntimePrerequisites(root, version);
+                passed("Portable updates reject missing/unknown runtimes before changing files; .NET 4.8 minimum/newer release keys and legacy 4.6.2 packages are recognized.");
                 CheckPackage(root, version);
                 passed("Apply revalidates SHA-256, exact repository/asset, version, package size and installed/portable kind before handoff.");
                 CheckBusyGuards();
@@ -40,7 +44,7 @@ namespace SPI_Data_Comp_Tool
                 CheckRollback(root, version);
                 passed("Portable copy and settings failures restore replaced files, remove only newly created app-owned files and retain unrelated user files plus backups.");
                 CheckRealExecutable(root);
-                passed("The actual built application/configuration passes strict archive extraction, assembly/product-version and SHA-256 verification in an isolated portable destination.");
+                passed("The actual core-only application/configuration passes strict extraction, version and SHA-256 verification while preserving existing legacy and user files.");
             }
             finally
             {
@@ -55,11 +59,54 @@ namespace SPI_Data_Comp_Tool
             return new List<KeyValuePair<string, string>>
             {
                 new KeyValuePair<string, string>(name, "synthetic-new-binary"),
-                new KeyValuePair<string, string>(name + ".config", "<configuration/>"),
+                new KeyValuePair<string, string>(name + ".config", RuntimeConfiguration("v4.8")),
                 new KeyValuePair<string, string>("portable/PNID_Reports/Source/instrument.txt", "synthetic source template"),
                 new KeyValuePair<string, string>("portable/PNID_Reports/Target_IPEP/instrument.txt", "synthetic target template"),
                 new KeyValuePair<string, string>("windows-x64/SPI_Data_Comp_Tool_" + version + ".exe", "ignored synthetic setup"),
             };
+        }
+
+        private static string RuntimeConfiguration(string version)
+        {
+            return "<configuration><startup><supportedRuntime version=\"v4.0\" sku=\".NETFramework,Version=" + version + "\"/></startup></configuration>";
+        }
+
+        private static void CheckRuntimePrerequisites(string root, UpdateVersion version)
+        {
+            RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.8"), 528040);
+            RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.8"), 533320);
+            RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.6.2"), 394802);
+            Expect<InvalidOperationException>(() => RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.8"), 528039), "A pre-4.8 runtime was accepted.");
+            Expect<InvalidOperationException>(() => RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.8"), 0), "An unknown installed runtime was accepted.");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.9"), int.MaxValue), "An unknown required runtime was accepted.");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration("<configuration/>", 528040), "An undeclared runtime was accepted.");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration("<configuration><startup><supportedRuntime version=\"v4.0\"/><supportedRuntime version=\"v4.0\"/></startup></configuration>", 528040), "Ambiguous runtime declarations were accepted.");
+            Expect<XmlException>(() => RuntimeRequirements.ValidateConfiguration("<!DOCTYPE configuration [<!ENTITY x SYSTEM 'file:///synthetic-not-read'>]><configuration>&x;</configuration>", 528040), "A DTD runtime configuration was accepted.");
+
+            string duplicateStartup = RuntimeConfiguration("v4.8").Replace("<startup>", "<startup/><startup>");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration(duplicateStartup, 528040), "Duplicate startup sections with one declared runtime were accepted.");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration(
+                RuntimeConfiguration("v4.8").Replace("</startup>", "</startup><startup/>"), 528040), "A trailing duplicate startup section was accepted.");
+            var invalidEntries = Entries(version);
+            invalidEntries[1] = new KeyValuePair<string, string>(invalidEntries[1].Key, duplicateStartup);
+            string ambiguousArchive = Archive(root, invalidEntries);
+
+            string archive = Archive(root, Entries(version));
+            string target = Path.Combine(root, "runtime-target");
+            string stage = Path.Combine(root, "runtime-stage");
+            Directory.CreateDirectory(target); Directory.CreateDirectory(stage);
+            string original = Path.Combine(target, "MySPI.exe");
+            File.WriteAllText(original, "original application");
+            bool settingsTouched = false;
+            Expect<InvalidOperationException>(() => UpdateApplyWorker.ApplyPortable(archive, target, "MySPI.exe", version,
+                stage, () => settingsTouched = true, null, (path, expected) => { }, 394802), "Update files were accepted on a missing runtime.");
+            Require(File.ReadAllText(original) == "original application" && !settingsTouched && !Directory.EnumerateFileSystemEntries(stage).Any(),
+                "A failed runtime preflight touched the application, settings or staging payload.");
+            Expect<InvalidDataException>(() => UpdateApplyWorker.ApplyPortable(ambiguousArchive, target, "MySPI.exe", version,
+                stage, () => settingsTouched = true, null, (path, expected) => { }, 528040), "An archive with duplicate startup sections was accepted.");
+            Require(File.ReadAllText(original) == "original application" && !settingsTouched && !Directory.EnumerateFileSystemEntries(stage).Any(),
+                "An ambiguous runtime configuration touched the application, settings or staging payload.");
+            UpdateApplyWorker.ValidatePortableArchive(archive, version, "MySPI.exe", 528040);
         }
 
         private static string Archive(string root, IList<KeyValuePair<string, string>> entries)
@@ -105,7 +152,39 @@ namespace SPI_Data_Comp_Tool
             Require(!File.Exists(Path.Combine(untouched, "MySPI.exe")), "An invalid compressed stream reached the destination.");
             var missing = Entries(version); missing.RemoveAt(3);
             string incomplete = Archive(root, missing);
-            Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(incomplete, version, "MySPI.exe"), "Missing PNID template was accepted.");
+            Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(incomplete, version, "MySPI.exe"), "A partial legacy package without both compatibility anchors was accepted.");
+        }
+
+        private static void CheckPackageVariants(string root, UpdateVersion version)
+        {
+            const string legacyPrefix = "portable/PNID_Reports/";
+            var coreEntries = Entries(version).Where(entry => !entry.Key.StartsWith(legacyPrefix, StringComparison.Ordinal)).ToList();
+            var core = UpdateApplyWorker.ValidatePortableArchive(Archive(root, coreEntries), version, "MySPI.exe");
+            Require(core.Count == 2 && core.Any(file => file.RelativePath == "MySPI.exe")
+                && core.Any(file => file.RelativePath == "MySPI.exe.config"),
+                "A core-only portable package was rejected or mapped unexpected files.");
+            foreach (string required in new[] { ".exe", ".exe.config" })
+            {
+                string name = "portable/SPI_Data_Comp_Tool_" + version + required;
+                var missing = coreEntries.Where(entry => entry.Key != name).ToList();
+                Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(Archive(root, missing), version, "MySPI.exe"),
+                    "A core-only package without its executable or configuration was accepted.");
+            }
+
+            var compatibilityEntries = Entries(version).Select(entry => entry.Key.StartsWith(legacyPrefix, StringComparison.Ordinal)
+                ? new KeyValuePair<string, string>(entry.Key, string.Empty) : entry).ToList();
+            string compatibilityPackage = Archive(root, compatibilityEntries);
+            var compatible = UpdateApplyWorker.ValidatePortableArchive(compatibilityPackage, version, "MySPI.exe");
+            Require(compatible.Count == 4, "The portable compatibility package lost one of the required legacy paths.");
+            using (var file = File.OpenRead(compatibilityPackage))
+            using (var zip = new ZipArchive(file, ZipArchiveMode.Read))
+            {
+                var anchors = zip.Entries.Where(entry => entry.FullName.StartsWith(legacyPrefix, StringComparison.Ordinal)).ToList();
+                Require(anchors.Count == 2 && anchors.All(entry => entry.Length == 0)
+                    && anchors.Any(entry => entry.FullName == legacyPrefix + "Source/instrument.txt")
+                    && anchors.Any(entry => entry.FullName == legacyPrefix + "Target_IPEP/instrument.txt"),
+                    "The old-updater compatibility paths must be exactly two empty files, without SQL content.");
+            }
         }
 
         private static void PatchCentralUInt32(string file, int relativeOffset, uint value)
@@ -377,13 +456,16 @@ namespace SPI_Data_Comp_Tool
                 foreach (var pair in new[] { new KeyValuePair<string, string>(name, executable), new KeyValuePair<string, string>(name + ".config", executable + ".config") })
                     using (var input = File.OpenRead(pair.Value))
                     using (var output = zip.CreateEntry(pair.Key).Open()) input.CopyTo(output);
-                foreach (string side in new[] { "Source", "Target_IPEP" })
-                    using (var output = zip.CreateEntry("portable/PNID_Reports/" + side + "/instrument.txt").Open())
-                    using (var writer = new StreamWriter(output)) writer.Write("synthetic template");
             }
             string target = Path.Combine(root, "real-target"); string stage = Path.Combine(root, "real-stage");
             Directory.CreateDirectory(target); Directory.CreateDirectory(stage);
             File.WriteAllText(Path.Combine(target, "user-notes.txt"), "preserved");
+            string legacyFolder = Path.Combine(target, "PNID_Reports", "Source");
+            Directory.CreateDirectory(legacyFolder);
+            string legacyTemplate = Path.Combine(legacyFolder, "instrument.txt");
+            string userLegacyFile = Path.Combine(legacyFolder, "my-saved-notes.txt");
+            File.WriteAllText(legacyTemplate, "existing legacy template");
+            File.WriteAllText(userLegacyFile, "unrelated user content in an older folder");
             string local = Path.Combine(root, "real-local");
             string currentVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             string sourceConfig = Path.Combine(local, "SPI_Data_Comp_Tool.exe_Url_real_fixture", currentVersion, "user.config");
@@ -398,6 +480,9 @@ namespace SPI_Data_Comp_Tool
             string applied = Path.Combine(target, "RetainedPortableName.exe");
             Require(settingsMigrated && UpdateApplyWorker.HashFile(applied) == UpdateApplyWorker.HashFile(executable), "The real executable was not applied correctly.");
             Require(File.ReadAllText(Path.Combine(target, "user-notes.txt")) == "preserved", "The real apply changed a user file.");
+            Require(File.ReadAllText(legacyTemplate) == "existing legacy template"
+                && File.ReadAllText(userLegacyFile) == "unrelated user content in an older folder",
+                "A core-only apply removed or overwrote files left in an older application folder.");
             Require(File.ReadAllText(sourceConfig).Contains("preserved-profile-selection") && File.ReadAllText(sourceConfig).Contains("preserved-rules-selection"),
                 "The actual application apply did not preserve its migrated selections.");
             UpdateVersion wrong;

@@ -11,7 +11,6 @@ PROJ = REPO / "SPI Data Comp Tool"
 GUARDED = {
     "Compare_Multiples_Forms.cs": ["btn_TestDBConnection_Click"],
     "DB Comparison.cs": ["btn_Load_SRC_Table_Click", "btn_Load_TRG_Table_Click"],
-    "Execute Excel Scripts Form.cs": ["btnTestConnecton_Click"],
     "SQL_DB_To_Excel.cs": ["btn_Connect_Click"],
     "UserProfileForm.cs": ["btn_Load_SRC_Table_Click", "btn_Load_TRG_Table_Click", "btn_Connect_Reference_ID_Click"],
 }
@@ -54,8 +53,7 @@ class InputChecks(unittest.TestCase):
 
     def test_the_windows_own_validation_still_runs_after_the_input_check(self) -> None:
         # both gates stay: the input check lists every wrong field, the window's validation (FormValidation) decides
-        for name, handler, gate in (("Execute Excel Scripts Form.cs", "btnTestConnecton_Click", "FormValidation.Check(this, () => connection.ValidateInput()"),
-                                    ("SQL_DB_To_Excel.cs", "btn_Connect_Click", "ValidateLoadInputs()"),
+        for name, handler, gate in (("SQL_DB_To_Excel.cs", "btn_Connect_Click", "ValidateLoadInputs()"),
                                     ("UserProfileForm.cs", "btn_Connect_Reference_ID_Click", "connection.ValidateInput()")):
             with self.subTest(window=name, button=handler):
                 body = self.handler_body(code(PROJ / name), handler)

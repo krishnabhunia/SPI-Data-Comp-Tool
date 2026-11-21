@@ -41,7 +41,6 @@ namespace SPI_Data_Comp_Tool
 
         private string str_DBNameSRC, str_DBNameTRG;
         private string strSelectCol;
-        private string str_unique_reference_key;
         private string str_Data_Source_To_Compare;
         private string str_Data_Target_To_Compare;
         private string str_SRCTableName, str_TRGTableName;
@@ -77,7 +76,6 @@ namespace SPI_Data_Comp_Tool
         private System.Windows.Forms.TextBox tb_TRG_Password => connection.Target.Password;
 
         private DataRow dataRows_TRG;
-        private DataRow[] dataRows_TRG_NPK;
 
         private List<string> strPKList;
 
@@ -573,22 +571,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private DataTable DeleteRowFromDatatable(DataTable dt, DataRow[] dr)
-        {
-            try
-            {
-                foreach (DataRow d in dr.Cast<DataRow>().ToArray())
-                {
-                    dt.Rows.Remove(d);
-                }
-                return dt;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
         private ExcelWorksheet AddNewWorksheet(ExcelPackage pck, ExcelWorksheet worksheet, DataTable dt, string strTableName = null)
         {
             try
@@ -687,7 +669,7 @@ namespace SPI_Data_Comp_Tool
                                 str_Data_Source_To_Compare = dr[dc.ColumnName].ToString().Trim();
                                 str_Data_Target_To_Compare = dataRows_TRG[dc.ColumnName].ToString().Trim();
 
-                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dr, dtSRC.Columns, dtTRG.Columns);
+                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dataRows_TRG, dtSRC.Columns, dtTRG.Columns);
 
                                 if (boolTest)
                                 {
@@ -696,7 +678,7 @@ namespace SPI_Data_Comp_Tool
                                     //{
                                     //    if (str_Data_Source_To_Compare.Length > 0 && str_Data_Target_To_Compare.Length > 0 && dc.ColumnName.ToString().Length > 0)
                                     //    {
-                                    //        boolRulesCheck = common_Data.CheckRulesInFile(str_Data_Source_To_Compare, str_Data_Target_To_Compare, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dr, dtSRC.Columns, dtTRG.Columns);
+                                    //        boolRulesCheck = common_Data.CheckRulesInFile(str_Data_Source_To_Compare, str_Data_Target_To_Compare, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dataRows_TRG, dtSRC.Columns, dtTRG.Columns);
 
                                     //        if (boolRulesCheck)
                                     //        {
@@ -754,7 +736,7 @@ namespace SPI_Data_Comp_Tool
                                         //if (boolANewRow)
                                         //{
                                         dtUnmatched.Rows.Add(dr.ItemArray);
-                                        dtUnmatched.Rows.Add(dataRows_TRG.ItemArray);
+                                        dtUnmatched.Rows.Add(ComparisonRows.ValuesForColumns(dataRows_TRG, dtUnmatched));
                                         boolANewRow = false;
                                         int_Color_Row += 2;
                                     }
@@ -889,22 +871,6 @@ namespace SPI_Data_Comp_Tool
 
         }
 
-        private string generateRowFilterString(DataRow dr)
-        {
-            try
-            {
-                str_unique_reference_key = string.Empty;
-                str_unique_reference_key = string.Join(" AND ", strPKList.AsEnumerable().Select(x => string.Concat(x, " = ", $"'{dr[x.ToString()]}'")));
-            }
-            catch (Exception ex)
-            {
-                myException_BG = ex;
-            }
-            return str_unique_reference_key;
-        }
-
-        private string strFilter;
-
         private void CompareTwoDataTable(DataTable dtSRC, DataTable dtTRG, string strPK, DoWorkEventArgs e)
         {
             try
@@ -952,15 +918,14 @@ namespace SPI_Data_Comp_Tool
 
                 int_Color_Row = 1;
 
+                var remainingTargets = new ComparisonRows(dtTRG, strPKList);
                 foreach (DataRow dr in dtSRC.Rows.Cast<DataRow>().ToArray())
                 {
                     int_object = 0;
-                    strFilter = generateRowFilterString(dr);
-
-                    dataRows_TRG_NPK = dtTRG.Select(generateRowFilterString(dr));
+                    DataRow targetRow = remainingTargets.TakeNext(dr);
                     DataColumn[] dc_TRG = dtTRG.Columns.Cast<DataColumn>().ToArray();
 
-                    if (dataRows_TRG_NPK.Length > 0)
+                    if (targetRow != null)
                     {
                         boolANewRow = true;
 
@@ -969,7 +934,7 @@ namespace SPI_Data_Comp_Tool
                             if (!(strPKList.Any(a => string.Equals(a, dc.ColumnName))))
                             {
                                 str_Data_Source_To_Compare = dr[dc.ColumnName].ToString().Trim();
-                                str_Data_Target_To_Compare = dataRows_TRG_NPK[0][dc.ColumnName].ToString().Trim();
+                                str_Data_Target_To_Compare = targetRow[dc.ColumnName].ToString().Trim();
 
                                 //boolCompareResult = false;
 
@@ -1007,7 +972,7 @@ namespace SPI_Data_Comp_Tool
                                 //#endregion
                                 //if (!(string.Equals(str_Data_Source_To_Compare, str_Data_Target_To_Compare, StringComparison.Ordinal)))
                                 //{
-                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dr, dtSRC.Columns, dtTRG.Columns);
+                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, targetRow, dtSRC.Columns, dtTRG.Columns);
 
                                 if (boolTest)
                                 {
@@ -1015,7 +980,7 @@ namespace SPI_Data_Comp_Tool
                                     if (boolANewRow)
                                     {
                                         dtUnmatched.Rows.Add(dr.ItemArray);
-                                        dtUnmatched.Rows.Add(dataRows_TRG_NPK[0].ItemArray);
+                                        dtUnmatched.Rows.Add(ComparisonRows.ValuesForColumns(targetRow, dtUnmatched));
                                         boolANewRow = false;
                                         int_Color_Row += 2;
                                     }
@@ -1025,13 +990,14 @@ namespace SPI_Data_Comp_Tool
                             }
                         }
                         dtSRC = DeleteRowFromDatatable(dtSRC, dr);
-                        dtTRG = DeleteRowFromDatatable(dtTRG, dataRows_TRG_NPK);
                     }
                     else
                     {
                         dtSRCOnly.Rows.Add(dr.ItemArray);
                     }
                 }
+
+                dtTRG = remainingTargets.Remaining();
 
                 //Common_Data.DisplayDebugMsg(rtb_Log,"Main Loop Comparison Done");
                 bgw_List.ReportProgress(2, new BackGroundWorkerUserObjectForReport(0, 0, "Main Loop Comparison Done"));
@@ -1147,24 +1113,6 @@ namespace SPI_Data_Comp_Tool
                 bgw_List.ReportProgress(5, new BackGroundWorkerUserObjectForReport(ex));
             }
 
-        }
-
-        private string generateRowFilterString(DataRow dr, string strPK)
-        {
-            try
-            {
-                str_unique_reference_key = string.Empty;
-                foreach (string str in strPK.Split(','))
-                {
-                    str_unique_reference_key = str_unique_reference_key + str + " = '" + dr[str] + "' AND ";
-                }
-                str_unique_reference_key = str_unique_reference_key.Substring(0, str_unique_reference_key.Length - 4);
-            }
-            catch (Exception ex)
-            {
-                myException_BG = ex;
-            }
-            return str_unique_reference_key;
         }
 
         private void btn_ClearLogs_Click(object sender, EventArgs e)
@@ -1330,7 +1278,7 @@ namespace SPI_Data_Comp_Tool
                     DefaultSettings(2);
                 }
 
-                if (Debugger.IsAttached & tabControl1.SelectedTab == tabPage_Excel)
+                if (GlobalDebug.boolIsGlobalDebug & tabControl1.SelectedTab == tabPage_Excel)
                 {
                     folderBrowserDialog1.SelectedPath = @"D:\Krishna\Projects\SPI\INPUT FILES\compare_multiple\MultiLevel Output\Output";
 

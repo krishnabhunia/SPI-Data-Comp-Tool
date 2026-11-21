@@ -59,6 +59,8 @@ namespace SPI_Data_Comp_Tool
 
         private SaveFileDialogFile saveFileDialogFile;
         private Common_Data common_Data;
+        private ProfileCatalog editorCatalog;
+        private List<DBC> editorProfiles;
         public UserProfileForm()
         {
             InitializeComponent();
@@ -84,10 +86,11 @@ namespace SPI_Data_Comp_Tool
                 common_Data = new Common_Data();
 
                 ProfileLoadResult load = connection.LoadSavedProfiles();
+                CaptureActiveCatalog();
                 if (load.Loaded)
                 {
                     connection.RefreshProfiles();
-                    l_lb_ReadProfile.Text = Path.GetFileName(load.FilePath);
+                    UseLoadedProfileFile(load.FilePath);
                 }
                 if (!string.IsNullOrEmpty(load.Message)) DisplayMessage(load.Message, load.HasError);
                 GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword);
@@ -113,7 +116,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 DisplayMessage(ex.Message.ToString(), true);
-                if (Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(ex.ToString(), true);
                 }
@@ -121,7 +124,7 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex1)
             {
                 DisplayMessage(ex1.Message.ToString(), true);
-                if (Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(ex1.ToString(), true);
                 }
@@ -439,14 +442,7 @@ namespace SPI_Data_Comp_Tool
                     if (!FormValidation.Check(this, () => FormValidation.ReadableFile(openFileDialogData.strFileNameWithPath,
                         l_lb_ReadProfile, "profile", ".json"), message => DisplayMessage(message, true))) return;
                     DisplayMessage($"Reading json file : '{openFileDialogData.strFileNameWithPath}'");
-                    // Reject an incomplete file before replacing the currently usable catalog.
-                    List<DBC> imported = ReadProfileFile(openFileDialogData.strFileNameWithPath);
-                    SetProfilePath(openFileDialogData.strFileNameWithPath);
-                    Profile.ProfileList = imported;
-                    connection.RefreshProfiles();
-
-                    l_lb_ReadProfile.Text = openFileDialogData.SimpleFileName;
-                    DisplayMessage($"Profile list loaded successfully from : {openFileDialogData.strFileNameWithPath}", false, -1, Color.DarkBlue);
+                    ImportProfileFile(openFileDialogData.strFileNameWithPath);
                 }
                 else
                 {
@@ -458,6 +454,84 @@ namespace SPI_Data_Comp_Tool
             {
                 DisplayError(ex);
             }
+        }
+
+        internal ProfileLoadResult ImportProfileFile(string path, Action<string> persistPath = null)
+        {
+            // File loading is independent of preference persistence. A read-only/damaged
+            // user.config must not reject a valid profile selected by the user.
+            ProfileLoadResult result = ProfileStore.ImportFile(path, persistPath ?? SetProfilePath);
+            if (result.Loaded)
+            {
+                CaptureActiveCatalog();
+                connection.RefreshProfiles();
+                l_lb_ReadProfile.Text = Path.GetFileName(result.FilePath);
+            }
+            if (!string.IsNullOrEmpty(result.Message)) DisplayMessage(result.Message, result.HasError);
+            return result;
+        }
+
+        private void CaptureActiveCatalog()
+        {
+            editorCatalog = ProfileStore.ActiveCatalog;
+            editorProfiles = Profile.ProfileList;
+        }
+
+        private void RequireEditorCatalog()
+        {
+            if (!ReferenceEquals(editorProfiles, Profile.ProfileList) ||
+                !ReferenceEquals(editorCatalog, ProfileStore.ActiveCatalog))
+                throw new InvalidOperationException("The active profiles changed in another window. Load the profile file in this editor again before saving or deleting.");
+            ProfileStore.RequireCurrentCatalog(editorCatalog);
+        }
+
+        private void RequireEditorSnapshot(ProfileCatalog expectedCatalog, List<DBC> expectedProfiles)
+        {
+            if (!ReferenceEquals(editorCatalog, expectedCatalog) || !ReferenceEquals(editorProfiles, expectedProfiles))
+                throw new InvalidOperationException("The profile file changed while confirmation was open. Review the current profiles and try again.");
+            RequireEditorCatalog();
+        }
+
+        internal bool SaveSelectedProfile(List<DBC> candidate, string selectedName, Func<string> selectPath,
+            Action<string> persistPath = null)
+        {
+            if (selectPath == null) throw new ArgumentNullException(nameof(selectPath));
+            RequireEditorCatalog();
+            ProfileCatalog expectedCatalog = editorCatalog;
+            List<DBC> expectedProfiles = editorProfiles;
+            string path = selectPath();
+            if (path == null)
+            {
+                DisplayMessage("Save cancelled; current profiles and the existing file are unchanged.");
+                return false;
+            }
+            // The same editor can also receive events during a modal dialog. Its newer
+            // catalog must never authorize a candidate built from the previous one.
+            RequireEditorSnapshot(expectedCatalog, expectedProfiles);
+            SaveProfileFile(path, candidate, selectedName, persistPath);
+            return true;
+        }
+
+        internal ProfileLoadResult SaveProfileFile(string path, List<DBC> candidate, string selectedName,
+            Action<string> persistPath = null)
+        {
+            // The save dialog can dispatch other windows' events. Check ownership again after it.
+            RequireEditorCatalog();
+            ProfileLoadResult result = ProfileStore.SaveFile(path, candidate, editorCatalog, persistPath ?? SetProfilePath);
+            CaptureActiveCatalog();
+            connection.RefreshProfiles(selectedName, false);
+            l_lb_ReadProfile.Text = Path.GetFileName(result.FilePath);
+            DisplayMessage(result.Message, result.HasError);
+            return result;
+        }
+
+        internal void DeleteProfileFile(string selectedName)
+        {
+            RequireEditorCatalog();
+            ProfileStore.DeleteProfile(editorCatalog, selectedName);
+            CaptureActiveCatalog();
+            connection.RefreshProfiles();
+            DisplayMessage($"Profile deleted successfully: {selectedName}", false, -1, Color.DarkBlue);
         }
 
         private void boolToggleControlEnable(bool boolEnableStatus)
@@ -478,6 +552,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                RequireEditorCatalog();
                 string profileName = cb_UserProfileList.Text.Trim();
                 if (!FormValidation.Check(this, () =>
                 {
@@ -502,33 +577,14 @@ namespace SPI_Data_Comp_Tool
 
                     DisplayMessage($"Saving Profile, Pls wait !!!");
 
-                    saveFileDialogFile = saveFileDialogFile.SaveFileDialogOnly("Save Profile in Json Format", $"Profile_{Environment.UserName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}", "json");
-
-                    if (saveFileDialogFile.BoolFileSaveStatus)
+                    SaveSelectedProfile(candidate, profileName, () =>
                     {
+                        saveFileDialogFile = saveFileDialogFile.SaveFileDialogOnly("Save Profile in Json Format", $"Profile_{Environment.UserName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}", "json");
+                        if (!saveFileDialogFile.BoolFileSaveStatus) return null;
                         if (!FormValidation.Check(this, () => FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath,
-                            btnSaveUserProfile, "profile output", ".json"), message => DisplayMessage(message, true))) return;
-                        ProfileStore.WriteAtomic(saveFileDialogFile.Str_saveFileNameWithPath,
-                            ProfileStore.SerializeForExport(candidate));
-                        try
-                        {
-                            SetProfilePath(saveFileDialogFile.Str_saveFileNameWithPath);
-                        }
-                        catch (Exception ex)
-                        {
-                            DisplayMessage("The profile file was saved, but its path could not be remembered. The active profiles are unchanged; use Load profile to open the saved file. " + ex.Message, true);
-                            return;
-                        }
-                        // The dialog was accepted and persistence succeeded: publish the new list.
-                        Profile.ProfileList = candidate;
-                        connection.RefreshProfiles(profileName, false);
-                        l_lb_ReadProfile.Text = Path.GetFileName(saveFileDialogFile.Str_saveFileNameWithPath);
-                        DisplayMessage($"Profile saved successfully: {saveFileDialogFile.Str_saveFileNameWithPath}; profile name: {profileName}");
-                    }
-                    else
-                    {
-                        DisplayMessage("Save cancelled; current profiles and the existing file are unchanged.");
-                    }
+                            btnSaveUserProfile, "profile output", ".json"), message => DisplayMessage(message, true))) return null;
+                        return saveFileDialogFile.Str_saveFileNameWithPath;
+                    });
                 }
                 else
                 {
@@ -597,45 +653,64 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                string selectedName = cb_UserProfileList.SelectedItem as string;
-                if (selectedName == null || Profile.ProfileList == null ||
-                    !Profile.ProfileList.Any(p => p != null && string.Equals(p.profileName, selectedName, StringComparison.Ordinal)))
-                {
-                    DisplayMessage("Select a saved profile to delete.", true);
-                    return;
-                }
-                string profilePath = Properties.Settings.Default.ProfilePathUser;
-                if (string.IsNullOrWhiteSpace(profilePath) || !File.Exists(profilePath))
-                {
-                    DisplayMessage("Load or save a profile file before deleting a profile.", true);
-                    return;
-                }
-                // Deleting from a stale catalog must not overwrite edits another window/process saved.
-                List<DBC> currentFile = ReadProfileFile(profilePath);
-                if (!string.Equals(ProfileStore.SerializeForExport(currentFile), ProfileStore.SerializeForExport(Profile.ProfileList), StringComparison.Ordinal))
-                {
-                    DisplayMessage("The profile file changed after it was loaded. Reload it before deleting a profile.", true);
-                    return;
-                }
-                if (MessageBox.Show(this,
-                    $"Delete profile '{selectedName}' from the saved profile file?\n\nThis cannot be undone in the application.",
+                DeleteSelectedProfile(selectedName => MessageBox.Show(this,
+                    $"Delete profile '{selectedName}' from the saved profile file?\n\n{editorCatalog.FilePath}\n\nThis cannot be undone in the application.",
                     "Delete saved profile", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
-                    MessageBoxDefaultButton.Button2) != DialogResult.Yes)
-                {
-                    DisplayMessage("Deletion cancelled; current profiles are unchanged.");
-                    return;
-                }
-
-                List<DBC> candidate = ProfileStore.Remove(Profile.ProfileList, selectedName);
-                ProfileStore.WriteAtomic(profilePath, ProfileStore.SerializeForExport(candidate));
-                Profile.ProfileList = candidate;
-                connection.RefreshProfiles();
-                DisplayMessage($"Profile deleted successfully: {selectedName}", false, -1, Color.DarkBlue);
+                    MessageBoxDefaultButton.Button2) == DialogResult.Yes);
             }
             catch (Exception ex)
             {
                 DisplayError(ex);
             }
+        }
+
+        /// <summary>Deletes only from the file successfully loaded by this form, after explicit confirmation.</summary>
+        internal bool DeleteSelectedProfile(Func<string, bool> confirm)
+        {
+            if (confirm == null) throw new ArgumentNullException(nameof(confirm));
+            string selectedName = cb_UserProfileList.SelectedItem as string;
+            List<DBC> active = Profile.ProfileList;
+            if (selectedName == null || active == null ||
+                !active.Any(p => p != null && string.Equals(p.profileName, selectedName, StringComparison.Ordinal)))
+            {
+                DisplayMessage("Select a saved profile to delete.", true);
+                return false;
+            }
+            string profilePath = editorCatalog?.FilePath;
+            if (string.IsNullOrWhiteSpace(profilePath) || !File.Exists(profilePath))
+            {
+                DisplayMessage("Load or save a profile file before deleting a profile.", true);
+                return false;
+            }
+            try
+            {
+                // Settings may point elsewhere after fallback loading. The catalog owns the
+                // destination, and both the memory snapshot and disk file must still match it.
+                RequireEditorCatalog();
+                ProfileStore.RequireUnchangedFile(editorCatalog);
+                ProfileCatalog confirmedCatalog = editorCatalog;
+                List<DBC> confirmedProfiles = editorProfiles;
+                if (!confirm(selectedName))
+                {
+                    DisplayMessage("Deletion cancelled; current profiles are unchanged.");
+                    return false;
+                }
+                // The confirmation can dispatch other windows' events. DeleteProfileFile
+                // rechecks ownership and disk content, writes atomically, then publishes.
+                RequireEditorSnapshot(confirmedCatalog, confirmedProfiles);
+                DeleteProfileFile(selectedName);
+                return true;
+            }
+            catch (InvalidOperationException error)
+            {
+                DisplayMessage(error.Message, true);
+                return false;
+            }
+        }
+
+        private void UseLoadedProfileFile(string path)
+        {
+            l_lb_ReadProfile.Text = Path.GetFileName(path);
         }
 
         private static void SetProfilePath(string path)
@@ -645,19 +720,14 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 Properties.Settings.Default.ProfilePathUser = path;
-                Properties.Settings.Default.Save();
-                ProfileStore.RememberPath(path);   // a new copy of the app finds the same file
+                if (!SelfTest.IsRunning) Properties.Settings.Default.Save();
             }
             catch
             {
-                Properties.Settings.Default.ProfilePathUser = previousPath;
+                try { Properties.Settings.Default.ProfilePathUser = previousPath; }
+                catch (Exception) { /* Keep the original persistence failure for the optional-save warning. */ }
                 throw;
             }
-        }
-
-        private static List<DBC> ReadProfileFile(string path)
-        {
-            return ProfileStore.ReadFile(path);
         }
 
         private void btn_Connect_Reference_ID_Click(object sender, EventArgs e)

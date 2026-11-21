@@ -50,6 +50,7 @@ namespace SPI_Data_Comp_Tool
         private DBTOExcel dBTOExcel;
 
         private List<string> lstTableDetails;
+        private readonly Dictionary<string, string> tableQueryNames = new Dictionary<string, string>(StringComparer.Ordinal);
         private bool tablesLoaded;
         private string[] exportEntries;
         private string exportFolder;
@@ -91,7 +92,7 @@ namespace SPI_Data_Comp_Tool
             if (!string.IsNullOrEmpty(profileLoad.Message))
                 FormHelpers.ShowText(lbl_Status, profileLoad.Message, profileLoad.HasError ? Color.DarkRed : UiTheme.TextColor);
 
-            if (!SelfTest.IsRunning && Debugger.IsAttached)
+            if (!SelfTest.IsRunning && GlobalDebug.boolIsGlobalDebug)
             {
                 if (Environment.UserName.ToString() == "KRISHNA")
                 {
@@ -194,7 +195,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
 
         }
@@ -252,6 +253,7 @@ namespace SPI_Data_Comp_Tool
                 cb_SelectAll.Update();
                 clb_TableList.Items.Clear();
                 lstTableDetails.Clear();
+                tableQueryNames.Clear();
                 if (!(backgroundWorker1.IsBusy))
                 {
                     toggleControls(false);
@@ -339,7 +341,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
         }
 
@@ -397,7 +399,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
         }
 
@@ -419,16 +421,16 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
         }
 
         private void DisplayError(Exception ex)
         {
-            lbl_Status.Text = ex.Message.ToString();
-            if (Debugger.IsAttached)
+            lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
+            if (GlobalDebug.boolIsGlobalDebug)
             {
-                lbl_Status.Text = ex.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
             }
             lbl_Status.Update();
             lbl_Status.ForeColor = Color.Red;
@@ -437,7 +439,7 @@ namespace SPI_Data_Comp_Tool
         private void DisplayMessage(string strMsg)
         {
             lbl_Status.ForeColor = Color.Black;
-            lbl_Status.Text = strMsg;
+            lbl_Status.Text = Common_Data.RedactConnectionCredentials(strMsg);
             lbl_Status.Update();
         }
 
@@ -445,6 +447,7 @@ namespace SPI_Data_Comp_Tool
         private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
             myException = null;
+            tableQueryNames.Clear();
             int count = 0;
             try
             {
@@ -459,7 +462,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     strQuery = $"select * from all_tables where {TableToExclude()} ORDER BY OWNER, TABLE_NAME";
 
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.boolIsGlobalDebug)
                     {
                         strQuery = $"select * from all_tables where {TableToExclude()} AND ROWNUM <= 50 ORDER BY OWNER, TABLE_NAME";
                     }
@@ -481,8 +484,8 @@ namespace SPI_Data_Comp_Tool
                             return;
                         }
 
-                        str_CompleteTableName = $"{dr["OWNER"].ToString()}.{dr["TABLE_NAME"].ToString()}";
-                        strQuery = $"Select count(*) \"count\" From {str_CompleteTableName}";
+                        str_CompleteTableName = RememberTableName(dr, "oracle");
+                        strQuery = $"Select count(*) \"count\" From {tableQueryNames[str_CompleteTableName]}";
                         dt = new DataTable();
                         oracleDA.SelectCommand.CommandText = strQuery;
                         oracleDA.SelectCommand.CommandType = CommandType.Text;
@@ -522,18 +525,8 @@ namespace SPI_Data_Comp_Tool
                             return;
                         }
 
-                        str_CompleteTableName = dr["TABLE_CATALOG"].ToString() + "." + dr["TABLE_SCHEMA"].ToString() + "." + dr["TABLE_NAME"].ToString();
-
-                        strQuery = "if object_id('" + str_CompleteTableName + "', 'U') IS NOT NULL" +
-                            " BEGIN " +
-                            "select count(*) 'count' from " + str_CompleteTableName + " " +
-                            "END " +
-                            "ELSE " +
-                            "BEGIN " +
-                            "PRINT 'NOT OK' " +
-                            "END";
-
-                        sqlDA.SelectCommand.CommandText = strQuery;
+                        str_CompleteTableName = RememberTableName(dr, "sql");
+                        PrepareSqlRead(str_CompleteTableName, true);
                         dt.Clear();
                         sqlDA.Fill(dt);
                         dt.TableName = str_CompleteTableName;
@@ -545,14 +538,55 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
+                myException = ex;
+                e.Cancel = true;
                 if (backgroundWorker1.IsBusy)
                 {
-                    e.Cancel = true;
                     backgroundWorker1.ReportProgress(0, "Error");
-                    myException = ex;
-                    return;
                 }
             }
+        }
+
+        private string RememberTableName(DataRow row, string provider)
+        {
+            string[] columns = provider == "oracle" ? new[] { "OWNER", "TABLE_NAME" }
+                : new[] { "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME" };
+            var display = new string[columns.Length];
+            var quoted = new string[columns.Length];
+            for (int index = 0; index < columns.Length; index++)
+            {
+                string value = Convert.ToString(row[columns[index]], System.Globalization.CultureInfo.InvariantCulture);
+                if (string.IsNullOrEmpty(value) || value.IndexOf('\0') >= 0)
+                    throw new InvalidOperationException("The database returned an invalid table identifier.");
+                display[index] = value;
+                quoted[index] = provider == "sql" ? "[" + value.Replace("]", "]]") + "]"
+                    : "\"" + value.Replace("\"", "\"\"") + "\"";
+            }
+            string name = string.Join(".", display);
+            if (tableQueryNames.ContainsKey(name))
+                throw new InvalidOperationException("Two database tables have the same displayed name. The export list cannot identify them safely.");
+            tableQueryNames.Add(name, string.Join(".", quoted));
+            return name;
+        }
+
+        private string QuotedTableName(string table)
+        {
+            string quoted;
+            if (!tableQueryNames.TryGetValue(table, out quoted))
+                throw new InvalidOperationException("Load the table list again before exporting the selected table.");
+            return quoted;
+        }
+
+        private void PrepareSqlRead(string table, bool countOnly)
+        {
+            string quoted = QuotedTableName(table);
+            // The object name is a parameter value; the SELECT identifier is built only from
+            // provider-returned metadata and each catalog/schema/table component is delimited.
+            sqlDA.SelectCommand.CommandText = "IF OBJECT_ID(@tableName, N'U') IS NULL "
+                + "THROW 50001, 'The selected table is no longer available. Reload the table list.', 1; "
+                + "SELECT " + (countOnly ? "COUNT(*) AS [count]" : "*") + " FROM " + quoted;
+            sqlDA.SelectCommand.Parameters.Clear();
+            sqlDA.SelectCommand.Parameters.Add("@tableName", SqlDbType.NVarChar, 776).Value = quoted;
         }
 
 
@@ -672,7 +706,7 @@ namespace SPI_Data_Comp_Tool
 
                 if (rb_Oracle.Checked)
                 {
-                    strQuery = $"Select * From {str_CompleteTableName}";
+                    strQuery = $"Select * From {QuotedTableName(str_CompleteTableName)}";
                     oracleDA.SelectCommand.CommandText = strQuery;
                     oracleDA.SelectCommand.CommandType = CommandType.Text;
                     oracleDA.Fill(dt);
@@ -680,16 +714,7 @@ namespace SPI_Data_Comp_Tool
 
                 if (rb_SQL.Checked)
                 {
-                    strQuery = "if object_id('" + str_CompleteTableName + "', 'U') IS NOT NULL" +
-                            " BEGIN " +
-                            "select* from " + str_CompleteTableName + " " +
-                            "END " +
-                            "ELSE " +
-                            "BEGIN " +
-                            "PRINT 'NOT OK' " +
-                            "END";
-
-                    sqlDA.SelectCommand.CommandText = strQuery;
+                    PrepareSqlRead(str_CompleteTableName, false);
                     sqlDA.Fill(dt);
                     dt.TableName = str_CompleteTableName;
                 }
@@ -698,12 +723,12 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
+                myException = ex;
                 if (backgroundWorker2.IsBusy)
                 {
                     backgroundWorker2.ReportProgress(0, "Error");
-                    myException = ex;
                 }
-                throw ex;
+                throw;
             }
         }
         private void backgroundWorker2_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
@@ -772,12 +797,11 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
+                myException = ex;
+                e.Cancel = true;
                 if (backgroundWorker2.IsBusy)
                 {
-                    e.Cancel = true;
                     backgroundWorker2.ReportProgress(0, "Error");
-                    myException = ex;
-                    return;
                 }
             }
         }

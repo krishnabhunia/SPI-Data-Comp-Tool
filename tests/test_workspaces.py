@@ -18,9 +18,9 @@ class WorkspaceContracts(unittest.TestCase):
     def test_catalog_contains_only_supported_task_routes(self):
         catalog = source("WorkspaceCatalog.cs")
         routes = re.findall(r'new WorkspaceTask\("([^"]+)"', catalog)
-        self.assertEqual(len(routes), 12)
-        self.assertEqual(len(set(routes)), 12)
-        expected = {"comparison": 5, "scripts": 2, "reports": 3, "settings": 2}
+        self.assertEqual(len(routes), 10)
+        self.assertEqual(len(set(routes)), 10)
+        expected = {"comparison": 5, "reports": 3, "settings": 2}
         self.assertIn("comparison.excel", routes)
         self.assertIn("comparison.excel-audit", routes)
         self.assertIn("comparison.identity", routes)
@@ -29,12 +29,12 @@ class WorkspaceContracts(unittest.TestCase):
         self.assertIn("() => new User_Settings(), false", catalog)
         self.assertIn("() => new UserProfileForm(), false", catalog)
 
-    def test_all_thirteen_pages_keep_the_lifecycle_bridge(self):
+    def test_all_eleven_pages_keep_the_lifecycle_bridge(self):
         pages = []
         for path in APP.glob("*.cs"):
             pages += re.findall(r"public (?:(?:partial|sealed) )?class (\w+) : WorkspacePageForm", path.read_text(encoding="utf-8-sig"))
-        self.assertEqual(len(pages), 13)
-        self.assertEqual(len(set(pages)), 13)
+        self.assertEqual(len(pages), 11)
+        self.assertEqual(len(set(pages)), 11)
         self.assertIn("public abstract class WorkspacePageForm : Form", source("WorkspacePageForm.cs"))
 
     def test_preparation_does_not_dispose_or_close_pages(self):
@@ -78,8 +78,8 @@ class WorkspaceContracts(unittest.TestCase):
         self.assertNotIn("this.helpToolStripMenuItem", designer)
         tiles = re.findall(r"private SPI_Data_Comp_Tool.TileButton (btn_Workspace\w+);", designer)
         self.assertEqual(set(tiles), {"btn_Workspace" + group for group in
-                                     ("Comparison", "Scripts", "Reports", "Settings")})
-        self.assertEqual(len(tiles), 4)
+                                     ("Comparison", "Reports", "Settings")})
+        self.assertEqual(len(tiles), 3)
 
     def test_offline_windows_checks_are_compiled_and_invoked(self):
         project = source("SPI Data Comp Tool.csproj")
@@ -97,8 +97,8 @@ class WorkspaceContracts(unittest.TestCase):
         designer = source("MainForm.Designer.cs")
         titles = re.findall(r'this\.(btn_Workspace\w+)\.Text = "([^"\n]+)";', designer)
         hints = dict(re.findall(r'this\.(btn_Workspace\w+)\.Hint = "([^"\n]+)";', designer))
-        self.assertEqual(len(titles), 4)
-        self.assertEqual(len(hints), 4)
+        self.assertEqual(len(titles), 3)
+        self.assertEqual(len(hints), 3)
         for tile, title in titles:
             with self.subTest(tile=tile):
                 self.assertNotIn("\\n", title)

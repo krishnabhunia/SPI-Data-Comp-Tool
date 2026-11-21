@@ -37,24 +37,35 @@ class ProfileSafety(unittest.TestCase):
         self.assertNotIn("dbc_AddNewUserProfile", form)
         self.assertIn("var replacement = new DBC", method)
         self.assertIn("ProfileStore.Upsert(Profile.ProfileList, replacement)", method)
-        self.assertLess(method.index("if (saveFileDialogFile.BoolFileSaveStatus)"), method.index("ProfileStore.WriteAtomic"))
-        self.assertLess(method.index("ProfileStore.WriteAtomic"), method.index("Profile.ProfileList = candidate"))
-        self.assertIn("connection.RefreshProfiles(profileName, false)", method)
+        self.assertIn("SaveSelectedProfile(candidate, profileName", method)
+        self.assertIn("if (!saveFileDialogFile.BoolFileSaveStatus) return null", method)
+        store_save = source("ProfileStore.cs").split("internal static ProfileLoadResult SaveFile", 1)[1].split("internal static void RequireCurrentCatalog", 1)[0]
+        self.assertLess(store_save.index("WriteAtomic(fullPath, json)"), store_save.index("Publish(candidate, fullPath)"))
+        self.assertLess(store_save.index("Publish(candidate, fullPath)"), store_save.index("RememberChoice("))
+        self.assertIn("connection.RefreshProfiles(selectedName, false)", form)
         self.assertNotIn("items.Remove", method)
 
     def test_deletion_is_confirmed_and_published_only_after_writing(self) -> None:
         form = source("UserProfileForm.cs")
         method = form.split("private void btnDeleteUserProfile_Click", 1)[1].split("private static void SetProfilePath", 1)[0]
         self.assertIn("MessageBoxDefaultButton.Button2", method)
-        self.assertIn("!= DialogResult.Yes", method)
-        self.assertLess(method.index("MessageBox.Show"), method.index("ProfileStore.Remove"))
-        self.assertLess(method.index("ProfileStore.WriteAtomic"), method.index("Profile.ProfileList = candidate"))
+        self.assertIn("== DialogResult.Yes", method)
+        self.assertIn("if (!confirm(selectedName))", method)
+        self.assertIn("string profilePath = editorCatalog?.FilePath;", method)
+        self.assertLess(method.index("MessageBox.Show"), method.index("DeleteProfileFile(selectedName)"))
+        self.assertNotIn("Properties.Settings.Default.ProfilePathUser", method)
+        delete = source("ProfileStore.cs").split("internal static ProfileCatalog DeleteProfile", 1)[1].split("private static ProfileCatalog Publish", 1)[0]
+        self.assertLess(delete.index("RequireUnchangedFile(expected)"), delete.index("WriteAtomic"))
+        self.assertLess(delete.index("WriteAtomic"), delete.index("Publish(candidate, expected.FilePath)"))
 
     def test_save_and_delete_sanitize_every_exported_profile(self) -> None:
         form = source("UserProfileForm.cs")
-        self.assertEqual(form.count("ProfileStore.SerializeForExport(candidate)"), 2)
         self.assertNotIn("JsonConvert.SerializeObject", form)
         store = source("ProfileStore.cs")
+        save = store.split("internal static ProfileLoadResult SaveFile", 1)[1].split("internal static void RequireCurrentCatalog", 1)[0]
+        delete = store.split("internal static ProfileCatalog DeleteProfile", 1)[1].split("private static ProfileCatalog Publish", 1)[0]
+        self.assertIn("SerializeForExport(candidate)", save)
+        self.assertIn("SerializeForExport(candidate)", delete)
         export = store.split("internal static List<DBC> CreateExportSnapshot", 1)[1].split("internal static void Validate", 1)[0]
         self.assertIn("foreach (DBC profile in profiles)", export)
         self.assertIn("DBC snapshot = Clone(profile)", export)
@@ -71,17 +82,19 @@ class ProfileSafety(unittest.TestCase):
     def test_import_is_validated_before_replacing_active_profiles(self) -> None:
         form = source("UserProfileForm.cs")
         method = form.split("private void l_lb_ReadProfile_LinkClicked", 1)[1].split("private void boolToggleControlEnable", 1)[0]
-        self.assertLess(method.index("ReadProfileFile("), method.index("Profile.ProfileList = imported"))
-        self.assertIn("ProfileStore.ReadFile(path)", form)
+        self.assertIn("ImportProfileFile(openFileDialogData.strFileNameWithPath)", method)
+        self.assertIn("ProfileStore.ImportFile(path", method)
         store = source("ProfileStore.cs")
+        load = store.split("internal static ProfileLoadResult LoadSavedProfiles(string path)", 1)[1].split("internal static ProfileLoadResult ImportFile", 1)[0]
+        self.assertLess(load.index("ReadFile(path)"), load.index("Publish(candidate, path)"))
         self.assertIn('profile.GetValue("dbSRC", StringComparison.OrdinalIgnoreCase) is JObject', store)
         self.assertIn('profile.GetValue("dbTRG", StringComparison.OrdinalIgnoreCase) is JObject', store)
         self.assertLess(store.index('profile.GetValue("dbSRC"'), store.index("array.ToObject<List<DBC>>()"))
 
     def test_saved_profiles_use_the_same_validated_reader_without_applying_early(self) -> None:
         store = source("ProfileStore.cs")
-        load = store.split("internal static ProfileLoadResult LoadSavedProfiles(string path)", 1)[1].split("private static ProfileLoadResult LoadFailure", 1)[0]
-        self.assertLess(load.index("ReadFile(path)"), load.index("Profile.ProfileList = candidate"))
+        load = store.split("internal static ProfileLoadResult LoadSavedProfiles(string path)", 1)[1].split("internal static ProfileLoadResult ImportFile", 1)[0]
+        self.assertLess(load.index("ReadFile(path)"), load.index("Publish(candidate, path)"))
         self.assertIn("error is InvalidDataException", load)
         self.assertNotIn("Properties.Settings.Default.Save", load)
         self.assertIn("Settings > Connection profiles > Load profile", store)
@@ -93,11 +106,21 @@ class ProfileSafety(unittest.TestCase):
         self.assertNotIn("ApplySelectedProfile", panel_load)
         form = source("UserProfileForm.cs")
         self.assertIn("ProfileLoadResult load = connection.LoadSavedProfiles()", form)
-        self.assertNotIn("SelfTest.IsRunning", form)
+        constructor = form.split("public UserProfileForm()", 1)[1].split("private void Connection_ProfileApplied", 1)[0]
+        self.assertNotIn("SelfTest.IsRunning", constructor)
+        self.assertIn("if (!SelfTest.IsRunning) Properties.Settings.Default.Save();", form)
         legacy = source("Common_Data.cs").split("public ComboBox ReadUserProfile", 1)[1].split("public DataTable GenerateTransposeTable", 1)[0]
         self.assertNotIn("DeserializeObject", legacy)
         self.assertNotIn("StreamReader", legacy)
         self.assertIn("ProfileStore.LoadSavedProfiles()", legacy)
+
+    def test_file_provenance_cannot_follow_an_unrelated_catalog(self) -> None:
+        store = source("ProfileStore.cs")
+        self.assertIn("ReferenceEquals(Profile.ProfileList, publishedCatalog.Profiles)", store)
+        self.assertIn("ReferenceEquals(expected, ActiveCatalog)", store)
+        form = source("UserProfileForm.cs")
+        self.assertIn("ReferenceEquals(editorProfiles, Profile.ProfileList)", form)
+        self.assertIn("ReferenceEquals(editorCatalog, ProfileStore.ActiveCatalog)", form)
 
     def test_atomic_write_never_truncates_the_original(self) -> None:
         store = source("ProfileStore.cs")
@@ -110,7 +133,7 @@ class ProfileSafety(unittest.TestCase):
 
     def test_executable_checks_cover_candidates_locked_files_and_selection(self) -> None:
         checks = (ROOT / "tests" / "ProfileWorkflowChecks.cs").read_text()
-        for scenario in ("CheckCandidateLists(passed)", "CheckExportSnapshots(passed)", "CheckValidation(passed)", "CheckAtomicFiles(passed)", "CheckSelection(passed)", "CheckSavedProfileLoading(passed)", "CheckSavedProfileFailures(passed)", "CheckUnavailableSettings(passed)"):
+        for scenario in ("CheckCandidateLists(passed)", "CheckExportSnapshots(passed)", "CheckValidation(passed)", "CheckAtomicFiles(passed)", "CheckSelection(passed)", "CheckSavedProfileLoading(passed)", "CheckSavedProfileFailures(passed)", "CheckUnavailableSettings(passed)", "CheckEditorPersistenceRecovery(passed)", "CheckEditorFileOwnership(passed)"):
             self.assertIn(scenario, checks)
         self.assertIn("FileShare.None", checks)
         self.assertIn("Profile.ProfileList = previous", checks)

@@ -1,7 +1,7 @@
 ; 64-bit Windows installer for the SPI Data Comparison Tool (Inno Setup 6).
 ; CI builds it from the Release|x64 output, e.g.:
 ;   ISCC /DAppVersion=2.5.0-beta001 /DNumericVersion=2.5.0 /DSourceDir=<bin\x64\Release> /DOutputDir=<dist\windows-x64> SPI_Data_Comp_Tool.iss
-; The app is one .exe (its libraries are embedded by Costura), its .exe.config and the PNID_Reports templates.
+; The app is one .exe (its libraries are embedded by Costura) and its .exe.config.
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
@@ -53,7 +53,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#SourceDir}\{#ExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\{#ExeName}.config"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#SourceDir}\PNID_Reports\*"; DestDir: "{app}\PNID_Reports"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#ExeName}"
@@ -70,20 +70,20 @@ begin
   Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
 end;
 
-// .NET Framework 4.6.2 or later (Release key 394802+), which the app is built for.
-function DotNet462Installed(): Boolean;
+// .NET Framework 4.8 or later (minimum Release key 528040), which the app is built for.
+function DotNet48Installed(): Boolean;
 var
   Release: Cardinal;
 begin
   Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', Release)
-            and (Release >= 394802);
+            and (Release >= 528040);
 end;
 
 function InitializeSetup(): Boolean;
 begin
-  Result := DotNet462Installed();
+  Result := DotNet48Installed();
   if not Result then
-    SuppressibleMsgBox('{#AppName} needs Microsoft .NET Framework 4.6.2 or later.' + #13#10 +
+    SuppressibleMsgBox('{#AppName} needs Microsoft .NET Framework 4.8 or later.' + #13#10 +
       'Install it from https://dotnet.microsoft.com/download/dotnet-framework and run this setup again.',
       mbCriticalError, MB_OK, IDOK);
 end;

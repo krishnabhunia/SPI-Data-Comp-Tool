@@ -20,7 +20,9 @@ class ProfileLoadingContracts(unittest.TestCase):
         self.assertIn("ReadRememberedPath()", fallback)
         self.assertIn("if (result.Loaded) RememberPath(path);", fallback)
         self.assertNotIn("Properties.Settings.Default", fallback)   # never written into user.config
-        self.assertIn("ProfileStore.RememberPath(path)", source("UserProfileForm.cs"))
+        self.assertIn("return fallback;", fallback)
+        self.assertIn("TryRememberPath(result.FilePath)", store)
+        self.assertIn("ProfileStore.ImportFile(path", source("UserProfileForm.cs"))
 
     def test_build_checks_never_touch_the_users_appdata(self) -> None:
         self.assertIn("return SelfTest.IsRunning ? null :", source("ProfileStore.cs"))

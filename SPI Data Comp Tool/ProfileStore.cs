@@ -27,10 +27,34 @@ namespace SPI_Data_Comp_Tool
         internal string Message { get; }
     }
 
+    /// <summary>The exact catalog and file published together by a successful read or write.</summary>
+    internal sealed class ProfileCatalog
+    {
+        internal ProfileCatalog(List<DBC> profiles, string filePath, string exportedContent)
+        {
+            Profiles = profiles;
+            FilePath = filePath;
+            ExportedContent = exportedContent;
+        }
+
+        internal List<DBC> Profiles { get; }
+        internal string FilePath { get; }
+        internal string ExportedContent { get; }
+    }
+
     /// <summary>Builds candidate profile lists without changing the active list, then saves atomically.</summary>
     internal static class ProfileStore
     {
         private const int MaximumProfileBytes = 16 * 1024 * 1024;
+        private static ProfileCatalog publishedCatalog;
+
+        // Some legacy callers/tests can replace ProfileList directly. Such a list has no proven
+        // source file; never carry the previous catalog's delete destination over to it.
+        internal static ProfileCatalog ActiveCatalog
+        {
+            get { return publishedCatalog != null && ReferenceEquals(Profile.ProfileList, publishedCatalog.Profiles)
+                    ? publishedCatalog : null; }
+        }
 
         /// <summary>Reads and validates one complete document without changing settings or active profiles.</summary>
         internal static List<DBC> ReadFile(string path)
@@ -67,6 +91,9 @@ namespace SPI_Data_Comp_Tool
 
         internal static ProfileLoadResult LoadSavedProfiles()
         {
+            ProfileCatalog active = ActiveCatalog;
+            if (active != null)
+                return new ProfileLoadResult(active.FilePath, true, false, "Using the active profiles from: " + active.FilePath);
             return LoadRememberedProfiles(() => Properties.Settings.Default.ProfilePathUser);
         }
 
@@ -95,7 +122,7 @@ namespace SPI_Data_Comp_Tool
             if (!usable)
             {
                 string remembered = ReadRememberedPath();
-                if (remembered != null && !string.Equals(remembered, path, StringComparison.OrdinalIgnoreCase) && File.Exists(remembered))
+                if (remembered != null && !string.Equals(remembered, path, StringComparison.OrdinalIgnoreCase))
                 {
                     ProfileLoadResult fallback = LoadSavedProfiles(remembered);
                     if (fallback.Loaded)
@@ -103,6 +130,9 @@ namespace SPI_Data_Comp_Tool
                             ? "This copy of the app has no saved profile file yet; "
                             : "The saved profile file " + path + " could not be found; ") +
                             "using the last one chosen on this computer. " + fallback.Message);
+                    // A new copy with an empty per-copy setting must still explain a damaged,
+                    // missing or locked shared file instead of silently showing no profiles.
+                    return fallback;
                 }
             }
             ProfileLoadResult result = LoadSavedProfiles(path);
@@ -143,18 +173,25 @@ namespace SPI_Data_Comp_Tool
         /// <summary>Remembers the chosen profiles file for other copies of the app. Best effort.</summary>
         internal static void RememberPath(string path)
         {
+            TryRememberPath(path);
+        }
+
+        private static bool TryRememberPath(string path)
+        {
             try
             {
                 string file = RememberedPathFile;
-                if (file == null || string.IsNullOrWhiteSpace(path)) return;
+                if (file == null) return true; // Deliberately disabled during isolated self-tests.
+                if (string.IsNullOrWhiteSpace(path)) return false;
                 string full = Path.GetFullPath(path);
-                if (string.Equals(ReadRememberedPath(), full, StringComparison.OrdinalIgnoreCase)) return;
+                if (string.Equals(ReadRememberedPath(), full, StringComparison.OrdinalIgnoreCase)) return true;
                 Directory.CreateDirectory(Path.GetDirectoryName(file));
-                File.WriteAllText(file, full, new UTF8Encoding(false));
+                WriteAtomic(file, full);
+                return true;
             }
             catch (Exception)
             {
-                // the profiles still work in this copy; only another copy would not find them
+                return false;
             }
         }
 
@@ -166,8 +203,8 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 List<DBC> candidate = ReadFile(path);
-                Profile.ProfileList = candidate;
-                return new ProfileLoadResult(path, true, false, "Profiles loaded from: " + path);
+                ProfileCatalog catalog = Publish(candidate, path);
+                return new ProfileLoadResult(catalog.FilePath, true, false, "Profiles loaded from: " + catalog.FilePath);
             }
             catch (Exception error) when (error is InvalidDataException || error is IOException || error is UnauthorizedAccessException ||
                 error is SecurityException || error is ArgumentException || error is NotSupportedException)
@@ -183,6 +220,80 @@ namespace SPI_Data_Comp_Tool
                 else reason = "The saved profile file could not be read. It may be locked or unavailable.";
                 return LoadFailure(path, reason);
             }
+        }
+
+        internal static ProfileLoadResult ImportFile(string path, Action<string> persistPath)
+        {
+            ProfileLoadResult result = LoadSavedProfiles(path);
+            return result.Loaded ? RememberChoice(result, persistPath) : result;
+        }
+
+        internal static ProfileLoadResult SaveFile(string path, List<DBC> candidate, ProfileCatalog expected,
+            Action<string> persistPath)
+        {
+            RequireCurrentCatalog(expected);
+            if (!string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Select a JSON profile file.");
+            string fullPath = Path.GetFullPath(path);
+            if (expected != null && string.Equals(expected.FilePath, fullPath, StringComparison.OrdinalIgnoreCase))
+                RequireUnchangedFile(expected);
+            string json = SerializeForExport(candidate);
+            if (Encoding.UTF8.GetByteCount(json) > MaximumProfileBytes)
+                throw new InvalidDataException("A saved profile JSON file cannot exceed 16 MiB.");
+            WriteAtomic(fullPath, json);
+            ProfileCatalog catalog = Publish(candidate, fullPath);
+            return RememberChoice(new ProfileLoadResult(catalog.FilePath, true, false,
+                "Profiles saved to: " + catalog.FilePath), persistPath);
+        }
+
+        internal static void RequireCurrentCatalog(ProfileCatalog expected)
+        {
+            if (!ReferenceEquals(expected, ActiveCatalog) || (expected != null &&
+                !string.Equals(SerializeForExport(expected.Profiles), expected.ExportedContent, StringComparison.Ordinal)))
+                throw new InvalidOperationException("The active profiles changed in another window. Load the profile file again before saving or deleting.");
+        }
+
+        internal static void RequireUnchangedFile(ProfileCatalog expected)
+        {
+            if (expected == null)
+                throw new InvalidOperationException("Load or save a profile file before deleting a profile.");
+            RequireCurrentCatalog(expected);
+            List<DBC> currentFile = ReadFile(expected.FilePath);
+            if (!string.Equals(SerializeForExport(currentFile), expected.ExportedContent, StringComparison.Ordinal))
+                throw new InvalidOperationException("The profile file changed after it was loaded. Reload it before saving or deleting a profile.");
+        }
+
+        internal static ProfileCatalog DeleteProfile(ProfileCatalog expected, string name)
+        {
+            // Recheck after the confirmation dialog, which can dispatch other windows' events.
+            RequireUnchangedFile(expected);
+            List<DBC> candidate = Remove(expected.Profiles, name);
+            if (candidate.Count == expected.Profiles.Count)
+                throw new InvalidOperationException("Select a saved profile to delete.");
+            WriteAtomic(expected.FilePath, SerializeForExport(candidate));
+            return Publish(candidate, expected.FilePath);
+        }
+
+        private static ProfileCatalog Publish(List<DBC> profiles, string path)
+        {
+            string exported = SerializeForExport(profiles);
+            var catalog = new ProfileCatalog(profiles, Path.GetFullPath(path), exported);
+            Profile.ProfileList = profiles;
+            publishedCatalog = catalog;
+            return catalog;
+        }
+
+        private static ProfileLoadResult RememberChoice(ProfileLoadResult result, Action<string> persistPath)
+        {
+            bool localSaved = true;
+            try { persistPath?.Invoke(result.FilePath); }
+            catch (Exception) { localSaved = false; }
+            bool sharedSaved = TryRememberPath(result.FilePath);
+            if (localSaved && sharedSaved) return result;
+            string warning = !localSaved
+                ? " This copy could not remember the profile location. The profiles are usable for this session; load this file again if needed after restarting."
+                : " The profile location could not be remembered for other copies of the app. These profiles remain usable in this copy.";
+            return new ProfileLoadResult(result.FilePath, true, true, result.Message + warning);
         }
 
         private static ProfileLoadResult LoadFailure(string path, string reason)
@@ -353,6 +464,7 @@ namespace SPI_Data_Comp_Tool
         internal static void Validate(IList<DBC> profiles)
         {
             if (profiles == null) throw new InvalidDataException("The profile file must contain a JSON list.");
+            if (profiles.Count > 10000) throw new InvalidDataException("A profile file cannot contain more than 10,000 profiles.");
             var names = new HashSet<string>(StringComparer.Ordinal);
             foreach (DBC profile in profiles)
             {
