@@ -54,13 +54,22 @@ namespace SPI_Data_Comp_Tool
         internal readonly List<string> ConditionalFormats = new List<string>();
         internal string Freeze, Filter, State = "visible";
         internal int UncachedFormulas;
+        internal readonly Dictionary<int, int> RowStyles = new Dictionary<int, int>();
+        internal int[] ColumnStyles = new int[0];            // index = column number; 0 = no column style
 
         internal static long Key(int row, int col) { return ((long)row << 15) | (uint)col; }
 
+        /// <summary>
+        /// The stored cell. A cell the file does not store is blank and shows the format of its row, else of its
+        /// column, as Excel draws it. A stored cell without a style number uses style 0, as the file format says.
+        /// </summary>
         internal IdentityCell Cell(int row, int col)
         {
             IdentityCell cell;
-            return Cells.TryGetValue(Key(row, col), out cell) ? cell : Blank;
+            if (Cells.TryGetValue(Key(row, col), out cell)) return cell;
+            int style;
+            if (!RowStyles.TryGetValue(row, out style)) style = col > 0 && col < ColumnStyles.Length ? ColumnStyles[col] : 0;
+            return style == 0 ? Blank : new IdentityCell { Kind = "blank", Style = style };
         }
 
         /// <summary>The 12 style properties of a cell, in the order of <see cref="IdentityStyle.Labels"/>.</summary>
@@ -106,6 +115,7 @@ namespace SPI_Data_Comp_Tool
         private readonly bool date1904;
         private string[][] styles;
         private bool[] dateStyle, durationStyle;
+        private readonly List<string> differentials = new List<string>();      // formats applied by conditional rules
 
         internal string FilePath { get; }
         internal List<string> SheetNames { get; } = new List<string>();
@@ -197,6 +207,10 @@ namespace SPI_Data_Comp_Tool
                     foreach (NumberingFormat format in numberFormats.Elements<NumberingFormat>())
                         if (format.NumberFormatId != null && format.FormatCode != null) custom[format.NumberFormatId.Value] = format.FormatCode.Value;
 
+                var differential = sheet.GetFirstChild<DifferentialFormats>();
+                if (differential != null)
+                    foreach (DifferentialFormat format in differential.Elements<DifferentialFormat>()) differentials.Add(DescribeDifferential(format));
+
                 var cellFormats = sheet.GetFirstChild<CellFormats>();
                 if (cellFormats != null)
                 {
@@ -232,6 +246,80 @@ namespace SPI_Data_Comp_Tool
             styles = described.ToArray();
             dateStyle = dates.ToArray();
             durationStyle = durations.ToArray();
+        }
+
+        private static readonly Dictionary<string, string[]> RuleSettings = new Dictionary<string, string[]>(StringComparer.Ordinal)
+        {
+            { "cellIs", new[] { "operator" } }, { "containsText", new[] { "text" } }, { "notContainsText", new[] { "text" } },
+            { "beginsWith", new[] { "text" } }, { "endsWith", new[] { "text" } }, { "top10", new[] { "rank", "percent", "bottom" } },
+            { "aboveAverage", new[] { "aboveAverage", "equalAverage", "stdDev" } }, { "timePeriod", new[] { "timePeriod" } },
+        };
+
+        private static readonly Dictionary<string, string> RuleDefaults = new Dictionary<string, string>(StringComparer.Ordinal)
+            { { "percent", "0" }, { "bottom", "0" }, { "aboveAverage", "1" }, { "equalAverage", "0" } };
+
+        /// <summary>
+        /// A conditional-format rule as text: its type and settings, its formulas, its scale / bar / icon values and
+        /// the format it applies. The priority and the format's index are left out: writers number them differently.
+        /// </summary>
+        private string DescribeRule(ConditionalFormattingRule rule)
+        {
+            string kind = rule.Type == null ? "" : rule.Type.InnerText;
+            var text = new StringBuilder(kind);
+            var given = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (OpenXmlAttribute attribute in rule.GetAttributes()) given[attribute.LocalName] = attribute.Value ?? "";
+            // Only the settings its type uses, and only when they differ from the default: some programs write
+            // every setting on every rule, others write none, and both mean the same rule.
+            string[] used;
+            if (RuleSettings.TryGetValue(kind, out used))
+            {
+                foreach (string name in used)
+                {
+                    string value, standard;
+                    if (!given.TryGetValue(name, out value) || value.Length == 0) continue;
+                    if (value == "true") value = "1"; else if (value == "false") value = "0";
+                    if (RuleDefaults.TryGetValue(name, out standard) && value == standard) continue;
+                    text.Append(' ').Append(name).Append('=').Append(value);
+                }
+            }
+            string stop;
+            if (given.TryGetValue("stopIfTrue", out stop) && (stop == "1" || stop == "true")) text.Append(" stopIfTrue");
+            string[] formulas = rule.Elements<Formula>().Select(formula => formula.Text).ToArray();
+            if (formulas.Length > 0) text.Append(" [").Append(string.Join(" ; ", formulas)).Append(']');
+            var scale = rule.Descendants<ConditionalFormatValueObject>()
+                .Select(item => (item.Type == null ? "" : item.Type.InnerText) + (item.Val == null ? "" : "=" + item.Val.Value))
+                .Concat(rule.Descendants<Color>().Select(colour => DescribeColour(colour))).ToArray();
+            if (scale.Length > 0) text.Append(" {").Append(string.Join(", ", scale)).Append('}');
+            if (rule.FormatId != null)
+                text.Append(" -> ").Append(rule.FormatId.Value < differentials.Count ? differentials[(int)rule.FormatId.Value] : "format " + rule.FormatId.Value);
+            return text.ToString();
+        }
+
+        private static string DescribeDifferential(DifferentialFormat format)
+        {
+            var parts = new List<string>();
+            Font font = format.GetFirstChild<Font>();
+            if (font != null)
+            {
+                var items = new List<string>();
+                if (Flag(font.GetFirstChild<Bold>())) items.Add("bold");
+                if (Flag(font.GetFirstChild<Italic>())) items.Add("italic");
+                if (font.GetFirstChild<Underline>() != null) items.Add("underline");
+                if (Flag(font.GetFirstChild<Strike>())) items.Add("strike");
+                if (font.GetFirstChild<Color>() != null) items.Add("colour " + DescribeColour(font.GetFirstChild<Color>()));
+                parts.Add("font(" + string.Join(", ", items) + ")");
+            }
+            NumberingFormat number = format.GetFirstChild<NumberingFormat>();
+            if (number != null && number.FormatCode != null) parts.Add("number format " + number.FormatCode.Value);
+            Fill fill = format.GetFirstChild<Fill>();
+            PatternFill pattern = fill == null ? null : fill.GetFirstChild<PatternFill>();
+            if (pattern != null)
+                parts.Add("fill(" + (pattern.PatternType == null ? "solid" : pattern.PatternType.InnerText)
+                    + " " + DescribeColour(pattern.GetFirstChild<ForegroundColor>()) + " / " + DescribeColour(pattern.GetFirstChild<BackgroundColor>()) + ")");
+            else if (fill != null) parts.Add("fill(gradient)");
+            string border = DescribeBorder(format.GetFirstChild<Border>());
+            if (border != "none") parts.Add("border(" + border + ")");
+            return parts.Count == 0 ? "no format" : string.Join(" ", parts);
         }
 
         private static List<TItem> Children<TList, TItem>(Stylesheet sheet) where TList : OpenXmlElement where TItem : OpenXmlElement
@@ -356,16 +444,23 @@ namespace SPI_Data_Comp_Tool
                     else if (type == typeof(DataValidation))
                     {
                         var rule = (DataValidation)reader.LoadCurrentElement();
-                        var formula = rule.GetFirstChild<Formula1>();
-                        sheet.Validations.Add(((rule.SequenceOfReferences == null ? "" : rule.SequenceOfReferences.InnerText) + ": "
-                            + (rule.Type == null ? "none" : rule.Type.InnerText) + " " + (formula == null ? "" : formula.Text)).Trim());
+                        var first = rule.GetFirstChild<Formula1>();
+                        var second = rule.GetFirstChild<Formula2>();
+                        // Only what the rule type uses is kept, with defaults spelled out, so the same rule saved by two
+                        // different programs reads the same: a list has no operator; "between" is the default operator.
+                        string kind = rule.Type == null ? "none" : rule.Type.InnerText;
+                        bool ranged = kind == "whole" || kind == "decimal" || kind == "date" || kind == "time" || kind == "textLength";
+                        string comparison = !ranged ? "" : rule.Operator == null ? "between" : rule.Operator.InnerText;
+                        bool pair = comparison == "between" || comparison == "notBetween";
+                        sheet.Validations.Add(((rule.SequenceOfReferences == null ? "" : rule.SequenceOfReferences.InnerText) + ": " + kind
+                            + (ranged ? " " + comparison : "") + " " + (first == null ? "" : first.Text) + (pair && second != null ? " ; " + second.Text : "")).Trim());
                     }
                     else if (type == typeof(ConditionalFormatting))
                     {
                         var block = (ConditionalFormatting)reader.LoadCurrentElement();
                         string range = block.SequenceOfReferences == null ? "" : block.SequenceOfReferences.InnerText;
                         foreach (ConditionalFormattingRule rule in block.Elements<ConditionalFormattingRule>())
-                            sheet.ConditionalFormats.Add(range + ": " + (rule.Type == null ? "" : rule.Type.InnerText));
+                            sheet.ConditionalFormats.Add(range + ": " + DescribeRule(rule));
                     }
                     else { more = reader.Read(); continue; }
                     // LoadCurrentElement leaves the reader on the element after the one it loaded.
@@ -373,12 +468,15 @@ namespace SPI_Data_Comp_Tool
                 }
             }
 
+            sheet.ColumnStyles = new int[sheet.LastCol + 1];
             foreach (Column column in columns)
             {
                 int from = column.Min == null ? 1 : (int)column.Min.Value;
                 int to = Math.Min(column.Max == null ? from : (int)column.Max.Value, sheet.LastCol);
+                int style = column.Style == null || column.Style.Value >= styles.Length ? 0 : (int)column.Style.Value;
                 for (int i = from; i <= to; i++)
                 {
+                    sheet.ColumnStyles[i] = style;
                     if (column.Width != null) sheet.Widths[i] = Math.Round(column.Width.Value, 2);
                     if (column.Hidden != null && column.Hidden.Value) sheet.HiddenColumns.Add(ColumnLetters(i));
                 }
@@ -416,6 +514,8 @@ namespace SPI_Data_Comp_Tool
             {
                 if (row.Height != null) sheet.Heights[rowNumber] = Math.Round(row.Height.Value, 2);
                 if (row.Hidden != null && row.Hidden.Value) sheet.HiddenRows.Add(rowNumber);
+                if (row.StyleIndex != null && row.CustomFormat != null && row.CustomFormat.Value && row.StyleIndex.Value > 0 && row.StyleIndex.Value < styles.Length)
+                    sheet.RowStyles[rowNumber] = (int)row.StyleIndex.Value;
             }
             int position = 0;
             foreach (Cell source in row.Elements<Cell>())
@@ -593,6 +693,19 @@ namespace SPI_Data_Comp_Tool
             while (i < formula.Length)
             {
                 char ch = formula[i];
+                if (ch == '[')                                      // table column or external workbook, e.g. Table1[Q1]: copy unchanged
+                {
+                    int depth = 0, close = i;
+                    while (close < formula.Length)
+                    {
+                        if (formula[close] == '[') depth++;
+                        else if (formula[close] == ']' && --depth == 0) { close++; break; }
+                        close++;
+                    }
+                    result.Append(formula, i, close - i);
+                    i = close;
+                    continue;
+                }
                 if (ch == '"' || ch == '\'')                        // text literal or quoted sheet name: copy unchanged
                 {
                     int end = i + 1;

@@ -734,11 +734,14 @@ namespace SPI_Data_Comp_Tool
             {
                 var widthsA = new Dictionary<string, string>(StringComparer.Ordinal);
                 var widthsB = new Dictionary<string, string>(StringComparer.Ordinal);
+                // Several columns can share a header text; the column letter keeps each one's width apart.
+                var repeated = new HashSet<string>(common.GroupBy(columnName).Where(group => group.Count() > 1).Select(group => group.Key), StringComparer.Ordinal);
                 foreach (Header column in common)
                 {
                     double width;
-                    widthsA[columnName(column)] = A.Widths.TryGetValue(column.Col, out width) ? FloatText(width) : "default";
-                    widthsB[columnName(column)] = B.Widths.TryGetValue(byB[column.Key].Col, out width) ? FloatText(width) : "default";
+                    string name = repeated.Contains(columnName(column)) ? columnName(column) + " [" + Letter(column.Col) + "]" : columnName(column);
+                    widthsA[name] = A.Widths.TryGetValue(column.Col, out width) ? FloatText(width) : "default";
+                    widthsB[name] = B.Widths.TryGetValue(byB[column.Key].Col, out width) ? FloatText(width) : "default";
                 }
                 CheckMap(res, scope, "Column widths", widthsA, widthsB, "layout", "default");
                 var heightsA = new Dictionary<string, string>(StringComparer.Ordinal);

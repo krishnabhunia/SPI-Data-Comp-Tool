@@ -139,9 +139,14 @@ namespace SPI_Data_Comp_Tool
                     new S.CellFormats(new S.CellFormat { FontId = 0 }, new S.CellFormat { FontId = 1, NumberFormatId = 10 }));
                 styles.Stylesheet.Save();
                 var sheetPart = workbook.AddNewPart<WorksheetPart>();
-                sheetPart.Worksheet = new S.Worksheet(new S.SheetData(
-                    new S.Row(new S.Cell { CellReference = "A1", StyleIndex = 1, DataType = S.CellValues.InlineString, InlineString = new S.InlineString(new S.Text("Head")) },
-                              new S.Cell { CellReference = "B1", CellValue = new S.CellValue("0.25"), StyleIndex = 1 }) { RowIndex = 1 }));
+                sheetPart.Worksheet = new S.Worksheet(
+                    new S.Columns(new S.Column { Min = 3, Max = 3, Style = 1, Width = 9, CustomWidth = true }),
+                    new S.SheetData(
+                        new S.Row(new S.Cell { CellReference = "A1", StyleIndex = 1, DataType = S.CellValues.InlineString, InlineString = new S.InlineString(new S.Text("Head")) },
+                                  new S.Cell { CellReference = "B1", CellValue = new S.CellValue("0.25"), StyleIndex = 1 }) { RowIndex = 1 },
+                        new S.Row(new S.Cell { CellReference = "A2", CellValue = new S.CellValue("1") },
+                                  new S.Cell { CellReference = "D2", CellValue = new S.CellValue("2") }) { RowIndex = 2, StyleIndex = 1, CustomFormat = true },
+                        new S.Row(new S.Cell { CellReference = "D3", CellValue = new S.CellValue("3") }) { RowIndex = 3 }));
                 sheetPart.Worksheet.Save();
                 workbook.Workbook = new S.Workbook(new S.Sheets(new S.Sheet { Name = "One", SheetId = 1, Id = workbook.GetIdOfPart(sheetPart) }));
                 workbook.Workbook.Save();
@@ -155,7 +160,11 @@ namespace SPI_Data_Comp_Tool
                     && style[IdentityStyle.NumberFormat] == "0.00%",
                     "font properties were lost when their XML order differs: " + string.Join(" / ", style));
                 Require(sheet.Cell(1, 1).Value == "Head" && sheet.Cell(1, 1).Kind == "text" && sheet.Cell(1, 2).Kind == "number" && sheet.Cell(1, 2).Value == "0.25"
-                    && sheet.LastRow == 1 && sheet.LastCol == 2 && sheet.Cell(5, 5).Kind == "blank", "cell values or sheet bounds were read wrongly");
+                    && sheet.LastRow == 3 && sheet.LastCol == 4 && sheet.Cell(5, 5).Kind == "blank", "cell values or sheet bounds were read wrongly");
+                // A cell the file does not store shows its row's format, else its column's; a stored cell without a style number uses style 0.
+                Func<int, int, string> font = (r, c) => sheet.StyleOf(sheet.Cell(r, c))[IdentityStyle.FontName];
+                Require(font(2, 2) == "Arial" && font(3, 3) == "Arial" && font(2, 1) == "Calibri" && font(3, 2) == "Calibri" && font(3, 4) == "Calibri"
+                    && sheet.Cell(3, 3).Kind == "blank", "a blank cell must take the format of its row or column");
             }
             passed("Workbook identity reader keeps bold, italic, size, colour and underline whatever the XML order of the font.");
 
@@ -164,6 +173,8 @@ namespace SPI_Data_Comp_Tool
             Require(IdentityWorkbook.ShiftFormula("\"A1\"&'My Sheet'!A1&LOG10(B2)&Rate1", 1, 0) == "\"A1\"&'My Sheet'!A2&LOG10(B3)&Rate1",
                 "text literals, sheet names, functions and names must not be shifted");
             Require(IdentityWorkbook.ShiftFormula("A1+1", -1, 0) == "#REF!+1", "a reference moved off the sheet must become #REF!");
+            Require(IdentityWorkbook.ShiftFormula("SUM(Table1[Q1])+A2+Table1[[#This Row],[B2]]+[1]Sheet1!C3", 1, 0) == "SUM(Table1[Q1])+A3+Table1[[#This Row],[B2]]+[1]Sheet1!C4",
+                "table columns and external workbook numbers in [ ] are not cell references");
             Require(IdentityWorkbook.NumberText(62000) == "62000" && IdentityWorkbook.NumberText(0.1 + 0.2) == "0.3" && IdentityWorkbook.NumberText(1e-7) == "1e-07",
                 "number text must match the reference tool");
             int row, col;
@@ -404,6 +415,33 @@ namespace SPI_Data_Comp_Tool
             IdentityResult noted = Compare(noteA, noteC);
             Require(Status(noted, "Cell comments") == "DIFF" && Status(noted, "Hyperlinks") == "DIFF" && Status(noted, "Hidden rows") == "DIFF",
                 "a changed comment, a missing link and a missing hidden row outside the data must be reported");
+
+            // Two columns with the same header text keep separate widths.
+            Func<double, string, string> twin = (width, name) => Book(folder, name, new[] { R("Value", "Value"), R(1, 2) },
+                sheet => { sheet.Column(1).Width = width; sheet.Column(2).Width = 20; });
+            IdentityResult twins = Compare(twin(10, "twin-a.xlsx"), twin(30, "twin-b.xlsx"));
+            Require(Status(twins, "Column widths") == "DIFF" && !twins.Identical && Compare(twin(10, "twin-c.xlsx"), twin(10, "twin-d.xlsx")).Identical,
+                "the width of the first of two equally named columns was lost");
+
+            // Conditional formats and validations on the same range are compared by what the rule does.
+            Func<bool, string, string> ruled = (second, name) => Book(folder, name, new[] { R("ID", "Qty"), R(1, 4), R(2, 9) }, sheet =>
+            {
+                IXLConditionalFormat format = sheet.Range("B2:B3").AddConditionalFormat();
+                if (second) format.WhenLessThan(5).Fill.SetBackgroundColor(XLColor.Red);
+                else format.WhenGreaterThan(5).Fill.SetBackgroundColor(XLColor.Red);
+                sheet.Range("A2:A3").SetDataValidation().WholeNumber.Between(1, second ? 5 : 9);
+            });
+            string ruleA = ruled(false, "rule-a.xlsx"), ruleB = ruled(true, "rule-b.xlsx");
+            IdentityResult rules = Compare(ruleA, ruleB);
+            Require(Status(rules, "Conditional formatting rules") == "DIFF" && Status(rules, "Data validation rules") == "DIFF" && rules.Count("extras") == 2
+                && Compare(ruleA, ruled(false, "rule-c.xlsx")).Identical, "a changed rule on the same range must be reported, and an equal rule must match");
+
+            // A format set on a whole column also shows on its blank cells, so it is a difference there.
+            Func<bool, string, string> banded = (bold, name) => Book(folder, name, new[] { R("ID", "Note", "Qty"), R(1, null, 4), R(2, null, 9) },
+                sheet => { if (bold) sheet.Column(2).Style.Fill.BackgroundColor = XLColor.Yellow; });
+            IdentityResult bands = Compare(banded(false, "band-a.xlsx"), banded(true, "band-b.xlsx"));
+            Require(bands.Count("values") == 0 && bands.Count("fmt_other") >= 2 && bands.Formats.Any(row => (string)row[6] == "Fill colour" && (string)row[8] == "#FFFF00"),
+                "a column format on blank cells was not compared");
 
             IdentityResult skipped = Compare(a, b, o => { o.CompareFormats = false; o.CompareLayout = false; });
             Require(skipped.Identical && skipped.Formats.Count == 0 && skipped.Skipped.Contains("fmt_font") && skipped.Skipped.Contains("layout")
