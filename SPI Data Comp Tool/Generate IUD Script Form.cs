@@ -27,9 +27,30 @@ namespace SPI_Data_Comp_Tool
 
         private string strUpdateClause, strSetClause, strWhereClause, strUpdateTable, strScriptFor;
 
+        private StepFlow steps;   // controlled steps, see BuildSteps
+
+        /// <summary>
+        /// Controlled steps: Script type, Workbook, Sheet, Table name, Generate. The script type decides
+        /// which file dialog opens, so it comes first. A step unlocks when the one before is done.
+        /// </summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, StepStrip.Attach(this))
+                .Add("Script type", "Choose Insert, Update or Delete", () => rb_Insert.Checked || rb_Update.Checked || rb_Delete.Checked)
+                .Add("Workbook", "Browse for the Excel workbook",
+                    () => dsGenerateScript != null && dsGenerateScript.Tables.Count > 0, btn_ListTableExcel)
+                .Add("Sheet", "Choose the worksheet", () => cb_SelectSheet.SelectedIndex >= 0, cb_SelectSheet)
+                .Add("Table name", "Choose where the table name comes from", () => tb_TableName.Text.Trim().Length > 0,
+                    rb_FromFileName, rb_SheetName, tb_TableName)
+                .Add("Generate", "Generate the script", () => boolGenerate, btn_Script);
+            steps.Watch(rb_Insert, rb_Update, rb_Delete);
+            steps.Refresh();
+        }
+
         public Generate_IUD_Script_Form()
         {
             InitializeComponent();
+            BuildSteps();
 
             try
             {

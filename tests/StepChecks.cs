@@ -46,6 +46,12 @@ namespace SPI_Data_Comp_Tool
             check("SPI FK extraction: test connection, then import", ForeignKeySteps);
             check("Table extraction after delta: source or Excel sheet, target, test, run", ExtractionSteps);
             check("Spec note creation: workbook, create notes, export", SpecNoteSteps);
+            check("Pre-merging tool: connect, then run", PreMergeSteps);
+            check("Pre-merging duplicacy check: target, test, run", DuplicacySteps);
+            check("Generate scripts: script type, workbook, sheet, table name, generate", ScriptSteps);
+            check("Execute scripts: test connection, then the steps of the chosen tab", ExecuteSteps);
+            check("Export database to Excel: load tables, tick tables, export", ExportSteps);
+            check("Customised Excel: workbook, columns, create", CustomisedSteps);
             check("step strip is readable in every theme", StripColours);
 
             lines.Add(failed == 0 ? "step checks passed" : failed + " step check(s) failed");
@@ -369,6 +375,151 @@ namespace SPI_Data_Comp_Tool
                 Set(form, "dt_SpecNote", SPI_Spec_Note_Creation_Utility.BuildNotes(table, form));
                 flow.Refresh();
                 Open(form, "btn_GenerateExcel");
+            }
+        }
+
+        private static void PreMergeSteps()
+        {
+            using (var form = new PreMergingTool_Form())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                var connection = Find<ConnectionPanel>(form, "connection");
+                Fill(connection.Source, false); flow.Refresh();
+                Locked(form, "btn_Connect", "btn_ListTableExcel", "btn_Duplicate");
+                Fill(connection.Source, true); flow.Refresh();
+                Open(form, "btn_Connect");
+                Locked(form, "btn_ListTableExcel", "btn_Duplicate");
+                Set(form, "boolConnection", true);
+                Set(form, "strConnection", "Server=x");
+                flow.Refresh();
+                Open(form, "btn_ListTableExcel", "btn_Duplicate", "cb_IgnoreCase");
+            }
+        }
+
+        private static void DuplicacySteps()
+        {
+            using (var form = new Pre_Merging_Duplicacy_Form())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                var connection = Find<ConnectionPanel>(form, "connection");
+                Fill(connection.Source, false); Fill(connection.Target, false); flow.Refresh();
+                Require(!connection.Target.Group.Enabled, "Target connection open while Source is empty");
+                Locked(form, "btn_Connect_Reference_ID", "btn_ListTableExcel");
+                Fill(connection.Source, true); Fill(connection.Target, true); flow.Refresh();
+                Open(form, "btn_Connect_Reference_ID");
+                Locked(form, "btn_ListTableExcel");
+                Get<DBConnectionStatus>(form, "dBConnectionStatus_SRC").boolConnection = true;
+                Get<DBConnectionStatus>(form, "dBConnectionStatus_TRG").boolConnection = true;
+                flow.Refresh();
+                Open(form, "btn_ListTableExcel", "cb_IgnoreCase");
+            }
+        }
+
+        private static void ScriptSteps()
+        {
+            using (var form = new Generate_IUD_Script_Form())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                Require(form.Controls.Find("step_Strip", false).Length == 1, "the step strip was not attached");
+                foreach (string name in new[] { "rb_Insert", "rb_Update", "rb_Delete" }) Find<RadioButton>(form, name).Checked = false;
+                flow.Refresh();
+                Locked(form, "btn_ListTableExcel", "cb_SelectSheet", "tb_TableName", "btn_Script");
+                Find<RadioButton>(form, "rb_Insert").Checked = true; flow.Refresh();
+                Open(form, "btn_ListTableExcel");
+                Locked(form, "cb_SelectSheet", "btn_Script");
+                var data = new DataSet();
+                var sheet = new DataTable("Sheet1");
+                sheet.Columns.Add("A");
+                sheet.Rows.Add("1");
+                data.Tables.Add(sheet);
+                form.SetWorkbook(data);
+                flow.Refresh();
+                Open(form, "cb_SelectSheet", "tb_TableName");
+                Find<TextBox>(form, "tb_TableName").Text = "TABLE_A"; flow.Refresh();
+                Open(form, "btn_Script");
+            }
+        }
+
+        private static void ExecuteSteps()
+        {
+            using (var form = new Execute_Excel_Scripts_Form())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                var connection = Find<ConnectionPanel>(form, "connection");
+                var tabs = Find<TabControl>(form, "tabControl1");
+                tabs.SelectedTab = Find<TabPage>(form, "tabPage_Excel");
+                Fill(connection.Source, false); flow.Refresh();
+                Locked(form, "btnTestConnecton", "btn_ExecuteScript", "clb_Checked", "btn_Execute");
+                Fill(connection.Source, true); flow.Refresh();
+                Open(form, "btnTestConnecton");
+                Locked(form, "btn_ExecuteScript");
+                Get<DBConnectionStatus>(form, "dBConnectionStatus_SRC").boolConnection = true; flow.Refresh();
+                Open(form, "btn_ExecuteScript");
+                Locked(form, "clb_Checked", "btn_Execute");
+                var scripts = new DataTable();
+                scripts.Columns.Add("SCRIPT");
+                Set(form, "dtGenerateScript", scripts);
+                var list = Find<CheckedListBox>(form, "clb_Checked");
+                list.Items.Clear(); list.Items.Add("SCRIPT");
+                flow.Refresh();
+                Open(form, "clb_Checked");
+                Locked(form, "btn_Execute");
+                list.SetItemChecked(0, true); flow.Refresh();
+                Open(form, "btn_Execute");
+                tabs.SelectedTab = Find<TabPage>(form, "tabPage_PNID_Reports"); flow.Refresh();
+                Open(form, "btn_PNID_Report");
+                Require(flow.Steps.Count(s => s.Shown) == 3, "PNID reports tab should show 3 steps");
+            }
+        }
+
+        private static void ExportSteps()
+        {
+            using (var form = new SQL_DB_To_Excel())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                var connection = Find<ConnectionPanel>(form, "connection");
+                Fill(connection.Source, false); flow.Refresh();
+                Locked(form, "btn_Connect", "clb_TableList", "btn_ExportToExcel");
+                Fill(connection.Source, true); flow.Refresh();
+                Open(form, "btn_Connect");
+                Locked(form, "clb_TableList", "btn_ExportToExcel");
+                Set(form, "tablesLoaded", true);
+                var tables = Find<CheckedListBox>(form, "clb_TableList");
+                tables.Items.Clear(); tables.Items.Add("T1");
+                flow.Refresh();
+                Open(form, "clb_TableList", "cb_SelectAll");
+                Locked(form, "btn_ExportToExcel");
+                tables.SetItemChecked(0, true); flow.Refresh();
+                Open(form, "btn_ExportToExcel");
+            }
+        }
+
+        private static void CustomisedSteps()
+        {
+            using (var form = new CustomisedExcel())
+            {
+                form.CreateControl();
+                StepFlow flow = Get<StepFlow>(form, "steps");
+                Require(form.Controls.Find("step_Strip", false).Length == 1, "the step strip was not attached");
+                flow.Refresh();
+                Open(form, "btn_ReadExcel");
+                Locked(form, "checkedListBox1", "btn_CreateExcel");
+                var data = new DataSet();
+                data.Tables.Add(new DataTable("Rules"));
+                data.Tables[0].Columns.Add("A");
+                Set(form, "dsCustomisedExcel", data);
+                var columns = Find<CheckedListBox>(form, "checkedListBox1");
+                columns.Items.Add("A");
+                flow.Refresh();
+                Open(form, "checkedListBox1");
+                Locked(form, "btn_CreateExcel");
+                columns.SetItemChecked(0, true); flow.Refresh();
+                Open(form, "btn_CreateExcel");
             }
         }
 

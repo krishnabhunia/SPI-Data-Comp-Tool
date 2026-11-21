@@ -83,7 +83,9 @@ namespace SPI_Data_Comp_Tool
                 {
                     // A test of an older target must never authorize execution on edited fields.
                     if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
+                    steps?.Later();
                 };
+                BuildSteps();
                 common_Data.ReadUserProfile(cb_UserProfileList);
 
                 point_gbTextFile = gb_ExcelFile.Location;
@@ -127,6 +129,33 @@ namespace SPI_Data_Comp_Tool
         }
 
         /// <summary>A saved profile was put into the Connection panel.</summary>
+        private StepFlow steps;   // controlled steps, see BuildSteps
+
+        /// <summary>
+        /// Controlled steps: Connection, Test connection, then by tab - Excel: Script workbook, Scripts,
+        /// Execute; Text: Folders and execute; PNID reports: Report. A step unlocks when the one before is done.
+        /// </summary>
+        private void BuildSteps()
+        {
+            Func<bool> excel = () => tabControl1.SelectedTab == tabPage_Excel;
+            Func<bool> text = () => tabControl1.SelectedTab == tabPage_Txt;
+            Func<bool> pnid = () => tabControl1.SelectedTab == tabPage_PNID_Reports;
+            steps = new StepFlow(this, step_Strip)
+                .Add("Connection", "Fill in the database connection", () => StepFlow.Passes(() => connection.ValidateInput()))
+                .Add("Test connection", "Test the connection", () => dBConnectionStatus_SRC != null && dBConnectionStatus_SRC.boolConnection,
+                    btnTestConnecton)
+                .Add(() => "Script workbook", () => "Browse for the script workbook", () => dtGenerateScript != null && dtGenerateScript.Columns.Count > 0,
+                    excel, btn_ExecuteScript)
+                .Add(() => "Scripts", () => "Tick the script columns to run", () => clb_Checked.CheckedItems.Count > 0, excel,
+                    clb_Checked, cmb_SelectFileName, chkb_SelectQuery)
+                .Add(() => "Execute", () => "Execute the ticked scripts", () => false, excel, btn_Execute)
+                .Add(() => "Folders and execute", () => "Choose both folders and execute", () => false, text,
+                    llb_Excel_SRC, llb_Excel_TRG, btn_ExecuteFromTextFiles)
+                .Add(() => "Report", () => "Choose the reports and generate them", () => false, pnid, clb_PNID_Reports, btn_PNID_Report);
+            steps.Watch(tabControl1);
+            steps.Refresh();
+        }
+
         private void Connection_ProfileApplied(object sender, DBConnectionDetails details)
         {
             dBConnectionDetails = details;

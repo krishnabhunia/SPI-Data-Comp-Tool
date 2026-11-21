@@ -73,8 +73,9 @@ namespace SPI_Data_Comp_Tool
             connection.ProfileHalf = rb_TRG.Checked ? ProfileHalf.Target : ProfileHalf.Source;
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => DisplayError(error);
-            connection.InputChanged += (sender, args) => { tablesLoaded = false; };
+            connection.InputChanged += (sender, args) => { tablesLoaded = false; exported = false; steps?.Later(); };
             UiTheme.Apply(this, btn_ExportToExcel);
+            BuildSteps();
 
             ds = new DataSet();
             dt_sql = new DataTable();
@@ -111,6 +112,22 @@ namespace SPI_Data_Comp_Tool
         }
 
         /// <summary>A saved profile was put into the Connection panel.</summary>
+        private StepFlow steps;   // controlled steps, see BuildSteps
+        private bool exported;
+
+        /// <summary>Controlled steps: Connection, Load tables, Tables, Export. A step unlocks when the one before is done.</summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, step_Strip)
+                .Add("Connection", "Fill in the database connection", () => StepFlow.Passes(() => connection.Source.ValidateInput()))
+                .Add("Load tables", "Connect and load the tables", () => tablesLoaded, btn_Connect)
+                .Add("Tables", "Tick the tables to export", () => clb_TableList.CheckedItems.Count > 0,
+                    tb_Find, cb_SelectAll, cb_SkipEmptyTable, clb_TableList)
+                .Add("Export", "Choose the folder and export to Excel", () => exported, linkLabel1, btn_ExportToExcel)
+                .Workers(backgroundWorker1, backgroundWorker2);
+            steps.Refresh();
+        }
+
         private void Connection_ProfileApplied(object sender, DBConnectionDetails details)
         {
             dBConnectionDetails = details;
@@ -815,6 +832,7 @@ namespace SPI_Data_Comp_Tool
                 else if (!e.Cancelled && myException == null)
                 {
                     UpdateProgressBar(1, 1, "All Excel File Saved Successfully");
+                    exported = true;
                     Process.Start(linkLabel1.Text);
                 }
             }
