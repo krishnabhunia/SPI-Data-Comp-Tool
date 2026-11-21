@@ -305,6 +305,9 @@
     <Compile Include="..\tests\ThemeChecks.cs">
       <Link>Tests\ThemeChecks.cs</Link>
     </Compile>
+    <Compile Include="..\tests\StepChecks.cs">
+      <Link>Tests\StepChecks.cs</Link>
+    </Compile>
     <Compile Include="..\tests\ToolGroupChecks.cs">
       <Link>Tests\ToolGroupChecks.cs</Link>
     </Compile>
@@ -315,6 +318,7 @@
       <Link>Tests\WorkbookIdentityFormChecks.cs</Link>
     </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="StepFlow.cs" />
     <Compile Include="ThemeControls.cs" />
     <Compile Include="UiTheme.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

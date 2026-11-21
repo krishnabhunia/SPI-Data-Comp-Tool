@@ -23,11 +23,26 @@ namespace SPI_Data_Comp_Tool
         {
             InitializeComponent();
             str_CustomisedExcelName = string.Empty;
+            BuildSteps();
 
 
             dsCustomisedExcel = new DataSet();
             common_Data = new Common_Data();
             openFileDialogData = new OpenFileDialogData();
+        }
+
+        private StepFlow steps;   // controlled steps, see BuildSteps
+        private bool created;
+
+        /// <summary>Controlled steps: Workbook, Columns, Create. A step unlocks when the one before is done.</summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, StepStrip.Attach(this))
+                .Add("Workbook", "Read the Excel workbook",
+                    () => dsCustomisedExcel != null && dsCustomisedExcel.Tables.Count > 0 && checkedListBox1.Items.Count > 0, btn_ReadExcel)
+                .Add("Columns", "Tick the columns to keep", () => checkedListBox1.CheckedItems.Count > 0, checkedListBox1, cb_SelectAll)
+                .Add("Create", "Create the customised Excel", () => created, btn_CreateExcel);
+            steps.Refresh();
         }
 
         private void btn_ReadExcel_Click(object sender, EventArgs e)
@@ -48,6 +63,7 @@ namespace SPI_Data_Comp_Tool
                     dsCustomisedExcel = candidate;
                     previous?.Dispose();
                     str_CustomisedExcelName = path;
+                    created = false;
                     FillCheckBoxList(dsCustomisedExcel);
                     DisplayMessage(string.Format("Rule file {0} imported successfully", str_CustomisedExcelName));
                 }
@@ -157,6 +173,7 @@ namespace SPI_Data_Comp_Tool
                         worksheet.Cells.AutoFitColumns(22,50);
                         FormValidation.WriteAtomically(saveFileDialog.FileName, path => pck.SaveAs(new System.IO.FileInfo(path)));
                         DisplayMessage("File Saved Successfully !!! Path : " + saveFileDialog.FileName);
+                        created = true;
                     }
                     #endregion
 

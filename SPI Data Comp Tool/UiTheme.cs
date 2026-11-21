@@ -341,7 +341,7 @@ namespace SPI_Data_Comp_Tool
             int zone = ZoneOf(c);
             bool recurse = true;
 
-            if (c is TileButton || c is GlyphIcon)
+            if (c is TileButton || c is GlyphIcon || c is StepStrip)
             {
                 if (zone == ZoneHeader) c.ForeColor = p.HeadText;
                 c.Invalidate();

@@ -31,7 +31,8 @@ SAVE = T("tlp_Save", cols=["100%"], rows=["100%", "auto"], cells=[
     (C("btn_ExportToExcel", dock="Fill", size=(160, 36), margin=0), 0, 1),
 ])
 
-LAYOUT = T("tlp_Root", cols=["420", "100%"], rows=["auto", "100%"], cells=[
+LAYOUT = T("tlp_Root", cols=["420", "100%"], rows=["auto", "auto", "100%"], cells=[
+    (C("step_Strip", new="SPI_Data_Comp_Tool.StepStrip", dock="Fill", size=(800, 66), margin=(0, 0, 0, 12)), 0, 0, 2),
     (connection_box("groupBox2", below=[
         F("flp_LoadFrom", [C("lbl_LoadFrom", new="Label", text="Fill from profile half", autosize=True, margin=(0, 4, 12, 0)),
                            C("rb_SRC", autosize=True, margin=(0, 2, 16, 0)), C("rb_TRG", autosize=True, margin=(0, 2, 0, 0))],
@@ -40,7 +41,7 @@ LAYOUT = T("tlp_Root", cols=["420", "100%"], rows=["auto", "100%"], cells=[
           margin=(0, 8, 0, 0)),
         C("progressBar1", anchor="Left, Right", size=(300, 14), margin=(0, 8, 0, 0)),
         C("lbl_Status", anchor="Left, Right", autosize=True, margin=(0, 6, 0, 0)),
-    ]), 0, 0),
-    (G("groupBox3", SAVE, margin=(0, 12, 12, 0)), 0, 1),
-    (G("groupBox1", TABLES, margin=0), 1, 0, 1, 2),
+    ]), 0, 1),
+    (G("groupBox3", SAVE, margin=(0, 12, 12, 0)), 0, 2),
+    (G("groupBox1", TABLES, margin=0), 1, 1, 1, 2),
 ])

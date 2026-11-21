@@ -11,6 +11,7 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 | `SPI Data Comp Tool/WorkspaceCatalog.cs` | Four workspace groups and 12 explicit task routes; advanced mapping opens an independent transient page |
 | `SPI Data Comp Tool/WindowNavigator.cs` | `WorkspaceNavigator`: default workspace/page reuse and explicit parallel sessions |
 | `SPI Data Comp Tool/WorkspaceForm.cs`, `WorkspacePageForm.cs` | Lazy page hosting, task switching and prepare-before-close lifecycle; existing business code remains in its page implementation |
+| `SPI Data Comp Tool/StepFlow.cs` | Controlled steps: `StepFlow` locks a step's controls until the step before is done; `StepStrip` shows the steps (done, current, locked) at the top of a window |
 | `SPI Data Comp Tool/UiTheme.cs`, `ThemeControls.cs` | Four retained colour palettes, live styling and preference persistence; owner-drawn home tiles, glyphs and theme swatch |
 | `SPI Data Comp Tool/DB Comparison.cs` | Database-comparison UI |
 | `SPI Data Comp Tool/Excel_Excel_Comparison.cs` | Excel comparison |
@@ -92,6 +93,24 @@ flowchart TD
 - Main window: a themed header band, **four workspace home tiles** and a status line with the running version. Each tile opens its group's first task; menus expose all 12 routes. `TileButton`, `GlyphIcon` and `ThemeSwatch` in `ThemeControls.cs` are retained owner-drawn controls. A tile remains a `Button`, preserving normal keyboard and accessibility semantics. Workspace selection, header and status colours also follow live theme changes. Workflow pages retain their controls and scrolling where necessary; a common host is not a claim that every older page has been visually redesigned. To add a future theme, define a palette in `UiTheme.cs`, include it in `All`, and extend `THEMES` in the contrast test and the Windows theme checks.
 - Shared code: `FormHelpers` holds the helpers several windows used to copy (status text and errors, elapsed time, summary transpose, Excel table formatting, table pickers). A window keeps a short wrapper with its own error handling and calls the helper; add new shared logic there instead of copying it.
 - Connection panel: `ConnectionPanel` (a UserControl) holds the profile picker, the Source and Target halves (`ConnectionSide`) and the Copy buttons, with their Oracle / SQL Server, Windows-login and default-port behaviour. A generated page places it with `new="SPI_Data_Comp_Tool.ConnectionPanel"`, sets `Mode` (`SourceAndTarget` or `SourceOnly`), handles `ProfileApplied` for its own extras, and retains control-name properties where needed. The retained database comparison, batch comparison, script execution, database export and profile surfaces use the shared connection controls. Single-connection pages use `Mode = SourceOnly`; `ProfileHalf` chooses the profile half, `SqlServerOnly` restricts the provider, and `ShowProfile` controls picker visibility. Shared layout parts live in `tools/layouts/_connection.py`; `KEEP = [...]` retains designed child contents, and `TABS(...)` lays out tab pages.
+
+### Controlled steps
+
+Seven retained tasks show a step strip above their controls. A step remains locked until its preceding applicable steps are complete; hovering a locked step explains what to do first. The strip shows completed, current and locked steps in the selected colour theme.
+
+| Task | Step order |
+|---|---|
+| Excel comparison | Source workbook → Target workbook → Load both files → Reference key → Columns to compare → Options and validate → Compare. The reference-key step includes the primary-key option. |
+| Database comparison | Source connection → Target connection → Source table → Target table → Load → Reference key → Columns → Set and validate → Compare. |
+| Batch comparison | Connections on the Databases tab, or Source folder → Target folder on the Excel folders tab; then Table list → Output folder → Compare. |
+| Generate scripts | Script type → Workbook → Sheet → Table name → Generate. Script type comes first because it determines which file dialog opens. |
+| Execute scripts & queries | Connection → Test connection; then the selected tab's steps: Script workbook → Scripts → Execute, Folders and execute, or Report. |
+| Database to Excel | Connection → Load tables → Tables → Export. |
+| Excel column selection | Workbook → Columns → Create. |
+
+Changing an earlier input locks dependent steps again. Database and Excel comparison restore checked keys and columns after reloading when the same names still exist, but require validation again. Their advanced-mapping modes continue in a separate mapping page after loading; the ordinary key/column steps do not apply to that mode. Script generation and execution remain separate actions, and the step strip does not replace action-time validation.
+
+`StepFlow` prevents page code from enabling a locked control and disables registered step controls while the page reports a busy operation or a registered background worker runs. Generate scripts and Excel column selection have no generated layout, so `StepStrip.Attach` places their existing controls in a filling panel beneath the strip while retaining their positions and anchors. The `--check-steps` runner (`tests/StepChecks.cs`) checks step order, locks, input changes and strip colours in all four themes using synthetic inputs.
 
 ### Current workflow hosting
 

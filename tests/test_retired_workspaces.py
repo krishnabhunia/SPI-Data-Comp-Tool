@@ -16,6 +16,7 @@ RETIRED_FILES = (
     "Table Extraction After Delta", "PreMergingTool_Form", "Pre_Merging_Duplicacy_Form",
 )
 RETIRED_LAYOUTS = (
+    "SPI_Spec_Note_Creation_Utility",
     "SPIDeltaChangeTrackerOptimised", "SPIDeltaChangeLegacyID", "SPI_FK_Extraction",
     "Table_Extraction_After_Delta", "PreMergingTool_Form", "Pre_Merging_Duplicacy_Form",
 )

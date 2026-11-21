@@ -21,8 +21,8 @@ TEXTS = {
     "btn_Load_SRC_Table": "Load tables", "btn_Load_TRG_Table": "Load tables",
     "groupBox3": "Compare", "cb_ColumnMapping": "Different column names / RefID comparison",
     "cb_IncludeRule": "Include rules", "btn_RuleForm": "Open rules…", "cb_IgnoreCase": "Ignore case",
-    "btn_Connect_Reference_ID": "1   Connect and load", "btn_Set": "2   Set and validate",
-    "btnGenerateOutput": "3   Compare and generate Excel", "btn_Cancel": "Cancel", "btn_Clear_Reset": "Clear / Reset",
+    "btn_Connect_Reference_ID": "Connect and load", "btn_Set": "Set and validate",
+    "btnGenerateOutput": "Compare and generate Excel", "btn_Cancel": "Cancel", "btn_Clear_Reset": "Clear / Reset",
     "label13": "Report", "llbl_File_path": "",
     "groupBox9": "View data", "groupBox7": "Reference key", "cb_PrimaryKey": "Select primary key",
     "groupBox5": "Source columns", "cb_selectAll_toggle": "Select all / none", "groupBox6": "Target columns",
@@ -88,14 +88,15 @@ PROGRESS = T("tlp_Progress", cols=["100%", "auto", "auto", "auto"], rows=["auto"
     (C("lblTimer", autosize=True, anchor="Left", minsize=(80, 0), margin=0), 3, 0),
 ])
 
-LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "100%", "auto"], cells=[
+LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "auto", "100%", "auto"], cells=[
+    (C("step_Strip", new="SPI_Data_Comp_Tool.StepStrip", dock="Fill", size=(800, 66), margin=(0, 0, 0, 12)), 0, 0),
     (T("tlp_Top", cols=["100%", "320"], rows=["auto"], autosize=True, dock="Fill", cells=[
         (G("groupBox14", T("tlp_Connection", cols=["100%"], rows=["auto", "auto"], autosize=True, cells=[
             (panel(), 0, 0),
             (TABLES, 0, 1),
         ]), autosize=True, margin=(0, 0, 12, 0)), 0, 0),
         (G("groupBox3", COMPARE, margin=0), 1, 0),
-    ]), 0, 0),
-    (G("groupBox9", VIEW, margin=(0, 12, 0, 0)), 0, 1),
-    (G("groupBox11", PROGRESS, autosize=True, margin=(0, 12, 0, 0)), 0, 2),
+    ]), 0, 1),
+    (G("groupBox9", VIEW, margin=(0, 12, 0, 0)), 0, 2),
+    (G("groupBox11", PROGRESS, autosize=True, margin=(0, 12, 0, 0)), 0, 3),
 ])
