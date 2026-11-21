@@ -66,11 +66,14 @@ namespace SPI_Data_Comp_Tool
             {
                 Name = "tlp_Updates",
                 Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 8,
-                Padding = new Padding(4), MinimumSize = new Size(630, 430),
+                Padding = new Padding(4),
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            // The workspace host can be shorter than a standalone Settings window. Keep
+            // action/status rows at their preferred height and let these two scrollable
+            // content areas use the remaining height without forcing the actions offscreen.
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -86,7 +89,7 @@ namespace SPI_Data_Comp_Tool
                     "  |  " + installer.Installation.Kind + "  |  " + (this.is64BitOperatingSystem ? "64-bit Windows" : "32-bit Windows"),
             };
             root.Controls.Add(installed, 0, 0);
-            var choices = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 0, 0, 8) };
+            var choices = new FlowLayoutPanel { Name = "flp_UpdateChoices", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 0, 0, 8) };
             choices.Controls.Add(new Label { Text = "Show releases", AutoSize = true, Margin = new Padding(0, 8, 10, 0) });
             channel = new ComboBox { Name = "cb_UpdateChannel", AccessibleName = "Release channel", DropDownStyle = ComboBoxStyle.DropDownList, Width = 150, Margin = new Padding(0, 4, 10, 0) };
             channel.Items.AddRange(new object[] { "Normal / stable", "Beta", "All releases" });
@@ -99,7 +102,7 @@ namespace SPI_Data_Comp_Tool
             {
                 Name = "lv_UpdateReleases", AccessibleName = "Available versions: select one to download",
                 Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true,
-                MultiSelect = false, HideSelection = false, MinimumSize = new Size(0, 140),
+                MultiSelect = false, HideSelection = false,
                 Margin = new Padding(0, 0, 0, 8),
             };
             releases.Columns.Add("Version", 150);
@@ -122,7 +125,7 @@ namespace SPI_Data_Comp_Tool
             progressText = new Label { Name = "lbl_UpdateProgress", Dock = DockStyle.Fill, AutoSize = true, Text = " ", Margin = new Padding(0, 2, 0, 4) };
             root.Controls.Add(progress, 0, 4);
             root.Controls.Add(progressText, 0, 5);
-            var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 2, 0, 6) };
+            var actions = new FlowLayoutPanel { Name = "flp_UpdateActions", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 2, 0, 6) };
             download = MakeButton("btn_DownloadUpdate", "Download selected", 165);
             cancel = MakeButton("btn_CancelUpdate", "Cancel", 90);
             install = MakeButton("btn_InstallUpdate", "Install && restart", 165);
@@ -157,7 +160,8 @@ namespace SPI_Data_Comp_Tool
 
         private static Button MakeButton(string name, string text, int width)
         {
-            return new Button { Name = name, Text = text, Size = new Size(width, 32), Margin = new Padding(0, 0, 8, 0), AutoSize = false };
+            return new Button { Name = name, Text = text, MinimumSize = new Size(width, 32), Margin = new Padding(0, 0, 8, 0),
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
         }
 
         internal UpdateRelease SelectedRelease

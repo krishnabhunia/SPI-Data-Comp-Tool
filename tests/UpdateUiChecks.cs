@@ -74,6 +74,8 @@ namespace SPI_Data_Comp_Tool
             passed("Update check/download cancellation, stale completions and disposal cannot enable installation or overwrite newer results.");
             CheckConsolidatedUpdater();
             passed("The app has one updater implementation; build status shows the running Normal/Beta channel, not the release filter.");
+            CheckShortUpdatesViewport();
+            passed("Update actions remain visible in short viewports; release lists and notes yield height while their content remains scrollable.");
             CheckSettingsNavigation();
             passed("Help reuses Settings > Updates, preserves other settings sections and makes update actions usable at minimum size.");
         }
@@ -530,6 +532,48 @@ namespace SPI_Data_Comp_Tool
                     "The superseded updater is still compiled: " + legacyType + ".");
         }
 
+        private static void RequireUpdateActionsVisible(UpdatesControl updates, string context)
+        {
+            Rectangle viewport = updates.RectangleToScreen(updates.ClientRectangle);
+            foreach (Control parent in Ancestors(updates))
+                viewport = Rectangle.Intersect(viewport, parent.RectangleToScreen(parent.ClientRectangle));
+            var table = Find<TableLayoutPanel>(updates, "tlp_Updates");
+            foreach (string name in new[] { "btn_CheckUpdates", "btn_DownloadUpdate", "btn_CancelUpdate", "btn_InstallUpdate" })
+            {
+                var button = Find<Button>(updates, name);
+                Rectangle bounds = button.RectangleToScreen(button.ClientRectangle);
+                bool parentsContain = Ancestors(button).TakeWhile(parent => parent != updates)
+                    .All(parent => parent.RectangleToScreen(parent.ClientRectangle).Contains(bounds));
+                Require(button.Visible && viewport.Contains(bounds) && parentsContain,
+                    context + " clips the update action " + name + ". Viewport=" + viewport + "; action=" + bounds +
+                    "; table=" + table.ClientSize + "; rows=" + string.Join(",", table.GetRowHeights()) +
+                    "; font=" + updates.Font.SizeInPoints + "; dpi=" + updates.DeviceDpi + ".");
+            }
+        }
+
+        private static IEnumerable<Control> Ancestors(Control control)
+        {
+            for (Control parent = control.Parent; parent != null; parent = parent.Parent) yield return parent;
+        }
+
+        private static void CheckShortUpdatesViewport()
+        {
+            using (var updates = new UpdatesControl(new FakeFeed(), new FakeInstaller(), currentVersion: "3.0.2"))
+            using (var host = Host(updates))
+            {
+                foreach (Size size in new[] { new Size(640, 330), new Size(700, 390), new Size(860, 620) })
+                {
+                    host.ClientSize = size;
+                    host.PerformLayout();
+                    Application.DoEvents();
+                    RequireUpdateActionsVisible(updates, "Updates viewport " + size);
+                    Require(Find<ListView>(updates, "lv_UpdateReleases").Height > 24 &&
+                        Find<TextBox>(updates, "tb_UpdateReleaseNotes").Height > 0,
+                        "Responsive update layout discarded its release list or notes.");
+                }
+            }
+        }
+
         private static void CheckSettingsNavigation()
         {
             using (var main = new MainForm())
@@ -558,17 +602,15 @@ namespace SPI_Data_Comp_Tool
                     "Settings contains duplicate Updates pages or updater controls.");
                 Require(!Find<GroupBox>(settings, "gb_Logs").Visible && Find<TableLayoutPanel>(settings, "tlp_Root").RowStyles[1].Height == 0,
                     "The unrelated log consumes the Updates workspace.");
-                settings.Size = settings.MinimumSize;
+                // A hosted page has no standalone minimum: resize the real workspace,
+                // which includes navigation/header/footer space, instead of setting the page to 0x0.
+                Form owner = settings.HostWorkspace ?? (Form)settings;
+                owner.Size = owner.MinimumSize;
+                owner.PerformLayout();
                 settings.PerformLayout();
                 Application.DoEvents();
                 var updates = Find<UpdatesControl>(settings, "updatesControl");
-                Rectangle viewport = updates.RectangleToScreen(updates.ClientRectangle);
-                foreach (string name in new[] { "btn_CheckUpdates", "btn_DownloadUpdate", "btn_CancelUpdate", "btn_InstallUpdate" })
-                {
-                    var button = Find<Button>(updates, name);
-                    Require(button.Visible && viewport.Contains(button.RectangleToScreen(button.ClientRectangle)),
-                        "Minimum Settings size clips the update action " + name + ".");
-                }
+                RequireUpdateActionsVisible(updates, "Minimum Settings workspace " + owner.Size);
                 settings.ShowRules();
                 Application.DoEvents();
                 Require(tabs.SelectedTab.Name == "tab_Rules" && log.Text == "Synthetic retained rules log" &&
