@@ -90,7 +90,7 @@ namespace SPI_Data_Comp_Tool
                 if (load.Loaded)
                 {
                     connection.RefreshProfiles();
-                    l_lb_ReadProfile.Text = Path.GetFileName(load.FilePath);
+                    UseLoadedProfileFile(load.FilePath);
                 }
                 if (!string.IsNullOrEmpty(load.Message)) DisplayMessage(load.Message, load.HasError);
                 GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword);
@@ -630,31 +630,61 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                RequireEditorCatalog();
-                string selectedName = cb_UserProfileList.SelectedItem as string;
-                if (selectedName == null || Profile.ProfileList == null ||
-                    !Profile.ProfileList.Any(p => p != null && string.Equals(p.profileName, selectedName, StringComparison.Ordinal)))
-                {
-                    DisplayMessage("Select a saved profile to delete.", true);
-                    return;
-                }
-                // Deleting from a stale catalog must not overwrite edits another window/process saved.
-                ProfileStore.RequireUnchangedFile(editorCatalog);
-                if (MessageBox.Show(this,
-                    $"Delete profile '{selectedName}' from the saved profile file?\n\nThis cannot be undone in the application.",
+                DeleteSelectedProfile(selectedName => MessageBox.Show(this,
+                    $"Delete profile '{selectedName}' from the saved profile file?\n\n{editorCatalog.FilePath}\n\nThis cannot be undone in the application.",
                     "Delete saved profile", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
-                    MessageBoxDefaultButton.Button2) != DialogResult.Yes)
-                {
-                    DisplayMessage("Deletion cancelled; current profiles are unchanged.");
-                    return;
-                }
-
-                DeleteProfileFile(selectedName);
+                    MessageBoxDefaultButton.Button2) == DialogResult.Yes);
             }
             catch (Exception ex)
             {
                 DisplayError(ex);
             }
+        }
+
+        /// <summary>Deletes only from the file successfully loaded by this form, after explicit confirmation.</summary>
+        internal bool DeleteSelectedProfile(Func<string, bool> confirm)
+        {
+            if (confirm == null) throw new ArgumentNullException(nameof(confirm));
+            string selectedName = cb_UserProfileList.SelectedItem as string;
+            List<DBC> active = Profile.ProfileList;
+            if (selectedName == null || active == null ||
+                !active.Any(p => p != null && string.Equals(p.profileName, selectedName, StringComparison.Ordinal)))
+            {
+                DisplayMessage("Select a saved profile to delete.", true);
+                return false;
+            }
+            string profilePath = editorCatalog?.FilePath;
+            if (string.IsNullOrWhiteSpace(profilePath) || !File.Exists(profilePath))
+            {
+                DisplayMessage("Load or save a profile file before deleting a profile.", true);
+                return false;
+            }
+            try
+            {
+                // Settings may point elsewhere after fallback loading. The catalog owns the
+                // destination, and both the memory snapshot and disk file must still match it.
+                RequireEditorCatalog();
+                ProfileStore.RequireUnchangedFile(editorCatalog);
+                if (!confirm(selectedName))
+                {
+                    DisplayMessage("Deletion cancelled; current profiles are unchanged.");
+                    return false;
+                }
+                // The confirmation can dispatch other windows' events. DeleteProfileFile
+                // rechecks ownership and disk content, writes atomically, then publishes.
+                DeleteProfileFile(selectedName);
+                return true;
+            }
+            catch (InvalidOperationException error)
+            {
+                DisplayMessage(error.Message, true);
+                return false;
+            }
+        }
+
+        private void UseLoadedProfileFile(string path)
+        {
+            l_lb_ReadProfile.Text = Path.GetFileName(path);
         }
 
         private static void SetProfilePath(string path)

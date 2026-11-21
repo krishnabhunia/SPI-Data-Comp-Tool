@@ -25,7 +25,8 @@ class CompilerCleanup(unittest.TestCase):
         # These similarly named helpers ARE called by Database Comparison; do not remove them globally.
         self.assertIn("generateTransposeTable();", src)
         self.assertIn("formatExcelTableByDataGridView(1, dataGridView2);", src)
-        self.assertIn("delete_current_row_from_sql_table();", src)
+        # One-to-one matching replaces the old helper that deleted all duplicate targets.
+        self.assertIn("dt_sql_only = remainingTargets.Remaining();", src)
 
     def test_ignore_case_uses_live_checkbox_in_all_comparison_routes(self):
         for name in ("Compare_Multiples_Forms.cs", "Excel_Excel_Comparison.cs"):

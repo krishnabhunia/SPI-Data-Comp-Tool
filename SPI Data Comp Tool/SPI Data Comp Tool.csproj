@@ -237,6 +237,13 @@
       <Link>Tests\ExcelAuditChecks.cs</Link>
     </Compile>
     <Compile Include="ConnectionStrings.cs" />
+    <Compile Include="ComparisonRows.cs" />
+    <Compile Include="..\tests\DatabaseIntegrationChecks.cs">
+      <Link>Tests\DatabaseIntegrationChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\ComparisonCorrectnessChecks.cs">
+      <Link>Tests\ComparisonCorrectnessChecks.cs</Link>
+    </Compile>
     <Compile Include="SelfTest.cs" />
     <Compile Include="WindowNavigator.cs" />
     <Compile Include="WorkspacePageForm.cs" />

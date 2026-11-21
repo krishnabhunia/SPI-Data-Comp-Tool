@@ -105,7 +105,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 lbl_Status.ForeColor = Color.Black;
-                lbl_Status.Text = str_Msg;
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(str_Msg);
             }
             catch (Exception ex)
             {
@@ -117,12 +117,12 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                lbl_Status.Text = ex.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                 lbl_Status.ForeColor = Color.Red;
             }
             catch (Exception ex1)
             {
-                lbl_Status.Text = ex1.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex1.Message.ToString());
             }
         }
 

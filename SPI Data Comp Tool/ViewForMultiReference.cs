@@ -226,11 +226,11 @@ namespace SPI_Data_Comp_Tool
                 lb.ForeColor = Color.Red;
                 if (ex != null)
                 {
-                    lb.Text = ex.Message.ToString();
+                    lb.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                 }
                 else
                 {
-                    lb.Text = strMessage;
+                    lb.Text = Common_Data.RedactConnectionCredentials(strMessage);
                 }
             }
             catch (Exception)
@@ -245,13 +245,13 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 {
-                    lb.Text = strMessage;
+                    lb.Text = Common_Data.RedactConnectionCredentials(strMessage);
                     lb.ForeColor = Color.Black;
                 }
             }
             catch (Exception except)
             {
-                lbl_Status.Text = except.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(except.Message.ToString());
             }
         }
 

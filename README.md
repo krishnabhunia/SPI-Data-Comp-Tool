@@ -22,6 +22,7 @@ The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes rem
 | 6 | Current workspace/task map, independent sessions and retirement boundary | [docs/WORKSPACES.md](docs/WORKSPACES.md) |
 | 7 | Separate Excel Sheet Audit: Design A, key mappings, two-sheet report and limits | [docs/EXCEL_SHEET_AUDIT.md](docs/EXCEL_SHEET_AUDIT.md) |
 | 8 | Workbook identity check: are two workbooks identical? Inputs, the five-sheet report and limits | [docs/WORKBOOK_IDENTITY_CHECK.md](docs/WORKBOOK_IDENTITY_CHECK.md) |
+| 9 | Open-issue evidence, remaining acceptance and framework migration plan | [docs/ISSUE_AUDIT.md](docs/ISSUE_AUDIT.md), [docs/FRAMEWORK_MIGRATION.md](docs/FRAMEWORK_MIGRATION.md) |
 
 ## Quick start
 

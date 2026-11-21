@@ -1,0 +1,28 @@
+name: Framework migration compatibility
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: framework-compatibility-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  framework-48:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: NuGet/setup-nuget@v3
+      - uses: microsoft/setup-msbuild@v3
+      - run: nuget restore "SPI Data Comp Tool.sln" -NonInteractive
+      - name: Build and exercise the .NET Framework 4.8 migration candidate
+        shell: pwsh
+        run: ./tools/check_framework_compatibility.ps1

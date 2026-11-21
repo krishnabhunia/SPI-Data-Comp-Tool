@@ -194,7 +194,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
 
         }
@@ -339,7 +339,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
         }
 
@@ -397,7 +397,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
         }
 
@@ -419,16 +419,16 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lbl_Status.Text = ex.Message.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
         }
 
         private void DisplayError(Exception ex)
         {
-            lbl_Status.Text = ex.Message.ToString();
+            lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             if (Debugger.IsAttached)
             {
-                lbl_Status.Text = ex.ToString();
+                lbl_Status.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
             }
             lbl_Status.Update();
             lbl_Status.ForeColor = Color.Red;
@@ -437,7 +437,7 @@ namespace SPI_Data_Comp_Tool
         private void DisplayMessage(string strMsg)
         {
             lbl_Status.ForeColor = Color.Black;
-            lbl_Status.Text = strMsg;
+            lbl_Status.Text = Common_Data.RedactConnectionCredentials(strMsg);
             lbl_Status.Update();
         }
 
