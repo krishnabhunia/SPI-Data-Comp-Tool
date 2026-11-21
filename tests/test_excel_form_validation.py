@@ -12,8 +12,8 @@ class ExcelValidationContracts(unittest.TestCase):
 
     def test_every_excel_utility_has_validation_boundaries(self):
         for name in (
-            "Excel_Excel_Comparison.cs", "ExcelFileReadCustomControl.cs", "ViewForMultiReference.cs",
-            "CustomisedExcel.cs", "MergeLogsExport.cs", "SPI_Spec_Note_Creation_Utility.cs",
+            "Excel_Excel_Comparison.cs", "ViewForMultiReference.cs",
+            "CustomisedExcel.cs", "MergeLogsExport.cs",
             "Generate IUD Script Form.cs", "Execute Excel Scripts Form.cs",
         ):
             with self.subTest(name=name):
@@ -56,11 +56,8 @@ class ExcelValidationContracts(unittest.TestCase):
         self.assertEqual(source.count("WriteExcel.ExportToExcel(dtGenerateScript, OutputWorksheetName(),"), 2)
         self.assertNotIn("WriteExcel.ExportToExcel(dtGenerateScript, strTableName,", source)
 
-    def test_result_builders_do_not_assume_nonempty_notes_or_fixed_log_lines(self):
-        notes = self.read("SPI_Spec_Note_Creation_Utility.cs")
+    def test_merge_logs_do_not_assume_fixed_log_lines(self):
         logs = self.read("MergeLogsExport.cs")
-        self.assertIn("BuildNotes", notes)
-        self.assertNotIn("str_Note.Substring", notes)
         self.assertIn("ParseMergeLog", logs)
         self.assertIn("int.TryParse", logs)
         self.assertNotIn("strDetails[4]", logs)

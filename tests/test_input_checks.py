@@ -12,13 +12,7 @@ GUARDED = {
     "Compare_Multiples_Forms.cs": ["btn_TestDBConnection_Click"],
     "DB Comparison.cs": ["btn_Load_SRC_Table_Click", "btn_Load_TRG_Table_Click"],
     "Execute Excel Scripts Form.cs": ["btnTestConnecton_Click"],
-    "PreMergingTool_Form.cs": ["btn_Connect_Click"],
-    "Pre_Merging_Duplicacy_Form.cs": ["btn_Load_SRC_Table_Click", "btn_Load_TRG_Table_Click", "btn_Connect_Reference_ID_Click"],
-    "SPI FK Extraction.cs": ["btn_TestDBConnection_Click"],
-    "SPIDeltaChangeLegacyID.cs": ["btn_Connect_Reference_ID_Click"],
-    "SPIDeltaChangeTrackerOptimised.cs": ["btn_Load_SRC_Table_Click", "btn_Load_TRG_Table_Click"],
     "SQL_DB_To_Excel.cs": ["btn_Connect_Click"],
-    "Table Extraction After Delta.cs": ["btn_TestDBConnection_Click"],
     "UserProfileForm.cs": ["btn_Load_SRC_Table_Click", "btn_Load_TRG_Table_Click", "btn_Connect_Reference_ID_Click"],
 }
 
@@ -52,27 +46,15 @@ class InputChecks(unittest.TestCase):
                         self.assertNotIn(connect, before, f"{connect} runs before the input check")
 
     def test_source_and_target_buttons_check_their_own_half(self) -> None:
-        for name in ("DB Comparison.cs", "Pre_Merging_Duplicacy_Form.cs", "UserProfileForm.cs"):
+        for name in ("DB Comparison.cs", "UserProfileForm.cs"):
             src = code(PROJ / name)
             for handler, half in (("btn_Load_SRC_Table_Click", "target: false"), ("btn_Load_TRG_Table_Click", "source: false")):
                 self.assertIn(f"connection.AddChecks(InputCheck.For(this), {half}).Report()", self.handler_body(src, handler),
                               f"{name} {handler}")
 
-    def test_the_input_check_never_asks_for_more_than_the_window_uses(self) -> None:
-        # Table extraction can read change numbers from Excel without a Source database; Legacy ID uses the Source only
-        extraction = code(PROJ / "Table Extraction After Delta.cs")
-        self.assertIn("connection.AddChecks(InputCheck.For(this), source: !cb_CHG_NUM_From_Excel.Checked).Report()", extraction)
-        legacy = self.handler_body(code(PROJ / "SPIDeltaChangeLegacyID.cs"), "btn_Connect_Reference_ID_Click")
-        self.assertIn("connection.AddChecks(InputCheck.For(this), target: false).Report()", legacy)
-
     def test_the_windows_own_validation_still_runs_after_the_input_check(self) -> None:
         # both gates stay: the input check lists every wrong field, the window's validation (FormValidation) decides
         for name, handler, gate in (("Execute Excel Scripts Form.cs", "btnTestConnecton_Click", "FormValidation.Check(this, () => connection.ValidateInput()"),
-                                    ("PreMergingTool_Form.cs", "btn_Connect_Click", "connection.Source.ValidateInput();"),
-                                    ("Pre_Merging_Duplicacy_Form.cs", "btn_Connect_Reference_ID_Click", "connection.ValidateInput();"),
-                                    ("SPIDeltaChangeLegacyID.cs", "btn_Connect_Reference_ID_Click", "ValidateLegacyConnectionInputs()"),
-                                    ("SPIDeltaChangeTrackerOptimised.cs", "btn_Load_SRC_Table_Click", "ValidateTrackerConnection(true);"),
-                                    ("SPIDeltaChangeTrackerOptimised.cs", "btn_Load_TRG_Table_Click", "ValidateTrackerConnection(false);"),
                                     ("SQL_DB_To_Excel.cs", "btn_Connect_Click", "ValidateLoadInputs()"),
                                     ("UserProfileForm.cs", "btn_Connect_Reference_ID_Click", "connection.ValidateInput()")):
             with self.subTest(window=name, button=handler):

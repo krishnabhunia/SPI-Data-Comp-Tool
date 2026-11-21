@@ -1,6 +1,6 @@
 # Form and workflow validation
 
-This inventory covers the 21 retained concrete Form implementations, the added `WorkspaceForm` host, the separate `ExcelSheetAuditForm`, the `WorkbookIdentityForm` and their shared controls: 24 concrete production forms. `WorkspacePageForm` is an abstract lifecycle base, not another independently opened screen. A screen with no editable input is audited for navigation/lifecycle behaviour rather than given artificial required fields. Existing updater safeguards remain in use; the workspace consolidation does not add a second updater, authentication system or SQL transaction framework. See [WORKSPACES.md](WORKSPACES.md) for the six groups and 21 explicit task routes.
+This inventory covers the 16 concrete production Form classes and their shared controls after retirement of the Analysis & Migration and Pre-merge Checks workspaces. `WorkspacePageForm` is an abstract lifecycle base, not another independently opened screen. A screen with no editable input is audited for navigation/lifecycle behaviour rather than given artificial required fields. Existing updater safeguards remain in use; the workspace host does not add a second updater, authentication system or SQL transaction framework. See [WORKSPACES.md](WORKSPACES.md) for the four workspaces and 12 explicit task routes.
 
 ## Common behaviour
 
@@ -19,19 +19,13 @@ This inventory covers the 21 retained concrete Form implementations, the added `
 
 | Form class | Validation or retained safeguards |
 |---|---|
-| `MainForm` | Six themed workspace home tiles, catalog-driven task navigation, redacted errors and all-workspace exit preflight. No data-entry fields. |
+| `MainForm` | Four themed workspace home tiles, catalog-driven task navigation, redacted errors and all-workspace exit preflight. No data-entry fields. |
 | `WorkspaceForm` | Lazy task creation, retained page state, selected-task keyboard behaviour, failed-factory preservation, close preparation and transient mapping cleanup. A blocked close selects the refusing task without disposing the other pages. |
 | `AboutBox1` | Read-only information; existing open/close smoke coverage. No artificial validation fields. |
 | `UserProfileForm` | Required unique profile names, applicable connection fields, strict bounded JSON, candidate-before-publication imports and password-free exports. |
 | `User_Settings` | Rules workbook/path/schema, required row values, unique identifiers and supported rule types; failed imports retain current rules. Four retained colour choices on General, live selection/picker synchronization and explicit failure-to-save feedback. Existing update channel/version/download/install validation retained. |
 | `DB_Comparison_Form` | Source/Target mode, connection freshness, loaded table and comparison-column selections, busy state and export bounds. Correct provider connection is used on each side. |
 | `Compare_Multiples_List_Tables_Forms` | Current connections, batch workbook schema/rows, selection validity, worker lifecycle and partial-failure reporting. |
-| `SPIDeltaChangeTrackerOptimised` | Separate source/target connection validation, table-list schema, operation prerequisites, stale state, worker lifecycle and partial-failure reporting. |
-| `PreMergingTool_Form` | Current connections, configuration/workbook requirements, required rows and columns, output path and Excel bounds. |
-| `Pre_Merging_Duplicacy_Form` | Distinct check/configuration mode requirements, current connections, configuration schema, safe output and failed/partial completion handling. |
-| `Table_Extraction_After_Delta_Form` | All supported list modes, required schemas, active source/target connections, Excel-source mode without an unused source database, and worker lifecycle. |
-| `SPI_FK_Extraction` | Current source connection, mapping/list schema and required extraction selections. |
-| `SPIDeltaChangeLegacyID` | Active SQL Server source only, current connection test, required mapping sheets/fields, duplicate output-column prevention; the same source field may serve two mapping roles. |
 | `SQL_DB_To_Excel` | Current SQL Server connection, selected table metadata, output folder, per-sheet limits, safe names and atomic output; worker inputs are captured before background work. |
 | `Excel_Excel_Comparison` | Current workbook data, valid matching columns and key selections, null/duplicate composite keys in primary-key mode, non-primary-key mode compatibility, stale results and busy states. |
 | `ExcelSheetAuditForm` | Separate two-file/worksheet/header inputs; explicit case-insensitive key-column mappings; complete null/duplicate key validation; captured worker requests, cancellation and busy-close guards; independently capped data/non-data results; two-sheet atomic report export with input-path protection and overwrite confirmation. See [EXCEL_SHEET_AUDIT.md](EXCEL_SHEET_AUDIT.md). |
@@ -41,14 +35,12 @@ This inventory covers the 21 retained concrete Form implementations, the added `
 | `Execute_Excel_Scripts_Form` | Applicable connection, readable workbook, exactly one selected SQL column, nonblank scripts and operation prerequisites. |
 | `CustomisedExcel` | Readable workbook, first-worksheet data and selected columns, candidate validation and valid export data. |
 | `MergeLogsExport` | Selected readable bounded log file, complete valid records, safe output path and candidate-before-publication handling. |
-| `SPI_Spec_Note_Creation_Utility` | Required inputs, supported source table/column structure and export prerequisites. |
-| `SPI_Analysis` | Current loaded source/target snapshots before showing results; prior results survive an invalid replacement. Its results control validates required fields, integral form identifiers, current pair selections, repeated arrangement and aligned export rows. |
 
-Shared coverage: `ConnectionSide`, `ConnectionPanel`, `OracleAndSQLConnection`, `ExcelFileReadCustomControl`, `SPI_Analysis_View`, `FormHelpers`, `ReadExcel`, `WriteExcel` and `FormValidation`. `UpdatesControl` keeps the already-tested release selection, checksum, cancellation and installation gates from the updater implementation.
+Shared coverage: `ConnectionSide`, `ConnectionPanel`, `OracleAndSQLConnection`, `ExcelFileReadCustomControl`, `FormHelpers`, `ReadExcel`, `WriteExcel` and `FormValidation`. `UpdatesControl` keeps the already-tested release selection, checksum, cancellation and installation gates from the updater implementation.
 
 `WorkspaceNavigator` and `WorkspacePageForm` provide shared navigation/lifecycle behaviour. Settings preferences and profiles are separate task pages in one workspace. The existing modal Import Rules path intentionally remains a short-lived `User_Settings(true)` dialog so its caller receives imported rules synchronously; cancelling or failing an import still preserves the caller's rules.
 
-The three earlier grouped tool windows use the same workspace infrastructure now. All nine workflows remain in the catalog; the redundant `ToolGroupWindow` is retired. A busy or refusing task keeps every loaded page and its draft state, including pages before and after it in the close order, and becomes the active page. Configuration retains its separate mode and singleton boundary.
+The retained script generation, Excel column selection and merge-log export tasks use the common workspace infrastructure. A busy or refusing task keeps every loaded page and its draft state, including pages before and after it in the close order, and becomes the active page. The retired workspaces and their dedicated forms are absent from the catalog and current build.
 
 ## Compatibility and explicit boundaries
 
@@ -62,9 +54,7 @@ The three earlier grouped tool windows use the same workspace infrastructure now
 | Separate Excel Sheet Audit | Headers match ignoring case only; whitespace remains significant. Key mappings are ordered typed tuples, not delimiter-concatenated text. Invalid keys stop the run. Without keys, logical row positions align below independently selected header rows. Values/formulas and formatting are separate checks; unsupported semantics prevent a complete-match claim. |
 | Script executor | Exactly one SQL column. The previous engine used only its first selected column; extra selections no longer silently appear executable. |
 | SQL generator | Values preserve whitespace, distinguish null from empty text and escape quotes. UPDATE/DELETE require explicit WHERE selections. Generated SQL still requires review against an isolated database. |
-| Analysis identifiers | Integer strings or exactly integral numeric values within the signed 32-bit range, including database decimals such as `1.00`; reject fractions, overflow, null, NaN and infinity. |
-| Gap Analysis setup | Source supports Oracle or SQL Server; Target remains SQL Server. Shared connection controls validate applicable authentication/port fields. Table/query drafts survive mode switches; only the explicit reset action restores the default query. Custom SQL is not thereby guaranteed read-only. |
-| Workspace state | Task switching preserves input/result state; reopening selects the default page. Ctrl/open-separate creates an independent supported session. Preferences, profiles and Configuration disallow parallel sessions; Configuration and duplicate checking retain separate mode state. |
+| Workspace state | Task switching preserves input/result state; reopening selects the default page. Ctrl/open-separate creates an independent supported session. Preferences and profiles disallow parallel sessions and keep separate page state. |
 | Colour themes | Ocean, Berry, Forest and Midnight remain available at Settings > Preferences, rules & updates > General > Colour theme. A saved theme name is bounded to 64 bytes; missing, unreadable, oversized or unknown values fall back to Ocean. Failure to save does not undo the current-session choice. The preference file remains outside the installation folder. Native Windows rendering limitations are not removed by the workspace host. |
 | Update handoff | Data workspaces and profile tasks, including hidden loaded pages, block installation. A Settings workspace containing only preferences may remain open. Closing or switching a task does not install an update. |
 | Excel export | At most 16,384 columns and 1,048,575 data rows plus the header per worksheet; valid unique 1–31-character sheet names. Existing split-report workflows still apply their existing partitioning. |
@@ -83,28 +73,29 @@ python tools/layout_gen.py --check tools/layouts/*.py
 git diff --check
 ```
 
-Windows builds compile both Any CPU and x64 with warnings as errors. The `--check-ui <log-file>` runner is configured to include the five form-validation suites and the workspace suite:
+Windows builds compile both Any CPU and x64 with warnings as errors. The `--check-ui <log-file>` runner includes the following validation and workspace suites:
 
 | Suite | Main checks |
 |---|---|
 | `CoreValidationChecks` | Field feedback, Unicode, port boundaries, literal connection strings, file locks/permissions, atomic failure/race cases, workbook bounds, input locking, header normalization and progress. |
-| `ConnectionValidationChecks` | Real connection/profile/settings/Analysis input controls; active/inactive field combinations, strict imports, stale-input invalidation and shared Gap Analysis connection behaviour. |
-| `DatabaseFormValidationChecks` | Nine database forms using synthetic data and connection-status fixtures; mode-specific gates, schemas, selections and partial-failure state. |
-| `ExcelFormValidationChecks` | Excel comparison, multi-reference, script generation/execution and utilities; positive/negative data, key/schema checks and a distinct-target-worksheet count/snapshot fixture without running SQL. |
-| `AnalysisValidationChecks` | Actual Analysis controls, valid/invalid numeric identifiers and repeat arrangement; real synthetic workbook reads, header collisions, Unicode, leading zeros and input preservation. |
-| `WorkspaceUiChecks` | All 21 routes in six groups; lazy hosting, page/session reuse, distinct modes, transient mappings, failed construction, close vetoes, main-owner closure, hidden workers and updater eligibility. |
+| `ConnectionValidationChecks` | Real connection/profile/settings controls; active/inactive field combinations, strict imports and stale-input invalidation. |
+| `DatabaseFormValidationChecks` | Database comparison, batch comparison and SQL database export using synthetic data and connection-status fixtures; mode-specific gates, schemas, selections and partial-failure state. |
+| `ExcelFormValidationChecks` | Excel comparison, multi-reference, script generation/execution and utilities; positive/negative data, key/schema checks and a distinct-target-worksheet count/snapshot fixture without running SQL. Also covers real synthetic workbook reads, header collisions, Unicode, leading zeros and input preservation. |
+| `WorkspaceUiChecks` | All 12 routes in four workspaces; lazy hosting, page/session reuse, transient mappings, failed construction, close vetoes, main-owner closure, hidden workers and updater eligibility. |
 | `WorkbookIdentityChecks`, `WorkbookIdentityFormChecks` | The identity engine and report on synthetic workbooks; the form's route, reading of both workbooks, refused inputs, comparisons by position and by key, the written report, keeping an existing report until confirmed, and the close guard. |
 
 The separate `--check-excel-audit <log-file>` entry point runs `ExcelAuditChecks` against temporary Open XML fixtures: positional/single/composite-key alignment, differently named keys, invalid and duplicate keys, header/schema validation, typed exact values, saved formulas, equivalent style identifiers, font/alignment changes, detail caps, date systems, input preservation, cancellation and schema-valid two-sheet report output. It also opens the new native form without replacing the existing route. These checks run in the Windows build workflow; they are not an assertion that a particular run has passed.
 
 The separate `--check-themes <log-file>` entry point runs `ThemeChecks`, configured to build eligible concrete forms in all four palettes, inspect actual label/button/field/grid colours, switch themes while windows are open, synchronize multiple Settings pickers and test saved choices using temporary files. Python contracts in `tests/test_themes.py` verify theme wiring and persistence boundaries; `tests/test_ui_contrast.py` checks palette contrast pairs. These complement the workspace lifecycle checks rather than prove complete rendering or business-output parity.
 
-The retained `--check-groups <log-file>` entry point runs `ToolGroupChecks` against the nine formerly grouped workflows through their current workspace routes. Its compatibility coverage includes correct page hosting/reuse and preservation of loaded pages when a hidden task refuses closure, followed by successful cleanup once the refusal clears. `tests/test_tool_groups.py` retains the corresponding route, readable-title and CI-wiring contracts. The successful `Application.Exit` scenario remains isolated in the `--check-workspace-exit <log-file>` process invoked by `WorkspaceUiChecks`.
+The separate `--check-steps <log-file>` entry point runs `StepChecks` for the retained database, Excel and batch comparison tasks, script generation/execution, database export and Excel column selection. It checks ordered unlocking, earlier-input invalidation, retained compatible comparison selections, conditional steps, busy-control locks and strip colours in all four themes. `tests/test_steps.py` checks the corresponding source, layout and CI wiring. Step readiness does not replace action-time validation or establish that executing user SQL is safe.
+
+The retained `--check-groups <log-file>` entry point runs `ToolGroupChecks` against script generation, Excel column selection and merge-log export through their current workspace routes. Its compatibility coverage includes correct page hosting/reuse and preservation of loaded pages when a hidden task refuses closure, followed by successful cleanup once the refusal clears. `tests/test_tool_groups.py` retains the corresponding route, readable-title and CI-wiring contracts. The successful `Application.Exit` scenario remains isolated in the `--check-workspace-exit <log-file>` process invoked by `WorkspaceUiChecks`.
 
 Tests use temporary synthetic data. They do not connect to live databases, execute user SQL, install a live release or write real-user preference files. The existing every-form open/close checks, updater checks, embedded dependency checks and installer smoke checks remain enabled. Check the PR's actual Actions results; this document is not evidence that a particular commit passed.
 
 ## Manual acceptance still required
 
-Use disposable Oracle/SQL Server databases and copies of representative workbooks to test permissions, provider/server versions, real comparison correctness, SQL mutation outcomes, large files and network failures. Compare representative outputs before/after hosting changes before retiring any old page implementation. Test task switching during work, close/cancel behaviour, keyboard navigation, scaling and assistive technology on the intended Windows machines. Switch between all four themes with several tasks loaded, check hidden pages when revisited, and verify inputs/results and running operations are unchanged. Include the native Windows controls described in the project guide. Do not run destructive scenarios against production.
+Use disposable Oracle/SQL Server databases and copies of representative workbooks to test permissions, provider/server versions, real comparison correctness, SQL mutation outcomes, large files and network failures. Compare representative outputs for the retained tasks with the previous release. Verify that only the four retained workspaces and their 12 tasks are available. Test task switching during work, close/cancel behaviour, keyboard navigation, scaling and assistive technology on the intended Windows machines. Switch between all four themes with several tasks loaded, check hidden pages when revisited, and verify inputs/results and running operations are unchanged. Include the native Windows controls described in the project guide. Do not run destructive scenarios against production.
 
 This work does not reinstate the reverted authentication/SQL-transaction redesign, prove every business rule, rotate old credentials or resolve licensing/governance decisions. Existing issues requiring owner decisions or live database acceptance must not be closed solely because these synthetic tests pass.

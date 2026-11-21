@@ -7,7 +7,7 @@ using System.Windows.Forms;
 namespace SPI_Data_Comp_Tool
 {
     /// <summary>
-    /// Compatibility checks for the nine formerly grouped tools, now hosted by the six task
+    /// Compatibility checks for the three retained formerly grouped tools, hosted by task
     /// workspaces. Uses real controls without running database, import or export actions.
     /// Run by "SPI Data Comp Tool.exe" --check-groups OUT_FILE (see SelfTest.cs).
     /// </summary>
@@ -19,24 +19,10 @@ namespace SPI_Data_Comp_Tool
             int failed = 0;
             var expected = new Dictionary<WorkspaceKind, Dictionary<string, Type>>
             {
-                { WorkspaceKind.PreMerge, new Dictionary<string, Type>
-                    {
-                        { "premerge.integrity", typeof(PreMergingTool_Form) },
-                        { "premerge.duplicates", typeof(Pre_Merging_Duplicacy_Form) },
-                        { "premerge.configuration", typeof(Pre_Merging_Duplicacy_Form) },
-                    }
-                },
                 { WorkspaceKind.DataReports, new Dictionary<string, Type>
                     {
                         { "reports.excel", typeof(CustomisedExcel) },
                         { "reports.logs", typeof(MergeLogsExport) },
-                    }
-                },
-                { WorkspaceKind.Analysis, new Dictionary<string, Type>
-                    {
-                        { "analysis.notes", typeof(SPI_Spec_Note_Creation_Utility) },
-                        { "analysis.extraction", typeof(Table_Extraction_After_Delta_Form) },
-                        { "analysis.legacy", typeof(SPIDeltaChangeLegacyID) },
                     }
                 },
                 { WorkspaceKind.Scripts, new Dictionary<string, Type>
@@ -126,15 +112,6 @@ namespace SPI_Data_Comp_Tool
                         && ReferenceEquals(window.ActivePage, route.Value) && window.LoadedPages.Count == tools.Count,
                         "Returning to " + route.Key + " replaced a tool or failed to activate it.");
                 }
-                if (kind == WorkspaceKind.PreMerge)
-                {
-                    var check = tools["premerge.duplicates"].Controls.Find("cb_ConfigurationMode", true).OfType<CheckBox>().Single();
-                    var configuration = tools["premerge.configuration"].Controls.Find("cb_ConfigurationMode", true).OfType<CheckBox>().Single();
-                    Require(!check.Checked && configuration.Checked,
-                        "Duplicate checks and configuration lost their independent operating modes.");
-                    Require(!WorkspaceCatalog.Find("premerge.configuration").AllowSeparateSession,
-                        "Configuration unexpectedly permits independent sessions.");
-                }
                 bool unknown = false;
                 try { window.OpenTask("no such tool"); }
                 catch (ArgumentException) { unknown = true; }
@@ -164,10 +141,10 @@ namespace SPI_Data_Comp_Tool
 
         private static void BusyToolKeepsEveryPage()
         {
-            string[] keys = { "premerge.first", "premerge.busy", "premerge.last" };
+            string[] keys = { "scripts.first", "scripts.busy", "scripts.last" };
             var definitions = keys.Select(key => new WorkspaceTask(key, key, "Synthetic close-guard probe",
-                WorkspaceKind.PreMerge, () => new ProbeTool())).ToArray();
-            using (var window = new WorkspaceForm(WorkspaceKind.PreMerge, definitions))
+                WorkspaceKind.Scripts, () => new ProbeTool())).ToArray();
+            using (var window = new WorkspaceForm(WorkspaceKind.Scripts, definitions))
             {
                 window.ShowInTaskbar = false;
                 window.Show();

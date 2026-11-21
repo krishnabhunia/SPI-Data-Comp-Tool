@@ -1,4 +1,4 @@
-"""The former grouped tools retain their routes and close protection inside task workspaces."""
+"""The remaining grouped tools retain their routes and close protection inside task workspaces."""
 
 import re
 import unittest
@@ -7,17 +7,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROJ = ROOT / "SPI Data Comp Tool"
 
-# The nine former group routes use the approved task workspaces and unchanged workflow types.
+# The retained group routes use task workspaces and unchanged workflow types.
 ROUTES = {
-    "premerge.integrity": ("PreMerge", "PreMergingTool_Form", ""),
-    "premerge.duplicates": ("PreMerge", "Pre_Merging_Duplicacy_Form", ""),
-    "premerge.configuration": ("PreMerge", "Pre_Merging_Duplicacy_Form", "true"),
     "reports.excel": ("DataReports", "CustomisedExcel", ""),
     "reports.logs": ("DataReports", "MergeLogsExport", ""),
-    "analysis.notes": ("Analysis", "SPI_Spec_Note_Creation_Utility", ""),
     "scripts.generate": ("Scripts", "Generate_IUD_Script_Form", ""),
-    "analysis.extraction": ("Analysis", "Table_Extraction_After_Delta_Form", ""),
-    "analysis.legacy": ("Analysis", "SPIDeltaChangeLegacyID", ""),
 }
 
 
@@ -49,13 +43,6 @@ class GroupedToolCompatibility(unittest.TestCase):
             with self.subTest(file=path.name):
                 self.assertNotRegex(path.read_text(encoding="utf-8-sig"), r"\bToolGroupWindow\b|\bToolGroups\.")
         self.assertFalse((PROJ / "ToolGroups.cs").exists())
-
-    def test_premerge_configuration_keeps_its_singleton_mode(self) -> None:
-        catalog = code("WorkspaceCatalog.cs")
-        self.assertRegex(catalog, r'"premerge\.configuration",[^\n]+\n\s*'
-                                 r'WorkspaceKind\.PreMerge, \(\) => new Pre_Merging_Duplicacy_Form\(true\), false\)')
-        self.assertRegex(catalog, r'"premerge\.duplicates",[^\n]+\n\s*'
-                                 r'WorkspaceKind\.PreMerge, \(\) => new Pre_Merging_Duplicacy_Form\(\)\)')
 
     def test_windows_have_readable_titles(self) -> None:
         for designer in sorted(PROJ.glob("*.Designer.cs")):

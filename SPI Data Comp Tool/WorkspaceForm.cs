@@ -25,7 +25,7 @@ namespace SPI_Data_Comp_Tool
         private bool forwardingDialogKey;
 
         // A parameterless constructor keeps the existing offline --open-form check meaningful.
-        public WorkspaceForm() : this(WorkspaceKind.Analysis, WorkspaceCatalog.TasksFor(WorkspaceKind.Analysis)) { }
+        public WorkspaceForm() : this(WorkspaceKind.Comparison, WorkspaceCatalog.TasksFor(WorkspaceKind.Comparison)) { }
 
         internal WorkspaceForm(WorkspaceKind workspace, IEnumerable<WorkspaceTask> definitions)
         {

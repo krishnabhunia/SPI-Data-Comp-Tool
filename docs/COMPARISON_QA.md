@@ -11,7 +11,7 @@ These checks are configured in the repository. Inspect the successful [Actions r
 | `python -m unittest discover -s tests -p "test_*.py" -v` | Python tests and selected source contracts for connection handling, profile safety, redaction, layout, packaging, versioning and workflows | Live database behaviour, comprehensive comparison correctness or performance limits |
 | **Windows data-integrity source checks** (`.github/workflows/data-integrity-checks.yml`) | Runs the Python regression suite on pull requests | Windows executable interaction or database integration |
 | **Build and checks** (`.github/workflows/build.yml`) | Builds the Windows application, validates generated layouts and runs regression checks | Proof that every business workflow is correct |
-| `--check-ui <log file>` | Executes synthetic Windows UI/profile/import checks: navigation, Settings/Rules, profile candidates and temporary-file writes, and a small Analysis fixture | Full Oracle/SQL Server integration, production files, or an exhaustive comparison dataset |
+| `--check-ui <log file>` | Executes synthetic Windows UI/profile/import checks: navigation, Settings/Rules, profile candidates, temporary-file writes, and comparison/workbook validation fixtures | Full Oracle/SQL Server integration, production files, or an exhaustive comparison dataset |
 | Workbook identity suite inside `--check-ui` (`tests/WorkbookIdentityChecks.cs`) | Engine and report on synthetic workbooks: value, type, formula, format and layout differences; primary keys; skipped checks; a report that opens without an Excel repair prompt | Real customer workbooks, very large files, or opening the report in Excel itself |
 | `--list-forms` / `--open-form` | Creates, shows and closes every listed window; a failed opening fails the check | Completing the workflow represented by each window |
 | Portable/installer checks | Loads embedded dependencies and smoke-tests the x64 installer and uninstaller | Upgrade/rollback compatibility across all previously released versions or Windows installations |
@@ -31,7 +31,7 @@ The following are **acceptance expectations to verify**, not a record of complet
 | Scenario | Expected result |
 | --- | --- |
 | Source and target use different Windows-authentication settings | Each connection uses its own selected authentication method |
-| Oracle source A and Oracle target B contain deliberately different rows | The optimized tracker returns differences, not A compared with A |
+| Oracle source A and Oracle target B contain deliberately different rows | Database comparison uses the distinct source and target connections and reports the expected differences |
 | Oracle target is offline but source is online | Target load fails; it must not silently reuse the source connection |
 | SQL Server source and target tables have equal rows | No false mismatch |
 | Source has an extra row; target has another extra row | Both source-only and target-only counts are correct |
@@ -39,7 +39,7 @@ The following are **acceptance expectations to verify**, not a record of complet
 | Null vs empty string, case changes, numeric/decimal precision, dates | Behavior matches agreed comparison rules |
 | Connection failure or an exception while a password is present | Neither UI messages nor disk logs reveal connection-string password assignments |
 | Save a database profile while debugger is attached | Saved JSON has blank passwords for both source and target |
-| Execute SQL scripts from an Excel sheet or use a merging/data-modifying workflow | Use only disposable databases and synthetic records with restricted test accounts; review generated commands outside the app before execution and capture before/after data. Do not assume built-in preview, transaction rollback or cancellation, and **do not test on production** |
+| Execute SQL scripts from an Excel sheet | Use only disposable databases and synthetic records with restricted test accounts; review generated commands outside the app before execution and capture before/after data. Do not assume built-in preview, transaction rollback or cancellation, and **do not test on production** |
 
 ## Known follow-ups
 

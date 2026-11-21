@@ -85,10 +85,8 @@ class WorkflowGuards(unittest.TestCase):
         self.assertIn("bool separateSession = false", navigation)
         self.assertIn("separateSession && task.AllowSeparateSession", navigation)
         self.assertIn("ModifierKeys & Keys.Control", main)
-        self.assertIn('"premerge.duplicates"', catalog)
-        self.assertIn('"premerge.configuration"', catalog)
-        self.assertIn('() => new Pre_Merging_Duplicacy_Form()', catalog)
-        self.assertIn('() => new Pre_Merging_Duplicacy_Form(true), false)', catalog)
+        self.assertIn('() => new User_Settings(), false)', catalog)
+        self.assertIn('() => new UserProfileForm(), false)', catalog)
         self.assertIn("TryPrepareCloseAll(e.CloseReason)", main)
         self.assertNotIn("MyException", main)
 

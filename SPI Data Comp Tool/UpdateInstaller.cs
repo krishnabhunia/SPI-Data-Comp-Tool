@@ -118,7 +118,7 @@ namespace SPI_Data_Comp_Tool
                 }
                 if (!(form is MainForm) && !(form is User_Settings))
                 {
-                    reason = "Save your work and close every comparison, script, profile, and analysis window before installing an update.";
+                    reason = "Save your work and close all task windows before installing an update.";
                     return false;
                 }
                 if (HasBusyWorker(form))

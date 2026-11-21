@@ -65,7 +65,7 @@ namespace SPI_Data_Comp_Tool
                 }
                 check("the theme switches while windows are open", LiveSwitch);
                 check("two Settings windows show the same theme", SettingsPickers);
-                check("six home tiles and hosted tasks keep their theme, state and selection", HostedWorkspaces);
+                check("four home tiles and hosted tasks keep their theme, state and selection", HostedWorkspaces);
             }
             finally
             {
@@ -249,7 +249,7 @@ namespace SPI_Data_Comp_Tool
                     var rulePicker = rules.Controls.Find("cb_Theme", true).OfType<ComboBox>().Single();
                     Pump();
 
-                    foreach (string name in new[] { "Comparison", "Analysis", "PreMerge", "Scripts", "Reports", "Settings" })
+                    foreach (string name in new[] { "Comparison", "Scripts", "Reports", "Settings" })
                     {
                         var tile = main.Controls.Find("btn_Workspace" + name, true).OfType<TileButton>().Single();
                         Require(tile.Text.IndexOfAny(new[] { '\r', '\n' }) < 0 && !string.IsNullOrWhiteSpace(tile.Hint)

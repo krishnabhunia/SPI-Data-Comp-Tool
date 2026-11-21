@@ -57,7 +57,7 @@ namespace SPI_Data_Comp_Tool
                     if (!FormValidation.Check(this, () => path = FormValidation.ReadableFile(openFileDialogData.strFileNameWithPath,
                         btn_ReadExcel, "Workbook", ".xlsx", ".xlsm"), DisplayMessage)) return;
                     DataSet candidate = common_Data.LoadExcelFromDataReader(path, "Rules for comparison");
-                    if (!FormValidation.Check(this, () => ExcelFileReadCustomControl.ValidateWorkbook(candidate, btn_ReadExcel), DisplayMessage))
+                    if (!FormValidation.Check(this, () => FormValidation.ValidateWorkbook(candidate, btn_ReadExcel), DisplayMessage))
                     { candidate?.Dispose(); return; }
                     DataSet previous = dsCustomisedExcel;
                     dsCustomisedExcel = candidate;
@@ -195,7 +195,7 @@ namespace SPI_Data_Comp_Tool
 
         internal void ValidateExportInput()
         {
-            ExcelFileReadCustomControl.ValidateWorkbook(dsCustomisedExcel, btn_ReadExcel);
+            FormValidation.ValidateWorkbook(dsCustomisedExcel, btn_ReadExcel);
             FormValidation.Require(checkedListBox1.CheckedItems.Count > 0, checkedListBox1, "Select at least one column to export.");
             FormValidation.Columns(dsCustomisedExcel.Tables[0], checkedListBox1.CheckedItems.Cast<string>(), checkedListBox1, "Export columns");
         }

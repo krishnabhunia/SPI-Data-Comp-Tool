@@ -25,13 +25,6 @@ WINDOWS = {
     "Excel_Excel_Comparison": ("Excel_Excel_Comparison.cs", "Excel_Excel_Comparison.Designer.cs"),
     "DB_Comparison": ("DB Comparison.cs", "DB Comparison.Designer.cs"),
     "Compare_Multiples_Forms": ("Compare_Multiples_Forms.cs", "Compare_Multiples_Forms.Designer.cs"),
-    "SPIDeltaChangeTrackerOptimised": ("SPIDeltaChangeTrackerOptimised.cs", "SPIDeltaChangeTrackerOptimised.Designer.cs"),
-    "SPIDeltaChangeLegacyID": ("SPIDeltaChangeLegacyID.cs", "SPIDeltaChangeLegacyID.Designer.cs"),
-    "SPI_FK_Extraction": ("SPI FK Extraction.cs", "SPI FK Extraction.Designer.cs"),
-    "Table_Extraction_After_Delta": ("Table Extraction After Delta.cs", "Table Extraction After Delta.Designer.cs"),
-    "SPI_Spec_Note_Creation_Utility": ("SPI_Spec_Note_Creation_Utility.cs", "SPI_Spec_Note_Creation_Utility.Designer.cs"),
-    "PreMergingTool_Form": ("PreMergingTool_Form.cs", "PreMergingTool_Form.Designer.cs"),
-    "Pre_Merging_Duplicacy_Form": ("Pre_Merging_Duplicacy_Form.cs", "Pre_Merging_Duplicacy_Form.Designer.cs"),
     "Execute_Excel_Scripts_Form": ("Execute Excel Scripts Form.cs", "Execute Excel Scripts Form.Designer.cs"),
     "SQL_DB_To_Excel": ("SQL_DB_To_Excel.cs", "SQL_DB_To_Excel.Designer.cs"),
 }
@@ -70,10 +63,8 @@ class ControlledSteps(unittest.TestCase):
         self.assertIn("c.Dock == DockStyle.None", attach)
         self.assertIn("body.BringToFront();", attach)
 
-    def test_batch_three_windows_lock_their_later_steps(self):
+    def test_script_and_report_windows_lock_their_later_steps(self):
         cases = {
-            "PreMergingTool_Form.cs": [('"Connect"', "btn_Connect"), ('"Run"', "btn_Duplicate")],
-            "Pre_Merging_Duplicacy_Form.cs": [('"Target connection"', "connection.Target.Group"), ('"Run"', "btn_ListTableExcel")],
             "Generate IUD Script Form.cs": [('"Workbook"', "btn_ListTableExcel"), ('"Generate"', "btn_Script")],
             "Execute Excel Scripts Form.cs": [('"Test connection"', "btnTestConnecton"), ('"Execute"', "btn_Execute"), ('"Report"', "btn_PNID_Report")],
             "SQL_DB_To_Excel.cs": [('"Load tables"', "btn_Connect"), ('"Export"', "btn_ExportToExcel")],
@@ -129,23 +120,6 @@ class ControlledSteps(unittest.TestCase):
         engine = read("StepFlow.cs")
         self.assertIn("watched.EnabledChanged += (sender, args) => KeepLocked(watched);", engine)
         self.assertIn("if (Busy || step.State == StepState.Locked)", engine)
-
-    def test_batch_two_windows_lock_their_later_steps(self):
-        cases = {
-            "SPIDeltaChangeTrackerOptimised.cs": [('"Target connection"', "connection.Target.Group"), ('"Table list"', "btn_ListTableExcel"),
-                                                  ('"Compare"', "btnGenerateOutput")],
-            "SPIDeltaChangeLegacyID.cs": [('"Test connection"', "btn_Connect_Reference_ID"), ('"Map legacy IDs"', "btn_ListTableExcel")],
-            "SPI FK Extraction.cs": [('"Test connection"', "btn_TestDBConnection"), ('"Import Excel"', "btn_ImportExcel")],
-            "Table Extraction After Delta.cs": [('"Target connection"', "connection.Target.Group"), ('"Run"', "btn_Chg_NumVsChg_Num")],
-            "SPI_Spec_Note_Creation_Utility.cs": [('"Create notes"', "btn_Spec_Create"), ('"Export"', "btn_GenerateExcel")],
-        }
-        for name, pairs in cases.items():
-            steps = body(read(name), "private void BuildSteps()")
-            for title, control in pairs:
-                with self.subTest(window=name, step=title):
-                    start = steps.index(title)
-                    end = steps.find(".Add(", start)
-                    self.assertIn(control, steps[start:end if end > 0 else len(steps)])
 
     def test_strip_is_drawn_from_the_theme(self):
         self.assertIn("c is TileButton || c is GlyphIcon || c is StepStrip", read("UiTheme.cs"))

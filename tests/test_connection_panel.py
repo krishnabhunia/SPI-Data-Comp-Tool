@@ -5,9 +5,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "SPI Data Comp Tool"
-CONVERTED = ("DB Comparison.cs", "UserProfileForm.cs", "Table Extraction After Delta.cs",
-             "Pre_Merging_Duplicacy_Form.cs", "SPIDeltaChangeLegacyID.cs", "Compare_Multiples_Forms.cs",
-             "SPI FK Extraction.cs", "SQL_DB_To_Excel.cs", "PreMergingTool_Form.cs", "Execute Excel Scripts Form.cs")
+CONVERTED = ("DB Comparison.cs", "UserProfileForm.cs", "Compare_Multiples_Forms.cs",
+             "SQL_DB_To_Excel.cs", "Execute Excel Scripts Form.cs")
 # handlers that the panel now owns; a converted window must not grow its own copy again
 COPIED = ("CheckChangeRadioButton", "btn_Copy_SRC_TRG_Click", "btn_TRG_SRC_Click",
           "cb_WindowAuthentication_SRC_CheckedChanged", "cb_UserProfileList_SelectedIndexChanged")
@@ -33,8 +32,6 @@ class ConnectionPanelContracts(unittest.TestCase):
         self.assertEqual(len(re.findall(r"d\.\w+_TRG_\w+", target_call)), 9)
 
     def test_sql_server_only_window_cannot_pick_oracle(self) -> None:
-        # SPI FK extraction opens SqlConnection directly, so Oracle must not be selectable there
-        self.assertIn("connection.SqlServerOnly = true;", source("SPI FK Extraction.cs"))
         side = source("ConnectionSide.cs")
         self.assertIn("Oracle.Enabled = !value;", side)
         self.assertIn("oracle = false;", side.split("internal void Apply(", 1)[1])
@@ -57,8 +54,6 @@ class ConnectionPanelContracts(unittest.TestCase):
         expected = {
             "DB Comparison.cs": ["cb_SRC_TableName.Text = details.str_SRC_TableName", "cb_TRG_TableName.Text = details.str_TRG_TableName"],
             "UserProfileForm.cs": ["cb_SRC_TableName.Text = details.str_SRC_TableName", "cb_TRG_TableName.Text = details.str_TRG_TableName"],
-            "Pre_Merging_Duplicacy_Form.cs": ["cb_SRC_TableName.Text = details.str_SRC_TableName"],
-            "PreMergingTool_Form.cs": ["tb_SchemaName.Text = details.str_SRC_TableName"],
         }
         for name, lines in expected.items():
             applied = source(name).split("void Connection_ProfileApplied(", 1)[1].split("\n        }", 1)[0]

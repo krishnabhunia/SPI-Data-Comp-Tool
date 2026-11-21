@@ -16,8 +16,7 @@ namespace SPI_Data_Comp_Tool
             CheckConnectionInputs(passed);
             CheckProfileDocuments(passed);
             CheckRuleRows(passed);
-            CheckAnalysisInputs(passed);
-            CheckSharedConnectionMigrations(passed);
+            CheckSharedConnectionCopies(passed);
         }
 
         private static void Require(bool condition, string message)
@@ -217,132 +216,12 @@ namespace SPI_Data_Comp_Tool
             Require(rejected, "Invalid comparison rule content was accepted.");
         }
 
-        private static void CheckAnalysisInputs(Action<string> passed)
-        {
-            foreach (string value in new[] { "dbo.Table_1", "[database].[schema].[table name]", "dbo.[name.with.dot]", "[name]]escaped]", "\"name\"\"escaped\"", "Table$1" })
-                Require(OracleAndSQLConnection.ValidateTableName(value, false) == value, "A valid table identifier was changed.");
-            foreach (string value in new[] { "SCHEMA.TABLE", "\"Schema\".\"Table with space\"" })
-                OracleAndSQLConnection.ValidateTableName(value, true);
-            foreach (string value in new[] { "", " ", "dbo..table", "dbo.", "table;DELETE FROM x", "table -- comment", "table/*comment*/", "[unclosed", "[]", "[table]suffix", "a.b.c.d.e" })
-            {
-                bool rejected = false;
-                try { OracleAndSQLConnection.ValidateTableName(value, false); }
-                catch (ArgumentException) { rejected = true; }
-                Require(rejected, "Invalid table-name syntax was accepted.");
-            }
-            using (var control = new OracleAndSQLConnection())
-            {
-                control.Load_DB_Oracle_SQL(); // Empty inputs must stop before either data adapter runs.
-                Require(!control.HasLoadedData && FormValidation.LastMessage(control).Length > 0,
-                    "Analysis load did not report missing connection input.");
-                foreach (string name in new[] { "tb_oracle_dsource", "tb_oracle_dbName", "tb_oracle_username", "tb_oracle_pwd",
-                    "tb_sql_dsource", "tb_sql_dbName", "tb_sql_username", "tb_sql_pwd" }) Find<TextBox>(control, name).Text = "synthetic";
-                Find<TextBox>(control, "tb_Source_tableName").Text = "SCHEMA.TABLE";
-                Find<TextBox>(control, "tb_destination_tableName").Text = "dbo.Target";
-                control.ValidateInput(); // Validation-only, never call Load with usable credentials.
-                var query = Find<CheckBox>(control, "cb_query");
-                query.Checked = true;
-                Find<TextBox>(control, "tb_querybox").Text = " ";
-                Invalid(control.ValidateInput);
-                Find<TextBox>(control, "tb_querybox").Text = "SELECT 1";
-                control.ValidateInput();
-                DataSet snapshot = control.FetchDataSet();
-                snapshot.Tables.Add("Synthetic source");
-                snapshot.Tables.Add("Synthetic target");
-                typeof(OracleAndSQLConnection).GetField("boolStatus", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(control, true);
-                Require(control.HasLoadedData, "Synthetic loaded state was not established.");
-                Find<TextBox>(control, "tb_oracle_dsource").Clear();
-                Require(!control.HasLoadedData, "Edited Analysis credentials left stale results marked current.");
-                control.Load_DB_Oracle_SQL();
-                Require(ReferenceEquals(snapshot, control.FetchDataSet()) && snapshot.Tables.Count == 2,
-                    "Rejected Analysis input destroyed the previous loaded snapshot.");
-            }
-            passed("Analysis validates both connections and query/table modes offline, rejects malformed table names, and invalidates edited input without destroying the previous snapshot.");
-        }
-
-        private static void CheckSharedConnectionMigrations(Action<string> passed)
+        private static void CheckSharedConnectionCopies(Action<string> passed)
         {
             List<DBC> previous = Profile.ProfileList;
             try
             {
                 Profile.ProfileList = new List<DBC>();
-                using (var control = new OracleAndSQLConnection())
-                {
-                    ConnectionPanel panel = Find<ConnectionPanel>(control, "connection");
-                    Require(panel.Target.SqlServerOnly && panel.Target.Sql.Checked && !panel.Target.Oracle.Enabled,
-                        "Analysis lost its SQL Server-only Target restriction.");
-                    string profilePassword = "  synthetic;'profile'  ";
-                    panel.Target.Apply(true, false, false, true, 0,
-                        " synthetic-host ", " synthetic-service ", " synthetic-user ", profilePassword);
-                    Require(panel.Target.Sql.Checked && !panel.Target.Oracle.Checked && !panel.Target.Oracle.Enabled
-                        && !panel.Target.DefaultPort.Checked && !panel.Target.DefaultPort.Enabled
-                        && !panel.Target.Port.Enabled && panel.Target.Port.ReadOnly && panel.Target.Port.Text.Length == 0,
-                        "Applying an Oracle profile enabled Oracle-only fields on the SQL Server-only Target.");
-                    Require(panel.Target.DataSource.Text == " synthetic-host "
-                        && panel.Target.Database.Text == " synthetic-service "
-                        && panel.Target.User.Text == " synthetic-user " && panel.Target.Password.Text == profilePassword,
-                        "Applying a profile changed literal connection field values or password whitespace.");
-                    var sourceTable = Find<TextBox>(control, "tb_Source_tableName");
-                    var targetTable = Find<TextBox>(control, "tb_destination_tableName");
-                    var query = Find<TextBox>(control, "tb_querybox");
-                    var useQuery = Find<CheckBox>(control, "cb_query");
-                    string initialQuery = query.Text;
-                    sourceTable.Text = "SOURCE.SPEC_FORM";
-                    targetTable.Text = "dbo.SPEC_FORM";
-                    useQuery.Checked = true;
-                    query.Text = "SELECT 'synthetic draft'";
-                    useQuery.Checked = false;
-                    Require(sourceTable.Text == "SOURCE.SPEC_FORM" && targetTable.Text == "dbo.SPEC_FORM"
-                        && query.Text == "SELECT 'synthetic draft'" && !query.Enabled,
-                        "Switching Analysis to table mode discarded a draft.");
-                    useQuery.Checked = true;
-                    Require(query.Text == "SELECT 'synthetic draft'" && !sourceTable.Enabled && !targetTable.Enabled,
-                        "Switching Analysis to query mode overwrote custom SQL or left table inputs active.");
-                    query.Clear();
-                    useQuery.Checked = false;
-                    useQuery.Checked = true;
-                    Require(query.Text.Length == 0, "Mode switching replaced an intentionally empty query draft.");
-                    typeof(OracleAndSQLConnection).GetMethod("btn_ResetQuery_Click", BindingFlags.Instance | BindingFlags.NonPublic)
-                        .Invoke(control, new object[] { null, EventArgs.Empty });
-                    Require(initialQuery.Length > 0 && query.Text == initialQuery,
-                        "Explicit Analysis query reset did not restore the specification template.");
-
-                    panel.Source.Oracle.Checked = true;
-                    panel.Source.DataSource.Text = "synthetic-source";
-                    panel.Source.Database.Text = "synthetic-service";
-                    panel.Source.User.Text = "synthetic-user";
-                    panel.Source.Password.Text = Guid.NewGuid().ToString("N"); // Disposable offline fixture, not a saved credential.
-                    panel.Source.DefaultPort.Checked = false;
-                    panel.Source.Port.Text = "1527";
-                    panel.Target.CopyFrom(panel.Source);
-                    Require(panel.Target.Sql.Checked && !panel.Target.Oracle.Checked && !panel.Target.Oracle.Enabled
-                        && !panel.Target.DefaultPort.Checked && panel.Target.Port.Text.Length == 0
-                        && !panel.Target.Port.Enabled && panel.Target.Port.ReadOnly
-                        && panel.Source.Port.Text == "1527" && !panel.Source.DefaultPort.Checked,
-                        "Copying Oracle into Analysis Target changed provider restrictions or the Source port draft.");
-                    panel.Target.WindowsLogin.Checked = true;
-                    panel.Target.User.Clear();
-                    panel.Target.Password.Clear();
-                    control.ValidateInput(); // Validation only: no adapters or connections are invoked.
-                    panel.Source.Port.Text = "0";
-                    Invalid(control.ValidateInput);
-                    panel.Source.Port.Text = "1527";
-                    control.ValidateInput();
-                    panel.Target.WindowsLogin.Checked = false;
-                    Invalid(control.ValidateInput);
-                    panel.Target.WindowsLogin.Checked = true;
-                    control.ValidateInput();
-
-                    DataSet snapshot = control.FetchDataSet();
-                    snapshot.Tables.Add("Synthetic source");
-                    snapshot.Tables.Add("Synthetic target");
-                    typeof(OracleAndSQLConnection).GetField("boolStatus", BindingFlags.Instance | BindingFlags.NonPublic)
-                        .SetValue(control, true);
-                    panel.Source.Port.Text = "1528";
-                    Require(!control.HasLoadedData && snapshot.Tables.Count == 2,
-                        "Editing the shared Analysis port failed to invalidate the loaded state or destroyed its snapshot.");
-                }
-
                 using (var panel = new ConnectionPanel())
                 {
                     panel.Source.Apply(true, false, false, false, 1527,
@@ -363,25 +242,9 @@ namespace SPI_Data_Comp_Tool
                         && !panel.Target.User.Enabled && !panel.Target.Password.Enabled,
                         "Shared copy lost SQL Server Windows-authentication presentation.");
                 }
-
-                using (var tracker = new SPIDeltaChangeTrackerOptimised())
-                {
-                    ConnectionPanel panel = Find<ConnectionPanel>(tracker, "connection");
-                    Require(!panel.Source.SqlServerOnly && !panel.Target.SqlServerOnly,
-                        "Tracker consolidation unexpectedly restricted a database provider.");
-                    var source = new DBConnectionStatus { boolConnection = true };
-                    var target = new DBConnectionStatus { boolConnection = true };
-                    typeof(SPIDeltaChangeTrackerOptimised).GetField("dbSRCConnection", BindingFlags.Instance | BindingFlags.NonPublic)
-                        .SetValue(tracker, source);
-                    typeof(SPIDeltaChangeTrackerOptimised).GetField("dbTRGConnection", BindingFlags.Instance | BindingFlags.NonPublic)
-                        .SetValue(tracker, target);
-                    panel.Target.DataSource.Text += "-synthetic-edit";
-                    Require(!source.boolConnection && !target.boolConnection,
-                        "Editing the shared Tracker connection did not invalidate tested connections.");
-                }
             }
             finally { Profile.ProfileList = previous; }
-            passed("Analysis and Tracker use shared connections; draft switching, explicit query reset, SQL-only copy, custom Oracle ports, Windows-authentication state and cache invalidation work offline.");
+            passed("Shared connection copies preserve custom Oracle port drafts and SQL Server Windows-authentication presentation without contacting a database.");
         }
     }
 }

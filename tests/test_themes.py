@@ -68,13 +68,12 @@ class Themes(unittest.TestCase):
     def test_main_window_tiles_open_the_same_tasks_as_the_menus(self) -> None:
         main = code("MainForm.cs")
         catalog = code("WorkspaceCatalog.cs")
-        for tile, route in (("Comparison", "comparison.database"), ("Analysis", "analysis.gaps"),
-                            ("PreMerge", "premerge.integrity"), ("Scripts", "scripts.generate"),
+        for tile, route in (("Comparison", "comparison.database"), ("Scripts", "scripts.generate"),
                             ("Reports", "reports.database"), ("Settings", "settings.preferences")):
             with self.subTest(tile=tile):
                 self.assertIn(f'btn_Workspace{tile}.Click += (sender, e) => OpenTask("{route}");', main)
                 self.assertIn(f'new WorkspaceTask("{route}"', catalog)
-        # Every menu entry and the six home tiles use the same route dispatcher and catalog.
+        # Every menu entry and the four home tiles use the same route dispatcher and catalog.
         self.assertIn("foreach (var task in WorkspaceCatalog.TasksFor(kind))", main)
         self.assertIn("Tag = task.Key", main)
         self.assertIn("item.Click += (sender, e) => OpenTask(route.Key);", main)

@@ -17,27 +17,6 @@ def code(name):
 
 
 class CompilerCleanup(unittest.TestCase):
-    def test_optimised_tracker_has_no_uninitialised_legacy_workbook_helpers(self):
-        src = code("SPIDeltaChangeTrackerOptimised.cs")
-        for name in ("wb", "dt_summarised_difference", "dt_sql_only", "dt_transpose", "cellValue",
-                     "boolCellValueIntType", "deleteColumnInExcel", "generateTransposeTable",
-                     "formatExcelTable", "formatExcelTableByDataGridView", "delete_current_row_from_sql_table"):
-            with self.subTest(symbol=name):
-                self.assertNotRegex(src, rf"\b{name}\b")
-        self.assertIn("using (ExcelPackage pck = new ExcelPackage())", src)
-        self.assertIn("FormValidation.WriteAtomically(strFilePathChangeSave,", src)
-        self.assertIn("temporary => pck.SaveAs(new FileInfo(temporary))", src)
-        self.assertIn("delete_current_row_from_target_table", src)
-        self.assertIn("private void backgroundWorker2_DoWork", src)
-
-    def test_local_row_alternation_remains(self):
-        src = code("SPIDeltaChangeTrackerOptimised.cs")
-        self.assertNotRegex(src, r"private\s+bool\s+boolToggle\s*;")
-        self.assertIn("bool boolToggle = true;", src)
-        self.assertIn("if (boolToggle)", src)
-        self.assertIn("boolToggle = false;", src)
-        self.assertIn("boolToggle = true;", src)
-
     def test_database_never_enabled_dead_include_branch(self):
         src = code("DB Comparison.cs")
         self.assertNotRegex(src, r"\bboolInclude\b")
@@ -63,14 +42,6 @@ class CompilerCleanup(unittest.TestCase):
                           "boolInclude = false;", "if (boolInclude)",
                           'Replace("###C###", "_IgnoreCase")', 'Replace("###C###", "_Ordinal")'):
             self.assertIn(statement, src)
-
-    def test_file_picker_uses_selection_result_not_unused_shadow(self):
-        src = code("ExcelFileReadCustomControl.cs")
-        self.assertNotRegex(src, r"private\s+bool\s+boolFileSelected\s*;")
-        self.assertNotRegex(src, r"(?<!\.)\bboolFileSelected\s*=")
-        self.assertIn("openFileDialogData.boolFileSelected", src)
-        self.assertIn("common_Data.LoadExcelFromDataReader", src)
-
 
 if __name__ == "__main__":
     unittest.main()

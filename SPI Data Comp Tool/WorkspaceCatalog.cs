@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    internal enum WorkspaceKind { Comparison, Analysis, PreMerge, Scripts, DataReports, Settings }
+    internal enum WorkspaceKind { Comparison, Scripts, DataReports, Settings }
 
     internal sealed class WorkspaceTask
     {
@@ -45,24 +45,6 @@ namespace SPI_Data_Comp_Tool
                 WorkspaceKind.Comparison, () => new WorkbookIdentityForm()),
             new WorkspaceTask("comparison.batch", "Batch comparison", "Compare a list of database tables or Excel files; retain per-item and batch reports.",
                 WorkspaceKind.Comparison, () => new Compare_Multiples_List_Tables_Forms()),
-            new WorkspaceTask("analysis.gaps", "Specification gaps", "Load specification metadata, arrange form pairs and export differences.",
-                WorkspaceKind.Analysis, () => new SPI_Analysis()),
-            new WorkspaceTask("analysis.notes", "Specification notes", "Create notes from an Excel workbook. No database connection is required.",
-                WorkspaceKind.Analysis, () => new SPI_Spec_Note_Creation_Utility()),
-            new WorkspaceTask("analysis.changes", "Track data changes", "Compare source and target data with the existing delta and date rules.",
-                WorkspaceKind.Analysis, () => new SPIDeltaChangeTrackerOptimised()),
-            new WorkspaceTask("analysis.legacy", "Map legacy identifiers", "Look up replacement identifiers and export the existing mapping workbook.",
-                WorkspaceKind.Analysis, () => new SPIDeltaChangeLegacyID()),
-            new WorkspaceTask("analysis.relationships", "Discover relationships", "Review candidate relationships inferred from column names; these are not confirmed foreign keys.",
-                WorkspaceKind.Analysis, () => new SPI_FK_Extraction()),
-            new WorkspaceTask("analysis.extraction", "Extract after delta", "Use the existing identifier/change-number mapping and table extraction modes.",
-                WorkspaceKind.Analysis, () => new Table_Extraction_After_Delta_Form()),
-            new WorkspaceTask("premerge.integrity", "Integrity & one-database checks", "Check orphan references and duplicates within one database.",
-                WorkspaceKind.PreMerge, () => new PreMergingTool_Form()),
-            new WorkspaceTask("premerge.duplicates", "Cross-database duplicates", "Compare duplicate entries across source and target environments.",
-                WorkspaceKind.PreMerge, () => new Pre_Merging_Duplicacy_Form()),
-            new WorkspaceTask("premerge.configuration", "Configuration", "Compare configuration with its own inputs and output columns.",
-                WorkspaceKind.PreMerge, () => new Pre_Merging_Duplicacy_Form(true), false),
             new WorkspaceTask("scripts.generate", "Generate scripts", "Create INSERT, UPDATE or DELETE scripts in a workbook. This task does not execute them.",
                 WorkspaceKind.Scripts, () => new Generate_IUD_Script_Form()),
             new WorkspaceTask("scripts.execute", "Execute scripts & queries", "Explicit database execution and query/report exports. Commands can change data; use authorised databases only.",
@@ -98,8 +80,6 @@ namespace SPI_Data_Comp_Tool
             switch (workspace)
             {
                 case WorkspaceKind.Comparison: return "Comparison";
-                case WorkspaceKind.Analysis: return "Analysis & Migration";
-                case WorkspaceKind.PreMerge: return "Pre-merge Checks";
                 case WorkspaceKind.Scripts: return "SQL Scripts";
                 case WorkspaceKind.DataReports: return "Data & Reports";
                 case WorkspaceKind.Settings: return "Settings";

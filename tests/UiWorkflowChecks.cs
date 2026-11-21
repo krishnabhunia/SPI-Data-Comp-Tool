@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -29,7 +27,6 @@ namespace SPI_Data_Comp_Tool
                 validationPassed &= RunValidationSuite("Connections", () => { ConnectionValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Database forms", () => { DatabaseFormValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Excel forms", () => { ExcelFormValidationChecks.Run(passed); }, messages);
-                validationPassed &= RunValidationSuite("Analysis", () => { AnalysisValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Workbook identity", () => { WorkbookIdentityChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Workbook identity form", () => { WorkbookIdentityFormChecks.Run(passed); }, messages);
                 if (!validationPassed)
@@ -39,7 +36,6 @@ namespace SPI_Data_Comp_Tool
                 }
                 CheckNavigation(passed);
                 CheckSettings(passed);
-                CheckAnalysis(passed);
                 UpdateUiChecks.Run(passed);
                 File.WriteAllLines(outputFile, messages);
                 return 0;
@@ -122,70 +118,6 @@ namespace SPI_Data_Comp_Tool
                 Properties.Settings.Default.XL_Excel_Save = savedExcel;
             }
             passed("Settings and Rules share one window; startup and failed rule imports preserve preferences.");
-        }
-
-        private static DataSet ExampleAnalysis()
-        {
-            var data = new DataSet();
-            foreach (string side in new[] { "Source", "Target" })
-            {
-                var table = new DataTable(side);
-                table.Columns.Add("SPEC_FORM_CNUM", typeof(int));
-                table.Columns.Add("SPEC_NAME", typeof(string));
-                table.Columns.Add("COLUMN_NAME", typeof(string));
-                table.Columns.Add("FORMAT_NAME", typeof(string));
-                table.Columns.Add("HEADER_TEXT", typeof(string));
-                table.Rows.Add(1, "Example specification", "TAG_NUMBER", "Instrument", "Tag number");
-                data.Tables.Add(table);
-            }
-            return data;
-        }
-
-        private static void CheckAnalysis(Action<string> passed)
-        {
-            using (var analysis = new SPI_Analysis())
-            using (var sample = ExampleAnalysis())
-            {
-                analysis.Show();
-                Require(!Find<Button>(analysis, "btn_Show").Enabled, "Analysis can run before both inputs are loaded.");
-                Application.DoEvents();
-                var setup = Find<TabPage>(analysis, "setupPage");
-                analysis.DisplayResults(sample);
-                var resultsPage = Find<TabPage>(analysis, "resultsPage");
-                var results = resultsPage.Controls.OfType<SPI_Analysis_View>().Single();
-                Require(ReferenceEquals(setup, Find<TabPage>(analysis, "setupPage")), "Showing analysis results discarded connection setup.");
-                Require(Find<TabControl>(analysis, "workspaceTabs").SelectedTab == resultsPage, "Results were not shown inside Analysis.");
-                sample.Tables[0].Rows.Clear();
-                Require(((DataTable)Find<DataGridView>(results, "dgv_Source").DataSource).Rows.Count == 1,
-                    "Reloading connection data changed the displayed result snapshot.");
-                bool rejected = false;
-                try { analysis.DisplayResults(new DataSet()); }
-                catch (ArgumentException) { rejected = true; }
-                Require(rejected && !results.IsDisposed && resultsPage.Controls.Contains(results),
-                    "An invalid reload destroyed existing results.");
-                Find<Button>(results, "btn_Arrange_target").PerformClick();
-                Require(Find<Button>(results, "btn_SaveInExcel").Enabled, "Synthetic analysis results could not be arranged for export.");
-                var remarks = (DataTable)Find<DataGridView>(results, "dgv_Remarks").DataSource;
-                Require(remarks.Rows.Count == 1 && remarks.Rows[0][0].ToString() == "Column and Header Match",
-                    "The embedded Analysis changed the synthetic matching result.");
-                var sourceFilter = Find<ComboBox>(results, "cb_Source");
-                sourceFilter.Text = "999";
-                Application.DoEvents();
-                Require(((DataTable)Find<DataGridView>(results, "dgv_Source").DataSource).Rows.Count == 0 &&
-                    !Find<Button>(results, "btn_Arrange_target").Enabled, "An unknown form selection left stale rows available to Arrange.");
-                sourceFilter.Text = "1";
-                Application.DoEvents();
-                Require(Find<Button>(results, "btn_Arrange_target").Enabled, "Returning to a valid form did not enable Arrange.");
-                analysis.Size = new Size(920, 660);
-                analysis.PerformLayout();
-                Application.DoEvents();
-                Require(results.Dock == DockStyle.Fill, "Analysis results do not resize with their workspace.");
-                using (var next = ExampleAnalysis()) analysis.DisplayResults(next);
-                Require(results.IsDisposed && resultsPage.Controls.OfType<SPI_Analysis_View>().Count() == 1,
-                    "Replacing results leaked the old result control or opened duplicate result panels.");
-                analysis.Close();
-            }
-            passed("Analysis keeps setup/results in one window; snapshots survive input changes and failed reloads; replacement disposes old results and Arrange remains available.");
         }
 
     }

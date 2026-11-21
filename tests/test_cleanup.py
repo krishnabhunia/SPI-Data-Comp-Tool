@@ -62,9 +62,8 @@ class EveryWindowCanBeOpened(unittest.TestCase):
     def test_the_first_delta_tracker_window_is_gone(self) -> None:
         for name in ("SPIDeltaChangeTracker.cs", "SPIDeltaChangeTracker.Designer.cs", "SPIDeltaChangeTracker.resx"):
             self.assertFalse((PROJ / name).exists(), name)
-        project = text("SPI Data Comp Tool.csproj").replace("SPIDeltaChangeTrackerOptimised", "")
+        project = text("SPI Data Comp Tool.csproj")
         self.assertNotIn("SPIDeltaChangeTracker", project)
-        self.assertIn("new SPIDeltaChangeTrackerOptimised()", code("WorkspaceCatalog.cs"))
 
     def test_main_menu_has_no_hidden_entries(self) -> None:
         hidden = re.findall(r"this\.(\w+ToolStripMenuItem)\.Visible = false;", text("MainForm.Designer.cs"))
@@ -77,7 +76,7 @@ class EveryWindowCanBeOpened(unittest.TestCase):
             if not name.endswith(".Designer.cs"):
                 for m in re.finditer(r"(?<!abstract )class\s+(\w+)\s*:\s*(?:Form|WorkspacePageForm|UserControl)\b", src):
                     windows[m.group(1)] = name
-        self.assertGreaterEqual(len(windows), 20)
+        self.assertEqual(len(windows), 18)
         for window, home in windows.items():
             own_designer = home[:-3] + ".Designer.cs"
             opened = any(re.search(rf"new\s+(?:SPI_Data_Comp_Tool\.)?{window}\s*\(", src)
