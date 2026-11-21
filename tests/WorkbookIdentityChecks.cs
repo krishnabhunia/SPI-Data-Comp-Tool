@@ -90,6 +90,38 @@ namespace SPI_Data_Comp_Tool
             if (shape != null) shape(sheet);
         }
 
+        /// <summary>A one-sheet workbook written element by element, for cases ClosedXML cannot produce.</summary>
+        private static string RawBook(string folder, string name, S.Row[] rows, Action<WorksheetPart, S.Worksheet> shape = null)
+        {
+            string path = Path.Combine(folder, name);
+            using (SpreadsheetDocument document = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook))
+            {
+                WorkbookPart workbook = document.AddWorkbookPart();
+                var part = workbook.AddNewPart<WorksheetPart>();
+                var sheet = new S.Worksheet(new S.SheetData(rows.Select(row => (OpenXmlElement)row)));
+                if (shape != null) shape(part, sheet);
+                part.Worksheet = sheet;
+                part.Worksheet.Save();
+                workbook.Workbook = new S.Workbook(new S.Sheets(new S.Sheet { Name = "Data", SheetId = 1, Id = workbook.GetIdOfPart(part) }));
+                workbook.Workbook.Save();
+            }
+            return path;
+        }
+
+        private static S.Cell TextCell(string reference, string text)
+        {
+            return new S.Cell { CellReference = reference, DataType = S.CellValues.InlineString, InlineString = new S.InlineString(new S.Text(text)) };
+        }
+
+        private static S.Row[] TwoRows()
+        {
+            return new[]
+            {
+                new S.Row(TextCell("A1", "ID"), TextCell("B1", "Name")) { RowIndex = 1 },
+                new S.Row(new S.Cell { CellReference = "A2", CellValue = new S.CellValue("1") }, TextCell("B2", "Asha")) { RowIndex = 2 },
+            };
+        }
+
         private static IdentityResult Compare(string a, string b, Action<IdentityOptions> set = null)
         {
             var options = new IdentityOptions();
@@ -442,6 +474,73 @@ namespace SPI_Data_Comp_Tool
             IdentityResult bands = Compare(banded(false, "band-a.xlsx"), banded(true, "band-b.xlsx"));
             Require(bands.Count("values") == 0 && bands.Count("fmt_other") >= 2 && bands.Formats.Any(row => (string)row[6] == "Fill colour" && (string)row[8] == "#FFFF00"),
                 "a column format on blank cells was not compared");
+
+            // Freeze panes: what is frozen counts, not where the sheet was scrolled to when it was saved.
+            Func<string, double, string, string> frozen = (name, rows, scrolledTo) => RawBook(folder, name, TwoRows(), (part, sheet) =>
+                sheet.InsertAt(new S.SheetViews(new S.SheetView(new S.Pane { VerticalSplit = rows, TopLeftCell = scrolledTo, ActivePane = S.PaneValues.BottomLeft, State = S.PaneStateValues.Frozen })
+                    { WorkbookViewId = 0 }), 0));
+            string freezeA = frozen("freeze-a.xlsx", 1, "A2");
+            Require(Compare(freezeA, frozen("freeze-b.xlsx", 1, "A40")).Identical, "the same frozen row scrolled to another place must still match");
+            IdentityResult frozenRows = Compare(freezeA, frozen("freeze-c.xlsx", 2, "A2"));
+            object[] freezeRow = frozenRows.Layout.Single(row => (string)row[1] == "Freeze panes");
+            Require((string)freezeRow[4] == "DIFF" && (string)freezeRow[2] == "A2" && (string)freezeRow[3] == "A3", "a different number of frozen rows must be reported");
+
+            // A custom row height below the last value is compared by its own row number.
+            Func<string, double, string> tall = (name, height) => Book(folder, name, new[] { R("ID", "Name"), R(1, "Asha") }, sheet => sheet.Row(10).Height = height);
+            string tallA = tall("tall-a.xlsx", 20);
+            Require(Compare(tallA, tall("tall-b.xlsx", 20)).Identical && Status(Compare(tallA, tall("tall-c.xlsx", 40)), "Row heights") == "DIFF",
+                "a row height below the data was not compared");
+
+            // With a key, a record of File B can pair with a File A row that has the number of a blank row below File B's data.
+            // The blank row must not hide the paired record's own height or hidden state.
+            Action<IXLWorksheet> pairedA = sheet => { sheet.Row(4).Height = 20; sheet.Row(4).Hide(); };
+            Action<IXLWorksheet> pairedB = sheet => { sheet.Row(3).Height = 30; sheet.Row(4).Height = 20; sheet.Row(4).Hide(); };
+            IdentityResult shifted = Compare(Book(folder, "shift-a.xlsx", new[] { R("ID", "Name"), R(1, "Asha"), R(2, "Sana"), R(3, "Ravi") }, pairedA),
+                Book(folder, "shift-b.xlsx", new[] { R("ID", "Name"), R(1, "Asha"), R(3, "Ravi") }, pairedB), o => o.KeyA = new[] { "id" });
+            object[] shiftedHeights = shifted.Layout.Single(row => (string)row[1] == "Row heights");
+            Require((string)shiftedHeights[4] == "DIFF" && ((string)shiftedHeights[2]).StartsWith("row 4=20", StringComparison.Ordinal) && ((string)shiftedHeights[3]).StartsWith("row 4=30", StringComparison.Ordinal),
+                "a blank row below the data must not hide the height of a paired record with the same row number");
+            Require(Status(shifted, "Hidden rows") == "DIFF", "a hidden blank row below the data must not stand in for a hidden paired record");
+
+            // Border colour is part of the border.
+            Func<string, XLColor, string> edged = (name, colour) => Book(folder, name, new[] { R("ID", "Name"), R(1, "Asha") }, sheet =>
+            {
+                sheet.Cell("B2").Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                sheet.Cell("B2").Style.Border.BottomBorderColor = colour;
+            });
+            string edgeA = edged("edge-a.xlsx", XLColor.Red);
+            IdentityResult edges = Compare(edgeA, edged("edge-b.xlsx", XLColor.Blue));
+            Require(Compare(edgeA, edged("edge-c.xlsx", XLColor.Red)).Identical && edges.Count("fmt_other") == 1
+                && edges.Formats.Any(row => (string)row[6] == "Borders" && (string)row[7] == "B:thin #FF0000" && (string)row[8] == "B:thin #0000FF"),
+                "a border that differs only in colour was not reported");
+
+            // A link to another file keeps the place inside that file.
+            Func<string, string, string> linked = (name, place) => RawBook(folder, name, TwoRows(), (part, sheet) =>
+            {
+                string id = part.AddHyperlinkRelationship(new Uri("other.xlsx", UriKind.Relative), true).Id;
+                sheet.Append(new S.Hyperlinks(new S.Hyperlink { Reference = "B2", Id = id, Location = place }));
+            });
+            string linkA = linked("link-a.xlsx", "Sheet1!A1");
+            IdentityResult links = Compare(linkA, linked("link-b.xlsx", "Sheet2!B5"));
+            object[] linkRow = links.Layout.Single(row => (string)row[1] == "Hyperlinks");
+            Require(Compare(linkA, linked("link-c.xlsx", "Sheet1!A1")).Identical && (string)linkRow[4] == "DIFF"
+                && (string)linkRow[2] == "B2=other.xlsx#Sheet1!A1" && (string)linkRow[3] == "B2=other.xlsx#Sheet2!B5",
+                "two links to different places in the same file must differ");
+
+            // A formula in a header cell is compared, even when its result is the same header text.
+            Func<string, bool, string> headed = (name, formula) => RawBook(folder, name, new[]
+            {
+                new S.Row(formula ? new S.Cell { CellReference = "A1", DataType = S.CellValues.String, CellFormula = new S.CellFormula("\"ID\""), CellValue = new S.CellValue("ID") }
+                                  : TextCell("A1", "ID"), TextCell("B1", "Name")) { RowIndex = 1 },
+                new S.Row(new S.Cell { CellReference = "A2", CellValue = new S.CellValue("1") }, TextCell("B2", "Asha")) { RowIndex = 2 },
+            });
+            string headA = headed("head-a.xlsx", false), headB = headed("head-b.xlsx", true);
+            IdentityResult headers = Compare(headA, headB);
+            Require(headers.Count("formulas") == 1 && headers.Count("header_names") == 0 && headers.Count("values") == 0 && !headers.Identical
+                && (string)headers.Data[0][KindAt] == "Formula only in File B" && (string)headers.Data[0][CellA] == "A1" && (string)headers.Data[0][ValueB] == "=\"ID\"",
+                "a formula in a header cell was not compared");
+            Require(Compare(headA, headB, o => o.CompareFormulas = false).Identical && Compare(headB, headed("head-c.xlsx", true)).Identical,
+                "header formulas must follow the formula switch, and equal header formulas must match");
 
             IdentityResult skipped = Compare(a, b, o => { o.CompareFormats = false; o.CompareLayout = false; });
             Require(skipped.Identical && skipped.Formats.Count == 0 && skipped.Skipped.Contains("fmt_font") && skipped.Skipped.Contains("layout")

@@ -398,7 +398,12 @@ namespace SPI_Data_Comp_Tool
         {
             if (side == null || side.Style == null) return;
             string style = side.Style.InnerText;
-            if (!string.IsNullOrEmpty(style) && style != "none") parts.Add(tag + ":" + style);
+            if (string.IsNullOrEmpty(style) || style == "none") return;
+            // Automatic, and its stored form "indexed 64", are the default colour and are left out, so the same
+            // border saved by two programs reads the same.
+            string colour = DescribeColour(side.GetFirstChild<Color>());
+            bool standard = colour == "none" || colour == "auto" || colour == "indexed 64";
+            parts.Add(tag + ":" + style + (standard ? "" : " " + colour));
         }
 
         // ------------------------------------------------------------------ one worksheet
@@ -428,7 +433,7 @@ namespace SPI_Data_Comp_Tool
                     else if (type == typeof(Pane))
                     {
                         var pane = (Pane)reader.LoadCurrentElement();
-                        if (pane.TopLeftCell != null) sheet.Freeze = pane.TopLeftCell.Value;
+                        sheet.Freeze = DescribePane(pane);
                     }
                     else if (type == typeof(MergeCell))
                     {
@@ -492,6 +497,24 @@ namespace SPI_Data_Comp_Tool
             return sheet;
         }
 
+        /// <summary>
+        /// A frozen pane as the first cell below and right of the frozen rows and columns ("A2" = one frozen row).
+        /// The pane's own top-left cell is not used: it is only where the sheet was scrolled to when it was saved.
+        /// </summary>
+        private static string DescribePane(Pane pane)
+        {
+            double across = pane.HorizontalSplit == null ? 0 : pane.HorizontalSplit.Value;
+            double down = pane.VerticalSplit == null ? 0 : pane.VerticalSplit.Value;
+            string state = pane.State == null ? "split" : pane.State.InnerText;
+            if (state == "frozen" || state == "frozenSplit")
+            {
+                if (across < 1 && down < 1) return null;
+                return ColumnLetters((int)across + 1) + ((int)down + 1).ToString(CultureInfo.InvariantCulture);
+            }
+            if (across == 0 && down == 0) return null;
+            return "split " + across.ToString("0.##", CultureInfo.InvariantCulture) + " x " + down.ToString("0.##", CultureInfo.InvariantCulture);
+        }
+
         private static void ReadHyperlink(Hyperlink link, WorksheetPart part, IdentitySheet sheet)
         {
             if (link.Reference == null) return;
@@ -501,7 +524,9 @@ namespace SPI_Data_Comp_Tool
                 HyperlinkRelationship relation = part.HyperlinkRelationships.FirstOrDefault(item => item.Id == link.Id.Value);
                 if (relation != null && relation.Uri != null) target = relation.Uri.OriginalString;
             }
-            if (string.IsNullOrEmpty(target)) target = link.Location == null ? "" : link.Location.Value;
+            string location = link.Location == null ? "" : link.Location.Value;
+            if (string.IsNullOrEmpty(target)) target = location;
+            else if (location.Length > 0) target += "#" + location;           // a file plus a place inside it
             sheet.Links[link.Reference.Value] = target;
         }
 
