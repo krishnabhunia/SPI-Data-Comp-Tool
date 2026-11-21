@@ -1,6 +1,6 @@
 # Form and workflow validation
 
-This inventory covers the 21 retained concrete Form implementations, the added `WorkspaceForm` host and their shared controls. `WorkspacePageForm` is an abstract lifecycle base, not another independently opened screen. A screen with no editable input is audited for navigation/lifecycle behaviour rather than given artificial required fields. Existing updater safeguards remain in use; the workspace consolidation does not add a second updater, authentication system or SQL transaction framework. See [WORKSPACES.md](WORKSPACES.md) for the six groups and 19 explicit task routes.
+This inventory covers the 21 retained concrete Form implementations, the added `WorkspaceForm` host, the separate `ExcelSheetAuditForm` and their shared controls: 23 concrete production forms. `WorkspacePageForm` is an abstract lifecycle base, not another independently opened screen. A screen with no editable input is audited for navigation/lifecycle behaviour rather than given artificial required fields. Existing updater safeguards remain in use; the workspace consolidation does not add a second updater, authentication system or SQL transaction framework. See [WORKSPACES.md](WORKSPACES.md) for the six groups and 20 explicit task routes.
 
 ## Common behaviour
 
@@ -34,6 +34,7 @@ This inventory covers the 21 retained concrete Form implementations, the added `
 | `SPIDeltaChangeLegacyID` | Active SQL Server source only, current connection test, required mapping sheets/fields, duplicate output-column prevention; the same source field may serve two mapping roles. |
 | `SQL_DB_To_Excel` | Current SQL Server connection, selected table metadata, output folder, per-sheet limits, safe names and atomic output; worker inputs are captured before background work. |
 | `Excel_Excel_Comparison` | Current workbook data, valid matching columns and key selections, null/duplicate composite keys in primary-key mode, non-primary-key mode compatibility, stale results and busy states. |
+| `ExcelSheetAuditForm` | Separate two-file/worksheet/header inputs; explicit case-insensitive key-column mappings; complete null/duplicate key validation; captured worker requests, cancellation and busy-close guards; independently capped data/non-data results; two-sheet atomic report export with input-path protection and overwrite confirmation. See [EXCEL_SHEET_AUDIT.md](EXCEL_SHEET_AUDIT.md). |
 | `ViewForMultiReference` | Required selected reference columns, current data and compatible mapping selections; count labels describe its actual copied Source/Target tables. Each hosted mapping session keeps an independent snapshot. |
 | `Generate_IUD_Script_Form` | Workbook/sheet/column choices, SQL identifiers, INSERT/UPDATE/DELETE-specific requirements, mandatory WHERE fields for UPDATE/DELETE and SET fields for UPDATE. |
 | `Execute_Excel_Scripts_Form` | Applicable connection, readable workbook, exactly one selected SQL column, nonblank scripts and operation prerequisites. |
@@ -56,7 +57,8 @@ The three earlier grouped tool windows use the same workspace infrastructure now
 | Passwords | Preserve exact entered characters, including leading/trailing spaces. No built-in credential policy is imposed beyond applicable required input. |
 | Excel imports | Open XML `.xlsx` / `.xlsm`; reject empty/corrupt files, duplicate headers after trimming/ignoring case, and populated columns without headers. Unused blank spacer columns/empty sheets may be omitted. Header-only sheets can remain available; actions requiring data reject them at that action. |
 | Header compatibility | The existing static reader keeps trimmed/uppercase headers; the case-preserving instance reader keeps original spelling/spaces. Both share schema validation. |
-| Comparison engine | In primary-key mode require non-null unique composite keys. Non-primary-key mode remains available. Selected headers containing commas or leading/trailing spaces are rejected with guidance because the existing comparison engine tokenizes them. |
+| Existing comparison engine | In primary-key mode require non-null unique composite keys. Non-primary-key mode remains available. Selected headers containing commas or leading/trailing spaces are rejected with guidance because the existing comparison engine tokenizes them. |
+| Separate Excel Sheet Audit | Headers match ignoring case only; whitespace remains significant. Key mappings are ordered typed tuples, not delimiter-concatenated text. Invalid keys stop the run. Without keys, logical row positions align below independently selected header rows. Values/formulas and formatting are separate checks; unsupported semantics prevent a complete-match claim. |
 | Script executor | Exactly one SQL column. The previous engine used only its first selected column; extra selections no longer silently appear executable. |
 | SQL generator | Values preserve whitespace, distinguish null from empty text and escape quotes. UPDATE/DELETE require explicit WHERE selections. Generated SQL still requires review against an isolated database. |
 | Analysis identifiers | Integer strings or exactly integral numeric values within the signed 32-bit range, including database decimals such as `1.00`; reject fractions, overflow, null, NaN and infinity. |
@@ -67,7 +69,7 @@ The three earlier grouped tool windows use the same workspace infrastructure now
 | Excel export | At most 16,384 columns and 1,048,575 data rows plus the header per worksheet; valid unique 1–31-character sheet names. Existing split-report workflows still apply their existing partitioning. |
 | Windows paths | Reject device paths/names, invalid characters, trailing dots/spaces, missing parent folders, locked/read-only destinations and supported lexical input/output self-overwrite aliases. Validation is not a physical hard-link/reparse-point identity check. |
 | Atomic output | Existing destination preserved if serialization fails. A new-file publication does not overwrite another writer that wins the race. Replacement of a previously existing file is not a compare-and-swap against unrelated concurrent edits; do not have multiple tools writing the same report. |
-| Import resource limits | Profile documents: 16 MiB / JSON depth 32. Merge logs: 64 MiB. Excel still loads into memory; this is not a streaming or decompression-bomb defence. |
+| Import resource limits | Profile documents: 16 MiB / JSON depth 32. Merge logs: 64 MiB. Existing Excel readers still load into memory. The separate audit streams worksheet cells, spools shared strings and keyed rows to disk, and applies bounded partition/detail guards; it is not a general decompression-bomb sandbox. |
 | Progress | Zero/negative totals do not divide by zero; long arithmetic and clamping prevent overflow/out-of-range progress values. |
 
 ## Verification
@@ -89,7 +91,9 @@ Windows builds compile both Any CPU and x64 with warnings as errors. The `--chec
 | `DatabaseFormValidationChecks` | Nine database forms using synthetic data and connection-status fixtures; mode-specific gates, schemas, selections and partial-failure state. |
 | `ExcelFormValidationChecks` | Excel comparison, multi-reference, script generation/execution and utilities; positive/negative data, key/schema checks and a distinct-target-worksheet count/snapshot fixture without running SQL. |
 | `AnalysisValidationChecks` | Actual Analysis controls, valid/invalid numeric identifiers and repeat arrangement; real synthetic workbook reads, header collisions, Unicode, leading zeros and input preservation. |
-| `WorkspaceUiChecks` | All 19 routes in six groups; lazy hosting, page/session reuse, distinct modes, transient mappings, failed construction, close vetoes, main-owner closure, hidden workers and updater eligibility. |
+| `WorkspaceUiChecks` | All 20 routes in six groups; lazy hosting, page/session reuse, distinct modes, transient mappings, failed construction, close vetoes, main-owner closure, hidden workers and updater eligibility. |
+
+The separate `--check-excel-audit <log-file>` entry point runs `ExcelAuditChecks` against temporary Open XML fixtures: positional/single/composite-key alignment, differently named keys, invalid and duplicate keys, header/schema validation, typed exact values, saved formulas, equivalent style identifiers, font/alignment changes, detail caps, date systems, input preservation, cancellation and schema-valid two-sheet report output. It also opens the new native form without replacing the existing route. These checks run in the Windows build workflow; they are not an assertion that a particular run has passed.
 
 The separate `--check-themes <log-file>` entry point runs `ThemeChecks`, configured to build eligible concrete forms in all four palettes, inspect actual label/button/field/grid colours, switch themes while windows are open, synchronize multiple Settings pickers and test saved choices using temporary files. Python contracts in `tests/test_themes.py` verify theme wiring and persistence boundaries; `tests/test_ui_contrast.py` checks palette contrast pairs. These complement the workspace lifecycle checks rather than prove complete rendering or business-output parity.
 

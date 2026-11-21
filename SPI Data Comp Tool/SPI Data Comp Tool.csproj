@@ -273,6 +273,16 @@
     <Compile Include="ConnectionSide.cs" />
     <Compile Include="FormHelpers.cs" />
     <Compile Include="FormValidation.cs" />
+    <Compile Include="ExcelAuditContracts.cs" />
+    <Compile Include="ExcelAuditReader.cs" />
+    <Compile Include="ExcelAuditEngine.cs" />
+    <Compile Include="ExcelAuditReportWriter.cs" />
+    <Compile Include="ExcelSheetAuditForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="..\tests\ExcelAuditChecks.cs">
+      <Link>Tests\ExcelAuditChecks.cs</Link>
+    </Compile>
     <Compile Include="ConnectionStrings.cs" />
     <Compile Include="SelfTest.cs" />
     <Compile Include="WindowNavigator.cs" />
