@@ -293,6 +293,9 @@
     <Compile Include="WorkbookIdentityReader.cs" />
     <Compile Include="WorkbookIdentityEngine.cs" />
     <Compile Include="IdentityReportWriter.cs" />
+    <Compile Include="WorkbookIdentityForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="..\tests\UiWorkflowChecks.cs">
       <Link>Tests\UiWorkflowChecks.cs</Link>
     </Compile>
@@ -346,6 +349,9 @@
     </Compile>
     <Compile Include="..\tests\WorkbookIdentityChecks.cs">
       <Link>Tests\WorkbookIdentityChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\WorkbookIdentityFormChecks.cs">
+      <Link>Tests\WorkbookIdentityFormChecks.cs</Link>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="ThemeControls.cs" />

@@ -8,6 +8,8 @@ The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes rem
 
 **Comparison > Excel Sheet Audit** is a separate native C# form for two selected worksheets: optional single/composite keys, case-insensitive column-name matching, exact typed values, headers, formatting and layout. It exports exactly two sheets: **Summary** and **Data Differences**. The original **Excel comparison** task is unchanged. See the [audit guide](docs/EXCEL_SHEET_AUDIT.md) for validation, scope and resource limits.
 
+**Comparison > Workbook identity check** answers one question: are two workbooks identical? It compares every sheet (or one chosen sheet) by row position or by an optional primary key, lists the 18 checks on screen and writes a five-sheet report: **Summary**, **Headers**, **Data Differences**, **Format Differences** and **Layout & Other**. See the [identity check guide](docs/WORKBOOK_IDENTITY_CHECK.md).
+
 | SrNo. | Topic | Where |
 |---|---|---|
 | 1 | Architecture, feature inventory, diagrams, setup, testing, limitations | [docs/PROJECT_GUIDE.md](docs/PROJECT_GUIDE.md) |
@@ -17,6 +19,7 @@ The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes rem
 | 5 | In-app normal/beta updates, version selection and recovery | [docs/UPDATING.md](docs/UPDATING.md) |
 | 6 | Workspace/task map, independent sessions and first-phase boundaries | [docs/WORKSPACES.md](docs/WORKSPACES.md) |
 | 7 | Separate Excel Sheet Audit: Design A, key mappings, two-sheet report and limits | [docs/EXCEL_SHEET_AUDIT.md](docs/EXCEL_SHEET_AUDIT.md) |
+| 8 | Workbook identity check: are two workbooks identical? Inputs, the five-sheet report and limits | [docs/WORKBOOK_IDENTITY_CHECK.md](docs/WORKBOOK_IDENTITY_CHECK.md) |
 
 ## Quick start
 

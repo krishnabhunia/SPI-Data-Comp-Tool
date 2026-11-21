@@ -20,7 +20,7 @@ class FormValidationContracts(unittest.TestCase):
             forms.update(re.findall(r"(?<!abstract )\bclass\s+(\w+)\s*:\s*(?:Form|WorkspacePageForm)\b",
                                     path.read_text(encoding="utf-8-sig")))
         documented = set(re.findall(r"^\| `(\w+)` \|", (ROOT / "docs/VALIDATION.md").read_text(), re.MULTILINE))
-        self.assertEqual(len(forms), 23)  # 21 retained implementations, workspace host and separate Excel Sheet Audit
+        self.assertEqual(len(forms), 24)  # 21 retained implementations, workspace host, Excel Sheet Audit and Workbook identity check
         self.assertNotIn("WorkspacePageForm", forms)  # abstract lifecycle bridge, not an extra window
         self.assertTrue(forms <= documented, forms - documented)
 

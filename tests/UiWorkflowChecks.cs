@@ -31,6 +31,7 @@ namespace SPI_Data_Comp_Tool
                 validationPassed &= RunValidationSuite("Excel forms", () => { ExcelFormValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Analysis", () => { AnalysisValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Workbook identity", () => { WorkbookIdentityChecks.Run(passed); }, messages);
+                validationPassed &= RunValidationSuite("Workbook identity form", () => { WorkbookIdentityFormChecks.Run(passed); }, messages);
                 if (!validationPassed)
                 {
                     File.WriteAllLines(outputFile, messages);

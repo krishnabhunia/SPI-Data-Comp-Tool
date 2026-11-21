@@ -15,26 +15,27 @@ def source(name):
 
 
 class WorkspaceContracts(unittest.TestCase):
-    def test_catalog_retains_existing_routes_and_adds_excel_audit(self):
+    def test_catalog_retains_existing_routes_and_adds_the_two_excel_checks(self):
         catalog = source("WorkspaceCatalog.cs")
         routes = re.findall(r'new WorkspaceTask\("([^"]+)"', catalog)
-        self.assertEqual(len(routes), 20)
-        self.assertEqual(len(set(routes)), 20)
-        expected = {"comparison": 4, "analysis": 6, "premerge": 3, "scripts": 2, "reports": 3, "settings": 2}
+        self.assertEqual(len(routes), 21)
+        self.assertEqual(len(set(routes)), 21)
+        expected = {"comparison": 5, "analysis": 6, "premerge": 3, "scripts": 2, "reports": 3, "settings": 2}
         self.assertIn("comparison.excel", routes)
         self.assertIn("comparison.excel-audit", routes)
+        self.assertIn("comparison.identity", routes)
         for group, count in expected.items():
             self.assertEqual(sum(route.startswith(group + ".") for route in routes), count)
         self.assertIn("() => new Pre_Merging_Duplicacy_Form(true), false", catalog)
         self.assertIn("() => new User_Settings(), false", catalog)
         self.assertIn("() => new UserProfileForm(), false", catalog)
 
-    def test_all_twenty_pages_keep_the_lifecycle_bridge(self):
+    def test_all_twenty_one_pages_keep_the_lifecycle_bridge(self):
         pages = []
         for path in APP.glob("*.cs"):
             pages += re.findall(r"public (?:(?:partial|sealed) )?class (\w+) : WorkspacePageForm", path.read_text(encoding="utf-8-sig"))
-        self.assertEqual(len(pages), 20)
-        self.assertEqual(len(set(pages)), 20)
+        self.assertEqual(len(pages), 21)
+        self.assertEqual(len(set(pages)), 21)
         self.assertIn("public abstract class WorkspacePageForm : Form", source("WorkspacePageForm.cs"))
 
     def test_preparation_does_not_dispose_or_close_pages(self):
