@@ -104,6 +104,23 @@ namespace SPI_Data_Comp_Tool
         internal IReadOnlyList<WorkspacePageForm> LoadedPages => pages.Values.Where(page => !page.IsDisposed).ToList().AsReadOnly();
         internal WorkspacePageForm ActivePage { get; private set; }
 
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            FitToWorkingArea();
+        }
+
+        private void FitToWorkingArea()
+        {
+            // Preserve the grouped windows' screen bounds after initial scaling and on task changes.
+            Rectangle area = Screen.FromControl(this).WorkingArea;
+            MinimumSize = new Size(Math.Min(MinimumSize.Width, area.Width), Math.Min(MinimumSize.Height, area.Height));
+            if (WindowState != FormWindowState.Normal) return;
+            Size = new Size(Math.Min(Width, area.Width), Math.Min(Height, area.Height));
+            Location = new Point(Math.Max(area.Left, Math.Min(Left, area.Right - Width)),
+                Math.Max(area.Top, Math.Min(Top, area.Bottom - Height)));
+        }
+
         private void AddTaskButton(WorkspaceTask task)
         {
             var button = new Button { Name = "task_" + task.Key.Replace('.', '_'), Text = task.Title, Width = 205, Height = 52,
@@ -196,6 +213,7 @@ namespace SPI_Data_Comp_Tool
                 }
             }
             SelectPage(key, page);
+            if (Visible) FitToWorkingArea();
             return page;
         }
 

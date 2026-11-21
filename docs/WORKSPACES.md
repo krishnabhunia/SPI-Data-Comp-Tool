@@ -71,6 +71,8 @@ The shared `ConnectionPanel` is now used by 12 connection surfaces, including Ga
 
 Only verified obsolete UI scaffolding was retired: the hidden Database Comparison dummy-profile prototype, the inactive Excel multithreading scaffold, and the Optimised Tracker's unconnected commented profile-save handler. The active profile editor, ordinary comparison worker and instrument worker remain. Advanced Mapping's displayed Target dimensions now come from its actual copied target table.
 
+The former three-group `ToolGroupWindow` host is superseded by the common workspace host. Its nine workflows remain available through the route inventory above: pre-merge modes stay in Pre-merge Checks, notes and delta tasks use Analysis & Migration, script generation uses SQL Scripts, and Excel/log exports use Data & Reports. Lazy creation, page reuse, Configuration's separate state, readable window titles and the all-or-none busy-close safeguard remain. The retained `--check-groups` runner verifies these workflows against the workspace implementation.
+
 ## What this phase does not claim
 
 - The 21 existing concrete Form implementations remain. Adding the common `WorkspaceForm` makes **22 concrete Form classes**; the abstract `WorkspacePageForm` is a lifecycle base, not another opening window. Normal navigation uses fewer independent workflow windows, not fewer business engines or source classes.

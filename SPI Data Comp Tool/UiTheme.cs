@@ -274,7 +274,7 @@ namespace SPI_Data_Comp_Tool
             if (form == null) return;
             SetIcon(form);
             Look look = Of(form);
-            if (!look.Hooked)
+            if (!themed.Contains(form))
             {
                 look.Hooked = true;
                 themed.Add(form);
@@ -300,7 +300,8 @@ namespace SPI_Data_Comp_Tool
         /// <summary>Themes a window that has not asked for it itself (every tool window gets the same look).</summary>
         public static void EnsureApplied(Form form)
         {
-            if (form != null && !Of(form).Hooked) Apply(form);
+            // a tool shown inside a group window may already have been styled as a control of that window
+            if (form != null && !themed.Contains(form)) Apply(form);
         }
 
         private static void Paint(Form form, bool darknessChanged)
@@ -880,14 +881,48 @@ namespace SPI_Data_Comp_Tool
         }
 
         /// <summary>
-        /// The progress bar keeps Windows' own drawing: the classic bar that would take the theme's
-        /// colour needs its window rebuilt while it is being created. Its colours are still set for
-        /// systems that use them.
+        /// A progress bar in the theme's accent colour. Windows' themed bar ignores colours (it is
+        /// always green), so the bar is switched to the plain drawing, which uses ForeColor on
+        /// BackColor. That is done after the bar's window exists and outside its creation, and the
+        /// bar's style is left alone, so its window is never rebuilt.
         /// </summary>
         private static void StyleProgress(ProgressBar bar, Look look, UiPalette p)
         {
             bar.ForeColor = p.Accent;
             bar.BackColor = p.Border;
+            if (!OnWindows) return;
+            if (!look.ScrollHooked)
+            {
+                look.ScrollHooked = true;
+                bar.HandleCreated += (s, e) => { Of((Control)s).DarkParts = false; PlainBarLater((ProgressBar)s); };
+            }
+            if (bar.IsHandleCreated) PlainBarLater(bar);
+        }
+
+        private static void PlainBarLater(ProgressBar bar)
+        {
+            if (Of(bar).DarkParts) return;   // this window of the bar is plain already
+            try { bar.BeginInvoke((MethodInvoker)(() => PlainBar(bar))); }
+            catch (Exception)
+            {
+                // the bar stays green
+            }
+        }
+
+        private static void PlainBar(ProgressBar bar)
+        {
+            if (bar.IsDisposed || !bar.IsHandleCreated) return;
+            Look look = Of(bar);
+            if (look.DarkParts) return;
+            try
+            {
+                SetWindowTheme(bar.Handle, string.Empty, string.Empty);
+                look.DarkParts = true;
+            }
+            catch (Exception)
+            {
+                // the bar stays green
+            }
         }
     }
 }

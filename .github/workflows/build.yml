@@ -170,6 +170,16 @@ jobs:
           if (-not $p.WaitForExit(180000)) { & tools/ci_window_report.ps1 -ProcessId $p.Id; Stop-Process -Id $p.Id -Force; throw 'theme checks timed out' }
           if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
           if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'theme checks failed' }
+      - name: Group window checks
+        shell: pwsh
+        run: |
+          # grouped-tool routes now use workspaces: retain lazy pages, bounded windows and all-or-none close guards
+          $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
+          $log = Join-Path $env:RUNNER_TEMP 'group-checks.txt'
+          $p = Start-Process $exe -ArgumentList '--check-groups', "`"$log`"" -PassThru
+          if (-not $p.WaitForExit(120000)) { & tools/ci_window_report.ps1 -ProcessId $p.Id; Stop-Process -Id $p.Id -Force; throw 'group window checks timed out' }
+          if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
+          if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'group window checks failed' }
       - name: Open every window
         shell: pwsh
         run: |

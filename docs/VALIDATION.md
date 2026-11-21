@@ -46,6 +46,8 @@ Shared coverage: `ConnectionSide`, `ConnectionPanel`, `OracleAndSQLConnection`, 
 
 `WorkspaceNavigator` and `WorkspacePageForm` provide shared navigation/lifecycle behaviour. Settings preferences and profiles are separate task pages in one workspace. The existing modal Import Rules path intentionally remains a short-lived `User_Settings(true)` dialog so its caller receives imported rules synchronously; cancelling or failing an import still preserves the caller's rules.
 
+The three earlier grouped tool windows use the same workspace infrastructure now. All nine workflows remain in the catalog; the redundant `ToolGroupWindow` is retired. A busy or refusing task keeps every loaded page and its draft state, including pages before and after it in the close order, and becomes the active page. Configuration retains its separate mode and singleton boundary.
+
 ## Compatibility and explicit boundaries
 
 | Area | Rule / boundary |
@@ -90,6 +92,8 @@ Windows builds compile both Any CPU and x64 with warnings as errors. The `--chec
 | `WorkspaceUiChecks` | All 19 routes in six groups; lazy hosting, page/session reuse, distinct modes, transient mappings, failed construction, close vetoes, main-owner closure, hidden workers and updater eligibility. |
 
 The separate `--check-themes <log-file>` entry point runs `ThemeChecks`, configured to build eligible concrete forms in all four palettes, inspect actual label/button/field/grid colours, switch themes while windows are open, synchronize multiple Settings pickers and test saved choices using temporary files. Python contracts in `tests/test_themes.py` verify theme wiring and persistence boundaries; `tests/test_ui_contrast.py` checks palette contrast pairs. These complement the workspace lifecycle checks rather than prove complete rendering or business-output parity.
+
+The retained `--check-groups <log-file>` entry point runs `ToolGroupChecks` against the nine formerly grouped workflows through their current workspace routes. Its compatibility coverage includes correct page hosting/reuse and preservation of loaded pages when a hidden task refuses closure, followed by successful cleanup once the refusal clears. `tests/test_tool_groups.py` retains the corresponding route, readable-title and CI-wiring contracts. The successful `Application.Exit` scenario remains isolated in the `--check-workspace-exit <log-file>` process invoked by `WorkspaceUiChecks`.
 
 Tests use temporary synthetic data. They do not connect to live databases, execute user SQL, install a live release or write real-user preference files. The existing every-form open/close checks, updater checks, embedded dependency checks and installer smoke checks remain enabled. Check the PR's actual Actions results; this document is not evidence that a particular commit passed.
 

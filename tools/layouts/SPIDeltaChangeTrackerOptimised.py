@@ -7,7 +7,7 @@ CLEAN_WHITESPACE = True
 FORM_NAME = "SPIDeltaChangeTrackerOptimised"
 CLIENT = (1260, 820)
 MINIMUM = (1080, 720)
-TITLE = "SPI Delta Change Tracker Optimised"
+TITLE = "Delta change tracker"
 DROP = PANEL_DROP + ["groupBox4", "label18"]
 FROZEN = ["comboBox1", "lblDebugMsg"]  # Existing hidden debug controls, not additional live workflows.
 

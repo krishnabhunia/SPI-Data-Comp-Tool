@@ -148,7 +148,7 @@ class Themes(unittest.TestCase):
         self.assertIn("private const double Readable = 4.5;", checks)
         self.assertIn("LiveSwitch", checks)
         # a self-test that does not finish says which dialog it was waiting on
-        self.assertEqual(workflow.count("& tools/ci_window_report.ps1 -ProcessId"), 4)
+        self.assertGreaterEqual(workflow.count("& tools/ci_window_report.ps1 -ProcessId"), 4)
         self.assertTrue((ROOT / "tools/ci_window_report.ps1").exists())
 
     def test_windows_only_calls_cannot_stop_the_app(self) -> None:
@@ -156,12 +156,16 @@ class Themes(unittest.TestCase):
         tail = theme.split("// ---------------- the parts Windows draws itself", 1)[1]
         self.assertEqual(tail.count("DwmSetWindowAttribute(form.Handle"), 2)
         self.assertEqual(tail.count("SetWindowTheme(c.Handle"), 1)
-        self.assertGreaterEqual(tail.count("catch (Exception)"), 2)   # title bar, scroll bars
+        self.assertGreaterEqual(tail.count("catch (Exception)"), 4)   # title bar, scroll bars, progress bar (twice)
         self.assertGreaterEqual(tail.count("if (!OnWindows"), 2)
         # a light theme asks Windows for nothing unless a dark theme was applied to that window before
         self.assertIn("|| dark == look.DarkParts) return;", tail)
         self.assertIn("|| p.Dark == look.DarkParts) return;", tail)
         self.assertNotIn("RecreateHandle", theme)
+        # the progress bar takes the accent colour only after its window exists, outside its creation
+        self.assertEqual(tail.count("SetWindowTheme(bar.Handle, string.Empty, string.Empty);"), 1)
+        self.assertIn("bar.BeginInvoke((MethodInvoker)(() => PlainBar(bar)));", tail)
+        self.assertIn("if (bar.IsDisposed || !bar.IsHandleCreated) return;", tail)
         self.assertNotIn(".Style = ProgressBarStyle", theme)   # changing it rebuilds the bar's window
 
 
