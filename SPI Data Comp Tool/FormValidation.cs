@@ -104,6 +104,14 @@ namespace SPI_Data_Comp_Tool
                 label + " exceeds Excel's worksheet limits (16,384 columns or 1,048,575 data rows plus a header).");
         }
 
+        /// <summary>Validate the first worksheet before accepting an imported workbook.</summary>
+        internal static void ValidateWorkbook(DataSet candidate, Control field)
+        {
+            Require(candidate != null && candidate.Tables.Count > 0, field,
+                "The workbook contains no readable worksheets.");
+            Table(candidate.Tables[0], field, "First worksheet");
+        }
+
         internal static void Workbook(DataSet data, Control field, string label)
         {
             Require(data != null && data.Tables.Count > 0, field, "Load " + label + " before exporting.");

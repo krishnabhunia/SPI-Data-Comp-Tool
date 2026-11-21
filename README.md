@@ -1,8 +1,8 @@
 # SPI Data Comparison Tool
 
-Generic Windows Forms (.NET Framework 4.6.2) desktop utility for database and Excel comparison, SPI delta analysis, pre-merge duplicate checks and data exports. It works against Oracle and SQL Server.
+Generic Windows Forms (.NET Framework 4.6.2) desktop utility for database and Excel comparison, SQL script generation/execution and data exports. It works against Oracle and SQL Server.
 
-The main window now groups existing tasks into six workspace tiles: **Comparison**, **Analysis & Migration**, **Pre-merge Checks**, **SQL Scripts**, **Data & Reports**, and **Settings**. Switching tasks preserves each page's inputs and results. This is a navigation/interface consolidation, not a replacement of the comparison or migration engines.
+The main window groups 12 tasks into four workspace tiles: **Comparison**, **SQL Scripts**, **Data & Reports**, and **Settings**. Switching tasks preserves each page's inputs and results. The retired Analysis & Migration and Pre-merge Checks workspaces, their task forms and their dedicated supporting code have been removed. The earlier application is preserved in [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0).
 
 The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes remain available. Choose one on the Settings preferences task's **General** tab; the home tiles, workspaces and loaded pages change colour immediately, without reopening the tasks. Ocean is the default; Midnight is the dark theme.
 
@@ -17,7 +17,7 @@ The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes rem
 | 3 | App icon and pictures (original, regenerate with `python tools/make_app_images.py`) | `SPI Data Comp Tool/app.ico`, `SPI Data Comp Tool/Resources/*.png` |
 | 4 | CI build: portable exe and 64-bit installer (one exe each, libraries embedded) | `.github/workflows/build.yml` → Actions → artifact `SPI_Data_Comp_Tool_<version>`, or the release page (`…_x64_setup.exe`) |
 | 5 | In-app normal/beta updates, version selection and recovery | [docs/UPDATING.md](docs/UPDATING.md) |
-| 6 | Workspace/task map, independent sessions and first-phase boundaries | [docs/WORKSPACES.md](docs/WORKSPACES.md) |
+| 6 | Current workspace/task map, independent sessions and retirement boundary | [docs/WORKSPACES.md](docs/WORKSPACES.md) |
 | 7 | Separate Excel Sheet Audit: Design A, key mappings, two-sheet report and limits | [docs/EXCEL_SHEET_AUDIT.md](docs/EXCEL_SHEET_AUDIT.md) |
 | 8 | Workbook identity check: are two workbooks identical? Inputs, the five-sheet report and limits | [docs/WORKBOOK_IDENTITY_CHECK.md](docs/WORKBOOK_IDENTITY_CHECK.md) |
 

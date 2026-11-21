@@ -19,8 +19,10 @@ namespace SPI_Data_Comp_Tool
     {
         internal static void Run(Action<string> passed)
         {
+            CheckRetiredWorkflowsAbsent();
+            passed("Retired workflow routes, workspace categories and implementation types are absent from the application.");
             CheckCatalogAndRealPages();
-            passed("All 21 task routes retain their workflow types in six lazily loaded workspaces.");
+            passed("All 12 task routes retain their workflow types in four lazily loaded workspaces.");
             CheckNavigation();
             passed("Workspace navigation reuses pages and restores windows without replacing independent sessions or modes.");
             CheckCloseLifecycle();
@@ -132,14 +134,14 @@ namespace SPI_Data_Comp_Tool
             };
             var tasks = new[]
             {
-                Task("analysis.inputs-one", WorkspaceKind.Analysis, () => create("inputs one")),
-                Task("analysis.inputs-two", WorkspaceKind.Analysis, () => create("inputs two")),
+                Task("comparison.inputs-one", WorkspaceKind.Comparison, () => create("inputs one")),
+                Task("comparison.inputs-two", WorkspaceKind.Comparison, () => create("inputs two")),
             };
-            using (var workspace = new WorkspaceForm(WorkspaceKind.Analysis, tasks))
+            using (var workspace = new WorkspaceForm(WorkspaceKind.Comparison, tasks))
             {
                 workspace.ShowInTaskbar = false;
                 workspace.Show();
-                var first = (TestPage)workspace.OpenTask("analysis.inputs-one");
+                var first = (TestPage)workspace.OpenTask("comparison.inputs-one");
                 var firstPanel = first.Controls.OfType<ConnectionPanel>().Single();
                 var firstLog = first.Controls.OfType<RichTextBox>().Single();
                 Application.DoEvents();
@@ -152,7 +154,7 @@ namespace SPI_Data_Comp_Tool
                     firstMessages.Contains("4 inputs need fixing. Nothing was started."),
                     "The hosted page did not expose its Source marks and validation log.");
 
-                var second = (TestPage)workspace.OpenTask("analysis.inputs-two");
+                var second = (TestPage)workspace.OpenTask("comparison.inputs-two");
                 var secondPanel = second.Controls.OfType<ConnectionPanel>().Single();
                 var secondLog = second.Controls.OfType<RichTextBox>().Single();
                 Application.DoEvents();
@@ -167,7 +169,7 @@ namespace SPI_Data_Comp_Tool
                     InputCheck.ReasonAt(firstPanel.Source.DataSource) == firstReason && firstLog.Text == firstMessages,
                     "Clearing another page erased the hidden first page's marks or changed its log.");
 
-                workspace.OpenTask("analysis.inputs-one");
+                workspace.OpenTask("comparison.inputs-one");
                 InputCheck.Clear(firstPanel.Source.DataSource);
                 Require(InputCheck.ReasonAt(firstPanel.Source.DataSource) == string.Empty,
                     "Clearing through a child did not find the provider created through its page.");
@@ -287,6 +289,35 @@ namespace SPI_Data_Comp_Tool
             return exitCode;
         }
 
+        private static void CheckRetiredWorkflowsAbsent()
+        {
+            string[] retiredRoutes = {
+                "analysis.gaps", "analysis.notes", "analysis.changes", "analysis.legacy",
+                "analysis.relationships", "analysis.extraction", "premerge.integrity",
+                "premerge.duplicates", "premerge.configuration"
+            };
+            foreach (string route in retiredRoutes)
+            {
+                bool rejected = false;
+                try { WorkspaceCatalog.Find(route); }
+                catch (ArgumentException) { rejected = true; }
+                Require(rejected, "A retired workflow remains addressable: " + route);
+            }
+            string[] retiredTypes = {
+                "SPI_Analysis", "SPI_Analysis_View", "OracleAndSQLConnection",
+                "SPI_Spec_Note_Creation_Utility", "ExcelFileReadCustomControl",
+                "SPIDeltaChangeTrackerOptimised", "SPIDeltaChangeLegacyID", "SPI_FK_Extraction",
+                "Table_Extraction_After_Delta_Form", "PreMergingTool_Form", "Pre_Merging_Duplicacy_Form"
+            };
+            Assembly assembly = typeof(MainForm).Assembly;
+            foreach (string name in retiredTypes)
+                Require(assembly.GetType("SPI_Data_Comp_Tool." + name, false) == null,
+                    "A retired implementation is still compiled into the application: " + name);
+            Require(Enum.GetNames(typeof(WorkspaceKind)).OrderBy(name => name).SequenceEqual(
+                    new[] { "Comparison", "DataReports", "Scripts", "Settings" }),
+                "The application exposes a retired or unexpected workspace category.");
+        }
+
         private static void CheckCatalogAndRealPages()
         {
             var expected = new Dictionary<WorkspaceKind, Dictionary<string, Type>>
@@ -298,23 +329,6 @@ namespace SPI_Data_Comp_Tool
                         { "comparison.excel-audit", typeof(ExcelSheetAuditForm) },
                         { "comparison.identity", typeof(WorkbookIdentityForm) },
                         { "comparison.batch", typeof(Compare_Multiples_List_Tables_Forms) },
-                    }
-                },
-                { WorkspaceKind.Analysis, new Dictionary<string, Type>
-                    {
-                        { "analysis.gaps", typeof(SPI_Analysis) },
-                        { "analysis.notes", typeof(SPI_Spec_Note_Creation_Utility) },
-                        { "analysis.changes", typeof(SPIDeltaChangeTrackerOptimised) },
-                        { "analysis.legacy", typeof(SPIDeltaChangeLegacyID) },
-                        { "analysis.relationships", typeof(SPI_FK_Extraction) },
-                        { "analysis.extraction", typeof(Table_Extraction_After_Delta_Form) },
-                    }
-                },
-                { WorkspaceKind.PreMerge, new Dictionary<string, Type>
-                    {
-                        { "premerge.integrity", typeof(PreMergingTool_Form) },
-                        { "premerge.duplicates", typeof(Pre_Merging_Duplicacy_Form) },
-                        { "premerge.configuration", typeof(Pre_Merging_Duplicacy_Form) },
                     }
                 },
                 { WorkspaceKind.Scripts, new Dictionary<string, Type>
@@ -337,7 +351,7 @@ namespace SPI_Data_Comp_Tool
                     }
                 },
             };
-            Require(WorkspaceCatalog.Tasks.Count() == 21, "A task route was lost or duplicated during consolidation.");
+            Require(WorkspaceCatalog.Tasks.Count() == 12, "A supported task route was lost or duplicated.");
             foreach (var group in expected)
             {
                 Require(WorkspaceCatalog.TasksFor(group.Key).Count() == group.Value.Count,
@@ -365,14 +379,6 @@ namespace SPI_Data_Comp_Tool
                         Require(workspace.LoadedPages.Count == ++loaded,
                             "Opening a task eagerly created or replaced another page.");
                     }
-                    if (group.Key == WorkspaceKind.PreMerge)
-                    {
-                        workspace.OpenTask("premerge.duplicates");
-                        var check = workspace.ActivePage;
-                        workspace.OpenTask("premerge.configuration");
-                        Require(!ReferenceEquals(check, workspace.ActivePage),
-                            "Duplicacy check and configuration incorrectly share mutable form state.");
-                    }
                     workspace.Close();
                     Require(workspace.IsDisposed, "An idle workspace failed to close.");
                 }
@@ -388,8 +394,8 @@ namespace SPI_Data_Comp_Tool
                 Task("comparison.alpha", WorkspaceKind.Comparison, () => { alphaCreated++; return new TestPage("alpha"); }),
                 Task("comparison.beta", WorkspaceKind.Comparison, () => new TestPage("beta")),
                 Task("settings.single", WorkspaceKind.Settings, () => new TestPage("settings"), false),
-                Task("premerge.check", WorkspaceKind.PreMerge, () => new TestPage("check")),
-                Task("premerge.configuration", WorkspaceKind.PreMerge,
+                Task("scripts.check", WorkspaceKind.Scripts, () => new TestPage("check")),
+                Task("scripts.configuration", WorkspaceKind.Scripts,
                     () => { configurationCreated++; return new TestPage("configuration"); }, false),
             };
             var navigator = new WorkspaceNavigator(tasks);
@@ -424,13 +430,13 @@ namespace SPI_Data_Comp_Tool
                 var single = navigator.Open(owner, "settings.single");
                 Require(ReferenceEquals(single, navigator.Open(owner, "settings.single", true)),
                     "A singleton task accepted an unintended parallel session.");
-                var configuration = navigator.Open(owner, "premerge.configuration");
-                var parallelCheck = navigator.Open(owner, "premerge.check", true);
+                var configuration = navigator.Open(owner, "scripts.configuration");
+                var parallelCheck = navigator.Open(owner, "scripts.check", true);
                 var parallelHost = navigator.LoadedWorkspaces.Single(window => window.LoadedPages.Contains(parallelCheck));
-                var configurationButton = parallelHost.Controls.Find("task_premerge_configuration", true).OfType<Button>().Single();
+                var configurationButton = parallelHost.Controls.Find("task_scripts_configuration", true).OfType<Button>().Single();
                 configurationButton.PerformClick();
                 Require(configurationCreated == 1 && parallelHost.LoadedPages.Count == 1 &&
-                    ReferenceEquals(configuration, navigator.Open(owner, "premerge.configuration")),
+                    ReferenceEquals(configuration, navigator.Open(owner, "scripts.configuration")),
                     "A singleton task was duplicated by navigation inside a parallel workspace.");
 
                 first.Close();
@@ -603,18 +609,18 @@ namespace SPI_Data_Comp_Tool
             BusyTestPage busy = null;
             var tasks = new[]
             {
-                Task("analysis.busy", WorkspaceKind.Analysis, () => busy = new BusyTestPage(release)),
-                Task("analysis.other", WorkspaceKind.Analysis, () => new TestPage("other")),
+                Task("comparison.busy", WorkspaceKind.Comparison, () => busy = new BusyTestPage(release)),
+                Task("comparison.other", WorkspaceKind.Comparison, () => new TestPage("other")),
             };
-            using (var workspace = new WorkspaceForm(WorkspaceKind.Analysis, tasks))
+            using (var workspace = new WorkspaceForm(WorkspaceKind.Comparison, tasks))
             {
                 try
                 {
                     workspace.ShowInTaskbar = false;
                     workspace.Show();
-                    workspace.OpenTask("analysis.busy");
+                    workspace.OpenTask("comparison.busy");
                     busy.StartOperation();
-                    workspace.OpenTask("analysis.other");
+                    workspace.OpenTask("comparison.other");
                     Require(busy.IsBusy && UpdateInstaller.HasBusyWorker(workspace),
                         "A hidden page's worker was not found through the workspace.");
                     Require(!workspace.TryPrepareWorkspaceClose(CloseReason.UserClosing) &&

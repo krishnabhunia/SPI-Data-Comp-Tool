@@ -10,7 +10,6 @@ namespace SPI_Data_Comp_Tool
     {
         Database,
         Sheet,
-        Delta,
         Export,
     }
 
@@ -41,9 +40,6 @@ namespace SPI_Data_Comp_Tool
                             g.DrawLine(pen, 4f, 9f, 20f, 9f);
                             g.DrawLine(pen, 4f, 15f, 20f, 15f);
                             g.DrawLine(pen, 10f, 3f, 10f, 21f);
-                            break;
-                        case Glyph.Delta:
-                            g.DrawPolygon(pen, new[] { new PointF(12f, 4f), new PointF(21f, 20f), new PointF(3f, 20f) });
                             break;
                         default:
                             g.DrawLine(pen, 12f, 15f, 12f, 4f);

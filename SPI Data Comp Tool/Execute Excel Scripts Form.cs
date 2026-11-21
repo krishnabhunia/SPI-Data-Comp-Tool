@@ -154,7 +154,7 @@ namespace SPI_Data_Comp_Tool
                     if (!FormValidation.Check(this, () => FormValidation.ReadableFile(openFileDialogData.strFileNameWithPath,
                         btn_ExecuteScript, "Script workbook", ".xlsx", ".xlsm"), ReportValidation)) return;
                     DataSet candidate = ReadExcel.LoadExcelFromDataReader(openFileDialogData.strFileNameWithPath);
-                    if (!FormValidation.Check(this, () => ExcelFileReadCustomControl.ValidateWorkbook(candidate, btn_ExecuteScript), ReportValidation))
+                    if (!FormValidation.Check(this, () => FormValidation.ValidateWorkbook(candidate, btn_ExecuteScript), ReportValidation))
                     { candidate?.Dispose(); return; }
                     lbl_ExcelFile.Text = $"Read File : {openFileDialogData.SimpleFileName}";
                     lbl_ExcelFile.Visible = true;

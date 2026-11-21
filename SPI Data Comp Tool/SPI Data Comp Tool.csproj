@@ -193,30 +193,6 @@
       <DependentUpon>DB Comparison.cs</DependentUpon>
     </Compile>
     <Compile Include="Logs.cs" />
-    <Compile Include="OracleAndSQLConnection.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="OracleAndSQLConnection.Designer.cs">
-      <DependentUpon>OracleAndSQLConnection.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SPI FK Extraction.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SPI FK Extraction.Designer.cs">
-      <DependentUpon>SPI FK Extraction.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SPIDeltaChangeTrackerOptimised.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SPIDeltaChangeTrackerOptimised.Designer.cs">
-      <DependentUpon>SPIDeltaChangeTrackerOptimised.cs</DependentUpon>
-    </Compile>
-    <Compile Include="ExcelFileReadCustomControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="ExcelFileReadCustomControl.Designer.cs">
-      <DependentUpon>ExcelFileReadCustomControl.cs</DependentUpon>
-    </Compile>
     <Compile Include="Excel_Excel_Comparison.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -240,18 +216,6 @@
     </Compile>
     <Compile Include="MergeLogsExport.Designer.cs">
       <DependentUpon>MergeLogsExport.cs</DependentUpon>
-    </Compile>
-    <Compile Include="PreMergingTool_Form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PreMergingTool_Form.Designer.cs">
-      <DependentUpon>PreMergingTool_Form.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Pre_Merging_Duplicacy_Form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Pre_Merging_Duplicacy_Form.Designer.cs">
-      <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
     </Compile>
     <Compile Include="AppVersion.cs" />
     <Compile Include="InputCheck.cs" />
@@ -323,9 +287,6 @@
     <Compile Include="..\tests\ExcelFormValidationChecks.cs">
       <Link>Tests\ExcelFormValidationChecks.cs</Link>
     </Compile>
-    <Compile Include="..\tests\AnalysisValidationChecks.cs">
-      <Link>Tests\AnalysisValidationChecks.cs</Link>
-    </Compile>
     <Compile Include="..\tests\UpdateFeedChecks.cs">
       <Link>Tests\UpdateFeedChecks.cs</Link>
     </Compile>
@@ -363,41 +324,11 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="SPIDeltaChangeLegacyID.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SPIDeltaChangeLegacyID.Designer.cs">
-      <DependentUpon>SPIDeltaChangeLegacyID.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SPI_Analysis.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SPI_Analysis.Designer.cs">
-      <DependentUpon>SPI_Analysis.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SPI_Analysis_View.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="SPI_Analysis_View.Designer.cs">
-      <DependentUpon>SPI_Analysis_View.cs</DependentUpon>
-    </Compile>
-    <Compile Include="SPI_Spec_Note_Creation_Utility.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SPI_Spec_Note_Creation_Utility.Designer.cs">
-      <DependentUpon>SPI_Spec_Note_Creation_Utility.cs</DependentUpon>
-    </Compile>
     <Compile Include="SQL_DB_To_Excel.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="SQL_DB_To_Excel.Designer.cs">
       <DependentUpon>SQL_DB_To_Excel.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Table Extraction After Delta.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Table Extraction After Delta.Designer.cs">
-      <DependentUpon>Table Extraction After Delta.cs</DependentUpon>
     </Compile>
     <Compile Include="UserProfileForm.cs">
       <SubType>Form</SubType>
@@ -429,18 +360,6 @@
     <EmbeddedResource Include="DB Comparison.resx">
       <DependentUpon>DB Comparison.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="OracleAndSQLConnection.resx">
-      <DependentUpon>OracleAndSQLConnection.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SPI FK Extraction.resx">
-      <DependentUpon>SPI FK Extraction.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SPIDeltaChangeTrackerOptimised.resx">
-      <DependentUpon>SPIDeltaChangeTrackerOptimised.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ExcelFileReadCustomControl.resx">
-      <DependentUpon>ExcelFileReadCustomControl.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Excel_Excel_Comparison.resx">
       <DependentUpon>Excel_Excel_Comparison.cs</DependentUpon>
     </EmbeddedResource>
@@ -452,12 +371,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="MergeLogsExport.resx">
       <DependentUpon>MergeLogsExport.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="PreMergingTool_Form.resx">
-      <DependentUpon>PreMergingTool_Form.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Pre_Merging_Duplicacy_Form.resx">
-      <DependentUpon>Pre_Merging_Duplicacy_Form.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -472,23 +385,8 @@
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="SPIDeltaChangeLegacyID.resx">
-      <DependentUpon>SPIDeltaChangeLegacyID.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SPI_Analysis.resx">
-      <DependentUpon>SPI_Analysis.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SPI_Analysis_View.resx">
-      <DependentUpon>SPI_Analysis_View.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SPI_Spec_Note_Creation_Utility.resx">
-      <DependentUpon>SPI_Spec_Note_Creation_Utility.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="SQL_DB_To_Excel.resx">
       <DependentUpon>SQL_DB_To_Excel.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Table Extraction After Delta.resx">
-      <DependentUpon>Table Extraction After Delta.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UserProfileForm.resx">
       <DependentUpon>UserProfileForm.cs</DependentUpon>
@@ -507,7 +405,6 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
-    <None Include="Properties\DataSources\ExcelFileReadCustomControl.datasource" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

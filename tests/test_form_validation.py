@@ -20,7 +20,7 @@ class FormValidationContracts(unittest.TestCase):
             forms.update(re.findall(r"(?<!abstract )\bclass\s+(\w+)\s*:\s*(?:Form|WorkspacePageForm)\b",
                                     path.read_text(encoding="utf-8-sig")))
         documented = set(re.findall(r"^\| `(\w+)` \|", (ROOT / "docs/VALIDATION.md").read_text(), re.MULTILINE))
-        self.assertEqual(len(forms), 24)  # 21 retained implementations, workspace host, Excel Sheet Audit and Workbook identity check
+        self.assertEqual(len(forms), 16)  # 13 workflow pages, main window, About and workspace host
         self.assertNotIn("WorkspacePageForm", forms)  # abstract lifecycle bridge, not an extra window
         self.assertTrue(forms <= documented, forms - documented)
 
@@ -28,7 +28,7 @@ class FormValidationContracts(unittest.TestCase):
         project = source("SPI Data Comp Tool.csproj")
         runner = (ROOT / "tests/UiWorkflowChecks.cs").read_text()
         for suite in ("CoreValidationChecks", "ConnectionValidationChecks", "DatabaseFormValidationChecks",
-                      "ExcelFormValidationChecks", "AnalysisValidationChecks"):
+                      "ExcelFormValidationChecks"):
             self.assertIn(suite + ".cs", project)
             self.assertIn(suite + ".Run(passed);", runner)
         self.assertLess(runner.index("UpdateFeedChecks.Run"), runner.index("CoreValidationChecks.Run"))
@@ -85,13 +85,6 @@ class FormValidationContracts(unittest.TestCase):
         self.assertIn("OracleConnectionStringBuilder", text)
         self.assertNotIn("password.Trim()", text)
         self.assertEqual(source("Common_Data.cs").count("ConnectionStrings.Build("), 2)
-
-    def test_analysis_gates_and_dynamic_export_preserve_valid_results(self):
-        text = source("SPI_Analysis_View.cs")
-        for required in ("if (!ValidateExport()) return;", "if (!ValidateArrangement()) return;", "arrangedPairs.Add",
-                         "decimal.Truncate(number)", "double.IsNaN(floating)", "FormValidation.WriteAtomically",
-                         "dt_source_arranged_all.Columns.Count + dt_target_arranged_all.Columns.Count + 1"):
-            self.assertIn(required, text)
 
     def test_progress_calculation_handles_zero_and_overflow(self):
         text = source("Common_Data.cs")

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
+using OfficeOpenXml;
 
 namespace SPI_Data_Comp_Tool
 {
@@ -18,6 +19,7 @@ namespace SPI_Data_Comp_Tool
             CheckScriptGeneration(passed);
             CheckExecutionInputs(passed);
             CheckUtilities(passed);
+            CheckWorkbookReader(passed);
         }
 
         private static void Require(bool valid, string message)
@@ -269,35 +271,17 @@ namespace SPI_Data_Comp_Tool
 
         private static void CheckUtilities(Action<string> passed)
         {
-            using (var control = new ExcelFileReadCustomControl())
             using (var customised = new CustomisedExcel())
             using (var data = new DataSet())
             {
-                Rejected(() => ExcelFileReadCustomControl.ValidateWorkbook(data, control));
+                Rejected(() => FormValidation.ValidateWorkbook(data, customised));
                 Rejected(customised.ValidateExportInput);
                 data.Tables.Add(Example("Input"));
-                ExcelFileReadCustomControl.ValidateWorkbook(data, control);
+                FormValidation.ValidateWorkbook(data, customised);
                 Set(customised, "dsCustomisedExcel", data);
                 Rejected(customised.ValidateExportInput);
                 Find<CheckedListBox>(customised, "checkedListBox1").Items.Add("Value", true);
                 customised.ValidateExportInput();
-            }
-            using (var input = new DataTable())
-            {
-                input.Columns.Add("CMPNT_ID");
-                input.Columns.Add("NAME");
-                input.Columns.Add("TYPE");
-                input.Columns.Add("Remark");
-                input.Rows.Add("1", "Name", "Type", DBNull.Value);
-                using (var notes = SPI_Spec_Note_Creation_Utility.BuildNotes(input, null))
-                    Require(notes.Rows[0]["NOTE"].ToString() == "" && (int)notes.Rows[0]["LengthNote"] == 0,
-                        "All-empty note data did not generate an empty note safely.");
-                input.Rows[0]["Remark"] = "Text";
-                using (var notes = SPI_Spec_Note_Creation_Utility.BuildNotes(input, null))
-                    Require(notes.Rows[0]["NOTE"].ToString() == "Remark:Text", "Note values changed unexpectedly.");
-                Require(input.Columns.Count == 4, "Note generation mutated its source table.");
-                input.Columns[0].ColumnName = "Wrong";
-                Rejected(() => SPI_Spec_Note_Creation_Utility.BuildNotes(input, null));
             }
             string log = "Table Name: Synthetic;\nTarget Sql: select 1\nSource Sql: select 1\nFirst Id: example\n"
                 + "Total Source Rows: 2; Inserted Rows: 1; Updated Rows: 0; Rejected Rows: 1;\n";
@@ -307,7 +291,77 @@ namespace SPI_Data_Comp_Tool
             Rejected(() => MergeLogsExport.ParseMergeLog("garbage", null));
             Rejected(() => MergeLogsExport.ParseMergeLog(log.Replace("Inserted Rows: 1", "Inserted Rows: -1"), null));
             Rejected(() => MergeLogsExport.ParseMergeLog(log.Replace("Total Source Rows: 2", "Total Source Rows: 999999999999"), null));
-            passed("Workbook/custom export, specification notes and merge-log import validate required data, selected columns, schemas, empty notes and numeric log records without mutating inputs.");
+            passed("Workbook/custom export and merge-log import validate required data, selected columns and numeric log records without mutating inputs.");
+        }
+
+        private static void CheckWorkbookReader(Action<string> passed)
+        {
+            string folder = Path.Combine(Path.GetTempPath(), "spi-workbook-validation-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(folder);
+            string path = Path.Combine(folder, "input.xlsx");
+            try
+            {
+                using (var package = new ExcelPackage())
+                {
+                    var sheet = package.Workbook.Worksheets.Add("Input");
+                    sheet.Cells[1, 1].Value = "Column1";
+                    sheet.Cells[1, 2].Value = " Id ";
+                    sheet.Cells[1, 4].Value = "Label";
+                    sheet.Cells[2, 1].Value = "001";
+                    sheet.Cells[2, 2].Value = 1;
+                    sheet.Cells[2, 4].Value = "नाम";
+                    package.SaveAs(new FileInfo(path));
+                }
+                byte[] original = File.ReadAllBytes(path);
+                using (DataSet loaded = ReadExcel.LoadExcelFromDataReader(path))
+                {
+                    Require(loaded.Tables.Count == 1 && loaded.Tables[0].Columns.Count == 3 && loaded.Tables[0].Rows.Count == 1,
+                        "The workbook reader did not ignore only the unused spacer column.");
+                    Require(loaded.Tables[0].Columns.Contains("COLUMN1") && loaded.Tables[0].Columns.Contains("ID"),
+                        "Header normalization collided with the reader's generated column names.");
+                    Require((string)loaded.Tables[0].Rows[0]["COLUMN1"] == "001" && (string)loaded.Tables[0].Rows[0]["LABEL"] == "नाम",
+                        "Workbook validation changed leading zeros or Unicode data.");
+                }
+                Require(original.SequenceEqual(File.ReadAllBytes(path)), "Reading a workbook modified the input.");
+                using (DataSet preserved = new Common_Data().LoadExcelFromDataReader(path))
+                {
+                    Require(preserved.Tables[0].Columns[0].ColumnName == "Column1"
+                        && preserved.Tables[0].Columns[1].ColumnName == " Id ",
+                        "The case-preserving reader changed existing header spelling or whitespace.");
+                }
+                using (var package = new ExcelPackage(new FileInfo(path)))
+                {
+                    package.Workbook.Worksheets[0].Cells[1, 4].Value = " id ";
+                    package.Save();
+                }
+                ExpectInvalidWorkbook(path);
+                using (var package = new ExcelPackage(new FileInfo(path)))
+                {
+                    package.Workbook.Worksheets[0].Cells[1, 4].Value = null;
+                    package.Save();
+                }
+                ExpectInvalidWorkbook(path); // Nonempty data under a blank header must not disappear.
+                File.WriteAllBytes(path, new byte[0]);
+                ExpectInvalidWorkbook(path);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+                Directory.Delete(folder);
+            }
+            passed("Real synthetic workbook imports preserve Unicode/leading zeros, handle generated-name collisions and blank spacers, reject duplicate/missing headers and empty files, and never modify inputs.");
+        }
+
+        private static void ExpectInvalidWorkbook(string path)
+        {
+            bool rejected = false;
+            try { using (ReadExcel.LoadExcelFromDataReader(path)) { } }
+            catch (InvalidDataException) { rejected = true; }
+            Require(rejected, "An invalid synthetic workbook was accepted.");
+            rejected = false;
+            try { using (new Common_Data().LoadExcelFromDataReader(path)) { } }
+            catch (InvalidDataException) { rejected = true; }
+            Require(rejected, "The case-preserving reader accepted an invalid synthetic workbook.");
         }
     }
 }

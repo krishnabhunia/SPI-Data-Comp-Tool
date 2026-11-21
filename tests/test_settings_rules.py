@@ -20,7 +20,7 @@ class SettingsRules(unittest.TestCase):
 
     def test_all_existing_import_entry_points_are_retained(self):
         for name in ("DB Comparison.cs", "Excel_Excel_Comparison.cs", "Compare_Multiples_Forms.cs",
-                     "SPIDeltaChangeTrackerOptimised.cs", "ViewForMultiReference.cs"):
+                     "ViewForMultiReference.cs"):
             with self.subTest(form=name):
                 self.assertIn("common_Data.OpenRuleForm();", source(name))
         src = source("Common_Data.cs")

@@ -1,4 +1,4 @@
-"""Main window: six task workspaces; menu routes are created from WorkspaceCatalog."""
+"""Main window: four task workspaces; menu routes are created from WorkspaceCatalog."""
 from layout_gen import C, T, G
 
 DESIGNER = "MainForm.Designer.cs"
@@ -26,12 +26,10 @@ DROP = [
 
 TEXTS = {
     "lbl_Title": "SPI Data Comparison Tool",
-    "lbl_Subtitle": "Oracle, SQL Server and Excel — six connected workspaces",
+    "lbl_Subtitle": "Oracle, SQL Server and Excel — four connected workspaces",
     "lbl_Start": "Choose a workspace",
     "lbl_LoginStatus": "Ready",
     "btn_WorkspaceComparison": "Comparison",
-    "btn_WorkspaceAnalysis": "Analysis & Migration",
-    "btn_WorkspacePreMerge": "Pre-merge Checks",
     "btn_WorkspaceScripts": "SQL Scripts",
     "btn_WorkspaceReports": "Data & Reports",
     "btn_WorkspaceSettings": "Settings",
@@ -44,8 +42,6 @@ PROPS = {
     "ico_Header": {"Glyph": "SPI_Data_Comp_Tool.Glyph.Database", "AccessibleRole": "System.Windows.Forms.AccessibleRole.Graphic"},
     "lbl_Start": {"ForeColor": MUTED, "Font": 'new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold)'},
     "btn_WorkspaceComparison": {"Tone": "0", "Glyph": "SPI_Data_Comp_Tool.Glyph.Database", "Hint": '"Databases, Excel, batch comparisons and advanced mapping"'},
-    "btn_WorkspaceAnalysis": {"Tone": "1", "Glyph": "SPI_Data_Comp_Tool.Glyph.Delta", "Hint": '"Specifications, changes, identifiers and relationships"'},
-    "btn_WorkspacePreMerge": {"Tone": "2", "Glyph": "SPI_Data_Comp_Tool.Glyph.Sheet", "Hint": '"Reference integrity, duplicates and configuration"'},
     "btn_WorkspaceScripts": {"Tone": "3", "Glyph": "SPI_Data_Comp_Tool.Glyph.Sheet", "Hint": '"Generate scripts or explicitly execute a workbook"'},
     "btn_WorkspaceReports": {"Tone": "0", "Glyph": "SPI_Data_Comp_Tool.Glyph.Export", "Hint": '"Database exports, Excel columns and merge logs"'},
     "btn_WorkspaceSettings": {"Tone": "1", "Glyph": "SPI_Data_Comp_Tool.Glyph.Database", "Hint": '"Profiles, rules, colour themes and stable/beta updates"'},
@@ -63,15 +59,13 @@ LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "100%", "auto"], cells=[
         (C("lbl_Title", new="Label", autosize=True, anchor="Left", margin=0), 1, 0),
         (C("lbl_Subtitle", new="Label", autosize=True, anchor="Left", margin=(2, 0, 0, 0)), 1, 1),
     ]), dock="Fill", autosize=True, margin=0, padding=(20, 14, 20, 14)), 0, 0),
-    (T("tlp_Workspaces", cols=["50%", "50%"], rows=["auto", "33.33%", "33.33%", "33.34%", "auto"], padding=14, cells=[
+    (T("tlp_Workspaces", cols=["50%", "50%"], rows=["auto", "50%", "50%", "auto"], padding=14, cells=[
         (C("lbl_Start", new="Label", autosize=True, anchor="Left", margin=(6, 0, 0, 6)), 0, 0, 2),
         (workspace_button("btn_WorkspaceComparison"), 0, 1),
-        (workspace_button("btn_WorkspaceAnalysis"), 1, 1),
-        (workspace_button("btn_WorkspacePreMerge"), 0, 2),
-        (workspace_button("btn_WorkspaceScripts"), 1, 2),
-        (workspace_button("btn_WorkspaceReports"), 0, 3),
-        (workspace_button("btn_WorkspaceSettings"), 1, 3),
-        (C("label3", autosize=True, dock="Fill", margin=(6, 10, 6, 0)), 0, 4, 2),
+        (workspace_button("btn_WorkspaceScripts"), 1, 1),
+        (workspace_button("btn_WorkspaceReports"), 0, 2),
+        (workspace_button("btn_WorkspaceSettings"), 1, 2),
+        (C("label3", autosize=True, dock="Fill", margin=(6, 10, 6, 0)), 0, 3, 2),
     ]), 0, 1),
     (G("pnl_Status", new="Panel", child=T("tlp_Status", cols=["100%", "auto"], rows=["auto"], autosize=True, cells=[
         (C("lbl_LoginStatus", autosize=True, anchor="Left", margin=0), 0, 0),

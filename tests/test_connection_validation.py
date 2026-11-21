@@ -50,17 +50,6 @@ class ConnectionValidation(unittest.TestCase):
         self.assertNotIn("Convert.ToInt32(tb_SRC_DefaultPort.Text)", profile)
         self.assertNotIn("Convert.ToInt32(tb_TRG_DefaultPort.Text)", profile)
 
-    def test_analysis_checks_before_connecting_and_uses_literal_connection_values(self):
-        analysis = source("OracleAndSQLConnection.cs")
-        load = analysis.split("public void Load_DB_Oracle_SQL()", 1)[1].split("private void btn_Connect", 1)[0]
-        self.assertLess(load.index("FormValidation.Check"), load.index("connect_Oracle_DB()"))
-        self.assertIn("TextChanged += InvalidateLoadedData", analysis)
-        self.assertIn("ValidateTableName", analysis)
-        self.assertEqual(analysis.count("ConnectionStrings.Build("), 3)
-        self.assertNotIn('"Password = "', analysis)
-        self.assertIn("DataSet previous = ds;", load)
-        self.assertNotIn("ds.Tables.Clear()", load)
-
     def test_rule_rows_are_validated_before_persistence(self):
         settings = source("User_Settings.cs")
         for expected in ("identifiers.Add(identifier)", 'ruleType != "1" && ruleType != "2" && ruleType != "3"',
@@ -70,7 +59,7 @@ class ConnectionValidation(unittest.TestCase):
     def test_windows_regressions_cover_invalid_and_compatible_input(self):
         checks = (ROOT / "tests" / "ConnectionValidationChecks.cs").read_text()
         for expected in ("CheckConnectionInputs(passed)", "CheckProfileDocuments(passed)", "CheckRuleRows(passed)",
-                         "CheckAnalysisInputs(passed)", "65536", "SourceOnly", "RefreshAvailableProfiles", "ReferenceEquals(snapshot"):
+                         "CheckSharedConnectionCopies(passed)", "65536", "SourceOnly", "RefreshAvailableProfiles", "custom-invalid-draft"):
             self.assertIn(expected, checks)
 
 
