@@ -15,13 +15,13 @@ SQL Scripts is also retired. Its Generate scripts and Execute scripts & queries 
 | Settings | Preferences, rules & updates; Connection profiles | 2 |
 | **Total** | **10 distinct directly launched implementation types** | **10** |
 
-The main window's three themed `TileButton` home tiles open each workspace's first task. Its menu exposes every current task. The left navigation within a workspace switches between tasks without clearing inputs or results. No workflow page is created until it is selected, and choosing a workspace does not automatically run database queries, comparisons or report exports.
+The main window's left rail lists every current task once, grouped by workspace, and is the only way to open a task: there is no menu bar, no home tiles and no Help menu. Tasks open inside the main window; switching between them does not clear inputs or results. No workflow page is created until it is selected, and choosing a workspace does not automatically run database queries, comparisons or report exports.
 
 ## Preserved colour themes
 
 The workspace shell keeps the existing **Ocean** (default), **Berry**, **Forest** and **Midnight** (dark) themes. No palette is removed or replaced. Choose **Settings > Preferences, rules & updates > General > Colour theme**; the General tab remains part of the existing preferences page, not another theme-specific form.
 
-Theme changes apply live to the three home tiles, workspace navigation/header/status areas and loaded workflow pages, including pages that are not currently visible. Newly opened tasks inherit the current palette. Recolouring does not recreate a page, clear its inputs/results or start an operation. Source/Target tints and semantic error/success colours remain distinct. Open Settings pickers stay synchronized, including the deliberate modal Import Rules dialog.
+Theme changes apply live to the rail, header/status areas and loaded workflow pages, including pages that are not currently visible. Newly opened tasks inherit the current palette. Recolouring does not recreate a page, clear its inputs/results or start an operation. Source/Target tints and semantic error/success colours remain distinct. Open Settings pickers stay synchronized, including the deliberate modal Import Rules dialog.
 
 The choice remains in `%AppData%\SPI Data Comparison Tool\theme.txt`, outside the installation folder. Ocean is the safe fallback for a missing, unreadable, unknown or oversized saved value. A failed save is reported while keeping the selected theme for the current session. Native Windows controls retain the rendering limitations described in [PROJECT_GUIDE.md](PROJECT_GUIDE.md).
 
@@ -44,16 +44,16 @@ The choice remains in `%AppData%\SPI Data Comparison Tool\theme.txt`, outside th
 
 | Action | Behaviour |
 |---|---|
-| Reopen a task from the main menu | Activate its default workspace/page, restoring a minimized workspace. |
+| Reopen a task from the rail | Activate its existing page in the main window. |
 | Switch to another task | Keep the previous page's state and any running job; only its visibility changes. |
-| Ctrl when opening a supported task / Open separate session | Create a separate workspace session with independent task inputs; do not overwrite the default session. |
+| New session (supported tasks only) | Open the task in a separate window — one task, no rail — with independent inputs; the main window's page is unchanged. There is no Ctrl+click shortcut. |
 | Preferences or profiles | No explicit parallel session; each Settings task retains its own state. |
 | Open Advanced mapping from Database/Excel comparison | Create a transient page in that Comparison workspace using fresh copied input tables. Each mapping keeps its own state; closing it removes its transient navigation entry. Standalone callers still work. |
 | Close task | Run the page's normal close guards. A busy page can refuse closure; other tasks remain open. |
 | Close a workspace / exit from the main window | Prepare the loaded pages first. If a page refuses, show that page and keep existing work. Successful closure then completes page cleanup. |
 | Enter / Escape | Respect the selected page's normal dialog-key behaviour. No workspace-wide Enter action starts a job or an update. |
 
-Settings contains two task pages, not one combined profile/preferences editor. **Help > Check for updates** activates **Settings > Preferences, rules & updates > Updates**. Comparison **Import Rules** keeps a deliberate short-lived modal `User_Settings(true)` dialog: its synchronous caller receives the imported dataset only after closing it. That modal path is not the persistent Settings workspace and does not introduce another rules engine.
+Settings contains two task pages, not one combined profile/preferences editor. Updates and About are tabs of **Settings > Preferences, rules & updates**; the main window has no Help menu. Comparison **Import Rules** keeps a deliberate short-lived modal `User_Settings(true)` dialog: its synchronous caller receives the imported dataset only after closing it. That modal path is not the persistent Settings workspace and does not introduce another rules engine.
 
 Installation is blocked by data workspaces, profile tasks and busy workers, including hidden pages. See [UPDATING.md](UPDATING.md) before installing or downgrading.
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -17,6 +17,9 @@ namespace SPI_Data_Comp_Tool
         private readonly Label description;
         private readonly Label status;
         private readonly Label empty;
+        private readonly Label heading;
+        private readonly string shellTitle;
+        private readonly TableLayoutPanel layout;
         private readonly Button closeTask;
         private readonly Button separateTask;
         private string activeKey;
@@ -28,11 +31,25 @@ namespace SPI_Data_Comp_Tool
         public WorkspaceForm() : this(WorkspaceKind.Comparison, WorkspaceCatalog.TasksFor(WorkspaceKind.Comparison)) { }
 
         internal WorkspaceForm(WorkspaceKind workspace, IEnumerable<WorkspaceTask> definitions)
+            : this(workspace, definitions.Where(item => item.Workspace == workspace).ToList(), WorkspaceCatalog.Title(workspace), false)
+        {
+        }
+
+        /// <summary>
+        /// The application shell's rail: every task of every group, each listed once under its group name.
+        /// </summary>
+        internal WorkspaceForm(IEnumerable<WorkspaceTask> definitions, string title)
+            : this(definitions.First().Workspace, definitions.ToList(), title, true)
+        {
+        }
+
+        private WorkspaceForm(WorkspaceKind workspace, List<WorkspaceTask> orderedTasks, string title, bool grouped)
         {
             Workspace = workspace;
-            var orderedTasks = definitions.Where(item => item.Workspace == workspace).ToList();
+            Grouped = grouped;
+            shellTitle = title;
             tasks = orderedTasks.ToDictionary(item => item.Key);
-            Text = WorkspaceCatalog.Title(workspace) + " — SPI";
+            Text = title + " — SPI";
             Name = "Workspace_" + workspace;
             Font = new Font("Segoe UI", 9F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -40,10 +57,10 @@ namespace SPI_Data_Comp_Tool
             MinimumSize = new Size(1000, 640);
             StartPosition = FormStartPosition.CenterParent;
 
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, Padding = new Padding(12) };
+            var root = layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, Padding = new Padding(12) };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 235F));
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 100F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, grouped ? 70F : 100F));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
 
@@ -51,7 +68,7 @@ namespace SPI_Data_Comp_Tool
                 Padding = new Padding(12, 0, 12, 0) };
             header.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
             header.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            header.Controls.Add(new Label { Text = WorkspaceCatalog.Title(workspace), Font = new Font(Font, FontStyle.Bold),
+            header.Controls.Add(heading = new Label { Name = "workspaceHeading", Text = title, Font = new Font(Font, FontStyle.Bold),
                 Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false, AccessibleName = "Workspace name" }, 0, 0);
             description = new Label { Name = "workspaceDescription", Dock = DockStyle.Fill, AutoEllipsis = true,
                 Text = "Choose a task. Inputs and results stay with their own page when you switch." };
@@ -75,7 +92,8 @@ namespace SPI_Data_Comp_Tool
             status = new Label { Name = "workspaceStatus", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft,
                 AutoEllipsis = true, Text = "Ready. Each task keeps independent inputs and results." };
             closeTask = new Button { Name = "workspaceCloseTask", Text = "Close task", AutoSize = true, Enabled = false, Height = 32 };
-            separateTask = new Button { Name = "workspaceSeparateTask", Text = "Open separate session", AutoSize = true, Enabled = false, Height = 32 };
+            // The only way to open a second, independent copy of a task (no Ctrl+click shortcut).
+            separateTask = new Button { Name = "workspaceSeparateTask", Text = "New session", AutoSize = true, Enabled = false, Height = 32 };
             closeTask.Click += (sender, args) => CloseActivePage();
             separateTask.Click += (sender, args) =>
             {
@@ -89,7 +107,22 @@ namespace SPI_Data_Comp_Tool
             root.Controls.Add(footer, 0, 2);
             root.SetColumnSpan(footer, 2);
             Controls.Add(root);
-            foreach (var task in orderedTasks) AddTaskButton(task);
+            WorkspaceKind? group = null;
+            foreach (var task in orderedTasks)
+            {
+                if (grouped && group != task.Workspace)
+                {
+                    group = task.Workspace;
+                    navigation.Controls.Add(new Label
+                    {
+                        Name = "group_" + task.Workspace, Text = WorkspaceCatalog.Title(task.Workspace), AutoSize = false, Width = 205,
+                        Height = 26, Margin = new Padding(2, navigation.Controls.Count == 0 ? 0 : 10, 0, 2),
+                        TextAlign = ContentAlignment.BottomLeft, Font = new Font(Font, FontStyle.Bold), UseMnemonic = false,
+                        AccessibleRole = AccessibleRole.StaticText,
+                    });
+                }
+                AddTaskButton(task);
+            }
             UiTheme.MarkHeader(header);
             UiTheme.MarkStatus(footer);
             UiTheme.Apply(this);
@@ -100,6 +133,20 @@ namespace SPI_Data_Comp_Tool
         }
 
         internal WorkspaceKind Workspace { get; }
+
+        /// <summary>True for the application shell, whose rail lists every group.</summary>
+        internal bool Grouped { get; }
+
+        /// <summary>A "New session" window holds one task and has no rail of its own.</summary>
+        internal bool ShowNavigation
+        {
+            get { return navigation.Visible; }
+            set
+            {
+                navigation.Visible = value;
+                layout.ColumnStyles[0].Width = value ? 235F : 0F;
+            }
+        }
         internal Func<WorkspaceTask, bool, WorkspacePageForm> NavigateTask { get; set; }
         internal IReadOnlyList<WorkspacePageForm> LoadedPages => pages.Values.Where(page => !page.IsDisposed).ToList().AsReadOnly();
         internal WorkspacePageForm ActivePage { get; private set; }
@@ -112,6 +159,7 @@ namespace SPI_Data_Comp_Tool
 
         private void FitToWorkingArea()
         {
+            if (!TopLevel) return;   // the shell is sized by the main window
             // Preserve the grouped windows' screen bounds after initial scaling and on task changes.
             Rectangle area = Screen.FromControl(this).WorkingArea;
             MinimumSize = new Size(Math.Min(MinimumSize.Width, area.Width), Math.Min(MinimumSize.Height, area.Height));
@@ -123,14 +171,13 @@ namespace SPI_Data_Comp_Tool
 
         private void AddTaskButton(WorkspaceTask task)
         {
-            var button = new Button { Name = "task_" + task.Key.Replace('.', '_'), Text = task.Title, Width = 205, Height = 52,
-                Margin = new Padding(0, 0, 0, 7), TextAlign = ContentAlignment.MiddleLeft,
+            var button = new Button { Name = "task_" + task.Key.Replace('.', '_'), Text = task.Title, Width = 205, Height = Grouped ? 38 : 52,
+                Margin = new Padding(0, 0, 0, Grouped ? 3 : 7), TextAlign = ContentAlignment.MiddleLeft,
                 AccessibleName = task.Title, AccessibleDescription = task.Description, UseMnemonic = false,
                 FlatStyle = FlatStyle.Flat, UseVisualStyleBackColor = false, BackColor = UiTheme.CardBack,
                 ForeColor = UiTheme.TextColor, Cursor = Cursors.Hand };
             button.FlatAppearance.BorderColor = UiTheme.Border;
-            button.Click += (sender, args) => NavigateSafely(task,
-                task.AllowSeparateSession && (ModifierKeys & Keys.Control) == Keys.Control);
+            button.Click += (sender, args) => NavigateSafely(task, false);
             taskButtons.Add(task.Key, button);
             navigation.Controls.Add(button);
             // The theme's ControlAdded handler styles new transient buttons before selection colours.
@@ -231,6 +278,7 @@ namespace SPI_Data_Comp_Tool
             page.Select();
             WorkspaceTask task = tasks[key];
             description.Text = task.Description;
+            if (Grouped) heading.Text = task.Title;
             closeTask.Enabled = true;
             separateTask.Enabled = task.AllowSeparateSession && NavigateTask != null;
             ApplyNavigationTheme();
@@ -287,6 +335,7 @@ namespace SPI_Data_Comp_Tool
                     closeTask.Enabled = false;
                     separateTask.Enabled = false;
                     description.Text = "Choose a task to continue.";
+                    heading.Text = shellTitle;
                     status.Text = "No open tasks. Select a task on the left.";
                     ApplyNavigationTheme();
                 }

@@ -249,12 +249,12 @@ namespace SPI_Data_Comp_Tool
                     var rulePicker = rules.Controls.Find("cb_Theme", true).OfType<ComboBox>().Single();
                     Pump();
 
-                    foreach (string name in new[] { "Comparison", "Reports", "Settings" })
+                    foreach (WorkspaceTask task in WorkspaceCatalog.Tasks)
                     {
-                        var tile = main.Controls.Find("btn_Workspace" + name, true).OfType<TileButton>().Single();
-                        Require(tile.Text.IndexOfAny(new[] { '\r', '\n' }) < 0 && !string.IsNullOrWhiteSpace(tile.Hint)
-                            && tile.AccessibleDescription == tile.Hint && !tile.UseMnemonic,
-                            name + ": the home tile needs a single title, separate hint and readable accessible description.");
+                        // The rail entry replaced the home tiles: one line of text, the description for screen readers.
+                        var entry = main.Controls.Find("task_" + task.Key.Replace('.', '_'), true).OfType<Button>().Single();
+                        Require(entry.Text.IndexOfAny(new[] { '\r', '\n' }) < 0 && entry.AccessibleDescription == task.Description
+                            && !entry.UseMnemonic, task.Key + ": the rail entry needs a single title and a readable accessible description.");
                     }
 
                     foreach (UiPalette p in new[] { UiTheme.Midnight, UiTheme.Berry, UiTheme.Forest, UiTheme.Ocean })

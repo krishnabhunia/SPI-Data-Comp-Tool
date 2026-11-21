@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -13,10 +13,22 @@ namespace SPI_Data_Comp_Tool
         private readonly Dictionary<string, WorkspaceTask> tasks;
         private readonly List<WorkspaceTask> orderedTasks;
 
+        private readonly Func<string, WorkspacePageForm> openInMain;
+
         internal WorkspaceNavigator(IEnumerable<WorkspaceTask> definitions = null)
+            : this(definitions, null)
+        {
+        }
+
+        /// <summary>
+        /// With <paramref name="openInMain"/> (the main window's shell), every ordinary open goes to that one window
+        /// and only "New session" creates a window: one task, no rail of its own, so no second way to reach a task.
+        /// </summary>
+        internal WorkspaceNavigator(IEnumerable<WorkspaceTask> definitions, Func<string, WorkspacePageForm> openInMain)
         {
             orderedTasks = (definitions ?? WorkspaceCatalog.Tasks).ToList();
             tasks = orderedTasks.ToDictionary(item => item.Key);
+            this.openInMain = openInMain;
         }
 
         internal IReadOnlyList<WorkspaceForm> LoadedWorkspaces => workspaces.Where(window => !window.IsDisposed).ToList().AsReadOnly();
@@ -26,13 +38,23 @@ namespace SPI_Data_Comp_Tool
             WorkspaceTask task;
             if (!tasks.TryGetValue(routeKey, out task)) throw new ArgumentException("Unknown workspace task: " + routeKey, nameof(routeKey));
             bool separate = separateSession && task.AllowSeparateSession;
+            if (openInMain != null && !separate) return openInMain(routeKey);
             WorkspaceForm window = null;
             bool created = separate || !defaults.TryGetValue(task.Workspace, out window) || window.IsDisposed;
             if (created)
             {
-                window = new WorkspaceForm(task.Workspace, orderedTasks.Where(item => item.Workspace == task.Workspace));
+                if (openInMain != null)
+                {
+                    window = new WorkspaceForm(task.Workspace, new[] { task });
+                    window.ShowNavigation = false;
+                    window.NavigateTask = (item, newSession) => newSession ? Open(owner, item.Key, true) : openInMain(item.Key);
+                }
+                else
+                {
+                    window = new WorkspaceForm(task.Workspace, orderedTasks.Where(item => item.Workspace == task.Workspace));
+                    window.NavigateTask = (item, newSession) => Open(owner, item.Key, newSession);
+                }
                 WorkspaceForm captured = window;
-                window.NavigateTask = (item, newSession) => Open(owner, item.Key, newSession);
                 workspaces.Add(window);
                 if (!separate) defaults[task.Workspace] = window;
                 window.FormClosed += (sender, args) =>

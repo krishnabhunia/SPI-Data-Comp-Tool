@@ -289,6 +289,15 @@ namespace SPI_Data_Comp_Tool
             return exitCode;
         }
 
+        private static IEnumerable<Control> AllControls(Control root)
+        {
+            foreach (Control child in root.Controls)
+            {
+                yield return child;
+                foreach (Control nested in AllControls(child)) yield return nested;
+            }
+        }
+
         private static void CheckRetiredWorkflowsAbsent()
         {
             string[] retiredRoutes = {
@@ -319,18 +328,16 @@ namespace SPI_Data_Comp_Tool
                 "The application exposes a retired or unexpected workspace category.");
             using (var main = new MainForm())
             {
-                string[] retiredGroups = { "Analysis", "PreMerge", "Scripts" };
-                var menu = main.Controls.Find("menuStrip1", true).OfType<MenuStrip>().Single();
-                foreach (string name in retiredGroups)
-                {
-                    Require(!main.Controls.Find("btn_Workspace" + name, true).Any(),
-                        "A retired workspace still has a home tile: " + name);
-                    Require(!menu.Items.Find("workspaceMenu_" + name, true).Any(),
-                        "A retired workspace still has a menu: " + name);
-                }
+                // One rail is the only way in: no menu bar, no home tiles, and no rail entry for a retired route.
+                Require(!main.Controls.Find("menuStrip1", true).Any() && !AllControls(main).OfType<MenuStrip>().Any(),
+                    "The main window still has a menu bar that repeats the rail.");
+                Require(!AllControls(main).OfType<TileButton>().Any(), "The main window still has home tiles that repeat the rail.");
                 foreach (string route in retiredRoutes)
-                    Require(!menu.Items.Find("taskMenu_" + route.Replace('.', '_'), true).Any(),
-                        "A retired workflow still has a menu entry: " + route);
+                    Require(!main.Controls.Find("task_" + route.Replace('.', '_'), true).Any(),
+                        "A retired workflow still has a rail entry: " + route);
+                foreach (WorkspaceTask task in WorkspaceCatalog.Tasks)
+                    Require(main.Controls.Find("task_" + task.Key.Replace('.', '_'), true).Length == 1,
+                        "The rail does not list this task exactly once: " + task.Key);
             }
         }
 

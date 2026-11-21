@@ -16,15 +16,16 @@ def source(name):
 class UpdaterUiContracts(unittest.TestCase):
     def test_updates_reuses_settings_instead_of_another_form(self):
         designer = source("User_Settings.Designer.cs")
-        for tab in ("tab_General", "tab_Rules", "tab_Updates"):
+        for tab in ("tab_General", "tab_Rules", "tab_Updates", "tab_About"):
             self.assertIn(f"this.tabs_Settings.Controls.Add(this.{tab});", designer)
         self.assertIn("internal sealed class UpdatesControl : UserControl", source("UpdatesControl.cs"))
         main = source("MainForm.cs")
-        entry = main.split("internal User_Settings ShowUpdatesSettings()", 1)[1].split("private void checkForUpdates", 1)[0]
-        self.assertIn('workspaces.Open(this, "settings.preferences")', entry)
+        entry = main.split("internal User_Settings ShowUpdatesSettings()", 1)[1].split("protected override void OnFormClosing", 1)[0]
+        self.assertIn('shell.OpenTask("settings.preferences")', entry)
         self.assertIn("settings.ShowUpdates();", entry)
         self.assertNotIn("new Form", entry)
-        self.assertIn('Name = "checkForUpdatesToolStripMenuItem"', main)
+        # Settings > Updates is the only entry: no Help menu item opens it a second way.
+        self.assertNotIn("checkForUpdatesToolStripMenuItem", main)
         self.assertIn('"settings.preferences"', source("WorkspaceCatalog.cs"))
 
     def test_opening_and_navigation_never_check_download_or_install(self):

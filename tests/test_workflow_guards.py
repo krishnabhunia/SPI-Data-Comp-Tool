@@ -84,7 +84,9 @@ class WorkflowGuards(unittest.TestCase):
         self.assertIn("FormClosed +=", navigation)
         self.assertIn("bool separateSession = false", navigation)
         self.assertIn("separateSession && task.AllowSeparateSession", navigation)
-        self.assertIn("ModifierKeys & Keys.Control", main)
+        # "New session" is the only way to a parallel session: no hidden Ctrl+click route.
+        self.assertNotIn("ModifierKeys", main)
+        self.assertIn("separate ? workspaces.Open(this, task.Key, true) : shell.OpenTask(task.Key)", main)
         self.assertIn('() => new User_Settings(), false)', catalog)
         self.assertIn('() => new UserProfileForm(), false)', catalog)
         self.assertIn("TryPrepareCloseAll(e.CloseReason)", main)

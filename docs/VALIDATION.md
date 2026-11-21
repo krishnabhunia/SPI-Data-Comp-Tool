@@ -23,7 +23,7 @@ This inventory covers the 14 concrete production Form classes and their shared c
 
 | Form class | Validation or retained safeguards |
 |---|---|
-| `MainForm` | Three themed workspace home tiles, catalog-driven task navigation, redacted errors and all-workspace exit preflight. No data-entry fields. |
+| `MainForm` | One left rail (every catalog task, listed once), tasks hosted in the main window, redacted errors and all-workspace exit preflight. No menu bar, tiles or data-entry fields. |
 | `WorkspaceForm` | Lazy task creation, retained page state, selected-task keyboard behaviour, failed-factory preservation, close preparation and transient mapping cleanup. A blocked close selects the refusing task without disposing the other pages. |
 | `AboutBox1` | Read-only information; existing open/close smoke coverage. No artificial validation fields. |
 | `UserProfileForm` | Required unique profile names, applicable connection fields, shared bounded JSON loading, usable imports despite failed path persistence, actual-file provenance, stale-editor/file checks and password-free atomic exports. |

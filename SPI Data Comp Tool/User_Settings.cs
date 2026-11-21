@@ -22,6 +22,7 @@ namespace SPI_Data_Comp_Tool
         public User_Settings(bool showRules)
         {
             InitializeComponent();
+            AddAboutTab();
             btn_ImportRules.Click += btn_ImportRules_Click;
             btn_ClearLogs.Click += (sender, e) => rtb_Log.Clear();
             btn_Close.Click += (sender, e) => Close();
@@ -60,6 +61,17 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
+        /// <summary>About is a Settings tab: the main window has no Help menu or separate About window.</summary>
+        private void AddAboutTab()
+        {
+            new AboutBox1().EmbedIn(pnl_About);
+        }
+
+        public void ShowAbout()
+        {
+            tabs_Settings.SelectedTab = tab_About;
+        }
+
         public void ShowRules()
         {
             tabs_Settings.SelectedTab = tab_Rules;
@@ -74,7 +86,7 @@ namespace SPI_Data_Comp_Tool
 
         private void UpdateAcceptButton()
         {
-            bool showingUpdates = tabs_Settings.SelectedTab == tab_Updates;
+            bool showingUpdates = tabs_Settings.SelectedTab == tab_Updates || tabs_Settings.SelectedTab == tab_About;
             // Updates own their status and progress; do not waste their workspace on the rules log.
             gb_Logs.Visible = !showingUpdates;
             tlp_Root.RowStyles[1].SizeType = SizeType.Absolute;

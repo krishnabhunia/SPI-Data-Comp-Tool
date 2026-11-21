@@ -56,7 +56,9 @@ class Themes(unittest.TestCase):
         self.assertIn("this.tlp_General.Controls.Add(this.gb_Theme, 0, 1);", designer)
         self.assertIn("this.tlp_Theme.Controls.Add(this.cb_Theme, 1, 0);", designer)
         self.assertIn("this.cb_Theme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;", designer)
-        self.assertEqual(len(re.findall(r"this\.tabs_Settings\.Controls\.Add\(", designer)), 3)
+        # General, Comparison rules, Updates and About; the theme lives in General, not in a tab of its own.
+        self.assertEqual(len(re.findall(r"this\.tabs_Settings\.Controls\.Add\(", designer)), 4)
+        self.assertNotIn("tab_Theme", designer)
         settings = code("User_Settings.cs")
         self.assertIn("cb_Theme.Items.AddRange(UiTheme.All);", settings)
         self.assertIn("cb_Theme.SelectedItem = UiTheme.Current;", settings)
@@ -65,23 +67,19 @@ class Themes(unittest.TestCase):
         self.assertIn("string notSaved = UiTheme.Use(palette);", handler)
         self.assertIn("could not be saved", handler)   # the user is told when the choice will not survive a restart
 
-    def test_main_window_tiles_open_the_same_tasks_as_the_menus(self) -> None:
+    def test_main_window_has_one_rail_and_no_tiles_or_menus(self) -> None:
         main = code("MainForm.cs")
-        catalog = code("WorkspaceCatalog.cs")
-        for tile, route in (("Comparison", "comparison.database"),
-                            ("Reports", "reports.database"), ("Settings", "settings.preferences")):
-            with self.subTest(tile=tile):
-                self.assertIn(f'btn_Workspace{tile}.Click += (sender, e) => OpenTask("{route}");', main)
-                self.assertIn(f'new WorkspaceTask("{route}"', catalog)
-        # Every menu entry and the three home tiles use the same route dispatcher and catalog.
-        self.assertIn("foreach (var task in WorkspaceCatalog.TasksFor(kind))", main)
-        self.assertIn("Tag = task.Key", main)
-        self.assertIn("item.Click += (sender, e) => OpenTask(route.Key);", main)
-        self.assertIn("workspaces.Open(this, route,", main)
+        designer = code("MainForm.Designer.cs")
+        # The shell's rail (every catalog task, listed once) is the only way to open a task.
+        self.assertIn('new WorkspaceForm(WorkspaceCatalog.Tasks, "SPI Data Comparison")', main)
+        self.assertIn("new WorkspaceNavigator(WorkspaceCatalog.Tasks, OpenInShell)", main)
+        for removed in ("btn_Workspace", "menuStrip", "ToolStripMenuItem", "AboutBox1", "ModifierKeys"):
+            with self.subTest(removed=removed):
+                self.assertNotIn(removed, main + designer)
         self.assertIn("UiTheme.MarkHeader(pnl_Header);", main)
         self.assertIn("UiTheme.MarkStatus(pnl_Status);", main)
-        # File > Exit closes the application root through the same busy-page preflight as its X.
-        self.assertIn('file.DropDownItems.Add("E&xit", null, (sender, e) => Close());', main)
+        # The window's X is the only exit and runs the busy-page preflight of every open task.
+        self.assertIn("shell.TryPrepareWorkspaceClose(e.CloseReason)", main)
         self.assertIn("protected override void OnFormClosing(FormClosingEventArgs e)", main)
         self.assertIn("workspaces.TryPrepareCloseAll(e.CloseReason)", main)
 

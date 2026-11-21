@@ -39,6 +39,21 @@ namespace SPI_Data_Comp_Tool
 
         }
 
+        private bool embedded;
+
+        /// <summary>Shows this page inside <paramref name="parent"/> (the Settings › About tab) instead of as a dialog.</summary>
+        internal void EmbedIn(Control parent)
+        {
+            embedded = true;
+            TopLevel = false;
+            FormBorderStyle = FormBorderStyle.None;
+            ShowInTaskbar = false;
+            Dock = DockStyle.Fill;
+            okButton.Visible = false;   // nothing to close: the tab stays part of Settings
+            parent.Controls.Add(this);
+            Show();
+        }
+
         #region Assembly Attribute Accessors
 
         public string AssemblyTitle
@@ -184,7 +199,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                this.Close();
+                if (!embedded) this.Close();
             }
             catch (Exception ex)
             {
@@ -200,7 +215,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (e.KeyCode == Keys.Escape)
+                if (e.KeyCode == Keys.Escape && !embedded)
                 {
                     this.Close();
                 }
