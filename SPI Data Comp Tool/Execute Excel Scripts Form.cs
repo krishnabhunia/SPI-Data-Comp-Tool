@@ -85,9 +85,6 @@ namespace SPI_Data_Comp_Tool
                     if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
                     steps?.Later();
                 };
-                BuildSteps();
-                common_Data.ReadUserProfile(cb_UserProfileList);
-                common_Data.ShowProfileLoad(rtb_Log);   // loaded, or why not and what to do
 
                 point_gbTextFile = gb_ExcelFile.Location;
 
@@ -102,7 +99,11 @@ namespace SPI_Data_Comp_Tool
                 dsPNIDReports = new DataSet();
                 boolPNIDFolderPath = false;
 
-                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                ProfileLoadResult profileLoad = connection.LoadSavedProfiles();
+                if (!string.IsNullOrEmpty(profileLoad.Message))
+                    Common_Data.DisplayMessage(rtb_Log, profileLoad.Message, profileLoad.HasError);
+
+                if (!SelfTest.IsRunning && (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached))
                 {
                     linkLabel1.Text = @"D:\Krishna\Output\Export Select Query to Excel";
                     llb_PNID_Report_Path.Text = @"D:\Krishna\Output";
@@ -127,6 +128,7 @@ namespace SPI_Data_Comp_Tool
             {
                 Common_Data.DisplayError(rtb_Log, ex);
             }
+            BuildSteps();
         }
 
         /// <summary>A saved profile was put into the Connection panel.</summary>

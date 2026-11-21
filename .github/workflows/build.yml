@@ -140,6 +140,15 @@ jobs:
           if (-not $p.WaitForExit(60000)) { & tools/ci_window_report.ps1 -ProcessId $p.Id; Stop-Process -Id $p.Id -Force; throw 'UI workflow checks timed out' }
           if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
           if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'UI workflow checks failed' }
+      - name: Saved-profile startup and navigation checks
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
+          $log = Join-Path $env:RUNNER_TEMP 'startup-checks.txt'
+          $p = Start-Process $exe -ArgumentList '--check-startup', "`"$log`"" -PassThru
+          if (-not $p.WaitForExit(120000)) { & tools/ci_window_report.ps1 -ProcessId $p.Id; Stop-Process -Id $p.Id -Force; throw 'Saved-profile startup checks timed out' }
+          if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
+          if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'Saved-profile startup checks failed' }
       - name: Excel Sheet Audit regression checks
         shell: pwsh
         run: |
@@ -291,6 +300,11 @@ jobs:
           if (-not $ui.WaitForExit(60000)) { & tools/ci_window_report.ps1 -ProcessId $ui.Id; Stop-Process -Id $ui.Id -Force; throw '64-bit UI workflow checks timed out' }
           if (Test-Path $uiLog) { Get-Content $uiLog | ForEach-Object { Write-Host $_ } }
           if ($ui.ExitCode -ne 0 -or -not (Test-Path $uiLog)) { throw '64-bit UI workflow checks failed' }
+          $startupLog = Join-Path $env:RUNNER_TEMP 'x64-startup-checks.txt'
+          $startup = Start-Process $exe -ArgumentList '--check-startup', "`"$startupLog`"" -PassThru
+          if (-not $startup.WaitForExit(120000)) { & tools/ci_window_report.ps1 -ProcessId $startup.Id; Stop-Process -Id $startup.Id -Force; throw '64-bit saved-profile startup checks timed out' }
+          if (Test-Path $startupLog) { Get-Content $startupLog | ForEach-Object { Write-Host $_ } }
+          if ($startup.ExitCode -ne 0 -or -not (Test-Path $startupLog)) { throw '64-bit saved-profile startup checks failed' }
           Get-ChildItem $dir -Recurse -File | ForEach-Object { Write-Host "installed: $($_.FullName.Substring($dir.Length))" }
           Start-Process (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
           for ($i = 0; $i -lt 30 -and (Test-Path $exe); $i++) { Start-Sleep 1 }

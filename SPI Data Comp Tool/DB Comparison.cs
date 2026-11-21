@@ -205,7 +205,6 @@ namespace SPI_Data_Comp_Tool
             cb_IgnoreCase.CheckedChanged += (sender, args) => { comparisonPrepared = compareFinished = false; steps?.Later(); };
             cb_IncludeRule.CheckedChanged += (sender, args) => { comparisonPrepared = compareFinished = false; steps?.Later(); };
             UiTheme.Apply(this, btnGenerateOutput);
-            BuildSteps();
 
             try
             {
@@ -239,17 +238,12 @@ namespace SPI_Data_Comp_Tool
                 OpenFileDialogData_OBJ = new OpenFileDialogData();
                 int_Count_Comparison = 0;
 
-                common_Data.ReadUserProfile(cb_UserProfileList);
-                //cb_UserProfileList = Common_Data.GetUserProfile(cb_UserProfileList);
+                ProfileLoadResult profileLoad = connection.LoadSavedProfiles();
+                if (!string.IsNullOrEmpty(profileLoad.Message))
+                    DisplayMessage(lblStatus, profileLoad.Message, profileLoad.HasError ? Color.DarkRed : UiTheme.TextColor);
 
-                if (common_Data.LastProfileLoad != null && !string.IsNullOrEmpty(common_Data.LastProfileLoad.Message))
-                {
-                    // loaded, or why not and what to do: the window opens either way
-                    if (common_Data.LastProfileLoad.IsError) DisplayMessage(lblStatus, common_Data.LastProfileLoad.Message, Color.Red);
-                    else DisplayMessage(lblStatus, common_Data.LastProfileLoad.Message);
-                }
-
-                if (GlobalDebug.boolIsGlobalDebug || (cb_UserProfileList.Items.Count > 0 && Debugger.IsAttached))
+                if (!SelfTest.IsRunning && cb_UserProfileList.Items.Count > 0 &&
+                    (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached))
                 {
                     cb_UserProfileList.SelectedIndex = 0;
                 }
@@ -260,7 +254,7 @@ namespace SPI_Data_Comp_Tool
             {
                 DisplayError(ex);
             }
-
+            BuildSteps();
         }
 
         /// <summary>A saved profile was put into the Connection panel: take over its table names.</summary>

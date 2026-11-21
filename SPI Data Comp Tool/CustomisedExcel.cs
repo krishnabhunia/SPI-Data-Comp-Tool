@@ -23,12 +23,12 @@ namespace SPI_Data_Comp_Tool
         {
             InitializeComponent();
             str_CustomisedExcelName = string.Empty;
-            BuildSteps();
 
 
             dsCustomisedExcel = new DataSet();
             common_Data = new Common_Data();
             openFileDialogData = new OpenFileDialogData();
+            BuildSteps();
         }
 
         private StepFlow steps;   // controlled steps, see BuildSteps

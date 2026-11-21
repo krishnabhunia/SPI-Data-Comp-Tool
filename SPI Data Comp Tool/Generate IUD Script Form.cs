@@ -50,7 +50,6 @@ namespace SPI_Data_Comp_Tool
         public Generate_IUD_Script_Form()
         {
             InitializeComponent();
-            BuildSteps();
 
             try
             {
@@ -65,7 +64,7 @@ namespace SPI_Data_Comp_Tool
             {
                 Common_Data.DisplayError(rtb_Log, ex);
             }
-
+            BuildSteps();
         }
 
 

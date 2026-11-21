@@ -18,6 +18,7 @@ namespace SPI_Data_Comp_Tool
                 // Run offline network/file checks before WinForms installs a UI synchronization context.
                 UpdateFeedChecks.Run(passed);
                 UpdateApplyChecks.Run(passed);
+                LoggingChecks.Run(passed);
                 ProfileWorkflowChecks.Run(passed);
                 ImportSchemaChecks.Run(passed);
                 CredentialRedactionChecks.Run(passed);

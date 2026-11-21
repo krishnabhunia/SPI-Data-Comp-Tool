@@ -263,6 +263,12 @@
     <Compile Include="..\tests\UiWorkflowChecks.cs">
       <Link>Tests\UiWorkflowChecks.cs</Link>
     </Compile>
+    <Compile Include="..\tests\LoggingChecks.cs">
+      <Link>Tests\LoggingChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\StartupChecks.cs">
+      <Link>Tests\StartupChecks.cs</Link>
+    </Compile>
     <Compile Include="..\tests\WorkspaceUiChecks.cs">
       <Link>Tests\WorkspaceUiChecks.cs</Link>
     </Compile>

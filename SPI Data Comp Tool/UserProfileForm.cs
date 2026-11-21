@@ -83,17 +83,13 @@ namespace SPI_Data_Comp_Tool
                 saveFileDialogFile = new SaveFileDialogFile();
                 common_Data = new Common_Data();
 
-                // The same reading as every other window (it never throws): a missing, moved or partly
-                // invalid file says what to do instead of leaving this page without profiles.
-                ProfileLoadResult loaded = ProfileStore.LoadSaved();
-                if (loaded.Profiles != null)
+                ProfileLoadResult load = connection.LoadSavedProfiles();
+                if (load.Loaded)
                 {
-                    Profile.ProfileList = loaded.Profiles;
-                    l_lb_ReadProfile.Text = Path.GetFileName(loaded.Path);
+                    connection.RefreshProfiles();
+                    l_lb_ReadProfile.Text = Path.GetFileName(load.FilePath);
                 }
-                connection.RefreshProfiles();
-                if (!string.IsNullOrEmpty(loaded.Message))
-                    Common_Data.DisplayMessage(rtb_Log, loaded.Message, loaded.IsError);
+                if (!string.IsNullOrEmpty(load.Message)) DisplayMessage(load.Message, load.HasError);
                 GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword);
             }
             catch (Exception ex)
@@ -661,12 +657,7 @@ namespace SPI_Data_Comp_Tool
 
         private static List<DBC> ReadProfileFile(string path)
         {
-            if (!string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("Select a JSON profile file.");
-            var file = new FileInfo(path);
-            if (file.Length == 0 || file.Length > 16 * 1024 * 1024)
-                throw new InvalidDataException("Select a nonempty profile JSON file no larger than 16 MiB.");
-            return ProfileStore.ParseJson(File.ReadAllText(path));
+            return ProfileStore.ReadFile(path);
         }
 
         private void btn_Connect_Reference_ID_Click(object sender, EventArgs e)

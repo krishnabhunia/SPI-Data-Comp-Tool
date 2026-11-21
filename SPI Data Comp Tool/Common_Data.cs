@@ -13,7 +13,6 @@ using OfficeOpenXml;
 using System.Diagnostics;
 using Oracle.ManagedDataAccess.Client;
 using System.Data.SqlClient;
-using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Drawing;
 
@@ -29,7 +28,6 @@ namespace SPI_Data_Comp_Tool
         private string strConnection;
         private string str_RuleFileName;
 
-        private List<DBC> items;
         private static bool boolColorAlternate;
         // A doubled quote is part of a quoted connection-string value, not its terminator.
         // Consume unterminated quoted values to the end, and unquoted values through line breaks
@@ -524,61 +522,44 @@ namespace SPI_Data_Comp_Tool
                 throw ex;
             }
         }
-        /// <summary>What the last <see cref="ReadUserProfile"/> found; the window shows its message.</summary>
-        internal ProfileLoadResult LastProfileLoad { get; private set; }
-
-        /// <summary>
-        /// Loads the saved profiles file and lists the profile names. Never throws: a missing, moved or
-        /// damaged file leaves the profiles already loaded in this session and puts the reason in
-        /// <see cref="LastProfileLoad"/>, so the window still opens.
-        /// </summary>
         public ComboBox ReadUserProfile(ComboBox cb_UserProfileList)
         {
-            ProfileLoadResult loaded = ProfileStore.LoadSaved();
-            LastProfileLoad = loaded;
-            if (loaded.Profiles != null) Profile.ProfileList = loaded.Profiles;
-            items = Profile.ProfileList;
-            cb_UserProfileList.DataSource = null;
-            cb_UserProfileList.Items.Clear();
-            if (Profile.ProfileList != null)
-            {
-                foreach (var i in Profile.ProfileList)
-                {
-                    if (i != null && !string.IsNullOrWhiteSpace(i.profileName))
-                    {
-                        cb_UserProfileList.Items.Add(i.profileName);
-                    }
-                }
-            }
-            return cb_UserProfileList;
-        }
-
-        /// <summary>Shows the result of <see cref="ReadUserProfile"/> in a window's log.</summary>
-        internal void ShowProfileLoad(RichTextBox rtb_Log)
-        {
-            if (LastProfileLoad != null && !string.IsNullOrEmpty(LastProfileLoad.Message))
-                DisplayMessage(rtb_Log, LastProfileLoad.Message, LastProfileLoad.IsError);
+            ProfileStore.LoadSavedProfiles();
+            return GetUserProfile(cb_UserProfileList);
         }
         public static ComboBox GetUserProfile(ComboBox cb_UserProfileList)
         {
-            try
+            if (cb_UserProfileList == null || cb_UserProfileList.IsDisposed) return cb_UserProfileList;
+            for (Control parent = cb_UserProfileList.Parent; parent != null; parent = parent.Parent)
             {
-                if (Profile.ProfileList != null)
+                var panel = parent as ConnectionPanel;
+                if (panel != null && panel.ProfileList == cb_UserProfileList)
                 {
-                    cb_UserProfileList.DataSource = null;
-                    cb_UserProfileList.Items.Clear();
-                    foreach (var i in Profile.ProfileList)
-                    {
-                        if (i.profileName != null)
-                        {
-                            cb_UserProfileList.Items.Add(i.profileName.ToString());
-                        }
-                    }
+                    panel.RefreshAvailableProfiles();
+                    return cb_UserProfileList;
                 }
             }
-            catch (Exception ex)
+            string selectedName = cb_UserProfileList.SelectedItem as string;
+            string enteredName = cb_UserProfileList.DropDownStyle == ComboBoxStyle.DropDownList
+                ? null : cb_UserProfileList.Text;
+            cb_UserProfileList.BeginUpdate();
+            try
             {
-                throw ex;
+                cb_UserProfileList.DataSource = null;
+                cb_UserProfileList.Items.Clear();
+                if (Profile.ProfileList != null)
+                {
+                    foreach (DBC profile in Profile.ProfileList)
+                        if (profile != null && !string.IsNullOrWhiteSpace(profile.profileName))
+                            cb_UserProfileList.Items.Add(profile.profileName);
+                }
+                cb_UserProfileList.SelectedItem = selectedName;
+                if (cb_UserProfileList.SelectedIndex < 0 && enteredName != null)
+                    cb_UserProfileList.Text = enteredName;
+            }
+            finally
+            {
+                cb_UserProfileList.EndUpdate();
             }
             return cb_UserProfileList;
         }
@@ -1885,8 +1866,8 @@ namespace SPI_Data_Comp_Tool
             // Developer mode is switched on only by an attached debugger or by an explicit
             // opt-in environment variable. It used to be granted to hard-coded Windows user
             // names and a hard-coded password, which anyone reading this public source could reuse.
-            if (Debugger.IsAttached ||
-                string.Equals(Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG"), "1", StringComparison.Ordinal))
+            if (!SelfTest.IsRunning && (Debugger.IsAttached ||
+                string.Equals(Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG"), "1", StringComparison.Ordinal)))
             {
                 strUserName = Environment.UserName;
                 strPassword = "";
@@ -2078,21 +2059,14 @@ namespace SPI_Data_Comp_Tool
                 {
                     List<DBC> items = Profile.ProfileList;
 
-                    // Early profiles name the platform only in str_DBType: choose Oracle / SQL Server from it.
-                    bool srcOracle, srcSql, trgOracle, trgSql;
-                    ProfileStore.PlatformOf(items[switchIndex].dbSRC, out srcOracle, out srcSql);
-                    ProfileStore.PlatformOf(items[switchIndex].dbTRG, out trgOracle, out trgSql);
-                    this.bool_Rb_SRC_Oracle = srcOracle;
-                    this.bool_Rb_TRG_Oracle = trgOracle;
+                    this.bool_Rb_SRC_Oracle = items[switchIndex].dbSRC.bool_Rb_Oracle;
+                    this.bool_Rb_TRG_Oracle = items[switchIndex].dbTRG.bool_Rb_Oracle;
 
-                    this.bool_Rb_SRC_SQL = srcSql;
-                    this.bool_Rb_TRG_SQL = trgSql;
+                    this.bool_Rb_SRC_SQL = items[switchIndex].dbSRC.bool_Rb_SQL;
+                    this.bool_Rb_TRG_SQL = items[switchIndex].dbTRG.bool_Rb_SQL;
 
-                    // ...and without a saved port such an Oracle connection uses the default port.
-                    this.bool_SRC_Oracle_DefaultPort = items[switchIndex].dbSRC.bool_Oracle_DefaultPort ||
-                        (srcOracle && !items[switchIndex].dbSRC.bool_Rb_Oracle && items[switchIndex].dbSRC.int_Oracle_DefaultPort == 0);
-                    this.bool_TRG_Oracle_DefaultPort = items[switchIndex].dbTRG.bool_Oracle_DefaultPort ||
-                        (trgOracle && !items[switchIndex].dbTRG.bool_Rb_Oracle && items[switchIndex].dbTRG.int_Oracle_DefaultPort == 0);
+                    this.bool_SRC_Oracle_DefaultPort = items[switchIndex].dbSRC.bool_Oracle_DefaultPort;
+                    this.bool_TRG_Oracle_DefaultPort = items[switchIndex].dbTRG.bool_Oracle_DefaultPort;
 
                     this.bool_SRC_SQL_WA = items[switchIndex].dbSRC.bool_SQL_WA;
                     this.bool_TRG_SQL_WA = items[switchIndex].dbTRG.bool_SQL_WA;

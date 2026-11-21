@@ -38,17 +38,28 @@ namespace SPI_Data_Comp_Tool
         private readonly List<Step> steps = new List<Step>();
         private readonly Dictionary<Control, Step> owner = new Dictionary<Control, Step>();
         private readonly Control host;
+        private readonly int ownerThreadId;
+        private readonly object schedulingGate = new object();
         private bool busy;
         [ThreadStatic] private static string lastFailure;   // set by Passes while a step is checked
         private bool refreshing;
-        private bool queued;
+        private object pendingRefresh;
 
         internal StepFlow(Control host, StepStrip strip)
         {
             this.host = host;
+            ownerThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
             Strip = strip;
             if (strip != null) strip.Flow = this;
-            host.HandleCreated += (sender, args) => Refresh();
+            // A constructor can create the handle while it is still initializing fields or
+            // applying a profile. Evaluate the completed state on the next UI event instead.
+            host.HandleCreated += (sender, args) => Later();
+            host.HandleDestroyed += (sender, args) =>
+            {
+                // Invalidate this handle's reservation atomically. A delayed poster/callback
+                // can never clear a different reservation made for the replacement handle.
+                lock (schedulingGate) pendingRefresh = null;
+            };
         }
 
         internal StepStrip Strip { get; }
@@ -154,23 +165,59 @@ namespace SPI_Data_Comp_Tool
         /// <summary>Refreshes once the current event has finished (a checked list changes its item after ItemCheck).</summary>
         internal void Later()
         {
-            if (queued) return;
-            if (!host.IsHandleCreated || host.IsDisposed)
+            // ItemCheck and profile application may notify us before their new values have
+            // been committed. Never evaluate them inline, including before the first Show.
+            // HandleCreated will schedule the deferred work once there is a UI dispatcher.
+            object reservation;
+            lock (schedulingGate)
             {
-                Refresh();
-                return;
+                if (host.IsDisposed || host.Disposing || !host.IsHandleCreated || pendingRefresh != null) return;
+                reservation = new object();
+                pendingRefresh = reservation;
             }
-            queued = true;
-            host.BeginInvoke((MethodInvoker)(() =>
+            try
             {
-                queued = false;
-                if (!host.IsDisposed) Refresh();
-            }));
+                // Do not hold the scheduling lock while calling WinForms. The UI thread may
+                // be destroying/recreating the handle while a worker posts this request.
+                host.BeginInvoke((MethodInvoker)(() =>
+                {
+                    lock (schedulingGate)
+                    {
+                        if (!ReferenceEquals(pendingRefresh, reservation)) return;
+                        pendingRefresh = null;
+                    }
+                    if (!host.IsDisposed && !host.Disposing) Refresh();
+                }));
+            }
+            catch (InvalidOperationException)
+            {
+                // The handle can disappear during BeginInvoke and already be replaced by
+                // the time this catch runs. Release only this request, never the new one.
+                bool invalidated;
+                lock (schedulingGate)
+                {
+                    invalidated = !ReferenceEquals(pendingRefresh, reservation);
+                    if (!invalidated) pendingRefresh = null;
+                }
+                // An unchanged live handle does not explain the posting error. Keep that
+                // unexpected failure visible; callback/Refresh errors are never caught here.
+                if (!invalidated && !host.IsDisposed && !host.Disposing && host.IsHandleCreated) throw;
+            }
         }
 
         internal void Refresh()
         {
-            if (refreshing) return;
+            if (host.IsDisposed || host.Disposing) return;
+            if (System.Threading.Thread.CurrentThread.ManagedThreadId != ownerThreadId)
+            {
+                Later();
+                return;
+            }
+            if (refreshing)
+            {
+                Later();
+                return;
+            }
             refreshing = true;
             try
             {
@@ -199,7 +246,7 @@ namespace SPI_Data_Comp_Tool
             {
                 refreshing = false;
             }
-            if (Strip != null) Strip.Relayout();
+            if (Strip != null && !Strip.IsDisposed && !Strip.Disposing) Strip.Relayout();
         }
 
         /// <summary>The text under the strip: the next thing to do.</summary>
@@ -269,14 +316,14 @@ namespace SPI_Data_Comp_Tool
 
         private void Set(Control c, bool enabled)
         {
-            if (c == null || c.IsDisposed) return;
+            if (c == null || c.IsDisposed || c.Disposing) return;
             if (c.Enabled != enabled) c.Enabled = enabled;
         }
 
         /// <summary>Window code that enables a control of a locked step (or while busy) is undone at once.</summary>
         private void KeepLocked(Control c)
         {
-            if (refreshing || !c.Enabled) return;
+            if (refreshing || host.IsDisposed || host.Disposing || c.IsDisposed || c.Disposing || !c.Enabled) return;
             Step step;
             if (!owner.TryGetValue(c, out step)) return;
             if (Busy || step.State == StepState.Locked)
