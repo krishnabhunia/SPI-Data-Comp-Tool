@@ -70,6 +70,12 @@ class ToolGroups(unittest.TestCase):
         self.assertLess(fill.index("form.TopLevel = false;"), fill.index("tlp_Profiles.Controls.Add(form, 0, 0);"))
         self.assertIn("Math.Min(screen.Width", fill)                                               # never larger than the screen
         self.assertIn("form.Dispose();", fill)
+        # the tab must not stop an update; any other open tool window still does, and background work is still checked
+        installer = code("UpdateInstaller.cs")
+        self.assertIn("if (!(form is MainForm) && !(form is User_Settings) && !IsShownInsideSettings(form))", installer)
+        inside = installer.split("private static bool IsShownInsideSettings", 1)[1].split("internal static bool HasBusyWorker", 1)[0]
+        self.assertIn("if (form.TopLevel) return false;", inside)
+        self.assertIn("if (parent is User_Settings) return true;", inside)
         main = code("MainForm.cs")
         handler = main.split("private void userProfileToolStripMenuItem_Click", 1)[1].split("private void", 1)[0]
         self.assertIn("windows.Open(this, () => new User_Settings()).ShowProfiles();", handler)   # one Settings window

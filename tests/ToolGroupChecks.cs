@@ -163,6 +163,13 @@ namespace SPI_Data_Comp_Tool
                     && settings.Controls.Find("tlp_Profiles", true).Single().Controls.Contains(profiles),
                     "User profiles is not shown inside the Profiles tab.");
                 Require(!log.Visible && settings.AcceptButton == null, "The Profiles tab did not get the whole window.");
+                // the tab is part of Settings, so it must not stop an update; a profiles window of its own still does
+                string reason;
+                Require(UpdateInstaller.CanInstallForms(new Form[] { settings, profiles }, out reason),
+                    "The Profiles tab blocks installing an update: " + reason);
+                using (var separate = new UserProfileForm())
+                    Require(!UpdateInstaller.CanInstallForms(new Form[] { settings, separate }, out reason),
+                        "A separate profiles window no longer blocks installing an update.");
                 Require(settings.Width <= Screen.FromControl(settings).WorkingArea.Width
                     && settings.Height <= Screen.FromControl(settings).WorkingArea.Height, "Settings grew beyond the screen.");
                 tabs.SelectedIndex = 0;

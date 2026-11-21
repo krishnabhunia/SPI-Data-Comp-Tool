@@ -98,7 +98,9 @@ namespace SPI_Data_Comp_Tool
         {
             foreach (Form form in forms)
             {
-                if (!(form is MainForm) && !(form is User_Settings))
+                // The Profiles tab shows the User profiles window inside Settings: it is part of Settings,
+                // with no window of its own to close. Its background work is still checked below.
+                if (!(form is MainForm) && !(form is User_Settings) && !IsShownInsideSettings(form))
                 {
                     reason = "Save your work and close every comparison, script, profile, and analysis window before installing an update.";
                     return false;
@@ -111,6 +113,14 @@ namespace SPI_Data_Comp_Tool
             }
             reason = null;
             return true;
+        }
+
+        private static bool IsShownInsideSettings(Form form)
+        {
+            if (form.TopLevel) return false;
+            for (Control parent = form.Parent; parent != null; parent = parent.Parent)
+                if (parent is User_Settings) return true;
+            return false;
         }
 
         internal static bool HasBusyWorker(object instance)
