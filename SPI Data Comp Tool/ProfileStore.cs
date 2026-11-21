@@ -8,9 +8,197 @@ using Newtonsoft.Json.Linq;
 
 namespace SPI_Data_Comp_Tool
 {
+    /// <summary>What happened when a window loaded the saved profiles file.</summary>
+    internal sealed class ProfileLoadResult
+    {
+        /// <summary>The profiles read from the file; null when nothing could be read.</summary>
+        internal List<DBC> Profiles;
+        internal string Path;
+        /// <summary>One line for the window's log or status: loaded, skipped entries, or what to do.</summary>
+        internal string Message;
+        internal bool IsError;
+    }
+
     /// <summary>Builds candidate profile lists without changing the active list, then saves atomically.</summary>
     internal static class ProfileStore
     {
+        internal const string ChooseAgain = "Choose it in Settings > Connection profiles (Read profile).";
+
+        /// <summary>While the build checks run, the only profile file read (null: none). The user's own file is never read.</summary>
+        internal static string SelfTestProfilePath;
+
+        /// <summary>Build checks only: where the remembered path is kept instead of the user's AppData.</summary>
+        internal static string RememberedPathFileOverride;
+
+        /// <summary>
+        /// The last profiles file chosen on this Windows account, kept beside theme.txt. A new copy of the
+        /// app (a new download folder) starts with empty settings; this lets it find the same file again.
+        /// </summary>
+        internal static string RememberedPathFile
+        {
+            get
+            {
+                if (RememberedPathFileOverride != null) return RememberedPathFileOverride;
+                return SelfTest.IsRunning ? null : System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "SPI Data Comparison Tool", "profile-path.txt");
+            }
+        }
+
+        internal static string ReadRememberedPath()
+        {
+            try
+            {
+                string file = RememberedPathFile;
+                if (file == null || !File.Exists(file) || new FileInfo(file).Length > 32768) return null;
+                string path = File.ReadAllText(file).Trim();
+                return path.Length == 0 || path.IndexOf('\0') >= 0 ? null : path;
+            }
+            catch (Exception)
+            {
+                return null;   // a missing or unreadable reminder is not worth an error
+            }
+        }
+
+        /// <summary>Remembers the chosen profiles file for other copies of the app. Best effort.</summary>
+        internal static void RememberPath(string path)
+        {
+            try
+            {
+                string file = RememberedPathFile;
+                if (file == null || string.IsNullOrWhiteSpace(path)) return;
+                if (string.Equals(ReadRememberedPath(), path, StringComparison.OrdinalIgnoreCase)) return;
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file));
+                File.WriteAllText(file, path, new UTF8Encoding(false));
+            }
+            catch (Exception)
+            {
+                // the profiles still work in this copy; only another copy would not find them
+            }
+        }
+
+        internal static bool IsJsonPath(string path)
+        {
+            return !string.IsNullOrWhiteSpace(path) &&
+                string.Equals(System.IO.Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Reads the saved profiles file for a window. Never throws: a missing, moved or damaged file gives
+        /// a message saying what to do, so the window still opens. A file the strict import rejects is read
+        /// entry by entry and the entries that cannot be used are skipped (and counted in the message).
+        /// </summary>
+        internal static ProfileLoadResult LoadSaved()
+        {
+            string path;
+            try { path = SelfTest.IsRunning ? SelfTestProfilePath : Properties.Settings.Default.ProfilePathUser; }
+            catch (Exception) { path = null; }
+            string missing = null;
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                if (!string.IsNullOrWhiteSpace(path)) missing = path;
+                string remembered = ReadRememberedPath();
+                if (remembered != null && File.Exists(remembered)) path = remembered;
+            }
+            if (string.IsNullOrWhiteSpace(path))
+                return new ProfileLoadResult { Message = "No connection profiles file is chosen yet. " + ChooseAgain };
+            if (!File.Exists(path))
+                return new ProfileLoadResult { Path = path, IsError = true,
+                    Message = "The connection profiles file was not found: " + path + ". It may have been moved or renamed. " + ChooseAgain };
+            try
+            {
+                if (!IsJsonPath(path))
+                    throw new InvalidDataException("The connection profiles file must be a .json file: " + path + ". " + ChooseAgain);
+                var info = new FileInfo(path);
+                if (info.Length == 0 || info.Length > 16 * 1024 * 1024)
+                    throw new InvalidDataException("The connection profiles file is empty or larger than 16 MiB: " + path + ". " + ChooseAgain);
+                string json = File.ReadAllText(path);
+                var result = new ProfileLoadResult { Path = path };
+                try
+                {
+                    result.Profiles = ParseJson(json);
+                    result.Message = "Connection profiles loaded from " + path + " (" + result.Profiles.Count + ").";
+                }
+                catch (InvalidDataException strict)
+                {
+                    int skipped;
+                    result.Profiles = ParseTolerant(json, out skipped);
+                    if (result.Profiles == null)
+                        throw new InvalidDataException("Connection profiles could not be read from " + path + ": " + strict.Message + " " + ChooseAgain);
+                    result.IsError = true;
+                    result.Message = "Connection profiles loaded from " + path + " (" + result.Profiles.Count + "), " + skipped +
+                        " entr" + (skipped == 1 ? "y" : "ies") + " skipped: " + strict.Message + " Saving a profile writes only the usable entries.";
+                }
+                if (missing != null)
+                {
+                    result.Message = "The saved profiles file " + missing + " was not found; using " + path + ". " + result.Message;
+                }
+                if (!string.Equals(path, Properties.Settings.Default.ProfilePathUser, StringComparison.Ordinal) && !SelfTest.IsRunning)
+                {
+                    // This copy found the file through the remembered path: keep it for next time.
+                    try { Properties.Settings.Default.ProfilePathUser = path; Properties.Settings.Default.Save(); }
+                    catch (Exception) { }
+                }
+                RememberPath(path);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return new ProfileLoadResult { Path = path, IsError = true,
+                    Message = ex is InvalidDataException ? ex.Message
+                        : "Connection profiles could not be read from " + path + ": " + ex.Message + " " + ChooseAgain };
+            }
+        }
+
+        /// <summary>
+        /// The older, lenient reading the comparison windows used: keeps every usable entry, skips entries
+        /// without a name, with contradicting choices, or repeating an earlier name. Null when the file is not
+        /// a JSON list of profiles at all.
+        /// </summary>
+        internal static List<DBC> ParseTolerant(string json, out int skipped)
+        {
+            skipped = 0;
+            List<DBC> read;
+            try { read = JsonConvert.DeserializeObject<List<DBC>>(json, new JsonSerializerSettings { MaxDepth = 32 }); }
+            catch (Exception) { return null; }
+            if (read == null) return null;
+            var kept = new List<DBC>();
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (DBC profile in read)
+            {
+                try
+                {
+                    if (profile != null)
+                    {
+                        if (profile.dbSRC == null) profile.dbSRC = new DBConnectionDetailsProfile();
+                        if (profile.dbTRG == null) profile.dbTRG = new DBConnectionDetailsProfile();
+                    }
+                    ValidateProfile(profile);
+                    if (!names.Add(profile.profileName)) throw new InvalidDataException("repeated name");
+                    kept.Add(profile);
+                }
+                catch (Exception)
+                {
+                    skipped++;
+                }
+            }
+            return kept;
+        }
+
+        /// <summary>
+        /// The platform of a saved connection. Profiles written by early versions only name it in
+        /// str_DBType ("oracle" / "sql"); without this the Oracle and SQL Server choices both stay empty.
+        /// </summary>
+        internal static void PlatformOf(DBConnectionDetailsProfile side, out bool oracle, out bool sql)
+        {
+            oracle = side != null && side.bool_Rb_Oracle;
+            sql = side != null && side.bool_Rb_SQL;
+            if (side == null || oracle || sql || string.IsNullOrWhiteSpace(side.str_DBType)) return;
+            string type = side.str_DBType.Trim();
+            oracle = string.Equals(type, "Oracle", StringComparison.OrdinalIgnoreCase);
+            sql = string.Equals(type, "SQL", StringComparison.OrdinalIgnoreCase);
+        }
+
         internal static List<DBC> ParseJson(string json)
         {
             if (string.IsNullOrWhiteSpace(json) || json.Length > 16 * 1024 * 1024)

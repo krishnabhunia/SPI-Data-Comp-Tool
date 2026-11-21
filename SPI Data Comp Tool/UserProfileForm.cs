@@ -83,18 +83,17 @@ namespace SPI_Data_Comp_Tool
                 saveFileDialogFile = new SaveFileDialogFile();
                 common_Data = new Common_Data();
 
-                string profilePath = Properties.Settings.Default.ProfilePathUser;
-                if (!SelfTest.IsRunning && !string.IsNullOrWhiteSpace(profilePath) && File.Exists(profilePath))
+                // The same reading as every other window (it never throws): a missing, moved or partly
+                // invalid file says what to do instead of leaving this page without profiles.
+                ProfileLoadResult loaded = ProfileStore.LoadSaved();
+                if (loaded.Profiles != null)
                 {
-                    Profile.ProfileList = ReadProfileFile(profilePath);
-                    connection.RefreshProfiles();
-                    l_lb_ReadProfile.Text = Path.GetFileName(profilePath);
-                    Common_Data.DisplayMessage(rtb_Log, $"User profile loaded from: {profilePath}");
+                    Profile.ProfileList = loaded.Profiles;
+                    l_lb_ReadProfile.Text = Path.GetFileName(loaded.Path);
                 }
-                else
-                {
-                    connection.RefreshProfiles();
-                }
+                connection.RefreshProfiles();
+                if (!string.IsNullOrEmpty(loaded.Message))
+                    Common_Data.DisplayMessage(rtb_Log, loaded.Message, loaded.IsError);
                 GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword);
             }
             catch (Exception ex)
@@ -651,6 +650,7 @@ namespace SPI_Data_Comp_Tool
             {
                 Properties.Settings.Default.ProfilePathUser = path;
                 Properties.Settings.Default.Save();
+                ProfileStore.RememberPath(path);   // a new copy of the app finds the same file
             }
             catch
             {

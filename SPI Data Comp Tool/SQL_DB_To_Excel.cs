@@ -88,7 +88,13 @@ namespace SPI_Data_Comp_Tool
             common_Data = new Common_Data();
             lstTableDetails = new List<string>();
 
+            // never throws: a missing or damaged profiles file must not stop this window from opening
             common_Data.ReadUserProfile(cb_UserProfileList);
+            if (common_Data.LastProfileLoad != null && !string.IsNullOrEmpty(common_Data.LastProfileLoad.Message))
+            {
+                DisplayMessage(common_Data.LastProfileLoad.Message);
+                if (common_Data.LastProfileLoad.IsError) lbl_Status.ForeColor = Color.Red;
+            }
 
             if (Debugger.IsAttached)
             {

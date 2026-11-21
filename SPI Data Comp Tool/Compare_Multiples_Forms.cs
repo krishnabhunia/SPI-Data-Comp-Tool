@@ -206,10 +206,7 @@ namespace SPI_Data_Comp_Tool
                     cb_UserProfileList.SelectedIndex = 0;
                 }
 
-                if (Common_Data.StringNotNullOrEmpty(Properties.Settings.Default.ProfilePathUser, ".json", false, true))
-                {
-                    Common_Data.DisplayMessage(rtb_Log, ($"User Profile Loaded from {Properties.Settings.Default.ProfilePathUser}"));
-                }
+                common_Data.ShowProfileLoad(rtb_Log);   // loaded, or why not and what to do
 
                 if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName))
                 {

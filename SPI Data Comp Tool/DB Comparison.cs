@@ -242,9 +242,11 @@ namespace SPI_Data_Comp_Tool
                 common_Data.ReadUserProfile(cb_UserProfileList);
                 //cb_UserProfileList = Common_Data.GetUserProfile(cb_UserProfileList);
 
-                if (Common_Data.StringNotNullOrEmpty(Properties.Settings.Default.ProfilePathUser, ".json", false, true))
+                if (common_Data.LastProfileLoad != null && !string.IsNullOrEmpty(common_Data.LastProfileLoad.Message))
                 {
-                    DisplayMessage(lblStatus, $"User Profile Loaded from {Properties.Settings.Default.ProfilePathUser}");
+                    // loaded, or why not and what to do: the window opens either way
+                    if (common_Data.LastProfileLoad.IsError) DisplayMessage(lblStatus, common_Data.LastProfileLoad.Message, Color.Red);
+                    else DisplayMessage(lblStatus, common_Data.LastProfileLoad.Message);
                 }
 
                 if (GlobalDebug.boolIsGlobalDebug || (cb_UserProfileList.Items.Count > 0 && Debugger.IsAttached))

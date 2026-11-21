@@ -25,6 +25,7 @@ namespace SPI_Data_Comp_Tool
                 // failure in one run rather than hiding later regressions behind the first one.
                 bool validationPassed = RunValidationSuite("Core", () => { CoreValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Connections", () => { ConnectionValidationChecks.Run(passed); }, messages);
+                validationPassed &= RunValidationSuite("Profile loading", () => { ProfileLoadChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Database forms", () => { DatabaseFormValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Excel forms", () => { ExcelFormValidationChecks.Run(passed); }, messages);
                 validationPassed &= RunValidationSuite("Workbook identity", () => { WorkbookIdentityChecks.Run(passed); }, messages);

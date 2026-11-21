@@ -87,6 +87,7 @@ namespace SPI_Data_Comp_Tool
                 };
                 BuildSteps();
                 common_Data.ReadUserProfile(cb_UserProfileList);
+                common_Data.ShowProfileLoad(rtb_Log);   // loaded, or why not and what to do
 
                 point_gbTextFile = gb_ExcelFile.Location;
 

@@ -524,40 +524,40 @@ namespace SPI_Data_Comp_Tool
                 throw ex;
             }
         }
+        /// <summary>What the last <see cref="ReadUserProfile"/> found; the window shows its message.</summary>
+        internal ProfileLoadResult LastProfileLoad { get; private set; }
+
+        /// <summary>
+        /// Loads the saved profiles file and lists the profile names. Never throws: a missing, moved or
+        /// damaged file leaves the profiles already loaded in this session and puts the reason in
+        /// <see cref="LastProfileLoad"/>, so the window still opens.
+        /// </summary>
         public ComboBox ReadUserProfile(ComboBox cb_UserProfileList)
         {
-            try
+            ProfileLoadResult loaded = ProfileStore.LoadSaved();
+            LastProfileLoad = loaded;
+            if (loaded.Profiles != null) Profile.ProfileList = loaded.Profiles;
+            items = Profile.ProfileList;
+            cb_UserProfileList.DataSource = null;
+            cb_UserProfileList.Items.Clear();
+            if (Profile.ProfileList != null)
             {
-                //if (Properties.Settings.Default.ProfilePathUser != null && Properties.Settings.Default.ProfilePathUser != "" && Properties.Settings.Default.ProfilePathUser.Contains("json"))
-                if (Common_Data.StringNotNullOrEmpty(Properties.Settings.Default.ProfilePathUser, ".json", false, true))
+                foreach (var i in Profile.ProfileList)
                 {
-                    using (StreamReader r = new StreamReader(Properties.Settings.Default.ProfilePathUser))
+                    if (i != null && !string.IsNullOrWhiteSpace(i.profileName))
                     {
-                        string json = r.ReadToEnd();
-                        items = JsonConvert.DeserializeObject<List<DBC>>(json);
-                        Profile.ProfileList = items;
-
-                        if (Profile.ProfileList != null)
-                        {
-                            cb_UserProfileList.DataSource = null;
-                            cb_UserProfileList.Items.Clear();
-                            foreach (var i in Profile.ProfileList)
-                            {
-                                if (i.profileName != null)
-                                {
-                                    cb_UserProfileList.Items.Add(i.profileName.ToString());
-                                }
-                            }
-                        }
-
+                        cb_UserProfileList.Items.Add(i.profileName);
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
             return cb_UserProfileList;
+        }
+
+        /// <summary>Shows the result of <see cref="ReadUserProfile"/> in a window's log.</summary>
+        internal void ShowProfileLoad(RichTextBox rtb_Log)
+        {
+            if (LastProfileLoad != null && !string.IsNullOrEmpty(LastProfileLoad.Message))
+                DisplayMessage(rtb_Log, LastProfileLoad.Message, LastProfileLoad.IsError);
         }
         public static ComboBox GetUserProfile(ComboBox cb_UserProfileList)
         {
@@ -2078,14 +2078,21 @@ namespace SPI_Data_Comp_Tool
                 {
                     List<DBC> items = Profile.ProfileList;
 
-                    this.bool_Rb_SRC_Oracle = items[switchIndex].dbSRC.bool_Rb_Oracle;
-                    this.bool_Rb_TRG_Oracle = items[switchIndex].dbTRG.bool_Rb_Oracle;
+                    // Early profiles name the platform only in str_DBType: choose Oracle / SQL Server from it.
+                    bool srcOracle, srcSql, trgOracle, trgSql;
+                    ProfileStore.PlatformOf(items[switchIndex].dbSRC, out srcOracle, out srcSql);
+                    ProfileStore.PlatformOf(items[switchIndex].dbTRG, out trgOracle, out trgSql);
+                    this.bool_Rb_SRC_Oracle = srcOracle;
+                    this.bool_Rb_TRG_Oracle = trgOracle;
 
-                    this.bool_Rb_SRC_SQL = items[switchIndex].dbSRC.bool_Rb_SQL;
-                    this.bool_Rb_TRG_SQL = items[switchIndex].dbTRG.bool_Rb_SQL;
+                    this.bool_Rb_SRC_SQL = srcSql;
+                    this.bool_Rb_TRG_SQL = trgSql;
 
-                    this.bool_SRC_Oracle_DefaultPort = items[switchIndex].dbSRC.bool_Oracle_DefaultPort;
-                    this.bool_TRG_Oracle_DefaultPort = items[switchIndex].dbTRG.bool_Oracle_DefaultPort;
+                    // ...and without a saved port such an Oracle connection uses the default port.
+                    this.bool_SRC_Oracle_DefaultPort = items[switchIndex].dbSRC.bool_Oracle_DefaultPort ||
+                        (srcOracle && !items[switchIndex].dbSRC.bool_Rb_Oracle && items[switchIndex].dbSRC.int_Oracle_DefaultPort == 0);
+                    this.bool_TRG_Oracle_DefaultPort = items[switchIndex].dbTRG.bool_Oracle_DefaultPort ||
+                        (trgOracle && !items[switchIndex].dbTRG.bool_Rb_Oracle && items[switchIndex].dbTRG.int_Oracle_DefaultPort == 0);
 
                     this.bool_SRC_SQL_WA = items[switchIndex].dbSRC.bool_SQL_WA;
                     this.bool_TRG_SQL_WA = items[switchIndex].dbTRG.bool_SQL_WA;

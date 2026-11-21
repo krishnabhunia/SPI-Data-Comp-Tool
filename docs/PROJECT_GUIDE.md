@@ -70,7 +70,7 @@ flowchart TD
 ## Configuration
 | SrNo. | Setting | How it works |
 |---|---|---|
-| 1 | Connection profiles | Saved from **Settings > Connection profiles** to a JSON file you choose; its path is remembered in the user settings (`ProfilePathUser`). Template: `UserProfile/userProfile.example.json`. The real `userProfile.json` is git-ignored. |
+| 1 | Connection profiles | Saved from **Settings > Connection profiles** to a JSON file you choose; its path is remembered in the user settings (`ProfilePathUser`) and, for a new copy of the app (a new download folder), in `%APPDATA%\SPI Data Comparison Tool\profile-path.txt`. Every window reads the file through `ProfileStore.LoadSaved`, which never throws: a missing, moved or damaged file is reported in the window's log or status with what to do, and a file the strict import rejects (e.g. a repeated profile name) keeps its usable entries and says how many were skipped. Early files that name the platform only in `str_DBType` (`oracle` / `sql`) select Oracle or SQL Server when chosen. Template: `UserProfile/userProfile.example.json`. The real `userProfile.json` is git-ignored. |
 | 2 | Login | None. The old login screen (a user name and password written in this source) was removed in 2.2.0; the main window opens unlocked. |
 | 3 | Developer mode | On when a debugger is attached, or when the environment variable `SPI_DATA_COMP_DEBUG=1` is set. It is no longer tied to specific Windows user names or a built-in password. The profile editor omits passwords from new JSON exports in every mode; enter them again when needed. |
 | 4 | Logs | `Desktop\LogFolder\Log_dd_MM_yyyy*.log` |

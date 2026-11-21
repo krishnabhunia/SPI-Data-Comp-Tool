@@ -30,6 +30,7 @@ namespace SPI_Data_Comp_Tool
             internal Func<bool> Applies;
             internal Control[] Controls;
             internal StepState State;
+            internal string Reason;           // why an open step is not done yet, e.g. "Enter the Source password."
             internal bool Shown;
             internal int Number;
         }
@@ -38,6 +39,7 @@ namespace SPI_Data_Comp_Tool
         private readonly Dictionary<Control, Step> owner = new Dictionary<Control, Step>();
         private readonly Control host;
         private bool busy;
+        [ThreadStatic] private static string lastFailure;   // set by Passes while a step is checked
         private bool refreshing;
         private bool queued;
 
@@ -185,7 +187,9 @@ namespace SPI_Data_Comp_Tool
                         continue;
                     }
                     step.Number = ++number;
+                    lastFailure = null;
                     bool done = open && Safe(step.Done, false);
+                    step.Reason = open && !done ? lastFailure : null;
                     step.State = !open ? StepState.Locked : done ? StepState.Done : StepState.Current;
                     foreach (Control c in step.Controls) Set(c, open && !blocked);
                     open = done;
@@ -204,7 +208,9 @@ namespace SPI_Data_Comp_Tool
             Step current = Current;
             int shown = steps.Count(s => s.Shown);
             if (current == null) return "All steps done. Change any step to run it again.";
-            return "Step " + current.Number + " of " + shown + ": " + Safe(current.Action, string.Empty) + ".";
+            string text = "Step " + current.Number + " of " + shown + ": " + Safe(current.Action, string.Empty) + ".";
+            // say what is still missing, e.g. a selected profile that has no saved password
+            return string.IsNullOrWhiteSpace(current.Reason) ? text : text + " " + current.Reason.Trim();
         }
 
         /// <summary>The tooltip of a locked step: what has to be done first.</summary>
@@ -212,7 +218,8 @@ namespace SPI_Data_Comp_Tool
         {
             Step current = Current;
             string first = current == null ? string.Empty : Safe(current.Action, string.Empty);
-            return "Locked. " + first + " first.";
+            string reason = current == null || string.IsNullOrWhiteSpace(current.Reason) ? string.Empty : " (" + current.Reason.Trim().TrimEnd('.') + ")";
+            return "Locked. " + first + " first" + reason + ".";
         }
 
         /// <summary>Puts the keyboard focus on the first usable control of an open step.</summary>
@@ -253,8 +260,9 @@ namespace SPI_Data_Comp_Tool
                 check();
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                lastFailure = ex.Message;   // shown under the strip while this step is the current one
                 return false;
             }
         }
