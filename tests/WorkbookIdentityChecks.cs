@@ -491,6 +491,17 @@ namespace SPI_Data_Comp_Tool
             Require(Compare(tallA, tall("tall-b.xlsx", 20)).Identical && Status(Compare(tallA, tall("tall-c.xlsx", 40)), "Row heights") == "DIFF",
                 "a row height below the data was not compared");
 
+            // With a key, a record of File B can pair with a File A row that has the number of a blank row below File B's data.
+            // The blank row must not hide the paired record's own height or hidden state.
+            Action<IXLWorksheet> pairedA = sheet => { sheet.Row(4).Height = 20; sheet.Row(4).Hide(); };
+            Action<IXLWorksheet> pairedB = sheet => { sheet.Row(3).Height = 30; sheet.Row(4).Height = 20; sheet.Row(4).Hide(); };
+            IdentityResult shifted = Compare(Book(folder, "shift-a.xlsx", new[] { R("ID", "Name"), R(1, "Asha"), R(2, "Sana"), R(3, "Ravi") }, pairedA),
+                Book(folder, "shift-b.xlsx", new[] { R("ID", "Name"), R(1, "Asha"), R(3, "Ravi") }, pairedB), o => o.KeyA = new[] { "id" });
+            object[] shiftedHeights = shifted.Layout.Single(row => (string)row[1] == "Row heights");
+            Require((string)shiftedHeights[4] == "DIFF" && ((string)shiftedHeights[2]).StartsWith("row 4=20", StringComparison.Ordinal) && ((string)shiftedHeights[3]).StartsWith("row 4=30", StringComparison.Ordinal),
+                "a blank row below the data must not hide the height of a paired record with the same row number");
+            Require(Status(shifted, "Hidden rows") == "DIFF", "a hidden blank row below the data must not stand in for a hidden paired record");
+
             // Border colour is part of the border.
             Func<string, XLColor, string> edged = (name, colour) => Book(folder, name, new[] { R("ID", "Name"), R(1, "Asha") }, sheet =>
             {

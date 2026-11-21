@@ -101,6 +101,7 @@ namespace SPI_Data_Comp_Tool
     internal static class WorkbookIdentityEngine
     {
         internal const string BlankText = "(blank)";
+        private const string BelowData = " (below the data)";
         private const string NullKey = "\0null";
         private static readonly Regex NumericText = new Regex(@"^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$", RegexOptions.Compiled);
         private static readonly int[] FontProperties = { 0, 1, 2, 3, 4, 5 };
@@ -750,22 +751,26 @@ namespace SPI_Data_Comp_Tool
                 CheckMap(res, scope, "Column widths", widthsA, widthsB, "layout", "default");
                 var heightsA = new Dictionary<string, string>(StringComparer.Ordinal);
                 var heightsB = new Dictionary<string, string>(StringComparer.Ordinal);
-                // A paired row is named by its File A row. A row below the last value belongs to no record and keeps its own number.
+                // A paired row is named by its File A row. A row below the last value belongs to no record: it keeps its own
+                // number and a label of its own, so it can never be taken for a paired record that has the same row number.
                 foreach (var item in A.Heights.OrderBy(entry => entry.Key))
-                    if (a2b.ContainsKey(item.Key) || item.Key > A.LastRow) heightsA["row " + Num(item.Key)] = FloatText(item.Value);
+                {
+                    if (item.Key > A.LastRow) heightsA["row " + Num(item.Key) + BelowData] = FloatText(item.Value);
+                    else if (a2b.ContainsKey(item.Key)) heightsA["row " + Num(item.Key)] = FloatText(item.Value);
+                }
                 foreach (var item in B.Heights.OrderBy(entry => entry.Key))
                 {
-                    if (b2a.ContainsKey(item.Key)) heightsB["row " + Num(b2a[item.Key])] = FloatText(item.Value);
-                    else if (item.Key > B.LastRow) heightsB["row " + Num(item.Key)] = FloatText(item.Value);
+                    if (item.Key > B.LastRow) heightsB["row " + Num(item.Key) + BelowData] = FloatText(item.Value);
+                    else if (b2a.ContainsKey(item.Key)) heightsB["row " + Num(b2a[item.Key])] = FloatText(item.Value);
                 }
                 CheckMap(res, scope, "Row heights", heightsA, heightsB, "layout", "default");
                 CheckSet(res, scope, "Merged cells", A.Merged, B.Merged, "layout");
                 Check(res, scope, "Freeze panes", Show(A.Freeze), Show(B.Freeze), A.Freeze == B.Freeze, "layout");
                 Check(res, scope, "Auto-filter range", Show(A.Filter), Show(B.Filter), A.Filter == B.Filter, "layout");
                 CheckSet(res, scope, "Hidden columns", A.HiddenColumns, B.HiddenColumns, "layout");
-                // Rows below the last value of File B belong to no record, so they keep their own number.
-                CheckSet(res, scope, "Hidden rows", A.HiddenRows.Select(row => Num(row)).ToList(),
-                    B.HiddenRows.Select(row => b2a.ContainsKey(row) ? Num(b2a[row]) : row > B.LastRow ? Num(row) : Num(row) + " (File B row)").ToList(), "layout");
+                // Rows below the last value belong to no record, so they keep their own number and the same label as above.
+                CheckSet(res, scope, "Hidden rows", A.HiddenRows.Select(row => row > A.LastRow ? Num(row) + BelowData : Num(row)).ToList(),
+                    B.HiddenRows.Select(row => row > B.LastRow ? Num(row) + BelowData : b2a.ContainsKey(row) ? Num(b2a[row]) : Num(row) + " (File B row)").ToList(), "layout");
                 Check(res, scope, "Sheet visibility", Show(A.State), Show(B.State), A.State == B.State, "layout");
 
                 // A cell address in File B -> the address of the matching cell in File A.
