@@ -137,15 +137,25 @@ namespace SPI_Data_Comp_Tool
         /// <summary>True for the application shell, whose rail lists every group.</summary>
         internal bool Grouped { get; }
 
-        /// <summary>A "New session" window holds one task and has no rail of its own.</summary>
+        private bool navigationWanted = true;
+
+        /// <summary>A "New session" window holds one task and has no rail of its own. Its own advanced-mapping
+        /// snapshots still need a way back, so the list reappears (with only this window's pages) while one is open.</summary>
         internal bool ShowNavigation
         {
             get { return navigation.Visible; }
             set
             {
-                navigation.Visible = value;
-                layout.ColumnStyles[0].Width = value ? 235F : 0F;
+                navigationWanted = value;
+                ApplyNavigation();
             }
+        }
+
+        private void ApplyNavigation()
+        {
+            bool show = navigationWanted || tasks.Keys.Any(key => key.StartsWith("transient.", StringComparison.Ordinal));
+            navigation.Visible = show;
+            layout.ColumnStyles[0].Width = show ? 235F : 0F;
         }
         internal Func<WorkspaceTask, bool, WorkspacePageForm> NavigateTask { get; set; }
         internal IReadOnlyList<WorkspacePageForm> LoadedPages => pages.Values.Where(page => !page.IsDisposed).ToList().AsReadOnly();
@@ -292,11 +302,13 @@ namespace SPI_Data_Comp_Tool
                 "Independent snapshot for advanced mapping. Close this task when its results are no longer needed.", Workspace, create, false);
             tasks.Add(key, task);
             AddTaskButton(task);
+            ApplyNavigation();
             try { return OpenTask(key); }
             catch
             {
                 tasks.Remove(key);
                 RemoveTaskButton(key);
+                ApplyNavigation();
                 throw;
             }
         }
@@ -319,7 +331,11 @@ namespace SPI_Data_Comp_Tool
             if (key.StartsWith("transient.", StringComparison.Ordinal))
             {
                 tasks.Remove(key);
-                if (!completingClose && !IsDisposed && !Disposing) RemoveTaskButton(key);
+                if (!completingClose && !IsDisposed && !Disposing)
+                {
+                    RemoveTaskButton(key);
+                    ApplyNavigation();
+                }
             }
             if (completingClose || IsDisposed || Disposing) return;
             if (ReferenceEquals(ActivePage, page))
