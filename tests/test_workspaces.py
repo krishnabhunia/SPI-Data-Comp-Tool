@@ -63,6 +63,8 @@ class WorkspaceContracts(unittest.TestCase):
     def test_update_policy_inspects_all_loaded_tasks(self):
         policy = source("UpdateInstaller.cs").split("internal static bool CanInstallForms", 1)[1].split("internal static bool HasBusyWorker", 1)[0]
         self.assertIn("workspace.Workspace != WorkspaceKind.Settings", policy)
+        self.assertIn("!workspace.Grouped && workspace.Workspace != WorkspaceKind.Settings", policy)
+        self.assertIn("!(form is AboutBox1)", policy)
         self.assertIn("workspace.LoadedPages.Cast<Form>()", policy)
         self.assertIn("HasBusyWorker(workspace)", policy)
         self.assertNotIn(".Visible", policy)
