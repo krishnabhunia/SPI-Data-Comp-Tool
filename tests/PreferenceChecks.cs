@@ -250,8 +250,8 @@ namespace SPI_Data_Comp_Tool
             string local = Path.Combine(folder, "user.config");
             string roaming = Path.Combine(folder, "absent-roaming.config");
             string applicationText = "<configuration><configSections><sectionGroup name=\"userSettings\" " +
-                "type=\"System.Configuration.UserSettingsGroup, System\"><section name=\"" + UpdatePreferences.SettingsSection +
-                "\" type=\"System.Configuration.ClientSettingsSection, System\" allowExeDefinition=\"MachineToLocalUser\" " +
+                "type=\"" + typeof(UserSettingsGroup).AssemblyQualifiedName + "\"><section name=\"" + UpdatePreferences.SettingsSection +
+                "\" type=\"" + typeof(ClientSettingsSection).AssemblyQualifiedName + "\" allowExeDefinition=\"MachineToLocalUser\" " +
                 "requirePermission=\"false\" /></sectionGroup></configSections></configuration>";
             string valid = "<configuration><userSettings><" + UpdatePreferences.SettingsSection + ">" +
                 "<setting name=\"RuleFilePath\" serializeAs=\"String\"><value>fixture-rules.xlsx</value></setting>" +
@@ -261,6 +261,13 @@ namespace SPI_Data_Comp_Tool
             File.WriteAllText(application, applicationText);
             File.WriteAllText(local, valid);
             var store = new MappedConfigStore(application, local, roaming);
+            // Prove the actual fixture/provider can load before testing recovery. Reading only
+            // through AppPreferences would hide a setup error behind its intended safe fallback.
+            string baselineRules = store.RuleFilePath;
+            bool baselineEpplus = store.EPPlusExcelSave;
+            bool baselineExcel = store.MicrosoftExcelSave;
+            Require(baselineRules == "fixture-rules.xlsx" && !baselineEpplus && baselineExcel,
+                "The mapped configuration fixture did not load its expected baseline values.");
             using (AppPreferences.UseForChecks(store))
             {
                 Require(AppPreferences.RuleFilePath == "fixture-rules.xlsx" && AppPreferences.ExcelWriter == ExcelWriterMode.MicrosoftExcel,
