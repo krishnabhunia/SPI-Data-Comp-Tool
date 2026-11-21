@@ -8,8 +8,9 @@ FORM_NAME = "SPIDeltaChangeTrackerOptimised"
 CLIENT = (1260, 820)
 MINIMUM = (1080, 720)
 TITLE = "Delta change tracker"
-DROP = PANEL_DROP + ["groupBox4", "label18"]
-FROZEN = ["comboBox1", "lblDebugMsg"]  # Existing hidden debug controls, not additional live workflows.
+DROP = PANEL_DROP + ["groupBox4", "label18",
+                     "lblDebugMsg"]   # hidden debug label that no code used
+FROZEN = ["comboBox1"]  # Existing hidden debug control, not an additional live workflow.
 
 TEXTS = {
     "groupBox14": "Connections and tables", "label16": "Source table", "label17": "Target table",

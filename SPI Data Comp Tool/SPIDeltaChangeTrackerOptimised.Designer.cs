@@ -47,7 +47,6 @@
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.btn_ListTableExcel = new System.Windows.Forms.Button();
-            this.lblDebugMsg = new System.Windows.Forms.Label();
             this.llbl_Folder_path = new System.Windows.Forms.LinkLabel();
             this.cb_IncludeRule = new System.Windows.Forms.CheckBox();
             this.cb_IgnoreCase = new System.Windows.Forms.CheckBox();
@@ -685,16 +684,6 @@
             this.backgroundWorker2.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker2_ProgressChanged);
             this.backgroundWorker2.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker2_RunWorkerCompleted);
             //
-            // lblDebugMsg
-            //
-            this.lblDebugMsg.AutoSize = true;
-            this.lblDebugMsg.Location = new System.Drawing.Point(9, 461);
-            this.lblDebugMsg.Name = "lblDebugMsg";
-            this.lblDebugMsg.Size = new System.Drawing.Size(63, 13);
-            this.lblDebugMsg.TabIndex = 36;
-            this.lblDebugMsg.Text = "lblDebuMsg";
-            this.lblDebugMsg.Visible = false;
-            //
             // timer1
             //
             this.timer1.Interval = 499;
@@ -714,7 +703,6 @@
             this.Padding = new System.Windows.Forms.Padding(12, 12, 12, 12);
             this.Controls.Add(this.tlp_Root);
             this.Controls.Add(this.comboBox1);
-            this.Controls.Add(this.lblDebugMsg);
             this.tlp_Root.ResumeLayout(false);
             this.tlp_Root.PerformLayout();
             this.tlp_Top.ResumeLayout(false);
@@ -801,7 +789,6 @@
         private System.Windows.Forms.Button btn_Clear;
         private System.Windows.Forms.Button btn_ListTableExcel;
         private System.ComponentModel.BackgroundWorker backgroundWorker2;
-        private System.Windows.Forms.Label lblDebugMsg;
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.Timer timer1;

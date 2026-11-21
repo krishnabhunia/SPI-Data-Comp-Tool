@@ -76,7 +76,6 @@
             this.btn_Reset = new System.Windows.Forms.Button();
             this.tb_CommonSchema = new System.Windows.Forms.TextBox();
             this.cb_CommonSchema = new System.Windows.Forms.CheckBox();
-            this.label11 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.tb_Schema_3 = new System.Windows.Forms.TextBox();
@@ -543,7 +542,6 @@
             this.gb_Schema.Controls.Add(this.btn_Reset);
             this.gb_Schema.Controls.Add(this.tb_CommonSchema);
             this.gb_Schema.Controls.Add(this.cb_CommonSchema);
-            this.gb_Schema.Controls.Add(this.label11);
             this.gb_Schema.Controls.Add(this.label10);
             this.gb_Schema.Controls.Add(this.label8);
             this.gb_Schema.Controls.Add(this.tb_Schema_3);
@@ -636,16 +634,6 @@
             this.cb_Schema1.Text = "Schema 1";
             this.cb_Schema1.UseVisualStyleBackColor = true;
             this.cb_Schema1.CheckedChanged += new System.EventHandler(this.cb_Schema1_CheckedChanged);
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(396, 94);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(71, 13);
-            this.label11.TabIndex = 10;
-            this.label11.Text = "e.g CAOJING";
-            this.label11.Visible = false;
             // 
             // label10
             // 
@@ -908,7 +896,6 @@
         private System.Windows.Forms.CheckBox cb_Schema3;
         private System.Windows.Forms.CheckBox cb_Schema2;
         private System.Windows.Forms.CheckBox cb_Schema1;
-        private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.GroupBox groupBox1;

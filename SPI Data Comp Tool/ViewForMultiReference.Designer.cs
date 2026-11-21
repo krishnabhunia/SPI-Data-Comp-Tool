@@ -50,10 +50,6 @@
             this.groupBox6 = new System.Windows.Forms.GroupBox();
             this.lb_Target_Col = new System.Windows.Forms.ListBox();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
             this.btn_AutoMappingCols = new System.Windows.Forms.Button();
             this.btn_AutoMappingID = new System.Windows.Forms.Button();
             this.btn_Col_For_SRC_TRG = new System.Windows.Forms.Button();
@@ -77,7 +73,6 @@
             this.groupBox8 = new System.Windows.Forms.GroupBox();
             this.groupBox10 = new System.Windows.Forms.GroupBox();
             this.btn_ClearAll = new System.Windows.Forms.Button();
-            this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.btn_Remove = new System.Windows.Forms.Button();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.groupBox1.SuspendLayout();
@@ -90,7 +85,6 @@
             this.groupBox9.SuspendLayout();
             this.groupBox8.SuspendLayout();
             this.groupBox10.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
             // groupBox1
@@ -311,10 +305,6 @@
             // 
             // groupBox7
             // 
-            this.groupBox7.Controls.Add(this.label6);
-            this.groupBox7.Controls.Add(this.label5);
-            this.groupBox7.Controls.Add(this.label4);
-            this.groupBox7.Controls.Add(this.label3);
             this.groupBox7.Controls.Add(this.btn_AutoMappingCols);
             this.groupBox7.Controls.Add(this.btn_AutoMappingID);
             this.groupBox7.Controls.Add(this.btn_Col_For_SRC_TRG);
@@ -328,46 +318,6 @@
             this.groupBox7.TabIndex = 6;
             this.groupBox7.TabStop = false;
             this.groupBox7.Text = "Selection Panel";
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(998, 418);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(35, 13);
-            this.label6.TabIndex = 17;
-            this.label6.Text = "label6";
-            this.label6.Visible = false;
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(998, 394);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(35, 13);
-            this.label5.TabIndex = 16;
-            this.label5.Text = "label5";
-            this.label5.Visible = false;
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(742, 413);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(35, 13);
-            this.label4.TabIndex = 15;
-            this.label4.Text = "label4";
-            this.label4.Visible = false;
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(742, 393);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(35, 13);
-            this.label3.TabIndex = 14;
-            this.label3.Text = "label3";
-            this.label3.Visible = false;
             // 
             // btn_AutoMappingCols
             // 
@@ -595,7 +545,6 @@
             // groupBox10
             // 
             this.groupBox10.Controls.Add(this.btn_ClearAll);
-            this.groupBox10.Controls.Add(this.dataGridView1);
             this.groupBox10.Controls.Add(this.btn_Remove);
             this.groupBox10.Location = new System.Drawing.Point(1058, 19);
             this.groupBox10.Name = "groupBox10";
@@ -613,15 +562,6 @@
             this.btn_ClearAll.Text = "Clear All";
             this.btn_ClearAll.UseVisualStyleBackColor = true;
             this.btn_ClearAll.Click += new System.EventHandler(this.btn_ClearAll_Click);
-            // 
-            // dataGridView1
-            // 
-            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(6, 310);
-            this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(34, 33);
-            this.dataGridView1.TabIndex = 8;
-            this.dataGridView1.Visible = false;
             // 
             // btn_Remove
             // 
@@ -666,7 +606,6 @@
             this.groupBox9.PerformLayout();
             this.groupBox8.ResumeLayout(false);
             this.groupBox10.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -697,7 +636,6 @@
         private System.Windows.Forms.ListBox lb_Target_ID;
         private System.Windows.Forms.ListBox lb_Source_Col;
         private System.Windows.Forms.ListBox lb_Target_Col;
-        private System.Windows.Forms.DataGridView dataGridView1;
         private System.Windows.Forms.Button btn_Cancel;
         private System.Windows.Forms.GroupBox groupBox9;
         private System.Windows.Forms.GroupBox groupBox10;
@@ -720,9 +658,5 @@
         private System.Windows.Forms.Button btn_Col_For_SRC_TRG;
         private System.Windows.Forms.Button btn_AutoMappingCols;
         private System.Windows.Forms.Button btn_AutoMappingID;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label3;
     }
 }
