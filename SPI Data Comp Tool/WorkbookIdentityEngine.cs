@@ -575,7 +575,16 @@ namespace SPI_Data_Comp_Tool
                                 formatDiffs.Add(new FormatDiff { Row = pair.A, RowB = pair.B, ColA = column.Col, ColB = other.Col, Property = property, A = sa[property], B = sb[property], Header = isHeader });
                         }
                     }
-                    if (isHeader) continue;
+                    if (isHeader)
+                    {
+                        // A header's text is judged by the header checks; its formula still counts as a formula.
+                        if (o.CompareFormulas && !string.Equals(x.Formula, y.Formula, StringComparison.Ordinal))
+                        {
+                            formulaRows.Add(FormulaRow(label, pair, columnName(column), Letter(column.Col) + Num(pair.A), Letter(other.Col) + Num(pair.B), x, y, flags));
+                            res.Add("formulas");
+                        }
+                        continue;
+                    }
 
                     bool bothNumbers = x.Kind == "number" && y.Kind == "number";
                     bool same = bothNumbers ? Math.Abs(x.Number - y.Number) <= tolerance
@@ -619,12 +628,7 @@ namespace SPI_Data_Comp_Tool
                     // Formulas: the calculated results were compared above.
                     if (o.CompareFormulas && !string.Equals(x.Formula, y.Formula, StringComparison.Ordinal))
                     {
-                        var row = new object[12 + flags];
-                        row[0] = label; row[1] = pair.A; row[2] = pair.Key; row[3] = columnName(column); row[4] = cellA; row[5] = cellB;
-                        row[6] = x.Formula ?? "(no formula)"; row[7] = y.Formula ?? "(no formula)";
-                        row[8] = x.Formula == null ? "Formula only in File B" : y.Formula == null ? "Formula only in File A" : "Formula differs";
-                        row[9] = "Text"; row[10] = "True";
-                        formulaRows.Add(row);
+                        formulaRows.Add(FormulaRow(label, pair, columnName(column), cellA, cellB, x, y, flags));
                         res.Add("formulas");
                     }
                 }
@@ -746,8 +750,14 @@ namespace SPI_Data_Comp_Tool
                 CheckMap(res, scope, "Column widths", widthsA, widthsB, "layout", "default");
                 var heightsA = new Dictionary<string, string>(StringComparer.Ordinal);
                 var heightsB = new Dictionary<string, string>(StringComparer.Ordinal);
-                foreach (var item in A.Heights.OrderBy(entry => entry.Key)) if (a2b.ContainsKey(item.Key)) heightsA["row " + Num(item.Key)] = FloatText(item.Value);
-                foreach (var item in B.Heights.OrderBy(entry => entry.Key)) if (b2a.ContainsKey(item.Key)) heightsB["row " + Num(b2a[item.Key])] = FloatText(item.Value);
+                // A paired row is named by its File A row. A row below the last value belongs to no record and keeps its own number.
+                foreach (var item in A.Heights.OrderBy(entry => entry.Key))
+                    if (a2b.ContainsKey(item.Key) || item.Key > A.LastRow) heightsA["row " + Num(item.Key)] = FloatText(item.Value);
+                foreach (var item in B.Heights.OrderBy(entry => entry.Key))
+                {
+                    if (b2a.ContainsKey(item.Key)) heightsB["row " + Num(b2a[item.Key])] = FloatText(item.Value);
+                    else if (item.Key > B.LastRow) heightsB["row " + Num(item.Key)] = FloatText(item.Value);
+                }
                 CheckMap(res, scope, "Row heights", heightsA, heightsB, "layout", "default");
                 CheckSet(res, scope, "Merged cells", A.Merged, B.Merged, "layout");
                 Check(res, scope, "Freeze panes", Show(A.Freeze), Show(B.Freeze), A.Freeze == B.Freeze, "layout");
@@ -785,6 +795,16 @@ namespace SPI_Data_Comp_Tool
             if (A.UncachedFormulas > 0) res.Notes.Add(UncachedNote("A", A));
             if (B.UncachedFormulas > 0) res.Notes.Add(UncachedNote("B", B));
             return keyed;
+        }
+
+        private static object[] FormulaRow(string label, RowPair pair, string column, string cellA, string cellB, IdentityCell x, IdentityCell y, int flags)
+        {
+            var row = new object[12 + flags];
+            row[0] = label; row[1] = pair.A; row[2] = pair.Key; row[3] = column; row[4] = cellA; row[5] = cellB;
+            row[6] = x.Formula ?? "(no formula)"; row[7] = y.Formula ?? "(no formula)";
+            row[8] = x.Formula == null ? "Formula only in File B" : y.Formula == null ? "Formula only in File A" : "Formula differs";
+            row[9] = "Text"; row[10] = "True";
+            return row;
         }
 
         private static string UncachedNote(string side, IdentitySheet sheet)
