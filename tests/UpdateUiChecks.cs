@@ -541,7 +541,7 @@ namespace SPI_Data_Comp_Tool
                     "The main window does not show its actual build version and channel.");
                 Require(menu.Items.Find("updateToolStripMenuItem", true).Length == 0,
                     "A second automatic-update menu entry survived consolidation.");
-                menu.Items.Find("userSettingsToolStripMenuItem", true).OfType<ToolStripMenuItem>().Single().PerformClick();
+                menu.Items.Find("taskMenu_settings_preferences", true).OfType<ToolStripMenuItem>().Single().PerformClick();
                 Application.DoEvents();
                 var settings = Application.OpenForms.OfType<User_Settings>().Single();
                 var log = Find<RichTextBox>(settings, "rtb_Log");

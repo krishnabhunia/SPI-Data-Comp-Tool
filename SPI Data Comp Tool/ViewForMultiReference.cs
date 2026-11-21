@@ -21,7 +21,7 @@ using DataTable = System.Data.DataTable;
 namespace SPI_Data_Comp_Tool
 {
     
-    public partial class ViewForMultiReference : Form
+    public partial class ViewForMultiReference : WorkspacePageForm
     {
         private bool boolSet;
         private string str_query;
@@ -175,9 +175,9 @@ namespace SPI_Data_Comp_Tool
                     clb_Target.Items.Add(dc.ColumnName);
                 }
 
-                lbl_Source.Text = string.Format("Rows : {0} and Columns : {1}", dsS.Tables[0].Rows.Count, dsS.Tables[0].Columns.Count);
+                lbl_Source.Text = string.Format("Rows : {0} and Columns : {1}", dsSource.Tables[0].Rows.Count, dsSource.Tables[0].Columns.Count);
 
-                lbl_Target.Text = string.Format("Rows : {0} and Columns : {1}", dsT.Tables[0].Rows.Count, dsT.Tables[0].Columns.Count);
+                lbl_Target.Text = string.Format("Rows : {0} and Columns : {1}", dsTarget.Tables[0].Rows.Count, dsTarget.Tables[0].Columns.Count);
 
                 DebuggerDataSet();
 

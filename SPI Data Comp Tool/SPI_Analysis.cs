@@ -5,7 +5,7 @@ using System.Windows.Forms;
 namespace SPI_Data_Comp_Tool
 {
     /// <summary>Connection setup and the resulting analysis share one workspace.</summary>
-    public partial class SPI_Analysis : Form
+    public partial class SPI_Analysis : WorkspacePageForm
     {
         private SPI_Analysis_View results;
 

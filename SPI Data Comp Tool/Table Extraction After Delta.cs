@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class Table_Extraction_After_Delta_Form : Form
+    public partial class Table_Extraction_After_Delta_Form : WorkspacePageForm
     {
         private IDisposable operationInputs;
         private Common_Data common_Data;

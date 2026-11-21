@@ -62,7 +62,6 @@
             this.cb_IgnoreCase = new System.Windows.Forms.CheckBox();
             this.cb_IncludeRule = new System.Windows.Forms.CheckBox();
             this.btn_RuleForm = new System.Windows.Forms.Button();
-            this.btn_ProcessBy_MultiThreading = new System.Windows.Forms.Button();
             this.btn_Cancel = new System.Windows.Forms.Button();
             this.btn_Validate = new System.Windows.Forms.Button();
             this.llbl_filePath = new System.Windows.Forms.LinkLabel();
@@ -70,7 +69,6 @@
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.lbl_Percentage = new System.Windows.Forms.Label();
-            this.bgw_multiThreading = new System.ComponentModel.BackgroundWorker();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.backgroundWorkerInstrument = new System.ComponentModel.BackgroundWorker();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
@@ -392,7 +390,6 @@
             this.groupBox4.Controls.Add(this.cb_IgnoreCase);
             this.groupBox4.Controls.Add(this.cb_IncludeRule);
             this.groupBox4.Controls.Add(this.btn_RuleForm);
-            this.groupBox4.Controls.Add(this.btn_ProcessBy_MultiThreading);
             this.groupBox4.Controls.Add(this.btn_Cancel);
             this.groupBox4.Controls.Add(this.btn_Compare);
             this.groupBox4.Controls.Add(this.btn_Validate);
@@ -450,18 +447,6 @@
             this.btn_RuleForm.Text = "Open Rule Form";
             this.btn_RuleForm.UseVisualStyleBackColor = true;
             this.btn_RuleForm.Click += new System.EventHandler(this.btn_RuleForm_Click);
-            // 
-            // btn_ProcessBy_MultiThreading
-            // 
-            this.btn_ProcessBy_MultiThreading.Location = new System.Drawing.Point(113, 96);
-            this.btn_ProcessBy_MultiThreading.Margin = new System.Windows.Forms.Padding(1);
-            this.btn_ProcessBy_MultiThreading.Name = "btn_ProcessBy_MultiThreading";
-            this.btn_ProcessBy_MultiThreading.Size = new System.Drawing.Size(193, 23);
-            this.btn_ProcessBy_MultiThreading.TabIndex = 10;
-            this.btn_ProcessBy_MultiThreading.Text = "Process By MultiThreading";
-            this.btn_ProcessBy_MultiThreading.UseVisualStyleBackColor = true;
-            this.btn_ProcessBy_MultiThreading.Visible = false;
-            this.btn_ProcessBy_MultiThreading.Click += new System.EventHandler(this.btn_ProcessBy_MultiThreading_Click);
             // 
             // btn_Cancel
             // 
@@ -532,14 +517,6 @@
             this.lbl_Percentage.Size = new System.Drawing.Size(87, 16);
             this.lbl_Percentage.TabIndex = 9;
             this.lbl_Percentage.Text = "Progress Bar";
-            // 
-            // bgw_multiThreading
-            // 
-            this.bgw_multiThreading.WorkerReportsProgress = true;
-            this.bgw_multiThreading.WorkerSupportsCancellation = true;
-            this.bgw_multiThreading.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bgw_multiThreading_DoWork);
-            this.bgw_multiThreading.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.bgw_multiThreading_ProgressChanged);
-            this.bgw_multiThreading.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.bgw_multiThreading_RunWorkerCompleted);
             // 
             // groupBox5
             // 
@@ -672,8 +649,6 @@
         private System.Windows.Forms.Label lbl_Percentage;
         private System.Windows.Forms.Button btn_Cancel;
         private System.Windows.Forms.Label lbl_Parameter;
-        private System.Windows.Forms.Button btn_ProcessBy_MultiThreading;
-        private System.ComponentModel.BackgroundWorker bgw_multiThreading;
         private System.Windows.Forms.Button btnLoad;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.CheckBox cb_IncludeRule;

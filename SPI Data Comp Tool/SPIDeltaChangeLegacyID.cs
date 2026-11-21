@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class SPIDeltaChangeLegacyID : Form
+    public partial class SPIDeltaChangeLegacyID : WorkspacePageForm
     {
         private DataSet dsTableList;
         private DataTable dtLegacyID;

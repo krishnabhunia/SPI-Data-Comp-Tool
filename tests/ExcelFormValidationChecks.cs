@@ -14,6 +14,7 @@ namespace SPI_Data_Comp_Tool
         {
             CheckExcelComparison(passed);
             CheckMultipleReference(passed);
+            CheckMultipleReferenceCounts(passed);
             CheckScriptGeneration(passed);
             CheckExecutionInputs(passed);
             CheckUtilities(passed);
@@ -132,6 +133,37 @@ namespace SPI_Data_Comp_Tool
                 Rejected(form.ValidateMapping);
             }
             passed("Multiple-reference mapping rejects empty, unequal, overlapping and missing column mappings before replacing prepared data.");
+        }
+
+        private static void CheckMultipleReferenceCounts(Action<string> passed)
+        {
+            using (var source = new DataSet())
+            using (var target = new DataSet())
+            {
+                source.Tables.Add(Example("Source"));
+                target.Tables.Add(Example("UnselectedTargetSheet"));
+                DataTable selected = target.Tables.Add("SelectedTargetSheet");
+                selected.Columns.Add("ID", typeof(string));
+                selected.Columns.Add("Value", typeof(string));
+                selected.Columns.Add("Extra", typeof(string));
+                selected.Rows.Add("1", "One", "A");
+                selected.Rows.Add("2", "Two", "B");
+                selected.Rows.Add("3", "Three", "C");
+
+                using (var form = new ViewForMultiReference(source, target))
+                {
+                    Require(Find<Label>(form, "lbl_Source").Text == "Rows : 1 and Columns : 2",
+                        "Advanced mapping did not display the loaded source dimensions.");
+                    Require(Find<Label>(form, "lbl_Target").Text == "Rows : 3 and Columns : 3",
+                        "Advanced mapping displayed dimensions from the unselected target worksheet.");
+                    Require(Find<CheckedListBox>(form, "clb_Target").Items.Contains("Extra"),
+                        "Target mapping columns did not come from the selected worksheet.");
+                    selected.Rows.Clear();
+                    Require(Get<DataSet>(form, "dsTarget").Tables[0].Rows.Count == 3,
+                        "Advanced mapping no longer retained its independent target snapshot.");
+                }
+            }
+            passed("Advanced mapping displays counts and columns from its selected target worksheet, preserving its independent snapshot.");
         }
 
         private static void CheckScriptGeneration(Action<string> passed)

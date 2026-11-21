@@ -2,7 +2,7 @@
 
 ## First upgrade
 
-Older versions do not have an update page. Install the first updater-enabled release manually from this repository's **Releases** page once. After that, open **File > User Settings > Updates**, or **Help > Check for updates**. Both routes use the same Settings window, alongside General and Comparison rules; no extra update form is opened.
+Older versions do not have an update page. Install the first updater-enabled release manually from this repository's **Releases** page once. In the workspace interface, open **Settings > Preferences, rules & updates > Updates**, or **Help > Check for updates**. Both routes activate the same preferences task and its Updates tab, alongside General and Comparison rules; no extra update form is opened. Earlier updater-enabled builds use **File > User Settings > Updates**.
 
 ## Upgrading from the earlier updater
 
@@ -18,7 +18,7 @@ The installer still accepts the earlier updater's `/RELAUNCH=1` request for back
 2. Select **Check for updates**. The application does not check on startup or merely when you open Settings.
 3. Select an exact version. The list shows its channel, publication date, current/latest labels and release notes. No version is selected automatically.
 4. Select **Download selected**. You can cancel the operation. A complete, matching SHA-256 checksum is required before installation becomes available.
-5. Save your work and close other SPI tool windows and other copies of SPI. Select **Install & restart**, read the selected-version confirmation and approve it. Downgrades and reinstalling the current version are explicitly identified.
+5. Save your work, close all data workspaces and the **Connection profiles** task, and close other copies of SPI. The Settings workspace may remain open with only its preferences task loaded. Select **Install & restart**, read the selected-version confirmation and approve it. Downgrades and reinstalling the current version are explicitly identified.
 
 Only published releases with compatible assets from `krishnabhunia/SPI-Data-Comp-Tool` are shown. Drafts, manual builds, missing-asset releases and unrecognised/four-part version tags are excluded. `2.6.0` ranks above `2.6.0-beta002`, which ranks above `2.6.0-beta001`; version comparison is numeric, not alphabetical. The current application version comes from build metadata, not the executable filename.
 
@@ -44,7 +44,7 @@ The updater preserves only these application preferences:
 
 It does not back up connection-profile contents, database passwords, workbooks, unsaved results or database contents. Back up those separately as appropriate. Preferences use an atomic, per-installation cache under `%LocalAppData%\SPI Data Comp Tool\Updates`. A bounded settings bridge copies the four known application preferences to the selected version's `user.config` location, including when returning to older versions that predate the updater. Unknown settings are not imported from a backup, and existing unrelated settings are preserved. Invalid settings paths or malformed configuration stop the update rather than silently resetting preferences.
 
-The update helper waits for the exact parent process to exit; it does not kill it. Other open tool windows block handoff. Save/close other SPI processes too: portable file locks fail safely, and setup is told not to force-close other applications.
+The update helper waits for the exact parent process to exit; it does not kill it. Other data workspaces and profile tasks block handoff even when their pages are hidden; switching to Updates is not the same as closing those tasks. Background workers inside hosted pages remain part of the busy check. Use **Close task** for Connection profiles and close each data workspace, leaving only the Settings preferences task. Save/close other SPI processes too: portable file locks fail safely, and setup is told not to force-close other applications.
 
 ## Verification and limitations
 
@@ -55,6 +55,7 @@ The update helper waits for the exact parent process to exit; it does not kill i
 - The installer is currently **unsigned**. SHA-256 detects corruption or a mismatch with the published manifest; it is **not** publisher/code-signing authentication. Never bypass an unexpected Windows warning automatically. A compromised repository or release account remains outside this integrity guarantee.
 - The target framework remains .NET Framework 4.6.2. Runtime configuration opts into strong cryptography and operating-system-selected TLS, without changing machine-wide registry settings or disabling certificate verification.
 - Downgrading to a version without this feature removes the update page. A later upgrade from that older version requires manual installation again.
+- The configured offline workspace checks cover a preferences-only Settings workspace, a hidden profile page and hosted background workers. They validate installation eligibility without installing a release; inspect the exact commit's Actions result rather than treating this guide as a passing test record.
 
 ## If installation does not finish
 

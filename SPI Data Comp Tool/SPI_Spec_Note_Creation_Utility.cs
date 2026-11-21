@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class SPI_Spec_Note_Creation_Utility : Form
+    public partial class SPI_Spec_Note_Creation_Utility : WorkspacePageForm
     {
         public delegate void GetExcelData(DataSet ds, string fileName = null);
         private event GetExcelData getExcelDataEvent;
