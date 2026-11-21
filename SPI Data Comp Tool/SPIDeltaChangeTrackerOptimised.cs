@@ -189,6 +189,7 @@ namespace SPI_Data_Comp_Tool
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
             connection.InputChanged += (sender, args) => InvalidateTrackerConnections();
             UiTheme.Apply(this, btnGenerateOutput);
+            BuildSteps();
 
             try
             {
@@ -711,6 +712,7 @@ namespace SPI_Data_Comp_Tool
             btn_RuleForm.Enabled = enabledStatus;
             cb_IgnoreCase.Enabled = enabledStatus;
             btn_ListTableExcel.Enabled = enabledStatus;
+            if (steps != null) steps.Busy = !enabledStatus;
         }
 
         //private void cb_selectAll_toggle_CheckedChanged(object sender, EventArgs e)
@@ -2556,6 +2558,7 @@ namespace SPI_Data_Comp_Tool
                 else if (strFilePathChangeSave != "" && boolStatus)
                 {
                     Common_Data.DisplayMessage(rtb_Log, "Done and Opening file in path " + llbl_Folder_path.Text);
+                    compareFinished = true;
                     lbl_PercentageShow.Text = lbl_PercentageShow.Text + " Done ";
                     stop_Time = DateTime.Now;
                     displayElapsedTime();
@@ -2710,6 +2713,34 @@ namespace SPI_Data_Comp_Tool
         {
             if (dbSRCConnection != null) dbSRCConnection.boolConnection = false;
             if (dbTRGConnection != null) dbTRGConnection.boolConnection = false;
+            compareFinished = false;
+            steps?.Later();
+        }
+
+        private StepFlow steps;   // controlled steps, see BuildSteps
+        private bool compareFinished;
+
+        /// <summary>
+        /// Controlled steps: Source connection, Target connection, Table list (tests both connections),
+        /// Date filter and output folder, Compare. A step unlocks when the one before is done.
+        /// </summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, step_Strip)
+                .Add("Source connection", "Fill in the source connection", () => StepFlow.Passes(() => ValidateTrackerConnection(true)))
+                .Add("Target connection", "Fill in the target connection", () => StepFlow.Passes(() => ValidateTrackerConnection(false)),
+                    connection.Target.Group)
+                .Add("Table list", "Choose the table-list workbook (this also tests both connections)",
+                    () => dbSRCConnection != null && dbSRCConnection.boolConnection && dbTRGConnection != null && dbTRGConnection.boolConnection
+                        && dsTableList != null && dsTableList.Tables.Count > 0 && dsTableList.Tables[0].Rows.Count > 0,
+                    btn_ListTableExcel, cb_SRC_TableName, btn_Load_SRC_Table, cb_TRG_TableName, btn_Load_TRG_Table, cb_FullName)
+                .Add("Date filter and folder", "Choose the date column and the output folder",
+                    () => cb_DateCol.Text.Trim().Length > 0 && System.IO.Directory.Exists(llbl_Folder_path.Text),
+                    cb_DateCol, dateTimePicker_Date, llbl_Folder_path)
+                .Add("Compare", "Choose the options, then compare and generate Excel", () => compareFinished,
+                    cb_IncludeRule, btn_RuleForm, cb_IgnoreCase, btnGenerateOutput)
+                .Workers(backgroundWorker2);
+            steps.Refresh();
         }
 
         private void ValidateTrackerConnection(bool source)

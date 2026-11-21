@@ -51,8 +51,9 @@ namespace SPI_Data_Comp_Tool
             connection.ShowProfile = false;
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
-            connection.InputChanged += (sender, args) => { boolSRCConnection = false; dbSRCConnection = null; };
+            connection.InputChanged += (sender, args) => { boolSRCConnection = false; dbSRCConnection = null; extracted = false; steps?.Later(); };
             UiTheme.Apply(this, btn_ImportExcel);
+            BuildSteps();
 
             try
             {
@@ -148,6 +149,20 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
+        private StepFlow steps;   // controlled steps, see BuildSteps
+        private bool extracted;
+
+        /// <summary>Controlled steps: Connection, Test connection, Import Excel. A step unlocks when the one before is done.</summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, step_Strip)
+                .Add("Connection", "Fill in the database connection", () => StepFlow.Passes(() => connection.Source.ValidateInput()))
+                .Add("Test connection", "Test the connection",
+                    () => boolSRCConnection && dbSRCConnection != null && dbSRCConnection.boolConnection, btn_TestDBConnection)
+                .Add("Import Excel", "Import the extraction-list Excel and save the result", () => extracted, btn_ImportExcel);
+            steps.Refresh();
+        }
+
         private void btn_ImportExcel_Click(object sender, EventArgs e)
         {
             try
@@ -208,6 +223,7 @@ namespace SPI_Data_Comp_Tool
                         if (WriteExcel.ExportToExcel(dtResult, "List of IDs", saveFileDialogFile.Str_saveFileNameWithPath))
                         {
                             Common_Data.DisplayMessage(rtb_Log, $"File saved as : {saveFileDialogFile.Str_saveFileNameWithPath}");
+                            extracted = true;
                             Process.Start(saveFileDialogFile.Str_saveFileNameWithPath);
                         }
                         else

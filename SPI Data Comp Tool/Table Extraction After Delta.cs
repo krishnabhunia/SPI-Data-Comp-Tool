@@ -90,8 +90,10 @@ namespace SPI_Data_Comp_Tool
             {
                 if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
                 if (dBConnectionStatus_TRG != null) dBConnectionStatus_TRG.boolConnection = false;
+                steps?.Later();
             };
             UiTheme.Apply(this);
+            BuildSteps();
 
             try
             {
@@ -163,6 +165,35 @@ namespace SPI_Data_Comp_Tool
             {
                 Common_Data.DisplayError(rtb_Log, ex);
             }
+        }
+
+        private StepFlow steps;   // controlled steps, see BuildSteps
+
+        private bool ExcelInput
+        {
+            get { return cb_CHG_NUM_From_Excel.Checked; }
+        }
+
+        /// <summary>
+        /// Controlled steps: Source (connection, or an Excel sheet when "Input from Excel" is ticked),
+        /// Target connection, Test connections, Run. A step unlocks when the one before is done.
+        /// </summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, step_Strip)
+                .Add(() => ExcelInput ? "Source sheet" : "Source connection",
+                    () => ExcelInput ? "Choose the source worksheet" : "Fill in the source connection, or tick Input from Excel",
+                    () => ExcelInput ? cb_ExcelSheetName.SelectedIndex >= 0 && dtSRC != null && dtSRC.Rows.Count > 0
+                        : StepFlow.Passes(() => connection.Source.ValidateInput()), null)
+                .Add("Target connection", "Fill in the target connection", () => StepFlow.Passes(() => connection.Target.ValidateInput()),
+                    connection.Target.Group)
+                .Add(() => ExcelInput ? "Test target" : "Test connections", () => ExcelInput ? "Test the target connection" : "Test both connections",
+                    () => dBConnectionStatus_TRG != null && dBConnectionStatus_TRG.boolConnection
+                        && (ExcelInput || dBConnectionStatus_SRC != null && dBConnectionStatus_SRC.boolConnection), null, btn_TestDBConnection)
+                .Add("Run", "Run one of the extractions", () => false, btn_Excel, btnOLDvsNew, btn_Chg_Num, btn_Chg_NumVsChg_Num)
+                .Workers(bgw_TableExtractionAfterDelta, bgw_old_VS_new, bgw_Chg_Num, bgw_Chg_numVsChg_Num);
+            steps.Watch(cb_CHG_NUM_From_Excel, cb_ExcelSheetName);
+            steps.Refresh();
         }
 
         private void ConnectDB()

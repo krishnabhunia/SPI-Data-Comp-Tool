@@ -67,6 +67,7 @@
             this.backgroundWorker2 = new System.ComponentModel.BackgroundWorker();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.tlp_Root = new System.Windows.Forms.TableLayoutPanel();
+            this.step_Strip = new SPI_Data_Comp_Tool.StepStrip();
             this.tlp_Top = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Connection = new System.Windows.Forms.TableLayoutPanel();
             this.connection = new SPI_Data_Comp_Tool.ConnectionPanel();
@@ -102,16 +103,26 @@
             this.tlp_Root.Name = "tlp_Root";
             this.tlp_Root.ColumnCount = 1;
             this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_Root.RowCount = 3;
+            this.tlp_Root.RowCount = 4;
+            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            this.tlp_Root.Controls.Add(this.tlp_Top, 0, 0);
-            this.tlp_Root.Controls.Add(this.gb_Debug, 0, 1);
-            this.tlp_Root.Controls.Add(this.groupBox11, 0, 2);
+            this.tlp_Root.Controls.Add(this.step_Strip, 0, 0);
+            this.tlp_Root.Controls.Add(this.tlp_Top, 0, 1);
+            this.tlp_Root.Controls.Add(this.gb_Debug, 0, 2);
+            this.tlp_Root.Controls.Add(this.groupBox11, 0, 3);
             this.tlp_Root.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Root.AutoSize = false;
             this.tlp_Root.TabIndex = 0;
+            //
+            // step_Strip
+            //
+            this.step_Strip.Name = "step_Strip";
+            this.step_Strip.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.step_Strip.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
+            this.step_Strip.Size = new System.Drawing.Size(800, 66);
+            this.step_Strip.TabIndex = 1;
             //
             // tlp_Top
             //
@@ -127,7 +138,7 @@
             this.tlp_Top.AutoSize = true;
             this.tlp_Top.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlp_Top.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.tlp_Top.TabIndex = 1;
+            this.tlp_Top.TabIndex = 2;
             //
             // groupBox14
             //
@@ -140,7 +151,7 @@
             this.groupBox14.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.groupBox14.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.groupBox14.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox14.TabIndex = 2;
+            this.groupBox14.TabIndex = 3;
             //
             // tlp_Connection
             //
@@ -155,7 +166,7 @@
             this.tlp_Connection.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Connection.AutoSize = true;
             this.tlp_Connection.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Connection.TabIndex = 3;
+            this.tlp_Connection.TabIndex = 4;
             //
             // connection
             //
@@ -163,7 +174,7 @@
             this.connection.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.connection.AutoSize = true;
             this.connection.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.connection.TabIndex = 4;
+            this.connection.TabIndex = 5;
             //
             // tlp_Tables
             //
@@ -186,7 +197,7 @@
             this.tlp_Tables.AutoSize = true;
             this.tlp_Tables.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlp_Tables.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.tlp_Tables.TabIndex = 5;
+            this.tlp_Tables.TabIndex = 6;
             //
             // tlp_SourceTable
             //
@@ -204,7 +215,7 @@
             this.tlp_SourceTable.AutoSize = true;
             this.tlp_SourceTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlp_SourceTable.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.tlp_SourceTable.TabIndex = 6;
+            this.tlp_SourceTable.TabIndex = 7;
             //
             // label16
             //
@@ -213,7 +224,7 @@
             this.label16.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label16.AutoSize = true;
             this.label16.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label16.TabIndex = 7;
+            this.label16.TabIndex = 8;
             //
             // cb_SRC_TableName
             //
@@ -224,7 +235,7 @@
             this.cb_SRC_TableName.Name = "cb_SRC_TableName";
             this.cb_SRC_TableName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.cb_SRC_TableName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_SRC_TableName.TabIndex = 8;
+            this.cb_SRC_TableName.TabIndex = 9;
             //
             // btn_Load_SRC_Table
             //
@@ -234,7 +245,7 @@
             this.btn_Load_SRC_Table.Text = "Load tables";
             this.btn_Load_SRC_Table.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
             this.btn_Load_SRC_Table.Size = new System.Drawing.Size(110, 30);
-            this.btn_Load_SRC_Table.TabIndex = 9;
+            this.btn_Load_SRC_Table.TabIndex = 10;
             //
             // tlp_TargetTable
             //
@@ -252,7 +263,7 @@
             this.tlp_TargetTable.AutoSize = true;
             this.tlp_TargetTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlp_TargetTable.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.tlp_TargetTable.TabIndex = 10;
+            this.tlp_TargetTable.TabIndex = 11;
             //
             // label17
             //
@@ -261,7 +272,7 @@
             this.label17.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label17.AutoSize = true;
             this.label17.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label17.TabIndex = 11;
+            this.label17.TabIndex = 12;
             //
             // cb_TRG_TableName
             //
@@ -271,7 +282,7 @@
             this.cb_TRG_TableName.Name = "cb_TRG_TableName";
             this.cb_TRG_TableName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.cb_TRG_TableName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_TRG_TableName.TabIndex = 12;
+            this.cb_TRG_TableName.TabIndex = 13;
             //
             // btn_Load_TRG_Table
             //
@@ -281,7 +292,7 @@
             this.btn_Load_TRG_Table.Text = "Load tables";
             this.btn_Load_TRG_Table.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
             this.btn_Load_TRG_Table.Size = new System.Drawing.Size(110, 30);
-            this.btn_Load_TRG_Table.TabIndex = 13;
+            this.btn_Load_TRG_Table.TabIndex = 14;
             //
             // tlp_DateFilter
             //
@@ -301,7 +312,7 @@
             this.tlp_DateFilter.AutoSize = true;
             this.tlp_DateFilter.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlp_DateFilter.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.tlp_DateFilter.TabIndex = 14;
+            this.tlp_DateFilter.TabIndex = 15;
             //
             // label12
             //
@@ -310,7 +321,7 @@
             this.label12.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label12.AutoSize = true;
             this.label12.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label12.TabIndex = 15;
+            this.label12.TabIndex = 16;
             //
             // cb_DateCol
             //
@@ -322,7 +333,7 @@
             this.cb_DateCol.Text = "CHG_DATE";
             this.cb_DateCol.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.cb_DateCol.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_DateCol.TabIndex = 16;
+            this.cb_DateCol.TabIndex = 17;
             //
             // label15
             //
@@ -331,7 +342,7 @@
             this.label15.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label15.AutoSize = true;
             this.label15.Margin = new System.Windows.Forms.Padding(16, 3, 8, 3);
-            this.label15.TabIndex = 17;
+            this.label15.TabIndex = 18;
             //
             // dateTimePicker_Date
             //
@@ -342,7 +353,7 @@
             this.dateTimePicker_Date.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.dateTimePicker_Date.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.dateTimePicker_Date.Size = new System.Drawing.Size(180, 25);
-            this.dateTimePicker_Date.TabIndex = 18;
+            this.dateTimePicker_Date.TabIndex = 19;
             //
             // cb_FullName
             //
@@ -353,7 +364,7 @@
             this.cb_FullName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_FullName.AutoSize = true;
             this.cb_FullName.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.cb_FullName.TabIndex = 19;
+            this.cb_FullName.TabIndex = 20;
             //
             // groupBox3
             //
@@ -364,7 +375,7 @@
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.groupBox3.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox3.TabIndex = 20;
+            this.groupBox3.TabIndex = 21;
             //
             // tlp_Run
             //
@@ -397,7 +408,7 @@
             this.tlp_Run.SetColumnSpan(this.llbl_Folder_path, 2);
             this.tlp_Run.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Run.AutoSize = false;
-            this.tlp_Run.TabIndex = 21;
+            this.tlp_Run.TabIndex = 22;
             //
             // cb_IncludeRule
             //
@@ -407,7 +418,7 @@
             this.cb_IncludeRule.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_IncludeRule.AutoSize = true;
             this.cb_IncludeRule.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_IncludeRule.TabIndex = 22;
+            this.cb_IncludeRule.TabIndex = 23;
             //
             // btn_RuleForm
             //
@@ -418,7 +429,7 @@
             this.btn_RuleForm.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
             this.btn_RuleForm.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_RuleForm.Size = new System.Drawing.Size(110, 30);
-            this.btn_RuleForm.TabIndex = 23;
+            this.btn_RuleForm.TabIndex = 24;
             //
             // cb_IgnoreCase
             //
@@ -428,7 +439,7 @@
             this.cb_IgnoreCase.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_IgnoreCase.AutoSize = true;
             this.cb_IgnoreCase.Margin = new System.Windows.Forms.Padding(0, 6, 0, 8);
-            this.cb_IgnoreCase.TabIndex = 24;
+            this.cb_IgnoreCase.TabIndex = 25;
             //
             // btnGenerateOutput
             //
@@ -440,7 +451,7 @@
             this.btnGenerateOutput.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnGenerateOutput.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
             this.btnGenerateOutput.Size = new System.Drawing.Size(160, 36);
-            this.btnGenerateOutput.TabIndex = 25;
+            this.btnGenerateOutput.TabIndex = 26;
             //
             // btn_Cancel
             //
@@ -452,7 +463,7 @@
             this.btn_Cancel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_Cancel.Margin = new System.Windows.Forms.Padding(0, 0, 4, 0);
             this.btn_Cancel.Size = new System.Drawing.Size(100, 30);
-            this.btn_Cancel.TabIndex = 26;
+            this.btn_Cancel.TabIndex = 27;
             //
             // btn_Clear_Reset
             //
@@ -463,7 +474,7 @@
             this.btn_Clear_Reset.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_Clear_Reset.Margin = new System.Windows.Forms.Padding(4, 0, 0, 0);
             this.btn_Clear_Reset.Size = new System.Drawing.Size(100, 30);
-            this.btn_Clear_Reset.TabIndex = 27;
+            this.btn_Clear_Reset.TabIndex = 28;
             //
             // tabControl1
             //
@@ -473,7 +484,7 @@
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Margin = new System.Windows.Forms.Padding(0, 12, 0, 8);
             this.tabControl1.Size = new System.Drawing.Size(280, 84);
-            this.tabControl1.TabIndex = 28;
+            this.tabControl1.TabIndex = 29;
             //
             // tabPage2
             //
@@ -482,7 +493,7 @@
             this.tabPage2.Text = "Batch table list";
             this.tabPage2.Controls.Add(this.tlp_Batch);
             this.tabPage2.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.tabPage2.TabIndex = 29;
+            this.tabPage2.TabIndex = 30;
             //
             // tlp_Batch
             //
@@ -495,7 +506,7 @@
             this.tlp_Batch.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Batch.AutoSize = true;
             this.tlp_Batch.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Batch.TabIndex = 30;
+            this.tlp_Batch.TabIndex = 31;
             //
             // btn_ListTableExcel
             //
@@ -506,7 +517,7 @@
             this.btn_ListTableExcel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_ListTableExcel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_ListTableExcel.Size = new System.Drawing.Size(150, 34);
-            this.btn_ListTableExcel.TabIndex = 31;
+            this.btn_ListTableExcel.TabIndex = 32;
             //
             // label13
             //
@@ -515,7 +526,7 @@
             this.label13.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label13.AutoSize = true;
             this.label13.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.label13.TabIndex = 32;
+            this.label13.TabIndex = 33;
             //
             // llbl_Folder_path
             //
@@ -529,7 +540,7 @@
             this.llbl_Folder_path.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.llbl_Folder_path.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.llbl_Folder_path.Size = new System.Drawing.Size(220, 38);
-            this.llbl_Folder_path.TabIndex = 33;
+            this.llbl_Folder_path.TabIndex = 34;
             //
             // gb_Debug
             //
@@ -540,7 +551,7 @@
             this.gb_Debug.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gb_Debug.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
             this.gb_Debug.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_Debug.TabIndex = 34;
+            this.gb_Debug.TabIndex = 35;
             //
             // tlp_Log
             //
@@ -554,7 +565,7 @@
             this.tlp_Log.Controls.Add(this.btn_Clear, 1, 0);
             this.tlp_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Log.AutoSize = false;
-            this.tlp_Log.TabIndex = 35;
+            this.tlp_Log.TabIndex = 36;
             //
             // rtb_Log
             //
@@ -564,7 +575,7 @@
             this.rtb_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtb_Log.Margin = new System.Windows.Forms.Padding(0, 0, 8, 0);
             this.rtb_Log.MinimumSize = new System.Drawing.Size(0, 130);
-            this.rtb_Log.TabIndex = 36;
+            this.rtb_Log.TabIndex = 37;
             //
             // btn_Clear
             //
@@ -575,7 +586,7 @@
             this.btn_Clear.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right));
             this.btn_Clear.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_Clear.Size = new System.Drawing.Size(95, 30);
-            this.btn_Clear.TabIndex = 37;
+            this.btn_Clear.TabIndex = 38;
             //
             // groupBox11
             //
@@ -588,7 +599,7 @@
             this.groupBox11.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.groupBox11.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
             this.groupBox11.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox11.TabIndex = 38;
+            this.groupBox11.TabIndex = 39;
             //
             // tlp_Progress
             //
@@ -607,7 +618,7 @@
             this.tlp_Progress.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Progress.AutoSize = true;
             this.tlp_Progress.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Progress.TabIndex = 39;
+            this.tlp_Progress.TabIndex = 40;
             //
             // progressBar1
             //
@@ -615,7 +626,7 @@
             this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.progressBar1.Margin = new System.Windows.Forms.Padding(0, 4, 16, 4);
             this.progressBar1.Size = new System.Drawing.Size(300, 14);
-            this.progressBar1.TabIndex = 40;
+            this.progressBar1.TabIndex = 41;
             //
             // lbl_PercentageShow
             //
@@ -624,7 +635,7 @@
             this.lbl_PercentageShow.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_PercentageShow.AutoSize = true;
             this.lbl_PercentageShow.Margin = new System.Windows.Forms.Padding(0, 0, 20, 0);
-            this.lbl_PercentageShow.TabIndex = 41;
+            this.lbl_PercentageShow.TabIndex = 42;
             //
             // label1
             //
@@ -633,7 +644,7 @@
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label1.AutoSize = true;
             this.label1.Margin = new System.Windows.Forms.Padding(0, 0, 8, 0);
-            this.label1.TabIndex = 42;
+            this.label1.TabIndex = 43;
             //
             // lblTimer
             //
@@ -643,7 +654,7 @@
             this.lblTimer.AutoSize = true;
             this.lblTimer.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.lblTimer.MinimumSize = new System.Drawing.Size(80, 0);
-            this.lblTimer.TabIndex = 43;
+            this.lblTimer.TabIndex = 44;
             //
             // comboBox1
             //
@@ -743,6 +754,8 @@
         }
 
         #endregion
+
+        private SPI_Data_Comp_Tool.StepStrip step_Strip;
 
         private System.Windows.Forms.TableLayoutPanel tlp_Root;
         private System.Windows.Forms.TableLayoutPanel tlp_Top;

@@ -75,10 +75,32 @@ namespace SPI_Data_Comp_Tool
             return this;
         }
 
+        private readonly List<System.ComponentModel.BackgroundWorker> workers = new List<System.ComponentModel.BackgroundWorker>();
+
+        /// <summary>
+        /// The window's background workers: while one runs every step control stays disabled, and the
+        /// steps are checked again when it finishes (after the window's own completion handler).
+        /// </summary>
+        internal StepFlow Workers(params System.ComponentModel.BackgroundWorker[] list)
+        {
+            foreach (var worker in list)
+            {
+                if (worker == null || workers.Contains(worker)) continue;
+                workers.Add(worker);
+                worker.RunWorkerCompleted += (sender, args) => Later();
+            }
+            return this;
+        }
+
+        private bool AnyWorkerBusy
+        {
+            get { return workers.Any(w => w.IsBusy); }
+        }
+
         /// <summary>While true (loading, comparing) every step control is disabled.</summary>
         internal bool Busy
         {
-            get { return busy; }
+            get { return busy || AnyWorkerBusy; }
             set
             {
                 busy = value;
@@ -151,6 +173,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 bool open = true;
+                bool blocked = Busy;
                 int number = 0;
                 foreach (Step step in steps)
                 {
@@ -158,13 +181,13 @@ namespace SPI_Data_Comp_Tool
                     if (!step.Shown)
                     {
                         step.State = open ? StepState.Done : StepState.Locked;
-                        foreach (Control c in step.Controls) Set(c, open && !busy);
+                        foreach (Control c in step.Controls) Set(c, open && !blocked);
                         continue;
                     }
                     step.Number = ++number;
                     bool done = open && Safe(step.Done, false);
                     step.State = !open ? StepState.Locked : done ? StepState.Done : StepState.Current;
-                    foreach (Control c in step.Controls) Set(c, open && !busy);
+                    foreach (Control c in step.Controls) Set(c, open && !blocked);
                     open = done;
                 }
             }
@@ -248,7 +271,7 @@ namespace SPI_Data_Comp_Tool
             if (refreshing || !c.Enabled) return;
             Step step;
             if (!owner.TryGetValue(c, out step)) return;
-            if (busy || step.State == StepState.Locked)
+            if (Busy || step.State == StepState.Locked)
             {
                 refreshing = true;
                 try { c.Enabled = false; }

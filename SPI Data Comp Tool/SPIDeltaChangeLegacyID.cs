@@ -58,8 +58,11 @@ namespace SPI_Data_Comp_Tool
             {
                 if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
                 if (dBConnectionStatus_TRG != null) dBConnectionStatus_TRG.boolConnection = false;
+                mapped = false;
+                steps?.Later();
             };
             UiTheme.Apply(this, btn_ListTableExcel);
+            BuildSteps();
 
             try
             {
@@ -92,6 +95,20 @@ namespace SPI_Data_Comp_Tool
         }
 
 
+
+        private StepFlow steps;   // controlled steps, see BuildSteps
+        private bool mapped;
+
+        /// <summary>Controlled steps: Source connection, Test connection, Map legacy IDs. A step unlocks when the one before is done.</summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, step_Strip)
+                .Add("Source connection", "Fill in the SQL Server source connection", () => StepFlow.Passes(ValidateLegacySource))
+                .Add("Test connection", "Test the source connection", () => dBConnectionStatus_SRC != null && dBConnectionStatus_SRC.boolConnection,
+                    btn_Connect_Reference_ID)
+                .Add("Map legacy IDs", "Browse for the Excel file and save the mapped copy", () => mapped, btn_ListTableExcel);
+            steps.Refresh();
+        }
 
         private void btn_ListTableExcel_Click(object sender, EventArgs e)
         {
@@ -162,6 +179,7 @@ namespace SPI_Data_Comp_Tool
                                 if (WriteExcel.ExportToExcel(dsTableList, saveFileDialogFile.Str_saveFileNameWithPath))
                                 {
                                     Common_Data.DisplayMessage(rtb_Log, $"Excel Output File Saved Successfully : {saveFileDialogFile.Str_saveFileNameWithPath}");
+                                    mapped = true;
                                 }
                                 else
                                 {
