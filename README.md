@@ -6,6 +6,8 @@ The main window now groups existing tasks into six workspace tiles: **Comparison
 
 The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes remain available. Choose one on the Settings preferences task's **General** tab; the home tiles, workspaces and loaded pages change colour immediately, without reopening the tasks. Ocean is the default; Midnight is the dark theme.
 
+**Comparison > Excel Sheet Audit** is a separate native C# form for two selected worksheets: optional single/composite keys, case-insensitive column-name matching, exact typed values, headers, formatting and layout. It exports exactly two sheets: **Summary** and **Data Differences**. The original **Excel comparison** task is unchanged. See the [audit guide](docs/EXCEL_SHEET_AUDIT.md) for validation, scope and resource limits.
+
 | SrNo. | Topic | Where |
 |---|---|---|
 | 1 | Architecture, feature inventory, diagrams, setup, testing, limitations | [docs/PROJECT_GUIDE.md](docs/PROJECT_GUIDE.md) |
@@ -14,6 +16,7 @@ The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes rem
 | 4 | CI build: portable exe and 64-bit installer (one exe each, libraries embedded) | `.github/workflows/build.yml` → Actions → artifact `SPI_Data_Comp_Tool_<version>`, or the release page (`…_x64_setup.exe`) |
 | 5 | In-app normal/beta updates, version selection and recovery | [docs/UPDATING.md](docs/UPDATING.md) |
 | 6 | Workspace/task map, independent sessions and first-phase boundaries | [docs/WORKSPACES.md](docs/WORKSPACES.md) |
+| 7 | Separate Excel Sheet Audit: Design A, key mappings, two-sheet report and limits | [docs/EXCEL_SHEET_AUDIT.md](docs/EXCEL_SHEET_AUDIT.md) |
 
 ## Quick start
 

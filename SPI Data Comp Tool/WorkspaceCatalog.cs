@@ -39,6 +39,8 @@ namespace SPI_Data_Comp_Tool
                 WorkspaceKind.Comparison, () => new DB_Comparison_Form()),
             new WorkspaceTask("comparison.excel", "Excel comparison", "Compare two workbooks, with optional keys and advanced column mappings.",
                 WorkspaceKind.Comparison, () => new Excel_Excel_Comparison()),
+            new WorkspaceTask("comparison.excel-audit", "Excel Sheet Audit", "Audit two worksheets: values, headers, formatting and layout. The existing Excel comparison remains unchanged.",
+                WorkspaceKind.Comparison, () => new ExcelSheetAuditForm()),
             new WorkspaceTask("comparison.batch", "Batch comparison", "Compare a list of database tables or Excel files; retain per-item and batch reports.",
                 WorkspaceKind.Comparison, () => new Compare_Multiples_List_Tables_Forms()),
             new WorkspaceTask("analysis.gaps", "Specification gaps", "Load specification metadata, arrange form pairs and export differences.",

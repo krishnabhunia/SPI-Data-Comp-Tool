@@ -140,6 +140,15 @@ jobs:
           if (-not $p.WaitForExit(60000)) { & tools/ci_window_report.ps1 -ProcessId $p.Id; Stop-Process -Id $p.Id -Force; throw 'UI workflow checks timed out' }
           if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
           if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'UI workflow checks failed' }
+      - name: Excel Sheet Audit regression checks
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
+          $log = Join-Path $env:RUNNER_TEMP 'excel-audit-checks.txt'
+          $p = Start-Process $exe -ArgumentList '--check-excel-audit', "`"$log`"" -PassThru
+          if (-not $p.WaitForExit(120000)) { & tools/ci_window_report.ps1 -ProcessId $p.Id; Stop-Process -Id $p.Id -Force; throw 'Excel Sheet Audit checks timed out' }
+          if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
+          if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'Excel Sheet Audit checks failed' }
       - name: Updater checks
         shell: pwsh
         run: |
