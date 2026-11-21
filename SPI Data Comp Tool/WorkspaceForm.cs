@@ -189,6 +189,10 @@ namespace SPI_Data_Comp_Tool
                     // Register the page before parenting: generic recursive control styling must
                     // not make an unregistered legacy Form look as though it registered itself.
                     UiTheme.EnsureApplied(page);
+                    // Some standalone workflows start maximized. A child page must use normal
+                    // window state before parenting; maximizing it under an unshown workspace
+                    // can prevent its native window from becoming visible on the first open.
+                    page.WindowState = FormWindowState.Normal;
                     page.TopLevel = false;
                     page.FormBorderStyle = FormBorderStyle.None;
                     page.ShowInTaskbar = false;

@@ -137,7 +137,9 @@ namespace SPI_Data_Comp_Tool
                     PumpEvents();
                     NoEventErrors(eventErrors, "opening the task");
                     Require(page != null && !page.IsDisposed && page.Visible && page.IsHandleCreated,
-                        "The task did not become a live, visible workspace page.");
+                        "The task did not become a live, visible workspace page. " + PageState(page));
+                    Require(page.WindowState == FormWindowState.Normal,
+                        "A hosted page retained standalone window state. " + PageState(page));
                     Require(navigator.LoadedWorkspaces.Count == 1 && page.HostWorkspace != null
                         && ReferenceEquals(page.HostWorkspace.ActivePage, page), "The navigator did not activate the new task.");
                     CheckInitialization(page);
@@ -230,6 +232,15 @@ namespace SPI_Data_Comp_Tool
             }
             connection.ValidateInput(); // Validate syntax/required fields only; never opens a database.
             Require(connection.Source.DataSource.Text == "manual-source", "Manual Source input was overwritten during refresh.");
+        }
+
+        private static string PageState(WorkspacePageForm page)
+        {
+            if (page == null) return "Page=null.";
+            return "Page=" + page.Name + ", Disposed=" + page.IsDisposed + ", Visible=" + page.Visible
+                + ", Handle=" + page.IsHandleCreated + ", WindowState=" + page.WindowState
+                + ", HostVisible=" + (page.HostWorkspace != null && page.HostWorkspace.Visible)
+                + ", ParentVisible=" + (page.Parent != null && page.Parent.Visible) + ".";
         }
 
         private static void CheckInitialization(WorkspacePageForm page)
