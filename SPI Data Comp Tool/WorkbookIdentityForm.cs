@@ -741,13 +741,25 @@ namespace SPI_Data_Comp_Tool
                         (percent, message) => worker.ReportProgress(percent * 9 / 10, message), cancelled);
                     if (cancelled()) { args.Cancel = true; return; }
                     worker.ReportProgress(92, "Writing the report");
-                    // The report replaces an existing file only once it has been written completely.
-                    FormValidation.WriteAtomically(request.Report, temporary => IdentityReportWriter.Write(compared, temporary));
+                    WriteReport(compared, request.Report, cancelled);
                     args.Result = compared;
                 }
                 if (cancelled() && job.Kind == JobKind.Load) args.Cancel = true;
             }
             catch (OperationCanceledException) { args.Cancel = true; }
+        }
+
+        /// <summary>
+        /// Writes the report beside its destination and puts it in place only when it is complete. Cancel pressed
+        /// while it is being written stops here: the unfinished run publishes nothing and an existing report stays.
+        /// </summary>
+        internal static void WriteReport(IdentityResult compared, string path, Func<bool> cancelled)
+        {
+            FormValidation.WriteAtomically(path, temporary =>
+            {
+                IdentityReportWriter.Write(compared, temporary);
+                if (cancelled != null && cancelled()) throw new OperationCanceledException();
+            });
         }
 
         private static IdentityFileInfo Inspect(string path, string sheet, int row, Func<bool> cancelled, out string error)

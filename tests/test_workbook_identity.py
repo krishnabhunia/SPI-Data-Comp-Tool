@@ -104,7 +104,7 @@ class WorkbookIdentityContracts(unittest.TestCase):
         form = code("WorkbookIdentityForm.cs")
         for needed in ("public sealed class WorkbookIdentityForm : WorkspacePageForm", "BackgroundWorker worker",
                        "FormValidation.LockInputs(this, cancel)", "WorkbookIdentityEngine.Compare(", "WorkbookIdentityEngine.Inspect(",
-                       "FormValidation.WriteAtomically(request.Report", "FormValidation.DifferentFiles(report, a, output)",
+                       "FormValidation.WriteAtomically(path, temporary =>", "FormValidation.DifferentFiles(report, a, output)",
                        "FormValidation.DifferentFiles(report, b, output)", "MessageBoxDefaultButton.Button2", "protected override void OnFormClosing",
                        "UiTheme.Apply(this, compare)", "IdentityReportWriter.Tables(finished)", "if (SelfTest.IsRunning) return;"):
             self.assertIn(needed, form)
@@ -113,7 +113,12 @@ class WorkbookIdentityContracts(unittest.TestCase):
         # The engine is never called from the UI thread.
         work = form.split("private void Work(object sender, DoWorkEventArgs args)", 1)[1].split("private void Completed(", 1)[0]
         self.assertEqual(form.count("WorkbookIdentityEngine.Compare("), work.count("WorkbookIdentityEngine.Compare("))
-        self.assertEqual(form.count("IdentityReportWriter.Write("), work.count("IdentityReportWriter.Write("))
+        self.assertEqual(form.count("WriteReport(compared, request.Report, cancelled);"), 1)
+        self.assertIn("WriteReport(compared, request.Report, cancelled);", work)
+        # Cancel pressed while the report is written is honoured before the report is put in place.
+        write = form.split("internal static void WriteReport(", 1)[1].split("private static IdentityFileInfo Inspect(", 1)[0]
+        self.assertEqual(form.count("IdentityReportWriter.Write("), write.count("IdentityReportWriter.Write("))
+        self.assertLess(write.index("IdentityReportWriter.Write(compared, temporary);"), write.index("throw new OperationCanceledException();"))
         for forbidden in ("Microsoft.Office.Interop", "OfficeOpenXml", "Application.DoEvents", "python"):
             self.assertNotIn(forbidden, form)
 

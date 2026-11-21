@@ -255,6 +255,21 @@ namespace SPI_Data_Comp_Tool
                 Wait(form);
                 Require(form.Result != null && form.StatusText.IndexOf("finished", StringComparison.Ordinal) >= 0, "the confirmed replacement did not finish: " + form.StatusText);
 
+                // Cancel pressed while the report is being written: nothing is put in place and the earlier report stays.
+                byte[] earlier = File.ReadAllBytes(report);
+                string never = Path.Combine(folder, "cancelled-report.xlsx");
+                foreach (string target in new[] { report, never })
+                {
+                    bool stopped = false;
+                    try { WorkbookIdentityForm.WriteReport(form.Result, target, () => true); }
+                    catch (OperationCanceledException) { stopped = true; }
+                    Require(stopped, "a report was put in place although the run was cancelled while it was written");
+                }
+                Require(earlier.SequenceEqual(File.ReadAllBytes(report)) && !File.Exists(never) && Directory.GetFiles(folder, ".spi-*").Length == 0,
+                    "a cancelled report replaced the earlier one, or left a file behind");
+                WorkbookIdentityForm.WriteReport(form.Result, never, () => false);
+                Require(File.Exists(never), "a report that was not cancelled was not written");
+
                 // A result on screen is marked once an input is edited.
                 Label stale = Find<Label>(form, "lbl_IdentityStale");
                 Require(!stale.Visible, "a fresh result was marked as out of date");
