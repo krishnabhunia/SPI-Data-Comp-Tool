@@ -75,7 +75,6 @@ namespace SPI_Data_Comp_Tool
             connection.Failed += (sender, error) => DisplayError(error);
             connection.InputChanged += (sender, args) => { tablesLoaded = false; exported = false; steps?.Later(); };
             UiTheme.Apply(this, btn_ExportToExcel);
-            BuildSteps();
 
             ds = new DataSet();
             dt_sql = new DataTable();
@@ -88,9 +87,11 @@ namespace SPI_Data_Comp_Tool
             common_Data = new Common_Data();
             lstTableDetails = new List<string>();
 
-            common_Data.ReadUserProfile(cb_UserProfileList);
+            ProfileLoadResult profileLoad = connection.LoadSavedProfiles();
+            if (!string.IsNullOrEmpty(profileLoad.Message))
+                FormHelpers.ShowText(lbl_Status, profileLoad.Message, profileLoad.HasError ? Color.DarkRed : UiTheme.TextColor);
 
-            if (Debugger.IsAttached)
+            if (!SelfTest.IsRunning && Debugger.IsAttached)
             {
                 if (Environment.UserName.ToString() == "KRISHNA")
                 {
@@ -108,7 +109,7 @@ namespace SPI_Data_Comp_Tool
                 }
                 linkLabel1.Text = @"D:\Krishna\Output\Export DB To Excel";
             }
-
+            BuildSteps();
         }
 
         /// <summary>A saved profile was put into the Connection panel.</summary>

@@ -142,7 +142,6 @@ namespace SPI_Data_Comp_Tool
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
             connection.InputChanged += (sender, args) => { boolLoadDataBase = boolSRCConnection = boolTRGConnection = compareFinished = false; steps?.Later(); };
             UiTheme.Apply(this, btn_Compare);
-            BuildSteps();
 
             try
             {
@@ -180,7 +179,6 @@ namespace SPI_Data_Comp_Tool
                 colorPairs = new List<ColorPair>();
                 ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;
 
-                common_Data.ReadUserProfile(cb_UserProfileList);
                 dsRules = new DataSet();
 
                 dtSummaryForList = new DataTable();
@@ -201,15 +199,14 @@ namespace SPI_Data_Comp_Tool
                 //checkRules = new CheckRules();
 
                 dsAllColumns = new DataSet();
+                ProfileLoadResult profileLoad = connection.LoadSavedProfiles();
                 if (cb_UserProfileList.Items.Count > 0)
                 {
                     cb_UserProfileList.SelectedIndex = 0;
                 }
 
-                if (Common_Data.StringNotNullOrEmpty(Properties.Settings.Default.ProfilePathUser, ".json", false, true))
-                {
-                    Common_Data.DisplayMessage(rtb_Log, ($"User Profile Loaded from {Properties.Settings.Default.ProfilePathUser}"));
-                }
+                if (!string.IsNullOrEmpty(profileLoad.Message))
+                    Common_Data.DisplayMessage(rtb_Log, profileLoad.Message, profileLoad.HasError);
 
                 if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName))
                 {
@@ -218,7 +215,6 @@ namespace SPI_Data_Comp_Tool
                         if (cb_UserProfileList.Items.Count > 2)
                         {
                             cb_UserProfileList.SelectedIndex = 1;
-                            btn_TestDBConnection_Click(null, null);
                         }
 
                         boolFolderPathSelected = true;
@@ -249,6 +245,7 @@ namespace SPI_Data_Comp_Tool
             {
                 Common_Data.DisplayError(rtb_Log, ex);
             }
+            BuildSteps();
         }
 
         /// <summary>A saved profile was put into the Connection panel: take over its table names.</summary>

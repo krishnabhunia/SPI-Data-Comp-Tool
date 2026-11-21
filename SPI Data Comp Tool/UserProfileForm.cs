@@ -83,18 +83,13 @@ namespace SPI_Data_Comp_Tool
                 saveFileDialogFile = new SaveFileDialogFile();
                 common_Data = new Common_Data();
 
-                string profilePath = Properties.Settings.Default.ProfilePathUser;
-                if (!SelfTest.IsRunning && !string.IsNullOrWhiteSpace(profilePath) && File.Exists(profilePath))
-                {
-                    Profile.ProfileList = ReadProfileFile(profilePath);
-                    connection.RefreshProfiles();
-                    l_lb_ReadProfile.Text = Path.GetFileName(profilePath);
-                    Common_Data.DisplayMessage(rtb_Log, $"User profile loaded from: {profilePath}");
-                }
-                else
+                ProfileLoadResult load = connection.LoadSavedProfiles();
+                if (load.Loaded)
                 {
                     connection.RefreshProfiles();
+                    l_lb_ReadProfile.Text = Path.GetFileName(load.FilePath);
                 }
+                if (!string.IsNullOrEmpty(load.Message)) DisplayMessage(load.Message, load.HasError);
                 GlobalDebug.ISGlobalDebug(GlobalDebug.strUserName, GlobalDebug.strPassword);
             }
             catch (Exception ex)
@@ -661,12 +656,7 @@ namespace SPI_Data_Comp_Tool
 
         private static List<DBC> ReadProfileFile(string path)
         {
-            if (!string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("Select a JSON profile file.");
-            var file = new FileInfo(path);
-            if (file.Length == 0 || file.Length > 16 * 1024 * 1024)
-                throw new InvalidDataException("Select a nonempty profile JSON file no larger than 16 MiB.");
-            return ProfileStore.ParseJson(File.ReadAllText(path));
+            return ProfileStore.ReadFile(path);
         }
 
         private void btn_Connect_Reference_ID_Click(object sender, EventArgs e)

@@ -36,7 +36,9 @@ class ConnectionValidation(unittest.TestCase):
         for expected in ("MaxDepth = 32", "DuplicatePropertyNameHandling.Error", "StringComparer.OrdinalIgnoreCase",
                          "JTokenType.Boolean", "JTokenType.Integer", "ValidateConnectionProfile", "side.int_Oracle_DefaultPort > 65535"):
             self.assertIn(expected, store)
-        self.assertIn("file.Length > 16 * 1024 * 1024", source("UserProfileForm.cs"))
+        self.assertIn("MaximumProfileBytes = 16 * 1024 * 1024", store)
+        self.assertIn("stream.Length > MaximumProfileBytes", store)
+        self.assertIn("ProfileStore.ReadFile(path)", source("UserProfileForm.cs"))
 
     def test_profile_ports_are_range_checked_before_integer_materialization(self):
         store = source("ProfileStore.cs")

@@ -188,6 +188,8 @@ namespace SPI_Data_Comp_Tool
                 return;
             }
 
+            // A stale or externally supplied catalog must not half-apply a broken profile.
+            ProfileStore.Validate(new[] { Profile.ProfileList[profileIndex] });
             DBConnectionDetails d = new DBConnectionDetails(profileIndex);
             if (mode == ConnectionMode.SourceOnly && ProfileHalf == ProfileHalf.Target)
             {
@@ -215,6 +217,22 @@ namespace SPI_Data_Comp_Tool
         {
             PopulateProfileNames(selectedName, true, null);
             if (applySelection) ApplySelectedProfile();
+        }
+
+        /// <summary>Loads the remembered catalog without applying a profile during form construction.</summary>
+        internal ProfileLoadResult LoadSavedProfiles()
+        {
+            ProfileLoadResult result = ProfileStore.LoadSavedProfiles();
+            RefreshAvailableProfiles();
+            return result;
+        }
+
+        /// <summary>Loads a selected catalog while preserving manually entered connection details.</summary>
+        internal ProfileLoadResult LoadSavedProfiles(string path)
+        {
+            ProfileLoadResult result = ProfileStore.LoadSavedProfiles(path);
+            RefreshAvailableProfiles();
+            return result;
         }
 
         /// <summary>

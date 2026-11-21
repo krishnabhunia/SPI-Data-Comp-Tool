@@ -23,7 +23,7 @@ class WorkspaceCleanupContracts(unittest.TestCase):
                 self.assertNotIn(obsolete, source + designer)
         self.assertIn("cb_UserProfileList => connection.ProfileList", source)
         self.assertIn("connection.ProfileApplied += Connection_ProfileApplied", source)
-        self.assertIn("common_Data.ReadUserProfile(cb_UserProfileList)", source)
+        self.assertIn("connection.LoadSavedProfiles()", source)
 
     def test_retired_database_profile_controls_stay_out_of_generated_layout(self):
         layout = (ROOT / "tools" / "layouts" / "DB_Comparison.py").read_text()
