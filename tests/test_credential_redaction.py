@@ -1,5 +1,6 @@
 """Source-routing contracts; CredentialRedactionChecks.cs executes synthetic cases on Windows."""
 
+import re
 import unittest
 from pathlib import Path
 
@@ -45,6 +46,21 @@ class CredentialRedaction(unittest.TestCase):
                      "malformed quoted suffix", "multiple assignments", "long escaped value", "long unquoted value",
                      "non-credential property names", "ThrowOnceControl"):
             self.assertIn(case, checks)
+
+    def test_form_exception_assignments_do_not_bypass_credential_filter(self):
+        """Catch routes outside the shared helper, including worker error/status labels."""
+        unsafe = []
+        for path in PROJECT.glob("*.cs"):
+            if path.name.endswith(".Designer.cs"):
+                continue
+            for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
+                if line.lstrip().startswith("//"):
+                    continue
+                assignment = re.search(r"\.Text\s*=\s*(.*);", line)
+                if assignment and re.search(r"\b(?:ex|ex1|except|myException|myException_BG|e\.Error)\b", assignment[1]):
+                    if "RedactConnectionCredentials(" not in assignment[1]:
+                        unsafe.append(f"{path.name}:{number}")
+        self.assertEqual(unsafe, [], "Exception text bypasses credential filtering: " + ", ".join(unsafe))
 
 
 if __name__ == "__main__":

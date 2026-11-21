@@ -93,7 +93,6 @@ namespace SPI_Data_Comp_Tool
         private DataTable dt_CommonTRG;
 
 
-        private DataView dv_sql;
         private DataView dv_oracle;
 
         private Exception myException_BG;
@@ -281,8 +280,8 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lblExpressionStatus.Text = ex.Message.ToString();
-                lblStatus.Text = ex.Message.ToString();
+                lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
+                lblStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
 
         }
@@ -465,8 +464,8 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lblExpressionStatus.Text = ex.Message.ToString();
-                lblStatus.Text = ex.Message.ToString();
+                lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
+                lblStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
 
         }
@@ -565,27 +564,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void delete_current_row_from_sql_table()
-        {
-            try
-            {
-                //DataRow[] rowsDel = dt_sql_only.Select(str_unique_reference_key + " = '" + dv_sql[0][str_unique_reference_key].ToString() + "'");
-                DataRow[] rowsDel = dt_sql_only.Select(str_unique_reference_key);
-
-                foreach (DataRow dr in rowsDel)
-                {
-                    dr.Delete();
-                }
-                dt_sql_only.AcceptChanges();
-            }
-            catch (Exception ex)
-            {
-                //lblExpressionStatus.Text = ex.Message.ToString();
-                //lblStatus.Text = ex.Message.ToString();
-                myException_BG = ex;
-            }
-        }
-
         private void columns_to_Ignore()
         {
             try
@@ -622,8 +600,8 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lblExpressionStatus.Text = ex.Message.ToString();
-                lblStatus.Text = ex.Message.ToString();
+                lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
+                lblStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                 boolStatus = false;
             }
 
@@ -641,8 +619,8 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lblExpressionStatus.Text = ex.Message.ToString();
-                lblStatus.Text = ex.Message.ToString();
+                lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
+                lblStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
         }
 
@@ -723,7 +701,7 @@ namespace SPI_Data_Comp_Tool
                 DataColumnCollection dcc = dt_check.Columns;
 
                 //foreach (DataColumn dc in dt.Columns)
-                foreach (DataColumn dc in dt_returnDataTable.Columns)
+                foreach (DataColumn dc in dt_returnDataTable.Columns.Cast<DataColumn>().ToArray())
                 {
                     if (!(dcc.Contains(dc.ColumnName.ToString())))
                     {
@@ -1079,7 +1057,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lblExpressionStatus.Text = ex.Message.ToString();
+                lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
         }
 
@@ -1118,19 +1096,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private string generateRowFilterString(DataRow dr)
-        {
-            try
-            {
-                str_unique_reference_key = string.Empty;
-                str_unique_reference_key = string.Join(" AND ", clb_ReferenceID.CheckedItems.Cast<string>().AsEnumerable().Select(x => string.Concat(x, " = ", $"'{dr[x.ToString()]}'")));
-            }
-            catch (Exception ex)
-            {
-                myException_BG = ex;
-            }
-            return str_unique_reference_key;
-        }
         private void btnGenerateOutput_Click(object sender, EventArgs e)
         {
             if (!ValidateComparisonInputs(true)) return;
@@ -1167,8 +1132,8 @@ namespace SPI_Data_Comp_Tool
                     {
                         myException_BG.Source = "There is some error";
                         toggleCondition(true);
-                        lblExpressionStatus.Text = myException_BG.Message.ToString();
-                        lblStatus.Text = myException_BG.Source.ToString();
+                        lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(myException_BG.Message.ToString());
+                        lblStatus.Text = Common_Data.RedactConnectionCredentials(myException_BG.Source.ToString());
                         return;
                     }
 
@@ -1191,8 +1156,8 @@ namespace SPI_Data_Comp_Tool
                     {
                         myException_BG.Source = "There is some error";
                         toggleCondition(true);
-                        lblExpressionStatus.Text = myException_BG.Message.ToString();
-                        lblStatus.Text = myException_BG.Source.ToString();
+                        lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(myException_BG.Message.ToString());
+                        lblStatus.Text = Common_Data.RedactConnectionCredentials(myException_BG.Source.ToString());
                         return;
                     }
 
@@ -1209,8 +1174,8 @@ namespace SPI_Data_Comp_Tool
 
             catch (Exception ex)
             {
-                lblExpressionStatus.Text = ex.Message.ToString();
-                lblStatus.Text = ex.Message.ToString();
+                lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
+                lblStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                 Logs.EnterLogsForError(ex);
             }
         }
@@ -1378,7 +1343,7 @@ namespace SPI_Data_Comp_Tool
 
                                 //Logs.EnterDataInLogs($"Source Data {str_Data_Source_To_Compare} || Target Data {str_Data_Target_To_Compare}");
 
-                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dr, dtSRC.Columns, dtTRG.Columns);
+                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dataRows_TRG, dtSRC.Columns, dtTRG.Columns);
                                 #region
 
                                 //if (!(string.Equals(str_Data_Source_To_Compare, str_Data_Target_To_Compare, stringComparisonTypeOrdincalCase)))
@@ -1389,7 +1354,7 @@ namespace SPI_Data_Comp_Tool
                                     //{
                                     //    if (str_Data_Source_To_Compare.Length > 0 && str_Data_Target_To_Compare.Length > 0 && dc.ColumnName.ToString().Length > 0)
                                     //    {
-                                    //        boolRulesCheck = common_Data.CheckRulesInFile(str_Data_Source_To_Compare, str_Data_Target_To_Compare, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dr, dtSRC.Columns, dtTRG.Columns);
+                                    //        boolRulesCheck = common_Data.CheckRulesInFile(str_Data_Source_To_Compare, str_Data_Target_To_Compare, dc.ColumnName.ToString(), dc.ColumnName.ToString(), dr, dataRows_TRG, dtSRC.Columns, dtTRG.Columns);
 
                                     //        if (boolRulesCheck)
                                     //        {
@@ -1407,7 +1372,7 @@ namespace SPI_Data_Comp_Tool
                                     if (boolANewRow)
                                     {
                                         dtUnmatched.Rows.Add(dr.ItemArray);
-                                        dtUnmatched.Rows.Add(dataRows_TRG.ItemArray);
+                                        dtUnmatched.Rows.Add(ComparisonRows.ValuesForColumns(dataRows_TRG, dtUnmatched));
                                         boolANewRow = false;
                                         int_Color_Row += 2;
                                     }
@@ -1556,10 +1521,8 @@ namespace SPI_Data_Comp_Tool
 
                 dt_sql.CaseSensitive = true;
 
-                dv_sql = new DataView(dt_sql);
+                var remainingTargets = new ComparisonRows(dt_sql, clb_ReferenceID.CheckedItems.Cast<string>());
                 dv_oracle = new DataView(dt_oracle);
-
-                dt_sql_only = dt_sql.Copy();
 
                 dt_unmatched_Capture = new DataTable();
                 dt_unmatched_Capture = dt_oracle.Clone();
@@ -1608,12 +1571,7 @@ namespace SPI_Data_Comp_Tool
                 foreach (DataRow dr in dt_oracle.Rows)
                 {
 
-                    str_unique_reference_key = generateRowFilterString(dr);
-
-                    //dv_sql.RowFilter = str_unique_reference_key + " = '" + dr[str_unique_reference_key] + "'";
-
-                    dv_sql.RowFilter = str_unique_reference_key;
-                    //Logs.EnterDataInLogs($"Unique reference key as : {str_unique_reference_key}");
+                    DataRow targetRow = remainingTargets.TakeNext(dr);
                     percentage = (((++progress) * 100) / totalProgressCount);
                     backgroundWorker1.ReportProgress(percentage);
 
@@ -1624,9 +1582,8 @@ namespace SPI_Data_Comp_Tool
                         return;
                     }
 
-                    if (dv_sql.Count > 0)
+                    if (targetRow != null)
                     {
-                        delete_current_row_from_sql_table();
 
                         foreach (var dc in cic_oracleTB)
                         {
@@ -1635,9 +1592,9 @@ namespace SPI_Data_Comp_Tool
                             if (!(cic_reference.Contains(dc.ToString())))
                             {
                                 str_Data_Source_To_Compare = dr[dc.ToString()].ToString().Trim();
-                                str_Data_Target_To_Compare = dv_sql[0][dc.ToString()].ToString().Trim();
+                                str_Data_Target_To_Compare = targetRow[dc.ToString()].ToString().Trim();
 
-                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ToString(), dc.ToString(), dr, dr, dt_oracle.Columns, dt_sql.Columns);
+                                bool boolTest = common_Data.MismatchTest(str_Data_Source_To_Compare, str_Data_Target_To_Compare, cb_IgnoreCase.Checked, cb_IncludeRule.Checked, dc.ToString(), dc.ToString(), dr, targetRow, dt_oracle.Columns, dt_sql.Columns);
 
                                 #region old code
 
@@ -1679,7 +1636,7 @@ namespace SPI_Data_Comp_Tool
 
                                 //#endregion
 
-                                ////if (!(dr[dc.ToString()].ToString() == dv_sql[0][dc.ToString()].ToString())) // previous code
+                                ////if (!(dr[dc.ToString()].ToString() == targetRow[dc.ToString()].ToString())) // previous code
                                 ////if (!(boolCompareResult))
 
                                 #endregion
@@ -1694,7 +1651,7 @@ namespace SPI_Data_Comp_Tool
                                     #region exception handling of float values start here
 
                                     //boolOracle = float.TryParse((dr[dc.ToString()].ToString()), out float float_oracle);
-                                    //boolSQL = float.TryParse((dv_sql[0][dc.ToString()].ToString()), out float float_sql);
+                                    //boolSQL = float.TryParse((targetRow[dc.ToString()].ToString()), out float float_sql);
 
                                     //if (boolOracle & boolSQL)
                                     //{
@@ -1710,7 +1667,7 @@ namespace SPI_Data_Comp_Tool
                                     if (newRow)
                                     {
                                         dt_unmatched_Capture.Rows.Add(dr.ItemArray);
-                                        dt_unmatched_Capture.Rows.Add(dv_sql[0].Row.ItemArray);
+                                        dt_unmatched_Capture.Rows.Add(ComparisonRows.ValuesForColumns(targetRow, dt_unmatched_Capture));
                                         headRow += 2;
                                         alternateRow += 2;
                                         newRow = false;
@@ -1745,6 +1702,8 @@ namespace SPI_Data_Comp_Tool
                     }
 
                 }
+                dt_sql_only = remainingTargets.Remaining();
+
                 #endregion
                 #endregion
 
@@ -1966,8 +1925,8 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lblExpressionStatus.Text = ex.Message.ToString();
-                lblStatus.Text = myException_BG.Message.ToString();
+                lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
+                lblStatus.Text = Common_Data.RedactConnectionCredentials(myException_BG.Message.ToString());
                 Logs.EnterLogsForError(ex);
             }
             finally
@@ -1991,8 +1950,8 @@ namespace SPI_Data_Comp_Tool
                 }
                 else if (e.Error != null)
                 {
-                    lblExpressionStatus.Text = e.Error.Message.ToString();
-                    lblStatus.Text = e.Error.Message.ToString();
+                    lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(e.Error.Message.ToString());
+                    lblStatus.Text = Common_Data.RedactConnectionCredentials(e.Error.Message.ToString());
                 }
                 else if (strFilePathChangeSave != "" && boolStatus)
                 {
@@ -2006,20 +1965,20 @@ namespace SPI_Data_Comp_Tool
                 }
                 else if (myException_BG.Source != null)
                 {
-                    lblStatus.Text = $"{myException_BG.Source} : {myException_BG.Message}";
-                    lblExpressionStatus.Text = myException_BG.Message.ToString();
+                    lblStatus.Text = Common_Data.RedactConnectionCredentials($"{myException_BG.Source} : {myException_BG.Message}");
+                    lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(myException_BG.Message.ToString());
                     lblExpressionStatus.ForeColor = Color.Red;
                 }
                 else
                 {
                     lblExpressionStatus.Text = "Some other error ";
-                    lblStatus.Text = "Error : " + myException_BG.Message.ToString();
+                    lblStatus.Text = Common_Data.RedactConnectionCredentials("Error : " + myException_BG.Message.ToString());
                 }
 
             }
             catch (Exception ex)
             {
-                lblExpressionStatus.Text = ex.Message.ToString();
+                lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                 Logs.EnterLogsForError(ex);
             }
             finally
@@ -2028,8 +1987,8 @@ namespace SPI_Data_Comp_Tool
                 timer1.Enabled = false;
                 if (myException_BG.InnerException != null)
                 {
-                    lblStatus.Text = myException_BG.Message.ToString();
-                    lblExpressionStatus.Text = myException_BG.Message.ToString();
+                    lblStatus.Text = Common_Data.RedactConnectionCredentials(myException_BG.Message.ToString());
+                    lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(myException_BG.Message.ToString());
                 }
             }
         }
@@ -2265,10 +2224,10 @@ namespace SPI_Data_Comp_Tool
             {
                 if (ex != null)
                 {
-                    lblExpressionStatus.Text = ex.Message.ToString();
+                    lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                     if (Debugger.IsAttached)
                     {
-                        lblExpressionStatus.Text = ex.ToString();
+                        lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }
                 }
                 else
@@ -2279,7 +2238,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex1)
             {
-                lblStatus.Text = ex1.Message.ToString();
+                lblStatus.Text = Common_Data.RedactConnectionCredentials(ex1.Message.ToString());
             }
         }
         private void cb_FullName_CheckedChanged(object sender, EventArgs e)
@@ -2384,7 +2343,7 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                lblExpressionStatus.Text = ex.Message.ToString();
+                lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
             }
         }
 

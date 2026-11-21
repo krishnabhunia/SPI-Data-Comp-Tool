@@ -20,6 +20,7 @@ namespace SPI_Data_Comp_Tool
             string folder = Path.Combine(Path.GetTempPath(), "spi-profile-load-" + Guid.NewGuid().ToString("N"));
             List<DBC> previous = Profile.ProfileList;
             string previousRemembered = ProfileStore.RememberedPathFileOverride;
+            string previousSetting = Properties.Settings.Default.ProfilePathUser;
             Directory.CreateDirectory(folder);
             try
             {
@@ -27,12 +28,16 @@ namespace SPI_Data_Comp_Tool
                 string saved = Path.Combine(folder, "profiles.json");
                 File.WriteAllText(saved, Legacy);
                 CheckRememberedPath(passed, saved, Path.Combine(folder, "moved-away.json"));
+                CheckDeletionDestination(passed, folder);
+                CheckFailedLoadDeletion(passed, folder);
+                CheckDeletionChangesAndReadErrors(passed, folder);
                 CheckStepReason(passed);
             }
             finally
             {
                 Profile.ProfileList = previous;
                 ProfileStore.RememberedPathFileOverride = previousRemembered;
+                Properties.Settings.Default.ProfilePathUser = previousSetting;
                 try { Directory.Delete(folder, true); } catch (Exception) { }
             }
         }
@@ -73,6 +78,153 @@ namespace SPI_Data_Comp_Tool
             Require(!gone.Loaded && gone.HasError && Profile.ProfileList == null,
                 "When neither file exists the normal recovery message must be shown: " + gone.Message);
             passed("A new copy of the app finds the last profiles file chosen on this computer; a missing one still reports how to recover");
+        }
+
+        private static string TwoProfiles()
+        {
+            List<DBC> profiles = ProfileStore.ParseJson(Legacy);
+            DBC second = ProfileStore.ParseJson(Legacy)[0];
+            second.profileName = "legacy two";
+            profiles.Add(second);
+            return ProfileStore.SerializeForExport(profiles);
+        }
+
+        private static void SelectFirstProfile(UserProfileForm form)
+        {
+            var panel = (ConnectionPanel)form.Controls.Find("connection", true)[0];
+            Require(panel.ProfileList.Items.Count > 0, "The fixture profile picker is empty.");
+            panel.ProfileList.SelectedIndex = -1;
+            panel.ProfileList.SelectedIndex = 0;
+        }
+
+        private static void CheckDeletionDestination(Action<string> passed, string folder)
+        {
+            string saved = Path.Combine(folder, "remembered-catalog.json");
+            string other = Path.Combine(folder, "unrelated-catalog.json");
+            string original = TwoProfiles();
+            File.WriteAllText(saved, original);
+            File.WriteAllText(other, original);
+            ProfileStore.RememberPath(saved);
+            Properties.Settings.Default.ProfilePathUser = string.Empty;
+            using (var form = new UserProfileForm())
+            {
+                SelectFirstProfile(form);
+                List<DBC> active = Profile.ProfileList;
+                Require(!form.DeleteSelectedProfile(name => false) && File.ReadAllText(saved) == original &&
+                    ReferenceEquals(Profile.ProfileList, active), "Cancelling a fallback-profile deletion changed the file or active profiles.");
+                bool confirmed = false;
+                Require(form.DeleteSelectedProfile(name => { confirmed = name == "legacy one"; return true; }) && confirmed,
+                    "A profile loaded from the remembered file could not be deleted when this copy has an empty setting.");
+                Require(ProfileStore.ReadFile(saved).Count == 1 && ProfileStore.ReadFile(saved)[0].profileName == "legacy two" &&
+                    Profile.ProfileList.Count == 1 && File.ReadAllText(other) == original &&
+                    Properties.Settings.Default.ProfilePathUser == string.Empty,
+                    "Fallback deletion used another file, changed settings, or failed to publish the saved result.");
+            }
+
+            File.WriteAllText(saved, original);
+            ProfileStore.RememberPath(saved);
+            Properties.Settings.Default.ProfilePathUser = Path.Combine(folder, "moved-catalog.json");
+            using (var form = new UserProfileForm())
+            {
+                SelectFirstProfile(form);
+                // Another app copy can change both hints. The already displayed file remains the destination.
+                Properties.Settings.Default.ProfilePathUser = other;
+                ProfileStore.RememberPath(other);
+                Require(form.DeleteSelectedProfile(name => true), "A fallback-loaded profile could not be deleted after its settings changed.");
+                Require(ProfileStore.ReadFile(saved).Count == 1 && File.ReadAllText(other) == original &&
+                    Properties.Settings.Default.ProfilePathUser == other,
+                    "Deletion followed an unrelated setting/remembered hint instead of the file shown by this form.");
+            }
+            passed("Fallback-loaded profiles delete from the displayed file; cancellation, empty/stale settings and later path changes cannot redirect deletion");
+        }
+
+        private static void CheckFailedLoadDeletion(Action<string> passed, string folder)
+        {
+            string original = TwoProfiles();
+            string invalid = Path.Combine(folder, "invalid-catalog.json");
+            string locked = Path.Combine(folder, "locked-catalog.json");
+            string untouched = Path.Combine(folder, "untouched-catalog.json");
+            File.WriteAllText(invalid, "{ damaged json");
+            File.WriteAllText(locked, original);
+            File.WriteAllText(untouched, original);
+            File.Delete(ProfileStore.RememberedPathFileOverride);
+            foreach (string path in new[] { Path.Combine(folder, "absent-catalog.json"), invalid, locked })
+            {
+                var active = ProfileStore.ParseJson(original);
+                Profile.ProfileList = active;
+                Properties.Settings.Default.ProfilePathUser = path;
+                using (FileStream held = path == locked
+                    ? new FileStream(locked, FileMode.Open, FileAccess.Read, FileShare.None) : null)
+                using (var form = new UserProfileForm())
+                {
+                    SelectFirstProfile(form);
+                    // Even a later valid setting must not give a failed load a deletion destination.
+                    Properties.Settings.Default.ProfilePathUser = untouched;
+                    bool prompted = false;
+                    Require(!form.DeleteSelectedProfile(name => { prompted = true; return true; }) && !prompted &&
+                        ReferenceEquals(Profile.ProfileList, active) && File.ReadAllText(untouched) == original,
+                        "A missing, invalid or unreadable profile load retained an unsafe deletion destination.");
+                }
+            }
+            Require(File.ReadAllText(invalid) == "{ damaged json" && File.ReadAllText(locked) == original,
+                "Failed profile loading or deletion altered an input file.");
+            passed("Missing, damaged and locked profile loads preserve the active catalog and never acquire an unrelated deletion destination");
+        }
+
+        private static void CheckDeletionChangesAndReadErrors(Action<string> passed, string folder)
+        {
+            string saved = Path.Combine(folder, "concurrent-catalog.json");
+            string original = TwoProfiles();
+            string changed = original.Replace("ora-host", "changed-host");
+            File.WriteAllText(saved, original);
+            Properties.Settings.Default.ProfilePathUser = saved;
+            using (var form = new UserProfileForm())
+            {
+                SelectFirstProfile(form);
+                List<DBC> active = Profile.ProfileList;
+                Require(!form.DeleteSelectedProfile(name => { File.WriteAllText(saved, changed); return true; }) &&
+                    ReferenceEquals(Profile.ProfileList, active) && File.ReadAllText(saved) == changed,
+                    "Deletion overwrote a file modified while confirmation was open.");
+            }
+
+            File.WriteAllText(saved, original);
+            using (var form = new UserProfileForm())
+            {
+                SelectFirstProfile(form);
+                var replacement = ProfileStore.ParseJson(changed);
+                Require(!form.DeleteSelectedProfile(name => { Profile.ProfileList = replacement; return true; }) &&
+                    ReferenceEquals(Profile.ProfileList, replacement) && File.ReadAllText(saved) == original,
+                    "Deletion overwrote a different catalog selected while confirmation was open.");
+            }
+
+            foreach (bool moveFile in new[] { false, true })
+            {
+                File.WriteAllText(saved, original);
+                using (var form = new UserProfileForm())
+                {
+                    SelectFirstProfile(form);
+                    List<DBC> active = Profile.ProfileList;
+                    FileStream held = null;
+                    string moved = saved + ".moved";
+                    bool refused = false;
+                    try
+                    {
+                        form.DeleteSelectedProfile(name =>
+                        {
+                            if (moveFile) File.Move(saved, moved);
+                            else held = new FileStream(saved, FileMode.Open, FileAccess.Read, FileShare.None);
+                            return true;
+                        });
+                    }
+                    catch (IOException) { refused = true; }
+                    finally { held?.Dispose(); }
+                    Require(refused && ReferenceEquals(Profile.ProfileList, active) &&
+                        File.ReadAllText(moveFile ? moved : saved) == original && (!moveFile || !File.Exists(saved)),
+                        "Deletion changed data or recreated a missing file after a read failure at confirmation.");
+                    if (moveFile) File.Move(moved, saved);
+                }
+            }
+            passed("Deletion rechecks the file/catalog after confirmation; concurrent changes and read failures preserve the existing data");
         }
 
         private static void CheckStepReason(Action<string> passed)

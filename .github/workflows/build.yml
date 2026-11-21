@@ -149,6 +149,10 @@ jobs:
           if (-not $p.WaitForExit(120000)) { & tools/ci_window_report.ps1 -ProcessId $p.Id; Stop-Process -Id $p.Id -Force; throw 'Saved-profile startup checks timed out' }
           if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
           if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw 'Saved-profile startup checks failed' }
+      - name: Disposable SQL Server comparison and Excel export checks
+        shell: pwsh
+        run: |
+          ./tools/check_sql_integration.ps1 -AppPath 'SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe' -LogPath (Join-Path $env:RUNNER_TEMP 'sql-integration-checks.txt')
       - name: Excel Sheet Audit regression checks
         shell: pwsh
         run: |

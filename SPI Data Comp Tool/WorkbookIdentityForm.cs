@@ -546,7 +546,7 @@ namespace SPI_Data_Comp_Tool
                 {
                     picker.SelectedIndex = 0;
                     if (source) loadedFileA = null; else loadedFileB = null;
-                    note.Text = "Not loaded: " + error;
+                    note.Text = Common_Data.RedactConnectionCredentials("Not loaded: " + error);
                 }
                 else
                 {
@@ -942,6 +942,7 @@ namespace SPI_Data_Comp_Tool
         private void SetStatus(string message, bool error = false, bool addToLog = true)
         {
             if (IsDisposed || Disposing) return;
+            message = Common_Data.RedactConnectionCredentials(message);
             status.Text = "Status: " + message;
             status.ForeColor = UiTheme.Readable(error ? Color.Red : Color.Black);
             if (addToLog) AppendLog(message);
@@ -950,6 +951,7 @@ namespace SPI_Data_Comp_Tool
         private void AppendLog(string message)
         {
             if (IsDisposed || Disposing) return;
+            message = Common_Data.RedactConnectionCredentials(message);
             if (log.TextLength > 24000) log.Text = log.Text.Substring(log.TextLength - 16000);
             log.AppendText(DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture) + "  " + message + Environment.NewLine);
             log.SelectionStart = log.TextLength;

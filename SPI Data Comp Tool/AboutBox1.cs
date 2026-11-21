@@ -30,10 +30,10 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                textBoxDescription.Text = ex.Message.ToString();
+                textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                 if (GlobalDebug.boolIsGlobalDebug)
                 {
-                    textBoxDescription.Text = ex.ToString();
+                    textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                 }
             }
 
@@ -60,12 +60,12 @@ namespace SPI_Data_Comp_Tool
                 }
                 catch (Exception ex)
                 {
-                    textBoxDescription.Text = ex.Message.ToString();
+                    textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                     if (GlobalDebug.boolIsGlobalDebug)
                     {
-                        textBoxDescription.Text = ex.ToString();
+                        textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }
-                    return ex.Message.ToString();
+                    return Common_Data.RedactConnectionCredentials(ex.Message);
                 }
             }
         }
@@ -93,12 +93,12 @@ namespace SPI_Data_Comp_Tool
                 }
                 catch (Exception ex)
                 {
-                    textBoxDescription.Text = ex.Message.ToString();
+                    textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                     if (GlobalDebug.boolIsGlobalDebug)
                     {
-                        textBoxDescription.Text = ex.ToString();
+                        textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }
-                    return ex.Message.ToString();
+                    return Common_Data.RedactConnectionCredentials(ex.Message);
                 }
             }
         }
@@ -118,12 +118,12 @@ namespace SPI_Data_Comp_Tool
                 }
                 catch (Exception ex)
                 {
-                    textBoxDescription.Text = ex.Message.ToString();
+                    textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                     if (GlobalDebug.boolIsGlobalDebug)
                     {
-                        textBoxDescription.Text = ex.ToString();
+                        textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }
-                    return ex.Message.ToString();
+                    return Common_Data.RedactConnectionCredentials(ex.Message);
                 }
 
             }
@@ -144,12 +144,12 @@ namespace SPI_Data_Comp_Tool
                 }
                 catch (Exception ex)
                 {
-                    textBoxDescription.Text = ex.Message.ToString();
+                    textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                     if (GlobalDebug.boolIsGlobalDebug)
                     {
-                        textBoxDescription.Text = ex.ToString();
+                        textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }
-                    return ex.Message.ToString();
+                    return Common_Data.RedactConnectionCredentials(ex.Message);
                 }
             }
         }
@@ -169,12 +169,12 @@ namespace SPI_Data_Comp_Tool
                 }
                 catch (Exception ex)
                 {
-                    textBoxDescription.Text = ex.Message.ToString();
+                    textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                     if (GlobalDebug.boolIsGlobalDebug)
                     {
-                        textBoxDescription.Text = ex.ToString();
+                        textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }
-                    return ex.Message.ToString();
+                    return Common_Data.RedactConnectionCredentials(ex.Message);
                 }
             }
         }
@@ -188,10 +188,10 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                textBoxDescription.Text = ex.Message.ToString();
+                textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                 if (GlobalDebug.boolIsGlobalDebug)
                 {
-                    textBoxDescription.Text = ex.ToString();
+                    textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                 }
             }
         }
@@ -207,10 +207,10 @@ namespace SPI_Data_Comp_Tool
             }
             catch (Exception ex)
             {
-                textBoxDescription.Text = ex.Message.ToString();
+                textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
                 if (GlobalDebug.boolIsGlobalDebug)
                 {
-                    textBoxDescription.Text = ex.ToString();
+                    textBoxDescription.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                 }
             }
 

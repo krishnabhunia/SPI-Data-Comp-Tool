@@ -46,7 +46,10 @@ class ProfileSafety(unittest.TestCase):
         form = source("UserProfileForm.cs")
         method = form.split("private void btnDeleteUserProfile_Click", 1)[1].split("private static void SetProfilePath", 1)[0]
         self.assertIn("MessageBoxDefaultButton.Button2", method)
-        self.assertIn("!= DialogResult.Yes", method)
+        self.assertIn("== DialogResult.Yes", method)
+        self.assertIn("if (!confirm(selectedName))", method)
+        self.assertIn("string profilePath = loadedProfilePath;", method)
+        self.assertNotIn("Properties.Settings.Default.ProfilePathUser", method)
         self.assertLess(method.index("MessageBox.Show"), method.index("ProfileStore.Remove"))
         self.assertLess(method.index("ProfileStore.WriteAtomic"), method.index("Profile.ProfileList = candidate"))
 
