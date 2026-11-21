@@ -541,7 +541,7 @@ namespace SPI_Data_Comp_Tool
                     "The main window does not show its actual build version and channel.");
                 Require(menu.Items.Find("updateToolStripMenuItem", true).Length == 0,
                     "A second automatic-update menu entry survived consolidation.");
-                menu.Items.Find("userSettingsToolStripMenuItem", true).OfType<ToolStripMenuItem>().Single().PerformClick();
+                menu.Items.Find("taskMenu_settings_preferences", true).OfType<ToolStripMenuItem>().Single().PerformClick();
                 Application.DoEvents();
                 var settings = Application.OpenForms.OfType<User_Settings>().Single();
                 var log = Find<RichTextBox>(settings, "rtb_Log");
@@ -551,7 +551,7 @@ namespace SPI_Data_Comp_Tool
                 Require(ReferenceEquals(settings, main.ShowUpdatesSettings()) && Application.OpenForms.OfType<User_Settings>().Count() == 1,
                     "Help created a duplicate Settings/Updates window.");
                 var tabs = Find<TabControl>(settings, "tabs_Settings");
-                Require(tabs.TabPages.Count == 4 && tabs.SelectedTab.Name == "tab_Updates" && settings.AcceptButton == null,
+                Require(tabs.TabPages.Count == 3 && tabs.SelectedTab.Name == "tab_Updates" && settings.AcceptButton == null,
                     "Help did not open Updates or Enter can implicitly start an action.");
                 Require(tabs.TabPages.Cast<TabPage>().Count(tab => tab.Name == "tab_Updates") == 1 &&
                     settings.Controls.Find("updatesControl", true).Length == 1,

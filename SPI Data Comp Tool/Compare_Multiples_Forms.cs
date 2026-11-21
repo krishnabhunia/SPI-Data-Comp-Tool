@@ -17,7 +17,7 @@ using Oracle.ManagedDataAccess.Client;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class Compare_Multiples_List_Tables_Forms : Form
+    public partial class Compare_Multiples_List_Tables_Forms : WorkspacePageForm
     {
         private IDisposable operationInputs;
         private OpenFileDialogData openFileDialogData;

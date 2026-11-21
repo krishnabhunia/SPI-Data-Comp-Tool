@@ -98,9 +98,25 @@ namespace SPI_Data_Comp_Tool
         {
             foreach (Form form in forms)
             {
-                // The Profiles tab shows the User profiles window inside Settings: it is part of Settings,
-                // with no window of its own to close. Its background work is still checked below.
-                if (!(form is MainForm) && !(form is User_Settings) && !IsShownInsideSettings(form))
+                var workspace = form as WorkspaceForm;
+                if (workspace != null)
+                {
+                    // Inspect every loaded page, including hidden tabs. A hidden profile or data
+                    // task still holds user work and must block replacement of the executable.
+                    if (workspace.Workspace != WorkspaceKind.Settings ||
+                        !CanInstallForms(workspace.LoadedPages.Cast<Form>(), out reason))
+                    {
+                        reason = "Close all data workspaces and profile tasks before installing an update.";
+                        return false;
+                    }
+                    if (HasBusyWorker(workspace))
+                    {
+                        reason = "A background operation is still running. Wait for it to finish before updating.";
+                        return false;
+                    }
+                    continue;
+                }
+                if (!(form is MainForm) && !(form is User_Settings))
                 {
                     reason = "Save your work and close every comparison, script, profile, and analysis window before installing an update.";
                     return false;
@@ -113,14 +129,6 @@ namespace SPI_Data_Comp_Tool
             }
             reason = null;
             return true;
-        }
-
-        private static bool IsShownInsideSettings(Form form)
-        {
-            if (form.TopLevel) return false;
-            for (Control parent = form.Parent; parent != null; parent = parent.Parent)
-                if (parent is User_Settings) return true;
-            return false;
         }
 
         internal static bool HasBusyWorker(object instance)

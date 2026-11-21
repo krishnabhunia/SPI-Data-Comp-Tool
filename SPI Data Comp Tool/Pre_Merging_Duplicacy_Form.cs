@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class Pre_Merging_Duplicacy_Form : Form
+    public partial class Pre_Merging_Duplicacy_Form : WorkspacePageForm
     {
         private IDisposable operationInputs;
         private DBConnectionStatus dBConnectionStatus_SRC, dBConnectionStatus_TRG;

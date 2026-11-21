@@ -1,409 +1,153 @@
-﻿namespace SPI_Data_Comp_Tool
+namespace SPI_Data_Comp_Tool
 {
     partial class OracleAndSQLConnection
     {
-        /// <summary> 
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary> 
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
+            if (disposing && components != null) components.Dispose();
             base.Dispose(disposing);
         }
 
-        #region Component Designer generated code
-
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            this.groupBox8 = new System.Windows.Forms.GroupBox();
-            this.rb_SRC_oracle = new System.Windows.Forms.RadioButton();
-            this.rb_SRC_SQL = new System.Windows.Forms.RadioButton();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.tb_destination_tableName = new System.Windows.Forms.TextBox();
-            this.label17 = new System.Windows.Forms.Label();
-            this.tb_sql_pwd = new System.Windows.Forms.TextBox();
-            this.tb_sql_username = new System.Windows.Forms.TextBox();
-            this.tb_sql_dbName = new System.Windows.Forms.TextBox();
-            this.tb_sql_dsource = new System.Windows.Forms.TextBox();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.connection = new SPI_Data_Comp_Tool.ConnectionPanel();
             this.tb_Source_tableName = new System.Windows.Forms.TextBox();
-            this.label16 = new System.Windows.Forms.Label();
-            this.tb_oracle_pwd = new System.Windows.Forms.TextBox();
-            this.tb_oracle_username = new System.Windows.Forms.TextBox();
-            this.tb_oracle_dbName = new System.Windows.Forms.TextBox();
-            this.tb_oracle_dsource = new System.Windows.Forms.TextBox();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.btn_Connect_Reference_ID = new System.Windows.Forms.Button();
-            this.lbl_Oracle_SQL_Connection = new System.Windows.Forms.Label();
-            this.cb_query = new System.Windows.Forms.CheckBox();
+            this.tb_destination_tableName = new System.Windows.Forms.TextBox();
             this.tb_querybox = new System.Windows.Forms.TextBox();
-            this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.groupBox8.SuspendLayout();
-            this.groupBox2.SuspendLayout();
-            this.groupBox1.SuspendLayout();
-            this.groupBox3.SuspendLayout();
+            this.cb_query = new System.Windows.Forms.CheckBox();
+            this.btn_Connect_Reference_ID = new System.Windows.Forms.Button();
+            this.btn_ResetQuery = new System.Windows.Forms.Button();
+            this.lbl_Oracle_SQL_Connection = new System.Windows.Forms.Label();
+            var root = new System.Windows.Forms.TableLayoutPanel();
+            var tables = new System.Windows.Forms.TableLayoutPanel();
+            var options = new System.Windows.Forms.FlowLayoutPanel();
+            var sourceLabel = new System.Windows.Forms.Label();
+            var targetLabel = new System.Windows.Forms.Label();
+            var queryHint = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
-            // groupBox8
-            // 
-            this.groupBox8.Controls.Add(this.rb_SRC_oracle);
-            this.groupBox8.Controls.Add(this.rb_SRC_SQL);
-            this.groupBox8.Location = new System.Drawing.Point(15, 14);
-            this.groupBox8.Name = "groupBox8";
-            this.groupBox8.Size = new System.Drawing.Size(350, 48);
-            this.groupBox8.TabIndex = 27;
-            this.groupBox8.TabStop = false;
-            this.groupBox8.Text = "Select Source Database Platform : ";
-            // 
-            // rb_SRC_oracle
-            // 
-            this.rb_SRC_oracle.AutoSize = true;
-            this.rb_SRC_oracle.Checked = true;
-            this.rb_SRC_oracle.Location = new System.Drawing.Point(6, 20);
-            this.rb_SRC_oracle.Name = "rb_SRC_oracle";
-            this.rb_SRC_oracle.Size = new System.Drawing.Size(56, 17);
-            this.rb_SRC_oracle.TabIndex = 17;
-            this.rb_SRC_oracle.TabStop = true;
-            this.rb_SRC_oracle.Text = "Oracle";
-            this.rb_SRC_oracle.UseVisualStyleBackColor = true;
-            this.rb_SRC_oracle.CheckedChanged += new System.EventHandler(this.rb_oracle_CheckedChanged);
-            // 
-            // rb_SRC_SQL
-            // 
-            this.rb_SRC_SQL.AutoSize = true;
-            this.rb_SRC_SQL.Location = new System.Drawing.Point(141, 19);
-            this.rb_SRC_SQL.Name = "rb_SRC_SQL";
-            this.rb_SRC_SQL.Size = new System.Drawing.Size(46, 17);
-            this.rb_SRC_SQL.TabIndex = 18;
-            this.rb_SRC_SQL.TabStop = true;
-            this.rb_SRC_SQL.Text = "SQL";
-            this.rb_SRC_SQL.UseVisualStyleBackColor = true;
-            this.rb_SRC_SQL.CheckedChanged += new System.EventHandler(this.rb_sql_CheckedChanged);
-            // 
-            // groupBox2
-            // 
-            this.groupBox2.Controls.Add(this.tb_destination_tableName);
-            this.groupBox2.Controls.Add(this.label17);
-            this.groupBox2.Controls.Add(this.tb_sql_pwd);
-            this.groupBox2.Controls.Add(this.tb_sql_username);
-            this.groupBox2.Controls.Add(this.tb_sql_dbName);
-            this.groupBox2.Controls.Add(this.tb_sql_dsource);
-            this.groupBox2.Controls.Add(this.label8);
-            this.groupBox2.Controls.Add(this.label6);
-            this.groupBox2.Controls.Add(this.label4);
-            this.groupBox2.Controls.Add(this.label2);
-            this.groupBox2.Location = new System.Drawing.Point(384, 68);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(354, 209);
-            this.groupBox2.TabIndex = 26;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "Target : SQL Connection and Settings";
-            // 
-            // tb_destination_tableName
-            // 
-            this.tb_destination_tableName.Location = new System.Drawing.Point(127, 167);
-            this.tb_destination_tableName.Name = "tb_destination_tableName";
-            this.tb_destination_tableName.Size = new System.Drawing.Size(207, 20);
-            this.tb_destination_tableName.TabIndex = 11;
-            // 
-            // label17
-            // 
-            this.label17.AutoSize = true;
-            this.label17.Location = new System.Drawing.Point(14, 170);
-            this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(106, 13);
-            this.label17.TabIndex = 10;
-            this.label17.Text = "Scheme/table name:";
-            // 
-            // tb_sql_pwd
-            // 
-            this.tb_sql_pwd.Location = new System.Drawing.Point(127, 133);
-            this.tb_sql_pwd.Name = "tb_sql_pwd";
-            this.tb_sql_pwd.PasswordChar = '*';
-            this.tb_sql_pwd.Size = new System.Drawing.Size(207, 20);
-            this.tb_sql_pwd.TabIndex = 9;
-            // 
-            // tb_sql_username
-            // 
-            this.tb_sql_username.Location = new System.Drawing.Point(127, 99);
-            this.tb_sql_username.Name = "tb_sql_username";
-            this.tb_sql_username.Size = new System.Drawing.Size(207, 20);
-            this.tb_sql_username.TabIndex = 8;
-            // 
-            // tb_sql_dbName
-            // 
-            this.tb_sql_dbName.Location = new System.Drawing.Point(127, 66);
-            this.tb_sql_dbName.Name = "tb_sql_dbName";
-            this.tb_sql_dbName.Size = new System.Drawing.Size(207, 20);
-            this.tb_sql_dbName.TabIndex = 7;
-            // 
-            // tb_sql_dsource
-            // 
-            this.tb_sql_dsource.Location = new System.Drawing.Point(127, 32);
-            this.tb_sql_dsource.Name = "tb_sql_dsource";
-            this.tb_sql_dsource.Size = new System.Drawing.Size(207, 20);
-            this.tb_sql_dsource.TabIndex = 6;
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(14, 134);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(53, 13);
-            this.label8.TabIndex = 3;
-            this.label8.Text = "Password";
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(14, 99);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(55, 13);
-            this.label6.TabIndex = 2;
-            this.label6.Text = "Username";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(14, 69);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(53, 13);
-            this.label4.TabIndex = 1;
-            this.label4.Text = "DB Name";
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(14, 35);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(67, 13);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "Data Source";
-            // 
-            // groupBox1
-            // 
-            this.groupBox1.Controls.Add(this.tb_Source_tableName);
-            this.groupBox1.Controls.Add(this.label16);
-            this.groupBox1.Controls.Add(this.tb_oracle_pwd);
-            this.groupBox1.Controls.Add(this.tb_oracle_username);
-            this.groupBox1.Controls.Add(this.tb_oracle_dbName);
-            this.groupBox1.Controls.Add(this.tb_oracle_dsource);
-            this.groupBox1.Controls.Add(this.label9);
-            this.groupBox1.Controls.Add(this.label7);
-            this.groupBox1.Controls.Add(this.label5);
-            this.groupBox1.Controls.Add(this.label3);
-            this.groupBox1.Location = new System.Drawing.Point(11, 68);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(354, 209);
-            this.groupBox1.TabIndex = 25;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Source : Oracle Connection and Settings";
-            // 
-            // tb_Source_tableName
-            // 
-            this.tb_Source_tableName.Location = new System.Drawing.Point(128, 164);
-            this.tb_Source_tableName.Name = "tb_Source_tableName";
-            this.tb_Source_tableName.Size = new System.Drawing.Size(207, 20);
-            this.tb_Source_tableName.TabIndex = 10;
-            // 
-            // label16
-            // 
-            this.label16.AutoSize = true;
-            this.label16.Location = new System.Drawing.Point(13, 167);
-            this.label16.Name = "label16";
-            this.label16.Size = new System.Drawing.Size(106, 13);
-            this.label16.TabIndex = 9;
-            this.label16.Text = "Scheme/table name:";
-            // 
-            // tb_oracle_pwd
-            // 
-            this.tb_oracle_pwd.Location = new System.Drawing.Point(128, 131);
-            this.tb_oracle_pwd.Name = "tb_oracle_pwd";
-            this.tb_oracle_pwd.PasswordChar = '*';
-            this.tb_oracle_pwd.Size = new System.Drawing.Size(207, 20);
-            this.tb_oracle_pwd.TabIndex = 8;
-            // 
-            // tb_oracle_username
-            // 
-            this.tb_oracle_username.Location = new System.Drawing.Point(128, 96);
-            this.tb_oracle_username.Name = "tb_oracle_username";
-            this.tb_oracle_username.Size = new System.Drawing.Size(207, 20);
-            this.tb_oracle_username.TabIndex = 7;
-            // 
-            // tb_oracle_dbName
-            // 
-            this.tb_oracle_dbName.Location = new System.Drawing.Point(128, 63);
-            this.tb_oracle_dbName.Name = "tb_oracle_dbName";
-            this.tb_oracle_dbName.Size = new System.Drawing.Size(207, 20);
-            this.tb_oracle_dbName.TabIndex = 6;
-            // 
-            // tb_oracle_dsource
-            // 
-            this.tb_oracle_dsource.Location = new System.Drawing.Point(128, 32);
-            this.tb_oracle_dsource.Name = "tb_oracle_dsource";
-            this.tb_oracle_dsource.Size = new System.Drawing.Size(207, 20);
-            this.tb_oracle_dsource.TabIndex = 5;
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(13, 131);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(53, 13);
-            this.label9.TabIndex = 4;
-            this.label9.Text = "Password";
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(13, 96);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(55, 13);
-            this.label7.TabIndex = 3;
-            this.label7.Text = "Username";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(13, 66);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(53, 13);
-            this.label5.TabIndex = 2;
-            this.label5.Text = "DB Name";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(13, 32);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(67, 13);
-            this.label3.TabIndex = 1;
-            this.label3.Text = "Data Source";
-            // 
-            // btn_Connect_Reference_ID
-            // 
-            this.btn_Connect_Reference_ID.Location = new System.Drawing.Point(17, 282);
-            this.btn_Connect_Reference_ID.Name = "btn_Connect_Reference_ID";
-            this.btn_Connect_Reference_ID.Size = new System.Drawing.Size(126, 23);
-            this.btn_Connect_Reference_ID.TabIndex = 28;
-            this.btn_Connect_Reference_ID.Text = "Connect and Load";
-            this.btn_Connect_Reference_ID.UseVisualStyleBackColor = true;
-            this.btn_Connect_Reference_ID.Click += new System.EventHandler(this.btn_Connect_Reference_ID_Click);
-            // 
-            // lbl_Oracle_SQL_Connection
-            // 
-            this.lbl_Oracle_SQL_Connection.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lbl_Oracle_SQL_Connection.Location = new System.Drawing.Point(18, 315);
-            this.lbl_Oracle_SQL_Connection.Name = "lbl_Oracle_SQL_Connection";
-            this.lbl_Oracle_SQL_Connection.Size = new System.Drawing.Size(450, 65);
-            this.lbl_Oracle_SQL_Connection.TabIndex = 29;
-            this.lbl_Oracle_SQL_Connection.Text = "lbl_Oracle_SQL_Connection";
-            // 
-            // cb_query
-            // 
-            this.cb_query.AutoSize = true;
-            this.cb_query.Location = new System.Drawing.Point(17, 27);
-            this.cb_query.Name = "cb_query";
-            this.cb_query.Size = new System.Drawing.Size(180, 17);
-            this.cb_query.TabIndex = 32;
-            this.cb_query.Text = "Use Query instead of table name";
-            this.cb_query.UseVisualStyleBackColor = true;
-            this.cb_query.CheckedChanged += new System.EventHandler(this.cb_query_CheckedChanged);
-            // 
-            // tb_querybox
-            // 
-            this.tb_querybox.Location = new System.Drawing.Point(21, 50);
-            this.tb_querybox.Multiline = true;
-            this.tb_querybox.Name = "tb_querybox";
-            this.tb_querybox.Size = new System.Drawing.Size(450, 220);
-            this.tb_querybox.TabIndex = 33;
-            // 
-            // groupBox3
-            // 
-            this.groupBox3.Controls.Add(this.tb_querybox);
-            this.groupBox3.Controls.Add(this.btn_Connect_Reference_ID);
-            this.groupBox3.Controls.Add(this.cb_query);
-            this.groupBox3.Controls.Add(this.lbl_Oracle_SQL_Connection);
-            this.groupBox3.Location = new System.Drawing.Point(756, 14);
-            this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(517, 392);
-            this.groupBox3.TabIndex = 34;
-            this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Tables and query";
-            // 
-            // OracleAndSQLConnection
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.groupBox3);
-            this.Controls.Add(this.groupBox8);
-            this.Controls.Add(this.groupBox2);
-            this.Controls.Add(this.groupBox1);
-            this.Name = "OracleAndSQLConnection";
-            this.Size = new System.Drawing.Size(1288, 418);
-            this.groupBox8.ResumeLayout(false);
-            this.groupBox8.PerformLayout();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            this.groupBox3.ResumeLayout(false);
-            this.groupBox3.PerformLayout();
-            this.ResumeLayout(false);
 
+            this.connection.Name = "connection";
+            this.connection.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.connection.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
+            this.connection.TabIndex = 0;
+
+            sourceLabel.Text = "Source table";
+            sourceLabel.AutoSize = true;
+            sourceLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            sourceLabel.Margin = new System.Windows.Forms.Padding(0, 3, 8, 3);
+            targetLabel.Text = "Target table (SQL Server)";
+            targetLabel.AutoSize = true;
+            targetLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            targetLabel.Margin = new System.Windows.Forms.Padding(16, 3, 8, 3);
+            this.tb_Source_tableName.Name = "tb_Source_tableName";
+            this.tb_Source_tableName.AccessibleName = "Source table";
+            this.tb_Source_tableName.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tb_Source_tableName.TabIndex = 0;
+            this.tb_destination_tableName.Name = "tb_destination_tableName";
+            this.tb_destination_tableName.AccessibleName = "Target table";
+            this.tb_destination_tableName.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tb_destination_tableName.TabIndex = 1;
+            tables.AutoSize = true;
+            tables.Dock = System.Windows.Forms.DockStyle.Fill;
+            tables.ColumnCount = 4;
+            tables.RowCount = 1;
+            tables.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            tables.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            tables.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            tables.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            tables.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            tables.Controls.Add(sourceLabel, 0, 0);
+            tables.Controls.Add(this.tb_Source_tableName, 1, 0);
+            tables.Controls.Add(targetLabel, 2, 0);
+            tables.Controls.Add(this.tb_destination_tableName, 3, 0);
+            tables.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
+            tables.TabIndex = 1;
+
+            this.cb_query.Name = "cb_query";
+            this.cb_query.Text = "Use a query instead of table names";
+            this.cb_query.AutoSize = true;
+            this.cb_query.Margin = new System.Windows.Forms.Padding(0, 8, 16, 3);
+            this.cb_query.TabIndex = 0;
+            this.cb_query.CheckedChanged += new System.EventHandler(this.cb_query_CheckedChanged);
+            this.btn_ResetQuery.Name = "btn_ResetQuery";
+            this.btn_ResetQuery.Text = "Reset to specification query";
+            this.btn_ResetQuery.AutoSize = true;
+            this.btn_ResetQuery.MinimumSize = new System.Drawing.Size(210, 32);
+            this.btn_ResetQuery.TabIndex = 1;
+            this.btn_ResetQuery.Click += new System.EventHandler(this.btn_ResetQuery_Click);
+            options.AutoSize = true;
+            options.Dock = System.Windows.Forms.DockStyle.Fill;
+            options.WrapContents = true;
+            options.Margin = new System.Windows.Forms.Padding(0);
+            options.Controls.Add(this.cb_query);
+            options.Controls.Add(this.btn_ResetQuery);
+            options.TabIndex = 2;
+
+            queryHint.Text = "Advanced query mode runs the same SQL on Source and Target. Use trusted queries with restricted accounts.";
+            queryHint.AutoSize = true;
+            queryHint.Dock = System.Windows.Forms.DockStyle.Fill;
+            queryHint.Margin = new System.Windows.Forms.Padding(0, 4, 0, 4);
+            this.tb_querybox.Name = "tb_querybox";
+            this.tb_querybox.AccessibleName = "Query for Source and Target";
+            this.tb_querybox.Multiline = true;
+            this.tb_querybox.AcceptsReturn = true;
+            this.tb_querybox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.tb_querybox.WordWrap = false;
+            this.tb_querybox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tb_querybox.MinimumSize = new System.Drawing.Size(0, 180);
+            this.tb_querybox.TabIndex = 3;
+            this.tb_querybox.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
+
+            this.btn_Connect_Reference_ID.Name = "btn_Connect_Reference_ID";
+            this.btn_Connect_Reference_ID.Text = "Connect and load";
+            this.btn_Connect_Reference_ID.AutoSize = true;
+            this.btn_Connect_Reference_ID.MinimumSize = new System.Drawing.Size(150, 34);
+            this.btn_Connect_Reference_ID.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.btn_Connect_Reference_ID.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
+            this.btn_Connect_Reference_ID.TabIndex = 4;
+            this.btn_Connect_Reference_ID.Click += new System.EventHandler(this.btn_Connect_Reference_ID_Click);
+            this.lbl_Oracle_SQL_Connection.Name = "lbl_Oracle_SQL_Connection";
+            this.lbl_Oracle_SQL_Connection.AutoSize = true;
+            this.lbl_Oracle_SQL_Connection.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lbl_Oracle_SQL_Connection.Margin = new System.Windows.Forms.Padding(0);
+
+            root.AutoSize = true;
+            root.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            root.Dock = System.Windows.Forms.DockStyle.Fill;
+            root.ColumnCount = 1;
+            root.RowCount = 7;
+            root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            for (int row = 0; row < 7; row++) root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            root.Controls.Add(this.connection, 0, 0);
+            root.Controls.Add(tables, 0, 1);
+            root.Controls.Add(options, 0, 2);
+            root.Controls.Add(queryHint, 0, 3);
+            root.Controls.Add(this.tb_querybox, 0, 4);
+            root.Controls.Add(this.btn_Connect_Reference_ID, 0, 5);
+            root.Controls.Add(this.lbl_Oracle_SQL_Connection, 0, 6);
+            root.Margin = new System.Windows.Forms.Padding(0);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoSize = true;
+            this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.MinimumSize = new System.Drawing.Size(760, 0);
+            this.Size = new System.Drawing.Size(1040, 560);
+            this.Controls.Add(root);
+            this.Name = "OracleAndSQLConnection";
+            this.ResumeLayout(false);
+            this.PerformLayout();
         }
 
-        #endregion
-
-        private System.Windows.Forms.GroupBox groupBox8;
-        private System.Windows.Forms.RadioButton rb_SRC_oracle;
-        private System.Windows.Forms.RadioButton rb_SRC_SQL;
-        private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.TextBox tb_destination_tableName;
-        private System.Windows.Forms.Label label17;
-        private System.Windows.Forms.TextBox tb_sql_pwd;
-        private System.Windows.Forms.TextBox tb_sql_username;
-        private System.Windows.Forms.TextBox tb_sql_dbName;
-        private System.Windows.Forms.TextBox tb_sql_dsource;
-        private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.GroupBox groupBox1;
+        private ConnectionPanel connection;
         private System.Windows.Forms.TextBox tb_Source_tableName;
-        private System.Windows.Forms.Label label16;
-        private System.Windows.Forms.TextBox tb_oracle_pwd;
-        private System.Windows.Forms.TextBox tb_oracle_username;
-        private System.Windows.Forms.TextBox tb_oracle_dbName;
-        private System.Windows.Forms.TextBox tb_oracle_dsource;
-        private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Button btn_Connect_Reference_ID;
-        private System.Windows.Forms.Label lbl_Oracle_SQL_Connection;
-        private System.Windows.Forms.CheckBox cb_query;
+        private System.Windows.Forms.TextBox tb_destination_tableName;
         private System.Windows.Forms.TextBox tb_querybox;
-        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.CheckBox cb_query;
+        private System.Windows.Forms.Button btn_Connect_Reference_ID;
+        private System.Windows.Forms.Button btn_ResetQuery;
+        private System.Windows.Forms.Label lbl_Oracle_SQL_Connection;
     }
 }

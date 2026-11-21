@@ -173,7 +173,7 @@ jobs:
       - name: Group window checks
         shell: pwsh
         run: |
-          # tools that share one window: every tab must build its tool inside the tab, once, and close with the window
+          # grouped-tool routes now use workspaces: retain lazy pages, bounded windows and all-or-none close guards
           $exe = (Resolve-Path "SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe").Path
           $log = Join-Path $env:RUNNER_TEMP 'group-checks.txt'
           $p = Start-Process $exe -ArgumentList '--check-groups', "`"$log`"" -PassThru

@@ -8,7 +8,7 @@ using System.Windows.Forms;
 namespace SPI_Data_Comp_Tool
 {
     /// <summary>Application preferences, comparison rules and updates share one settings window.</summary>
-    public partial class User_Settings : Form
+    public partial class User_Settings : WorkspacePageForm
     {
         private bool initializing = true;
 
@@ -65,50 +65,6 @@ namespace SPI_Data_Comp_Tool
             btn_ImportRules.Select();
         }
 
-        private UserProfileForm profiles;
-
-        /// <summary>
-        /// Shows the Profiles tab. It holds the User profiles window as it always was (same controls,
-        /// same code), built the first time the tab is shown; File > User Profile opens Settings here.
-        /// </summary>
-        public UserProfileForm ShowProfiles()
-        {
-            tabs_Settings.SelectedTab = tab_Profiles;
-            FillProfiles();
-            return profiles;
-        }
-
-        private void FillProfiles()
-        {
-            if (profiles != null && !profiles.IsDisposed) return;
-            var form = new UserProfileForm();
-            try
-            {
-                Size wanted = form.Size, least = form.MinimumSize;
-                form.TopLevel = false;                       // a window inside the tab, not on the desktop
-                form.FormBorderStyle = FormBorderStyle.None;
-                form.Dock = DockStyle.Fill;
-                UiTheme.EnsureApplied(form);
-                tlp_Profiles.Controls.Add(form, 0, 0);
-                profiles = form;
-                // the profiles window is larger than Settings: make room once, never beyond the screen
-                Size extra = new Size(Width - tlp_Profiles.Width, Height - tlp_Profiles.Height);
-                Rectangle screen = Screen.FromControl(this).WorkingArea;
-                MinimumSize = new Size(Math.Min(screen.Width, Math.Max(MinimumSize.Width, least.Width + extra.Width)),
-                    Math.Min(screen.Height, Math.Max(MinimumSize.Height, least.Height + extra.Height)));
-                if (WindowState == FormWindowState.Normal)
-                    Size = new Size(Math.Min(screen.Width, Math.Max(Width, wanted.Width + extra.Width)),
-                        Math.Min(screen.Height, Math.Max(Height, wanted.Height + extra.Height)));
-                form.Show();
-            }
-            catch
-            {
-                profiles = null;
-                form.Dispose();
-                throw;
-            }
-        }
-
         public void ShowUpdates()
         {
             tabs_Settings.SelectedTab = tab_Updates;
@@ -124,15 +80,6 @@ namespace SPI_Data_Comp_Tool
             tlp_Root.RowStyles[1].Height = showingUpdates ? 0F : 140F;
             // Enter must never accidentally start installation.
             AcceptButton = showingUpdates ? null : tabs_Settings.SelectedTab == tab_Rules ? btn_ImportRules : btn_Close;
-            if (tabs_Settings.SelectedTab == tab_Profiles)
-            {
-                // Profiles has its own log and buttons: it gets the whole window, as Updates does
-                gb_Logs.Visible = false;
-                tlp_Root.RowStyles[1].Height = 0F;
-                AcceptButton = null;
-                try { FillProfiles(); }
-                catch (Exception ex) { Common_Data.DisplayError(rtb_Log, ex); }
-            }
         }
 
         private void btn_ImportRules_Click(object sender, EventArgs e)

@@ -109,7 +109,7 @@ def qualify(tp):
 
 
 def cs(text):
-    return text.replace("\\", "\\\\").replace('"', '\\"')
+    return text.replace("\\", "\\\\").replace('"', '\\"').replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t")
 
 
 def style(spec, kind):
@@ -228,12 +228,12 @@ def generate(spec_path):
         for d in drop:
             stmt = re.sub(rf"\s*this\.{re.escape(d)},", "", stmt)             # not the last entry
             stmt = re.sub(rf",\s*this\.{re.escape(d)}\}}\)", "})", stmt)     # the last entry
+            stmt = re.sub(rf"(?<=\{{)\s*this\.{re.escape(d)}\s*(?=\}}\))", "", stmt)  # the only entry
         return stmt
 
     for k in list(per_ctrl):
         per_ctrl[k] = [without_dropped_items(x) for x in per_ctrl[k]]
-        per_ctrl[k] = [x for x in per_ctrl[k] if not (mentions_dropped(x) and not x.strip().startswith(f"this.{k}."))
-                       or not mentions_dropped(x.replace(f"this.{k}.", "", 1))]
+        per_ctrl[k] = [x for x in per_ctrl[k] if not mentions_dropped(x.replace(f"this.{k}.", "", 1))]
     pre = [x for x in pre if not mentions_dropped(x)]
 
     I = "            "
@@ -399,15 +399,25 @@ def generate(spec_path):
     out.append("")
 
     new_body = "\n" + "\n".join(out)
-    # fields: drop removed, add new
+    # fields: drop removed, update explicitly replaced types, add new
     new_tail = tail
     for n in drop:
         new_tail = re.sub(rf"^\s*private [\w\.]+ {n};\s*\n", "", new_tail, flags=re.M)
+    for n in order:
+        node = info[n][0]
+        replacement = {"table": "TableLayoutPanel", "flow": "FlowLayoutPanel"}.get(node.kind) or node.o.get("new")
+        if n in field_types and replacement:
+            # Reusing a control name with a new subtype must update both its constructor and field.
+            new_tail = re.sub(rf"(^\s*private )[\w\.]+( {re.escape(n)};)",
+                              rf"\g<1>{qualify(replacement)}\g<2>", new_tail, flags=re.M)
     decl = "".join(f"        private {qualify({'table': 'TableLayoutPanel', 'flow': 'FlowLayoutPanel'}.get(info[n][0].kind) or info[n][0].o['new'])} {n};\n"
                    for n in new_nodes)
     if decl and "#endregion" in new_tail:
         new_tail = new_tail.replace("        #endregion\n", "        #endregion\n\n" + decl, 1)
     text = head + new_body + new_tail
+    if getattr(spec, "CLEAN_WHITESPACE", False):
+        # Opt in as layouts are converted; avoid unrelated churn in older generated designers.
+        text = "\n".join(line.rstrip() for line in text.split("\n"))
     return designer, text
 
 

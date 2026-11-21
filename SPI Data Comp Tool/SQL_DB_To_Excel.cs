@@ -14,7 +14,7 @@ using DataTable = System.Data.DataTable;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class SQL_DB_To_Excel : Form
+    public partial class SQL_DB_To_Excel : WorkspacePageForm
     {
         private IDisposable operationInputs;
         private string strQuery;

@@ -1,255 +1,107 @@
-﻿using System;
-using System.Drawing;
+using System;
+using System.Linq;
 using System.Windows.Forms;
-using System.Diagnostics;
 
 namespace SPI_Data_Comp_Tool
 {
     public partial class MainForm : Form
     {
-        private readonly WindowNavigator windows = new WindowNavigator();
+        private readonly WorkspaceNavigator workspaces = new WorkspaceNavigator();
+
         public MainForm()
         {
             InitializeComponent();
-            MyInitialization();
-
-            // The login screen was removed: its user name and password were hard-coded in this
-            // source, so it protected nothing. The main window now opens ready to use.
-            UnlockMainWindow();
+            FormBorderStyle = FormBorderStyle.Sizable;
+            MaximizeBox = true;
+            label3.Text = "Choose a workspace. Each task keeps its own inputs and results. Reopen a task to return to it; hold Ctrl for a separate session.";
+            BuildWorkspaceMenus();
+            btn_WorkspaceComparison.Click += (sender, e) => OpenTask("comparison.database");
+            btn_WorkspaceAnalysis.Click += (sender, e) => OpenTask("analysis.gaps");
+            btn_WorkspacePreMerge.Click += (sender, e) => OpenTask("premerge.integrity");
+            btn_WorkspaceScripts.Click += (sender, e) => OpenTask("scripts.generate");
+            btn_WorkspaceReports.Click += (sender, e) => OpenTask("reports.database");
+            btn_WorkspaceSettings.Click += (sender, e) => OpenTask("settings.preferences");
+            lbl_LoginStatus.Text = GlobalDebug.ISGlobalDebug(Environment.UserName, string.Empty) ? "Developer mode" : "Ready";
             InitializeUpdates();
-            // the header band and the status bar take their colours from the theme chosen in Settings
             UiTheme.MarkHeader(pnl_Header);
             UiTheme.MarkStatus(pnl_Status);
             UiTheme.Apply(this);
+            foreach (var button in new[] { btn_WorkspaceComparison, btn_WorkspaceAnalysis, btn_WorkspacePreMerge,
+                btn_WorkspaceScripts, btn_WorkspaceReports, btn_WorkspaceSettings }) button.UseMnemonic = false;
         }
 
-        private void MyInitialization()
+        private void BuildWorkspaceMenus()
         {
-            label3.Text = "Use only on data you are allowed to access. Every other tool is in the menus above. Opening a tool again returns to its active window; hold Ctrl when opening a tool for a separate session.";
-            // the four tools most people start with; each opens the same window as its menu entry
-            tile_CompareDb.Click += (sender, e) => OpenWindow(() => new DB_Comparison_Form());
-            tile_CompareExcel.Click += (sender, e) => OpenWindow(() => new Excel_Excel_Comparison());
-            tile_DeltaTracker.Click += (sender, e) => OpenWindow(() => new SPIDeltaChangeTrackerOptimised());
-            tile_ExportExcel.Click += (sender, e) => OpenWindow(() => new SQL_DB_To_Excel());
-        }
-
-        private void OpenWindow<T>(Func<T> create, string mode = "", bool allowSeparateSession = true) where T : Form
-        {
-            try
+            menuStrip1.Items.Clear();
+            var file = new ToolStripMenuItem("&File");
+            file.DropDownItems.Add("E&xit", null, (sender, e) => Close());
+            menuStrip1.Items.Add(file);
+            foreach (WorkspaceKind kind in Enum.GetValues(typeof(WorkspaceKind)))
             {
-                bool separate = allowSeparateSession && (ModifierKeys & Keys.Control) == Keys.Control;
-                windows.Open(this, create, mode, separate);
-            }
-            catch (Exception ex)
-            {
-                lbl_LoginStatus.Text = "Unable to open window";
-                MessageBox.Show(this, Common_Data.RedactConnectionCredentials(ex.Message), "Unable to open window", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        /// <summary>
-        /// Opens a tool as a tab of its group window (see ToolGroups.cs). With Ctrl held, and where a
-        /// separate session is allowed, it opens in a window of its own as before.
-        /// </summary>
-        private void OpenTool<T>(string group, Func<T> create, string mode = "", bool allowSeparateSession = true) where T : Form
-        {
-            try
-            {
-                if (allowSeparateSession && (ModifierKeys & Keys.Control) == Keys.Control)
+                var menu = new ToolStripMenuItem(WorkspaceCatalog.Title(kind).Replace("&", "&&"))
+                    { Name = "workspaceMenu_" + kind };
+                foreach (var task in WorkspaceCatalog.TasksFor(kind))
                 {
-                    windows.Open(this, create, mode, true);
-                    return;
+                    WorkspaceTask route = task;
+                    var item = new ToolStripMenuItem(task.Title.Replace("&", "&&"))
+                    {
+                        Name = "taskMenu_" + task.Key.Replace('.', '_'), Tag = task.Key, ToolTipText = task.Description
+                    };
+                    item.Click += (sender, e) => OpenTask(route.Key);
+                    menu.DropDownItems.Add(item);
                 }
-                ToolGroupWindow host = windows.Open(this, () => ToolGroups.Create(group), group);
-                host.ShowTool(ToolGroupWindow.KeyOf(typeof(T), mode), () => create());
+                menuStrip1.Items.Add(menu);
             }
-            catch (Exception ex)
+            var help = new ToolStripMenuItem("&Help");
+            var updates = new ToolStripMenuItem("Check for &updates…") { Name = "checkForUpdatesToolStripMenuItem" };
+            updates.Click += (sender, e) =>
             {
-                lbl_LoginStatus.Text = "Unable to open window";
-                MessageBox.Show(this, Common_Data.RedactConnectionCredentials(ex.Message), "Unable to open window", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+                try { ShowUpdatesSettings(); }
+                catch (Exception ex) { ShowNavigationError(ex); }
+            };
+            help.DropDownItems.Add(updates);
+            help.DropDownItems.Add("&About", null, (sender, e) =>
+            {
+                using (var about = new AboutBox1())
+                {
+                    about.ShowInTaskbar = false;
+                    about.ShowDialog(this);
+                }
+            });
+            menuStrip1.Items.Add(help);
         }
 
-        private void aboutUsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void OpenTask(string route)
         {
-            using (AboutBox1 abu = new AboutBox1())
-            {
-                abu.ShowInTaskbar = false;
-                abu.ShowIcon = false;
-                abu.ShowDialog(this);
-            }
+            try { workspaces.Open(this, route, (ModifierKeys & Keys.Control) == Keys.Control); }
+            catch (Exception ex) { ShowNavigationError(ex); }
+        }
+
+        private void ShowNavigationError(Exception ex)
+        {
+            lbl_LoginStatus.Text = "Unable to open task";
+            MessageBox.Show(this, Common_Data.RedactConnectionCredentials(ex.Message), "Unable to open task",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         internal User_Settings ShowUpdatesSettings()
         {
-            // The same key as File > Settings: never create a second settings window.
-            User_Settings settings = windows.Open(this, () => new User_Settings());
+            // Help activates the exact same page as Settings > Preferences, rules & updates.
+            var settings = (User_Settings)workspaces.Open(this, "settings.preferences");
             settings.ShowUpdates();
             return settings;
         }
 
-        private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
+        protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            try { ShowUpdatesSettings(); }
-            catch (Exception ex)
+            base.OnFormClosing(e);
+            if (!e.Cancel && (!workspaces.TryPrepareCloseAll(e.CloseReason) ||
+                OwnedForms.OfType<WorkspaceForm>().Except(workspaces.LoadedWorkspaces)
+                    .Any(workspace => !workspace.TryPrepareWorkspaceClose(e.CloseReason))))
             {
-                MessageBox.Show(this, Common_Data.RedactConnectionCredentials(ex.Message), "Unable to open Updates",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                e.Cancel = true;
+                lbl_LoginStatus.Text = "Finish or cancel active tasks before closing SPI.";
             }
-        }
-
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
-        private void compareExcelToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new Excel_Excel_Comparison());
-        }
-
-        private void sPIAnalysisToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new SPI_Analysis());
-        }
-
-        private void UnlockMainWindow()
-        {
-            try
-            {
-                ToggleMenuStripForms(true);
-                // Developer mode comes only from an attached debugger or SPI_DATA_COMP_DEBUG=1.
-                lbl_LoginStatus.Text = GlobalDebug.ISGlobalDebug(Environment.UserName, string.Empty)
-                    ? "Developer mode"
-                    : "Ready";
-            }
-            catch (Exception ex)
-            {
-                FormHelpers.ShowError(lbl_LoginStatus, ex);
-            }
-        }
-
-        private void ToggleMenuStripForms(bool boolEnableStatus)
-        {
-            try
-            {
-                compareDBToolStripMenuItem.Enabled = boolEnableStatus;
-                compareExcelToolStripMenuItem.Enabled = boolEnableStatus;
-                customisedExcelToolStripMenuItem.Enabled = boolEnableStatus;
-                sPIAnalysisToolStripMenuItem.Enabled = boolEnableStatus;
-                sPISpecNoteCreationUtilityToolStripMenuItem.Enabled = boolEnableStatus;
-                exportDBToExcelToolStripMenuItem.Enabled = boolEnableStatus;
-                sQLDBToExcelToolStripMenuItem.Enabled = boolEnableStatus;
-                sPIDeltaChangeTrackerOptimisedToolStripMenuItem.Enabled = boolEnableStatus;
-                compareListTablesToolStripMenuItem.Enabled = boolEnableStatus;
-                preMergingToolToolStripMenuItem.Enabled = boolEnableStatus;
-                preMergingDuplicacyCheckToolStripMenuItem.Enabled = boolEnableStatus;
-                userProfileToolStripMenuItem.Enabled = boolEnableStatus;
-                configurationToolStripMenuItem.Enabled = boolEnableStatus;
-                sPIDeltaChangeLegacyIDToolStripMenuItem.Enabled = boolEnableStatus;
-                generateInsertScriptsToolStripMenuItem.Enabled = boolEnableStatus;
-                executeScriptsFromExcelToolStripMenuItem.Enabled = boolEnableStatus;
-                tableExtractionAfterDeltaToolStripMenuItem.Enabled = boolEnableStatus;
-                mergeLogsExportToolStripMenuItem.Enabled = boolEnableStatus;
-                sPIFKExtractionToolStripMenuItem.Enabled = boolEnableStatus;
-
-
-            }
-            catch (Exception ex)
-            {
-                lbl_LoginStatus.Text = ex.Message.ToString();
-            }
-        }
-
-        private void sPISpecNoteCreationUtilityToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTool(ToolGroups.ExcelTools, () => new SPI_Spec_Note_Creation_Utility());
-        }
-
-        private void compareDBToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new DB_Comparison_Form());
-        }
-
-        private void customisedExcelToolStripMenuItem_Click_1(object sender, EventArgs e)
-        {
-            OpenTool(ToolGroups.ExcelTools, () => new CustomisedExcel());
-        }
-
-        private void sQLDBToExcelToolStripMenuItem_Click_1(object sender, EventArgs e)
-        {
-            OpenWindow(() => new SQL_DB_To_Excel());
-        }
-
-        private void compareListTablesToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new Compare_Multiples_List_Tables_Forms());
-        }
-
-        private void preMergingToolToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTool(ToolGroups.PreMerging, () => new PreMergingTool_Form());
-        }
-
-        private void preMergingDuplicacyCheckToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTool(ToolGroups.PreMerging, () => new Pre_Merging_Duplicacy_Form(), "check");
-        }
-
-        private void userProfileToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            // User profiles is a tab of Settings; the same key as File > Settings, so never a second window
-            try { windows.Open(this, () => new User_Settings()).ShowProfiles(); }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, Common_Data.RedactConnectionCredentials(ex.Message), "Unable to open Profiles",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void configurationToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTool(ToolGroups.PreMerging, () => new Pre_Merging_Duplicacy_Form(true), "configuration", false);
-        }
-
-        private void generateInsertScriptsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTool(ToolGroups.ExcelTools, () => new Generate_IUD_Script_Form());
-        }
-
-        private void executeScriptsFromExcelToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new Execute_Excel_Scripts_Form());
-        }
-
-        private void tableExtractionAfterDeltaToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTool(ToolGroups.Delta, () => new Table_Extraction_After_Delta_Form());
-        }
-
-        private void mergeLogsExportToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTool(ToolGroups.ExcelTools, () => new MergeLogsExport());
-        }
-
-        private void sPIDeltaChangeLegacyIDToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenTool(ToolGroups.Delta, () => new SPIDeltaChangeLegacyID());
-        }
-
-        private void sPIDeltaChangeTrackerOptimisedToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new SPIDeltaChangeTrackerOptimised());
-        }
-
-        private void userSettingsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new User_Settings(), allowSeparateSession: false);
-        }
-
-        private void sPIFKExtractionToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            OpenWindow(() => new SPI_FK_Extraction());
         }
     }
 }

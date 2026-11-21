@@ -19,7 +19,7 @@ using OfficeOpenXml;
 
 namespace SPI_Data_Comp_Tool
 {
-    public partial class Excel_Excel_Comparison : Form
+    public partial class Excel_Excel_Comparison : WorkspacePageForm
     {
         private bool boolStatus;
         private bool boolCellValueIntType;
@@ -193,11 +193,6 @@ namespace SPI_Data_Comp_Tool
                 //Properties.Settings.Default.XL_Excel_Save = true;
                 //Properties.Settings.Default.EPPlus_Excel_Save = false;
             }
-            else
-            {
-                btn_ProcessBy_MultiThreading.Enabled = false;
-                btn_ProcessBy_MultiThreading.Visible = false;
-            }
 
             toolTip = new ToolTip();
 
@@ -218,7 +213,7 @@ namespace SPI_Data_Comp_Tool
             cb_IgnoreCase.CheckedChanged += (sender, args) => InvalidateComparison();
             FormClosing += (sender, args) =>
             {
-                if (isLoading || backgroundWorker1.IsBusy || backgroundWorkerInstrument.IsBusy || bgw_multiThreading.IsBusy)
+                if (isLoading || backgroundWorker1.IsBusy || backgroundWorkerInstrument.IsBusy)
                 {
                     args.Cancel = true;
                     DisplayMessage("Wait for loading or cancel the current operation before closing this window.", true);
@@ -652,7 +647,7 @@ namespace SPI_Data_Comp_Tool
                 boolSelectedBothFile = true;
                 if (cb_MultiReference.Checked)
                 {
-                    new ViewForMultiReference(ds, ds).Show(this);
+                    WorkspaceCatalog.OpenAdvancedMapping(this, () => new ViewForMultiReference(ds, ds));
                 }
                 else
                 {
@@ -2036,10 +2031,6 @@ namespace SPI_Data_Comp_Tool
                 {
                     backgroundWorkerInstrument.CancelAsync();
                 }
-                if (bgw_multiThreading.IsBusy)
-                {
-                    bgw_multiThreading.CancelAsync();
-                }
             }
             catch (Exception ex)
             {
@@ -2050,322 +2041,6 @@ namespace SPI_Data_Comp_Tool
         private void Excel_Excel_Comparison_Load(object sender, EventArgs e)
         {
 
-        }
-
-        private void btn_ProcessBy_MultiThreading_Click(object sender, EventArgs e)
-        {
-            try
-            {
-
-                //changeEnabledStatus(false);
-                //dateTime1 = DateTime.Now;
-
-                //lblError.Text = string.Empty;
-                //lbl_Status.Text = "Process start";
-                //strFileNameWithPath = llbl_filePath.Text + @"\" + tb_fileName.Text + @".xlsx";
-                //if (!bgw_multiThreading.IsBusy)
-                //{
-                //    bgw_multiThreading.RunWorkerAsync();
-                //}
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void bgw_multiThreading_DoWork(object sender, DoWorkEventArgs e)
-        {
-            ////int progress = 0;
-            //int totalProgress;//, percentage;
-
-            //dateTime1 = DateTime.Now;
-            //DataGridView dataGridView11 = new DataGridView();
-
-            //try
-            //{
-            //    if (boolValidate)
-            //    {
-            //        dt_secondTable.CaseSensitive = true;
-            //        dv_secondTableDataView = new DataView(dt_secondTable);
-
-            //        dt_firstTableOnly = dt_firstTable.Clone();
-            //        dt_secondTableOnly = dt_secondTable.Copy();
-
-            //        //int cellCol, headRow, alternateRow;
-            //        //headRow = -1;
-            //        //cellCol = alternateRow = 0;
-            //        //string str_colName;
-            //        //bool newRow = true;
-
-            //        dt_unmatched_Capture = dt_firstTable.Clone();
-
-            //        dt_summarised_difference = dt_firstTable.Clone();
-
-            //        foreach (DataColumn dc in dt_firstTable.Columns)
-            //        {
-            //            dt_summarised_difference.Columns[dc.ToString()].DataType = typeof(Int32);
-            //        }
-            //        DataRow dr_summarised = dt_summarised_difference.NewRow();
-            //        foreach (DataColumn dc in dt_firstTable.Columns)
-            //        {
-            //            dr_summarised[dc.ToString()] = 0;
-            //        }
-            //        dt_summarised_difference.Rows.Add(dr_summarised);
-
-            //        totalProgress = dt_firstTable.Rows.Count;
-            //        string colNameToAdd;
-            //        for (int i = 0; i < dt_unmatched_Capture.Columns.Count; i++)
-            //        {
-            //            colNameToAdd = dt_unmatched_Capture.Columns[i].ColumnName.ToString();
-            //            dataGridView11.Columns.Add(colNameToAdd, colNameToAdd);
-            //        }
-
-            //        #region multithreading tak started
-
-            //        //ParameterizedThreadStart pts = new ParameterizedThreadStart(multiThreadingParameter);
-            //        //Thread t = new Thread(multiThreadingParameter);
-            //        //t.Start();
-
-            //        //Thread tc = Thread.CurrentThread;
-            //        //Thread.Sleep(10000);
-
-
-            //        //multiThreading(1, dt_firstTable, dt_secondTable, dataGridView11, e);
-
-            //        #endregion
-
-            //        #region for deleting columns which are not required
-
-            //        int index = 0;
-            //        int adjust = 0;
-            //        foreach (DataColumn dc in dt_summarised_difference.Columns)
-            //        {
-            //            index = dc.Ordinal - adjust;
-            //            if (!(clb_reference_ID.GetItemChecked(clb_reference_ID.FindString(dc.ColumnName.ToString()))))
-            //            {
-            //                if (Convert.ToInt32(dt_summarised_difference.Rows[0][dc.ColumnName.ToString()]) == 0)
-            //                {
-            //                    dt_unmatched_Capture.Columns.Remove(dc.ColumnName);
-            //                    dataGridView11.Columns.Remove(dc.ColumnName.ToString());
-            //                    adjust++;
-            //                }
-            //            }
-            //        }
-
-            //        #endregion
-
-            //        bgw_multiThreading.ReportProgress(105);
-
-            //        dt_transpose = common_Data.GenerateTransposeTable(dt_summarised_difference);
-            //        wb = new XLWorkbook();
-
-            //        wb.Worksheets.Add(dt_unmatched_Capture, "Mismatch");
-
-            //        wb.Worksheets.Add(dt_firstTableOnly, "Rows in first excelsheet");
-            //        wb.Worksheets.Add(dt_secondTableOnly, "Rows in second excelsheet");
-            //        wb.Worksheets.Add(dt_transpose, "Summarised");
-
-            //        bgw_multiThreading.ReportProgress(106);
-
-            //        formatExcelTableByDataGridView(1, dataGridView11, dt_unmatched_Capture, clb_reference_ID.CheckedItems, "First Excel", "Second Excel");
-
-            //        formatExcelTable(2, dt_firstTableOnly);
-            //        formatExcelTable(3, dt_secondTableOnly);
-            //        formatExcelTable(4, dt_transpose);
-
-            //        bgw_multiThreading.ReportProgress(107);
-
-            //        wb.SaveAs(fileNameWithPath);
-
-            //        bgw_multiThreading.ReportProgress(108);
-
-            //        boolStatus = true;
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    myException = ex;
-            //    boolStatus = false;
-            //    //DisplayError(ex);
-            //}
-            //finally
-            //{
-            //    //changeEnabledStatus(true);
-            //}
-        }
-
-        public void multiThreadingParameter()
-        {
-            //Thread.Sleep(15000);
-        }
-
-        private void multiThreading(int int_status, DataTable dt_source, DataTable dt_target, DataGridView dgv, DoWorkEventArgs e)
-        {
-            //try
-            //{
-
-            //    if (int_status == 1)
-            //    {
-            //        int percentage, progress = 0;
-            //        int totalProgress = dt_source.Rows.Count;
-            //        int cellCol, headRow, alternateRow;
-            //        string str_colName;
-            //        bool newRow = true;
-
-            //        headRow = -1;
-            //        cellCol = alternateRow = 0;
-
-            //        //dt_unmatched_Capture = dt_source.Clone();
-            //        //dt_summarised_difference = dt_source.Clone();
-
-
-            //        foreach (DataRow dr in dt_source.Rows)
-            //        {
-            //            percentage = (((++progress) * 100) / totalProgress);
-            //            bgw_multiThreading.ReportProgress(percentage);
-
-            //            if (bgw_multiThreading.CancellationPending)
-            //            {
-            //                e.Cancel = true;
-            //                bgw_multiThreading.CancelAsync();
-            //                return;
-            //            }
-
-            //            str_RowFilter = generateRowFilterString(dr);
-            //            dv_secondTableDataView.RowFilter = str_RowFilter;
-
-            //            if (dv_secondTableDataView.Count > 0)
-            //            {
-            //                delete_current_row_from_second_table();
-
-            //                CheckedListBox.CheckedItemCollection cic_firsttableColumns = clb_firstExcel.CheckedItems;
-            //                CheckedListBox.CheckedItemCollection cic_reference = clb_reference_ID.CheckedItems;
-            //                foreach (var a in cic_firsttableColumns)
-            //                {
-            //                    if (!(cic_reference.Contains(a)))
-            //                    {
-            //                        if (!(dr[a.ToString()].ToString() == dv_secondTableDataView[0][a.ToString()].ToString()))
-            //                        {
-            //                            cellCol = dt_firstTable.Columns[a.ToString()].Ordinal;
-            //                            str_colName = a.ToString();
-            //                            if (newRow)
-            //                            {
-            //                                dt_unmatched_Capture.Rows.Add(dr.ItemArray);
-            //                                dt_unmatched_Capture.Rows.Add(dv_secondTableDataView[0].Row.ItemArray);
-            //                                headRow += 2;
-            //                                alternateRow += 2;
-            //                                newRow = false;
-
-            //                                //dataGridView11.DataSource = dt_unmatched_Capture;
-            //                                dgv.Rows.Add(dt_unmatched_Capture.Rows[0].ItemArray);
-            //                                dgv.Rows.Add(dt_unmatched_Capture.Rows[1].ItemArray);
-            //                            }
-
-            //                            dgv.Rows[headRow - 1].Cells[cellCol].Style.BackColor = Color.Yellow;
-            //                            dgv.Rows[alternateRow - 1].Cells[cellCol].Style.BackColor = Color.Yellow;
-
-            //                            dt_summarised_difference.Rows[0][str_colName] =
-            //                                    Convert.ToInt32((dt_summarised_difference.Rows[0][str_colName]).ToString()) + 1;
-            //                        }
-            //                    }
-            //                }
-            //                newRow = true;
-            //            }
-            //            else
-            //            {
-            //                dt_firstTableOnly.Rows.Add(dr.ItemArray);
-            //            }
-
-            //        }
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    myException = ex;
-            //}
-        }
-        private void bgw_multiThreading_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            try
-            {
-                if (myException.InnerException != null)
-                {
-                    lbl_Status.Text = myException.Message.ToString();
-                    Logs.EnterLogsWithTime(lbl_Status.Text);
-                }
-                if (e.ProgressPercentage <= 100)
-                {
-                    progressBar1.Value = e.ProgressPercentage;
-                    lbl_Percentage.Text = e.ProgressPercentage + " % ";
-                }
-                else if (e.ProgressPercentage >= 100)
-                {
-                    progressBar1.Value = 100;
-                    switch (e.ProgressPercentage)
-                    {
-                        case 105:
-                            lbl_Percentage.Text = "Writing Excel File";
-                            break;
-
-                        case 106:
-                            lbl_Percentage.Text = "Formatting Excel File";
-                            break;
-
-                        case 107:
-                            lbl_Percentage.Text = "Saving Excel File";
-                            break;
-
-                        case 108:
-                            lbl_Percentage.Text = "File Saved Successfully";
-                            break;
-
-                    }
-                }
-                //else
-                //{
-                //    progressBar1.Value = 100;
-                //    lbl_Percentage.Text = e.ProgressPercentage + " % Done";
-                //}
-                showElapsedTime();
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void bgw_multiThreading_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            try
-            {
-                if (e.Cancelled)
-                {
-                    lbl_Status.Text = "Process Cancelled";
-                    progressBar1.Value = 0;
-                    lbl_Percentage.Text = "0 % and Processed cancelled";
-                }
-                else if (boolStatus)
-                {
-                    lbl_Status.Text = "Opening " + fileNameWithPath;
-                    Process.Start(fileNameWithPath);
-                    progressBar1.Value = 100;
-                    lbl_Percentage.Text = "100 % Done";
-                }
-                else
-                {
-                    lbl_Status.Text = myException.Message.ToString();
-                }
-                Logs.EnterLogsWithTime(lbl_Status.Text);
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-            finally
-            {
-                changeEnabledStatus(true);
-            }
         }
 
         private void btn_RuleForm_Click(object sender, EventArgs e)
@@ -2425,7 +2100,6 @@ namespace SPI_Data_Comp_Tool
             FormValidation.Require(!isLoading, btn_SelectLoad, "Wait for the workbook load to finish.");
             FormValidation.IsBusy(backgroundWorker1, btn_Compare);
             FormValidation.IsBusy(backgroundWorkerInstrument, btnLoad);
-            FormValidation.IsBusy(bgw_multiThreading, btn_ProcessBy_MultiThreading);
         }
 
         internal void ValidateComparisonInput()

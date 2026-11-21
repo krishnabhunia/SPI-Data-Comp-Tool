@@ -65,6 +65,7 @@ namespace SPI_Data_Comp_Tool
                 }
                 check("the theme switches while windows are open", LiveSwitch);
                 check("two Settings windows show the same theme", SettingsPickers);
+                check("six home tiles and hosted tasks keep their theme, state and selection", HostedWorkspaces);
             }
             finally
             {
@@ -207,6 +208,117 @@ namespace SPI_Data_Comp_Tool
                     "Going back to Ocean from the other Settings window did not work.");
             }
             UiTheme.Use(UiTheme.Berry, false);   // a closed Settings window no longer listens
+        }
+
+        private static void HostedWorkspaces()
+        {
+            UiPalette before = UiTheme.Current;
+            try
+            {
+                UiTheme.Use(UiTheme.Ocean, false);
+                using (var main = new MainForm())
+                using (var comparison = new WorkspaceForm(WorkspaceKind.Comparison,
+                    WorkspaceCatalog.TasksFor(WorkspaceKind.Comparison)))
+                using (var settings = new WorkspaceForm(WorkspaceKind.Settings,
+                    WorkspaceCatalog.TasksFor(WorkspaceKind.Settings)))
+                using (var rules = new User_Settings(true))
+                {
+                    main.ShowInTaskbar = false;
+                    comparison.ShowInTaskbar = false;
+                    settings.ShowInTaskbar = false;
+                    main.Show();
+                    comparison.Show(main);
+                    settings.Show(main);
+
+                    // Exercise real workflow factories but never click a data or updater action.
+                    WorkspacePageForm database = comparison.OpenTask("comparison.database");
+                    var draft = new TextBox
+                    {
+                        Name = "tb_HostedThemeProbe", Text = "Retained draft selection", Dock = DockStyle.Bottom,
+                    };
+                    database.Controls.Add(draft);
+                    var error = new Label
+                    {
+                        Name = "lbl_HostedThemeProbe", Text = "Synthetic validation error", AutoSize = true,
+                    };
+                    database.Controls.Add(error);
+                    error.ForeColor = Color.Red;
+                    WorkspacePageForm excel = comparison.OpenTask("comparison.excel");
+                    var preferences = (User_Settings)settings.OpenTask("settings.preferences");
+                    var picker = preferences.Controls.Find("cb_Theme", true).OfType<ComboBox>().Single();
+                    var rulePicker = rules.Controls.Find("cb_Theme", true).OfType<ComboBox>().Single();
+                    Pump();
+
+                    foreach (string name in new[] { "Comparison", "Analysis", "PreMerge", "Scripts", "Reports", "Settings" })
+                    {
+                        var tile = main.Controls.Find("btn_Workspace" + name, true).OfType<TileButton>().Single();
+                        Require(tile.Text.IndexOfAny(new[] { '\r', '\n' }) < 0 && !string.IsNullOrWhiteSpace(tile.Hint)
+                            && tile.AccessibleDescription == tile.Hint && !tile.UseMnemonic,
+                            name + ": the home tile needs a single title, separate hint and readable accessible description.");
+                    }
+
+                    foreach (UiPalette p in new[] { UiTheme.Midnight, UiTheme.Berry, UiTheme.Forest, UiTheme.Ocean })
+                    {
+                        // The actual hosted Settings picker changes the theme without writing a user
+                        // preference in SelfTest mode; the independent Rules dialog stays synchronized.
+                        picker.SelectedItem = p;
+                        Pump();
+                        Require(UiTheme.Current == p && rulePicker.SelectedItem == p,
+                            p.Name + ": the embedded Settings picker and Rules dialog disagree.");
+                        Require(ReferenceEquals(comparison.ActivePage, excel) && comparison.LoadedPages.Count == 2
+                            && excel.Visible && !database.Visible && draft.Text == "Retained draft selection",
+                            p.Name + ": changing theme replaced, selected or cleared a workflow page.");
+                        Require(error.ForeColor == p.Danger,
+                            p.Name + ": a late-added validation label on a hidden page did not follow the theme.");
+                        Require(Inspect(main, p));
+                        Require(Inspect(comparison, p));
+                        Require(Inspect(settings, p));
+                        Require(Inspect(preferences, p));
+                        Require(Inspect(rules, p));
+                        foreach (WorkspacePageForm page in comparison.LoadedPages)
+                            Require(Inspect(page, p));  // Includes pages hidden by task navigation.
+                        RequireNavigationTheme(comparison, "comparison.excel", p);
+                        RequireNavigationTheme(settings, "settings.preferences", p);
+                    }
+
+                    UiTheme.Use(UiTheme.Midnight, false);
+                    WorkspacePageForm latePage = comparison.OpenTask("comparison.batch");
+                    Require(comparison.LoadedPages.Count == 3 && !latePage.TopLevel,
+                        "Opening a task after a theme switch lost lazy hosting or replaced an existing page.");
+                    Require(Inspect(latePage, UiTheme.Midnight));
+                    RequireNavigationTheme(comparison, "comparison.batch", UiTheme.Midnight);
+                    Require(ReferenceEquals(database, comparison.OpenTask("comparison.database"))
+                        && draft.Text == "Retained draft selection",
+                        "Returning to a hidden workflow after theme changes lost its retained state.");
+                    RequireNavigationTheme(comparison, "comparison.database", UiTheme.Midnight);
+                    comparison.Close();
+                    settings.Close();
+                    main.Close();
+                }
+                // Closed hosts/pages must have unsubscribed from theme changes.
+                UiTheme.Use(UiTheme.Berry, false);
+            }
+            finally
+            {
+                UiTheme.Use(before, false);
+            }
+        }
+
+        private static void RequireNavigationTheme(WorkspaceForm workspace, string selectedKey, UiPalette palette)
+        {
+            foreach (WorkspaceTask task in WorkspaceCatalog.TasksFor(workspace.Workspace))
+            {
+                var button = workspace.Controls.Find("task_" + task.Key.Replace('.', '_'), true).OfType<Button>().Single();
+                bool selected = task.Key == selectedKey;
+                Require(button.BackColor == (selected ? palette.Accent : palette.CardBack)
+                    && button.ForeColor == (selected ? palette.AccentText : palette.TextColor)
+                    && button.FlatAppearance.BorderColor == (selected ? palette.Accent : palette.FieldBorder)
+                    && button.FlatAppearance.MouseOverBackColor == (selected ? palette.AccentHover : palette.HoverBack)
+                    && button.FlatAppearance.MouseDownBackColor == (selected ? palette.AccentPressed : palette.PressedBack),
+                    palette.Name + ": task navigation lost its selection or interactive colours: " + task.Key + ".");
+                Require(Contrast(button.ForeColor, button.BackColor) >= Readable,
+                    palette.Name + ": task navigation is not readable: " + task.Key + ".");
+            }
         }
 
         private static void Pump()

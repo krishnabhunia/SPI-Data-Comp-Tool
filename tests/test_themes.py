@@ -45,6 +45,9 @@ class Themes(unittest.TestCase):
     def test_every_tool_window_is_themed(self) -> None:
         navigator = code("WindowNavigator.cs")
         self.assertLess(navigator.index("UiTheme.EnsureApplied(window);"), navigator.index("window.Show(owner);"))
+        host = code("WorkspaceForm.cs")
+        self.assertLess(host.index("UiTheme.EnsureApplied(page);"), host.index("content.Controls.Add(page);"))
+        self.assertLess(host.index("UiTheme.EnsureApplied(page);"), host.index("page.Show();"))
         self.assertIn("UiTheme.Apply(this);", code("AboutBox1.cs"))
         self.assertIn("Load += (sender, e) => UiTheme.Apply(this);", code("ViewForMultiReference.cs"))
 
@@ -53,7 +56,7 @@ class Themes(unittest.TestCase):
         self.assertIn("this.tlp_General.Controls.Add(this.gb_Theme, 0, 1);", designer)
         self.assertIn("this.tlp_Theme.Controls.Add(this.cb_Theme, 1, 0);", designer)
         self.assertIn("this.cb_Theme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;", designer)
-        self.assertEqual(len(re.findall(r"this\.tabs_Settings\.Controls\.Add\(", designer)), 4)   # the theme picker added no tab; Profiles did later
+        self.assertEqual(len(re.findall(r"this\.tabs_Settings\.Controls\.Add\(", designer)), 3)
         settings = code("User_Settings.cs")
         self.assertIn("cb_Theme.Items.AddRange(UiTheme.All);", settings)
         self.assertIn("cb_Theme.SelectedItem = UiTheme.Current;", settings)
@@ -62,16 +65,40 @@ class Themes(unittest.TestCase):
         self.assertIn("string notSaved = UiTheme.Use(palette);", handler)
         self.assertIn("could not be saved", handler)   # the user is told when the choice will not survive a restart
 
-    def test_main_window_tiles_open_the_same_windows_as_the_menus(self) -> None:
+    def test_main_window_tiles_open_the_same_tasks_as_the_menus(self) -> None:
         main = code("MainForm.cs")
-        for tile, window in (("tile_CompareDb", "DB_Comparison_Form"), ("tile_CompareExcel", "Excel_Excel_Comparison"),
-                             ("tile_DeltaTracker", "SPIDeltaChangeTrackerOptimised"), ("tile_ExportExcel", "SQL_DB_To_Excel")):
+        catalog = code("WorkspaceCatalog.cs")
+        for tile, route in (("Comparison", "comparison.database"), ("Analysis", "analysis.gaps"),
+                            ("PreMerge", "premerge.integrity"), ("Scripts", "scripts.generate"),
+                            ("Reports", "reports.database"), ("Settings", "settings.preferences")):
             with self.subTest(tile=tile):
-                self.assertIn(f"{tile}.Click += (sender, e) => OpenWindow(() => new {window}());", main)
-                self.assertGreaterEqual(main.count(f"OpenWindow(() => new {window}());"), 2)   # the tile and the menu entry
+                self.assertIn(f'btn_Workspace{tile}.Click += (sender, e) => OpenTask("{route}");', main)
+                self.assertIn(f'new WorkspaceTask("{route}"', catalog)
+        # Every menu entry and the six home tiles use the same route dispatcher and catalog.
+        self.assertIn("foreach (var task in WorkspaceCatalog.TasksFor(kind))", main)
+        self.assertIn("Tag = task.Key", main)
+        self.assertIn("item.Click += (sender, e) => OpenTask(route.Key);", main)
+        self.assertIn("workspaces.Open(this, route,", main)
         self.assertIn("UiTheme.MarkHeader(pnl_Header);", main)
         self.assertIn("UiTheme.MarkStatus(pnl_Status);", main)
-        self.assertIn("Application.Exit();", main)   # File > Exit still closes the app
+        # File > Exit closes the application root through the same busy-page preflight as its X.
+        self.assertIn('file.DropDownItems.Add("E&xit", null, (sender, e) => Close());', main)
+        self.assertIn("protected override void OnFormClosing(FormClosingEventArgs e)", main)
+        self.assertIn("workspaces.TryPrepareCloseAll(e.CloseReason)", main)
+
+    def test_workspace_selection_and_hidden_pages_follow_theme_changes(self) -> None:
+        host = code("WorkspaceForm.cs")
+        self.assertIn("UiTheme.Changed += Theme_Changed;", host)
+        self.assertIn("Disposed += (sender, args) => UiTheme.Changed -= Theme_Changed;", host)
+        selection = host.split("private void ApplyNavigationTheme()", 1)[1].split("private void NavigateSafely", 1)[0]
+        self.assertIn("selected ? palette.Accent : palette.CardBack", selection)
+        self.assertIn("selected ? palette.AccentText : palette.TextColor", selection)
+        self.assertIn("selected ? palette.AccentHover : palette.HoverBack", selection)
+        self.assertIn("selected ? palette.AccentPressed : palette.PressedBack", selection)
+        checks = (ROOT / "tests/ThemeChecks.cs").read_text(encoding="utf-8")
+        self.assertIn("HostedWorkspaces", checks)
+        self.assertIn("foreach (WorkspacePageForm page in comparison.LoadedPages)", checks)
+        self.assertIn("Require(Inspect(page, p));", checks)
 
     def test_main_window_ships_no_unused_pictures(self) -> None:
         designer = code("MainForm.Designer.cs")

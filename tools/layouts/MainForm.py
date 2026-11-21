@@ -1,66 +1,77 @@
-"""Main window - layout spec for tools/layout_gen.py."""
-from layout_gen import C, T, F, G
+"""Main window: six task workspaces; menu routes are created from WorkspaceCatalog."""
+from layout_gen import C, T, G
 
 DESIGNER = "MainForm.Designer.cs"
+CLEAN_WHITESPACE = True
 FORM_NAME = "MainForm"
-CLIENT = (660, 500)
-MINIMUM = (600, 470)
+CLIENT = (1000, 640)
+MINIMUM = (840, 570)
 FORM_PADDING = 0
-TOP = ["menuStrip1"]           # docked to the top, outside the layout table
+TOP = ["menuStrip1"]
 
-# the old login box and its two holder panels are gone (login removed in 2.2.0)
-DROP = ["gb_logincredentials", "btn_Login", "tb_username", "tb_password", "label1", "label4",
-        "gb_AppDetails", "panel_control",
-        # the first Delta Change Tracker window: its menu entry was always hidden, the window is removed
-        "sPIDeltaChangeTrackerToolStripMenuItem",
-        # the two pictures, the two plain buttons and Exit made way for the header band and the tool tiles
-        # (File > Exit and the window's own close button still close the app)
-        "pictureBox1", "pictureBox2", "label2", "btn_Open_DB_Comparison", "btn_Excel_Comparison", "btn_Exit_Logout"]
+DROP = [
+    "gb_logincredentials", "btn_Login", "tb_username", "tb_password", "label1", "label4", "gb_AppDetails", "panel_control",
+    "pictureBox1", "pictureBox2", "label2", "btn_Exit_Logout", "btn_Open_DB_Comparison", "btn_Excel_Comparison",
+    "tile_CompareDb", "tile_CompareExcel", "tile_DeltaTracker", "tile_ExportExcel", "sPIDeltaChangeTrackerToolStripMenuItem",
+    "fileToolStripMenuItem", "userProfileToolStripMenuItem", "userSettingsToolStripMenuItem", "exitToolStripMenuItem",
+    "analysisToolStripMenuItem", "sPIAnalysisToolStripMenuItem", "sPISpecNoteCreationUtilityToolStripMenuItem",
+    "sPIDeltaChangeLegacyIDToolStripMenuItem", "sPIDeltaChangeTrackerOptimisedToolStripMenuItem", "sPIFKExtractionToolStripMenuItem",
+    "toolToolStripMenuItem", "compareDBToolStripMenuItem", "compareExcelToolStripMenuItem", "compareListTablesToolStripMenuItem",
+    "toolsToolStripMenuItem", "customisedExcelToolStripMenuItem", "preMergingToolToolStripMenuItem", "preMergingDuplicacyCheckToolStripMenuItem",
+    "configurationToolStripMenuItem", "generateInsertScriptsToolStripMenuItem", "executeScriptsFromExcelToolStripMenuItem",
+    "exportDBToExcelToolStripMenuItem", "sQLDBToExcelToolStripMenuItem", "tableExtractionAfterDeltaToolStripMenuItem",
+    "mergeLogsExportToolStripMenuItem", "helpToolStripMenuItem", "checkForUpdatesToolStripMenuItem", "aboutUsToolStripMenuItem",
+    "toolStripSeparator1", "toolStripSeparator2", "toolStripSeparator3", "toolStripSeparator4",
+]
 
 TEXTS = {
     "lbl_Title": "SPI Data Comparison Tool",
-    "lbl_Subtitle": "Compare Oracle, SQL Server and Excel data",
-    "lbl_Start": "Start with",
-    "tile_CompareDb": "Compare databases",
-    "tile_CompareExcel": "Compare Excel files",
-    "tile_DeltaTracker": "Delta change tracker",
-    "tile_ExportExcel": "Export to Excel",
+    "lbl_Subtitle": "Oracle, SQL Server and Excel — six connected workspaces",
+    "lbl_Start": "Choose a workspace",
     "lbl_LoginStatus": "Ready",
-    "checkForUpdatesToolStripMenuItem": "Check for &updates…",
+    "btn_WorkspaceComparison": "Comparison",
+    "btn_WorkspaceAnalysis": "Analysis & Migration",
+    "btn_WorkspacePreMerge": "Pre-merge Checks",
+    "btn_WorkspaceScripts": "SQL Scripts",
+    "btn_WorkspaceReports": "Data & Reports",
+    "btn_WorkspaceSettings": "Settings",
 }
 
 MUTED = "System.Drawing.Color.FromArgb(90, 90, 90)"
-TILE = "SPI_Data_Comp_Tool.TileButton"
-
 PROPS = {
     "lbl_Title": {"Font": 'new System.Drawing.Font("Segoe UI", 16F, System.Drawing.FontStyle.Bold)'},
     "lbl_Subtitle": {"Font": 'new System.Drawing.Font("Segoe UI", 9.75F)'},
     "ico_Header": {"Glyph": "SPI_Data_Comp_Tool.Glyph.Database", "AccessibleRole": "System.Windows.Forms.AccessibleRole.Graphic"},
     "lbl_Start": {"ForeColor": MUTED, "Font": 'new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold)'},
-    "tile_CompareDb": {"Tone": "0", "Glyph": "SPI_Data_Comp_Tool.Glyph.Database", "Hint": '"Oracle or SQL Server, table by table"'},
-    "tile_CompareExcel": {"Tone": "1", "Glyph": "SPI_Data_Comp_Tool.Glyph.Sheet", "Hint": '"Two workbooks, sheet by sheet"'},
-    "tile_DeltaTracker": {"Tone": "2", "Glyph": "SPI_Data_Comp_Tool.Glyph.Delta", "Hint": '"What changed since the backup"'},
-    "tile_ExportExcel": {"Tone": "3", "Glyph": "SPI_Data_Comp_Tool.Glyph.Export", "Hint": '"Tables from a database to a workbook"'},
+    "btn_WorkspaceComparison": {"Tone": "0", "Glyph": "SPI_Data_Comp_Tool.Glyph.Database", "Hint": '"Databases, Excel, batch comparisons and advanced mapping"'},
+    "btn_WorkspaceAnalysis": {"Tone": "1", "Glyph": "SPI_Data_Comp_Tool.Glyph.Delta", "Hint": '"Specifications, changes, identifiers and relationships"'},
+    "btn_WorkspacePreMerge": {"Tone": "2", "Glyph": "SPI_Data_Comp_Tool.Glyph.Sheet", "Hint": '"Reference integrity, duplicates and configuration"'},
+    "btn_WorkspaceScripts": {"Tone": "3", "Glyph": "SPI_Data_Comp_Tool.Glyph.Sheet", "Hint": '"Generate scripts or explicitly execute a workbook"'},
+    "btn_WorkspaceReports": {"Tone": "0", "Glyph": "SPI_Data_Comp_Tool.Glyph.Export", "Hint": '"Database exports, Excel columns and merge logs"'},
+    "btn_WorkspaceSettings": {"Tone": "1", "Glyph": "SPI_Data_Comp_Tool.Glyph.Database", "Hint": '"Profiles, rules, colour themes and stable/beta updates"'},
     "label3": {"ForeColor": MUTED},
     "lbl_Version": {"ForeColor": MUTED},
     "lbl_LoginStatus": {"ForeColor": MUTED},
 }
 
+def workspace_button(name):
+    return C(name, new="SPI_Data_Comp_Tool.TileButton", dock="Fill", margin=6, size=(400, 94))
+
 LAYOUT = T("tlp_Root", cols=["100%"], rows=["auto", "100%", "auto"], cells=[
-    # header band in the theme's colour
     (G("pnl_Header", new="Panel", child=T("tlp_Header", cols=["auto", "100%"], rows=["auto", "auto"], autosize=True, cells=[
         (C("ico_Header", new="SPI_Data_Comp_Tool.GlyphIcon", size=(40, 40), anchor="Left", margin=(0, 0, 14, 0)), 0, 0, 1, 2),
         (C("lbl_Title", new="Label", autosize=True, anchor="Left", margin=0), 1, 0),
         (C("lbl_Subtitle", new="Label", autosize=True, anchor="Left", margin=(2, 0, 0, 0)), 1, 1),
     ]), dock="Fill", autosize=True, margin=0, padding=(20, 14, 20, 14)), 0, 0),
-    # the four tools most people start with; every other tool is in the menus
-    (T("tlp_Body", cols=["50%", "50%"], rows=["auto", "50%", "50%", "auto"], padding=(20, 14, 20, 12), cells=[
-        (C("lbl_Start", new="Label", autosize=True, anchor="Left", margin=(0, 0, 0, 10)), 0, 0, 2),
-        (C("tile_CompareDb", new=TILE, dock="Fill", margin=(0, 0, 7, 7)), 0, 1),
-        (C("tile_CompareExcel", new=TILE, dock="Fill", margin=(7, 0, 0, 7)), 1, 1),
-        (C("tile_DeltaTracker", new=TILE, dock="Fill", margin=(0, 7, 7, 0)), 0, 2),
-        (C("tile_ExportExcel", new=TILE, dock="Fill", margin=(7, 7, 0, 0)), 1, 2),
-        (C("label3", autosize=True, dock="Fill", margin=(0, 12, 0, 0)), 0, 3, 2),
+    (T("tlp_Workspaces", cols=["50%", "50%"], rows=["auto", "33.33%", "33.33%", "33.34%", "auto"], padding=14, cells=[
+        (C("lbl_Start", new="Label", autosize=True, anchor="Left", margin=(6, 0, 0, 6)), 0, 0, 2),
+        (workspace_button("btn_WorkspaceComparison"), 0, 1),
+        (workspace_button("btn_WorkspaceAnalysis"), 1, 1),
+        (workspace_button("btn_WorkspacePreMerge"), 0, 2),
+        (workspace_button("btn_WorkspaceScripts"), 1, 2),
+        (workspace_button("btn_WorkspaceReports"), 0, 3),
+        (workspace_button("btn_WorkspaceSettings"), 1, 3),
+        (C("label3", autosize=True, dock="Fill", margin=(6, 10, 6, 0)), 0, 4, 2),
     ]), 0, 1),
     (G("pnl_Status", new="Panel", child=T("tlp_Status", cols=["100%", "auto"], rows=["auto"], autosize=True, cells=[
         (C("lbl_LoginStatus", autosize=True, anchor="Left", margin=0), 0, 0),
