@@ -18,10 +18,7 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class UserProfileForm : WorkspacePageForm
     {
-        private string strQuery;
         private string str_DBName;
-        private string strSQLConnection;
-        private string strOracleConnection;
 
         private DBConnectionStatus dBConnectionStatus_SRC, dBConnectionStatus_TRG;
         private DBConnectionDetails dBConnectionDetails;
@@ -49,11 +46,6 @@ namespace SPI_Data_Comp_Tool
         private OpenFileDialogData openFileDialogData;
         private DBConnectionDetailsProfile dBConnectionDetailsProfile;
 
-        private OracleDataAdapter oracleDA;
-        private SqlDataAdapter sqlDA;
-
-        private DataTable dt_oracle;
-        private DataTable dt_sql;
         private string str_tableName;
 
         private SaveFileDialogFile saveFileDialogFile;

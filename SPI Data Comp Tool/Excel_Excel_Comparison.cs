@@ -612,7 +612,6 @@ namespace SPI_Data_Comp_Tool
         private async void btn_SelectLoad_Click(object sender, EventArgs e)
         {
             if (!FormValidation.Check(this, ValidateIdle, message => DisplayMessage(message, true))) return;
-            bool loadingSucceeded = false;
             string restoredText = string.Empty;
             isLoading = true;
             changeEnabledStatus(false);
@@ -682,8 +681,7 @@ namespace SPI_Data_Comp_Tool
                     else if (clb_firstExcel.Items.Count > 0) cb_select_first_clb.Checked = true;
                 }
                 lbl_Parameter.Text = "Rows: " + source.Rows.Count + "; Columns: " + source.Columns.Count;
-                lbl_LoadStatus.Text = "Loaded successfully. Select keys and columns, then validate." + restoredText;
-                loadingSucceeded = true;
+                lbl_LoadStatus.Text = "Loaded successfully. Select keys and columns, then compare." + restoredText;
             }
             catch (Exception ex)
             {
