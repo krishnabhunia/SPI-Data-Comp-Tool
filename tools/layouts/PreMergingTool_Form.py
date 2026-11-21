@@ -32,12 +32,13 @@ RIGHT = T("tlp_Right", cols=["100%"], rows=["auto", "100%"], cells=[
     ]), margin=0), 0, 1),
 ])
 
-LAYOUT = T("tlp_Root", cols=["440", "100%"], rows=["auto", "100%"], cells=[
+LAYOUT = T("tlp_Root", cols=["440", "100%"], rows=["auto", "auto", "100%"], cells=[
+    (C("step_Strip", new="SPI_Data_Comp_Tool.StepStrip", dock="Fill", size=(800, 66), margin=(0, 0, 0, 12)), 0, 0, 2),
     (connection_box("groupBox12", below=[
         T("tlp_Schema", cols=["auto", "100%"], rows=["auto"], autosize=True, cells=[
             (C("cb_Schema", **LABEL), 0, 0), (C("tb_SchemaName", **FIELD), 1, 0)], margin=(0, 8, 0, 0)),
         C("btn_Connect", size=(150, 30), anchor="Right", margin=(0, 8, 0, 0)),
-    ]), 0, 0),
-    (RIGHT, 1, 0),
-    (G("groupBox2", LOG, margin=(0, 12, 0, 0)), 0, 1, 2),
+    ]), 0, 1),
+    (RIGHT, 1, 1),
+    (G("groupBox2", LOG, margin=(0, 12, 0, 0)), 0, 2, 2),
 ])

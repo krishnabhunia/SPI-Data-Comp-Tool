@@ -30,7 +30,14 @@ WINDOWS = {
     "SPI_FK_Extraction": ("SPI FK Extraction.cs", "SPI FK Extraction.Designer.cs"),
     "Table_Extraction_After_Delta": ("Table Extraction After Delta.cs", "Table Extraction After Delta.Designer.cs"),
     "SPI_Spec_Note_Creation_Utility": ("SPI_Spec_Note_Creation_Utility.cs", "SPI_Spec_Note_Creation_Utility.Designer.cs"),
+    "PreMergingTool_Form": ("PreMergingTool_Form.cs", "PreMergingTool_Form.Designer.cs"),
+    "Pre_Merging_Duplicacy_Form": ("Pre_Merging_Duplicacy_Form.cs", "Pre_Merging_Duplicacy_Form.Designer.cs"),
+    "Execute_Excel_Scripts_Form": ("Execute Excel Scripts Form.cs", "Execute Excel Scripts Form.Designer.cs"),
+    "SQL_DB_To_Excel": ("SQL_DB_To_Excel.cs", "SQL_DB_To_Excel.Designer.cs"),
 }
+
+# windows without a generated layout attach the strip at run time
+ATTACHED = ("Generate IUD Script Form.cs", "CustomisedExcel.cs")
 
 
 class ControlledSteps(unittest.TestCase):
@@ -52,6 +59,33 @@ class ControlledSteps(unittest.TestCase):
                 src = read(code)
                 self.assertIn("new StepFlow(this, step_Strip)", src)
                 self.assertIn("BuildSteps();", src)
+
+    def test_windows_without_a_layout_attach_the_strip(self):
+        for name in ATTACHED:
+            with self.subTest(window=name):
+                src = read(name)
+                self.assertIn("new StepFlow(this, StepStrip.Attach(this))", src)
+                self.assertIn("BuildSteps();", src)
+        attach = body(read("StepFlow.cs"), "internal static StepStrip Attach(Form form)")
+        self.assertIn("c.Dock == DockStyle.None", attach)
+        self.assertIn("body.BringToFront();", attach)
+
+    def test_batch_three_windows_lock_their_later_steps(self):
+        cases = {
+            "PreMergingTool_Form.cs": [('"Connect"', "btn_Connect"), ('"Run"', "btn_Duplicate")],
+            "Pre_Merging_Duplicacy_Form.cs": [('"Target connection"', "connection.Target.Group"), ('"Run"', "btn_ListTableExcel")],
+            "Generate IUD Script Form.cs": [('"Workbook"', "btn_ListTableExcel"), ('"Generate"', "btn_Script")],
+            "Execute Excel Scripts Form.cs": [('"Test connection"', "btnTestConnecton"), ('"Execute"', "btn_Execute"), ('"Report"', "btn_PNID_Report")],
+            "SQL_DB_To_Excel.cs": [('"Load tables"', "btn_Connect"), ('"Export"', "btn_ExportToExcel")],
+            "CustomisedExcel.cs": [('"Columns"', "checkedListBox1"), ('"Create"', "btn_CreateExcel")],
+        }
+        for name, pairs in cases.items():
+            steps = body(read(name), "private void BuildSteps()")
+            for title, control in pairs:
+                with self.subTest(window=name, step=title):
+                    start = steps.index(title)
+                    end = steps.find(".Add(", start)
+                    self.assertIn(control, steps[start:end if end > 0 else len(steps)])
 
     def test_busy_windows_disable_every_step(self):
         self.assertIn("steps.Busy = !boolEnabledStatus;", body(read("Excel_Excel_Comparison.cs"), "private void changeEnabledStatus("))

@@ -43,9 +43,10 @@ namespace SPI_Data_Comp_Tool
             connection.Source.Title = "Database";
             connection.ProfileApplied += Connection_ProfileApplied;
             connection.Failed += (sender, error) => Common_Data.DisplayError(rtb_Log, error);
-            connection.InputChanged += (sender, args) => { boolConnection = false; strConnection = string.Empty; };
+            connection.InputChanged += (sender, args) => { boolConnection = false; strConnection = string.Empty; steps?.Later(); };
             tb_SchemaName.TextChanged += (sender, args) => { boolConnection = false; };
-            UiTheme.Apply(this);   // its main button sits in a tab kept as designed; too small for the bold blue style
+            UiTheme.Apply(this);
+            BuildSteps();   // its main button sits in a tab kept as designed; too small for the bold blue style
 
             try
             {
@@ -103,6 +104,24 @@ namespace SPI_Data_Comp_Tool
         }
 
         /// <summary>A saved profile was put into the Connection panel.</summary>
+        private StepFlow steps;   // controlled steps, see BuildSteps
+
+        /// <summary>Controlled steps: Connection (and schema), Connect, Run. A step unlocks when the one before is done.</summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, step_Strip)
+                .Add("Connection", "Fill in the connection (and the schema name if ticked)", () => StepFlow.Passes(() =>
+                {
+                    connection.Source.ValidateInput();
+                    if (cb_Schema.Checked) FormValidation.Required(tb_SchemaName, "Schema name");
+                }))
+                .Add("Connect", "Test the connection", () => boolConnection && !string.IsNullOrWhiteSpace(strConnection), btn_Connect)
+                .Add("Run", "Run the pre-merging process or the duplicate check",
+                    () => false, btn_ListTableExcel, btn_Duplicate, cb_IgnoreCase, cb_WithoutSpecialCharacters);
+            steps.Watch(cb_Schema, tb_SchemaName);
+            steps.Refresh();
+        }
+
         private void Connection_ProfileApplied(object sender, DBConnectionDetails details)
         {
             dBConnectionDetails = details;

@@ -322,6 +322,30 @@ namespace SPI_Data_Comp_Tool
 
         internal StepFlow Flow { get; set; }
 
+        /// <summary>
+        /// For a window without a generated layout: puts its controls into a panel that fills the window
+        /// (positions and anchors unchanged) and adds the strip above it. Docked children stay where they are.
+        /// </summary>
+        internal static StepStrip Attach(Form form)
+        {
+            var strip = new StepStrip { Name = "step_Strip", Dock = DockStyle.Top };
+            var body = new Panel { Name = "pnl_StepBody", Dock = DockStyle.Fill, AutoScroll = form.AutoScroll };
+            form.SuspendLayout();
+            body.SuspendLayout();
+            Size client = form.ClientSize;
+            List<Control> moved = form.Controls.Cast<Control>().Where(c => c.Dock == DockStyle.None).ToList();
+            body.Size = client;
+            foreach (Control c in moved) body.Controls.Add(c);   // same order, so the same z-order
+            form.AutoScroll = false;
+            form.Controls.Add(strip);
+            form.Controls.Add(body);
+            body.BringToFront();                                 // the filling panel is laid out last
+            form.ClientSize = new Size(client.Width, client.Height + strip.Height);
+            body.ResumeLayout(false);
+            form.ResumeLayout(true);
+            return strip;
+        }
+
         private void ThemeChanged(object sender, EventArgs e)
         {
             if (!IsDisposed) Invalidate();

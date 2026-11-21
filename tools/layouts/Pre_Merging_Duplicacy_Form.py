@@ -33,8 +33,9 @@ STATUS = T("tlp_Status", cols=["100%", "auto"], rows=["auto", "100%"], cells=[
     (C("rtb_Log", dock="Fill", margin=(0, 8, 0, 0)), 0, 1, 2),
 ])
 
-LAYOUT = T("tlp_Root", cols=["100%", "320"], rows=["auto", "100%"], cells=[
-    (connection_box("groupBox14"), 0, 0),
-    (G("groupBox3", RUN, margin=0), 1, 0),
-    (G("groupBox10", STATUS, margin=(0, 12, 0, 0)), 0, 1, 2),
+LAYOUT = T("tlp_Root", cols=["100%", "320"], rows=["auto", "auto", "100%"], cells=[
+    (C("step_Strip", new="SPI_Data_Comp_Tool.StepStrip", dock="Fill", size=(800, 66), margin=(0, 0, 0, 12)), 0, 0, 2),
+    (connection_box("groupBox14"), 0, 1),
+    (G("groupBox3", RUN, margin=0), 1, 1),
+    (G("groupBox10", STATUS, margin=(0, 12, 0, 0)), 0, 2, 2),
 ])

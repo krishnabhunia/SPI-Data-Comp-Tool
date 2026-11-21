@@ -130,8 +130,10 @@ namespace SPI_Data_Comp_Tool
             {
                 if (dBConnectionStatus_SRC != null) dBConnectionStatus_SRC.boolConnection = false;
                 if (dBConnectionStatus_TRG != null) dBConnectionStatus_TRG.boolConnection = false;
+                steps?.Later();
             };
             UiTheme.Apply(this, btn_ListTableExcel);
+            BuildSteps();
 
             try
             {
@@ -168,6 +170,23 @@ namespace SPI_Data_Comp_Tool
         }
 
         /// <summary>A saved profile was put into the Connection panel: take over its table names.</summary>
+        private StepFlow steps;   // controlled steps, see BuildSteps
+
+        /// <summary>Controlled steps: Source connection, Target connection, Test connections, Run. A step unlocks when the one before is done.</summary>
+        private void BuildSteps()
+        {
+            steps = new StepFlow(this, step_Strip)
+                .Add("Source connection", "Fill in the source connection", () => StepFlow.Passes(() => connection.Source.ValidateInput()))
+                .Add("Target connection", "Fill in the target connection", () => StepFlow.Passes(() => connection.Target.ValidateInput()),
+                    connection.Target.Group)
+                .Add("Test connections", "Test both connections",
+                    () => dBConnectionStatus_SRC != null && dBConnectionStatus_SRC.boolConnection && dBConnectionStatus_TRG != null && dBConnectionStatus_TRG.boolConnection,
+                    btn_Connect_Reference_ID)
+                .Add("Run", "Run the pre-merging Excel process", () => false, cb_ConfigurationMode, cb_IgnoreCase, btn_ListTableExcel)
+                .Workers(backgroundWorker1);
+            steps.Refresh();
+        }
+
         private void Connection_ProfileApplied(object sender, DBConnectionDetails details)
         {
             dBConnectionDetails = details;
