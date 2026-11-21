@@ -13,7 +13,6 @@ using OfficeOpenXml;
 using System.Diagnostics;
 using Oracle.ManagedDataAccess.Client;
 using System.Data.SqlClient;
-using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Drawing;
 
@@ -29,7 +28,6 @@ namespace SPI_Data_Comp_Tool
         private string strConnection;
         private string str_RuleFileName;
 
-        private List<DBC> items;
         private static bool boolColorAlternate;
         // A doubled quote is part of a quoted connection-string value, not its terminator.
         // Consume unterminated quoted values to the end, and unquoted values through line breaks
@@ -526,59 +524,42 @@ namespace SPI_Data_Comp_Tool
         }
         public ComboBox ReadUserProfile(ComboBox cb_UserProfileList)
         {
-            try
-            {
-                //if (Properties.Settings.Default.ProfilePathUser != null && Properties.Settings.Default.ProfilePathUser != "" && Properties.Settings.Default.ProfilePathUser.Contains("json"))
-                if (Common_Data.StringNotNullOrEmpty(Properties.Settings.Default.ProfilePathUser, ".json", false, true))
-                {
-                    using (StreamReader r = new StreamReader(Properties.Settings.Default.ProfilePathUser))
-                    {
-                        string json = r.ReadToEnd();
-                        items = JsonConvert.DeserializeObject<List<DBC>>(json);
-                        Profile.ProfileList = items;
-
-                        if (Profile.ProfileList != null)
-                        {
-                            cb_UserProfileList.DataSource = null;
-                            cb_UserProfileList.Items.Clear();
-                            foreach (var i in Profile.ProfileList)
-                            {
-                                if (i.profileName != null)
-                                {
-                                    cb_UserProfileList.Items.Add(i.profileName.ToString());
-                                }
-                            }
-                        }
-
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            return cb_UserProfileList;
+            ProfileStore.LoadSavedProfiles();
+            return GetUserProfile(cb_UserProfileList);
         }
         public static ComboBox GetUserProfile(ComboBox cb_UserProfileList)
         {
-            try
+            if (cb_UserProfileList == null || cb_UserProfileList.IsDisposed) return cb_UserProfileList;
+            for (Control parent = cb_UserProfileList.Parent; parent != null; parent = parent.Parent)
             {
-                if (Profile.ProfileList != null)
+                var panel = parent as ConnectionPanel;
+                if (panel != null && panel.ProfileList == cb_UserProfileList)
                 {
-                    cb_UserProfileList.DataSource = null;
-                    cb_UserProfileList.Items.Clear();
-                    foreach (var i in Profile.ProfileList)
-                    {
-                        if (i.profileName != null)
-                        {
-                            cb_UserProfileList.Items.Add(i.profileName.ToString());
-                        }
-                    }
+                    panel.RefreshAvailableProfiles();
+                    return cb_UserProfileList;
                 }
             }
-            catch (Exception ex)
+            string selectedName = cb_UserProfileList.SelectedItem as string;
+            string enteredName = cb_UserProfileList.DropDownStyle == ComboBoxStyle.DropDownList
+                ? null : cb_UserProfileList.Text;
+            cb_UserProfileList.BeginUpdate();
+            try
             {
-                throw ex;
+                cb_UserProfileList.DataSource = null;
+                cb_UserProfileList.Items.Clear();
+                if (Profile.ProfileList != null)
+                {
+                    foreach (DBC profile in Profile.ProfileList)
+                        if (profile != null && !string.IsNullOrWhiteSpace(profile.profileName))
+                            cb_UserProfileList.Items.Add(profile.profileName);
+                }
+                cb_UserProfileList.SelectedItem = selectedName;
+                if (cb_UserProfileList.SelectedIndex < 0 && enteredName != null)
+                    cb_UserProfileList.Text = enteredName;
+            }
+            finally
+            {
+                cb_UserProfileList.EndUpdate();
             }
             return cb_UserProfileList;
         }
@@ -1885,8 +1866,8 @@ namespace SPI_Data_Comp_Tool
             // Developer mode is switched on only by an attached debugger or by an explicit
             // opt-in environment variable. It used to be granted to hard-coded Windows user
             // names and a hard-coded password, which anyone reading this public source could reuse.
-            if (Debugger.IsAttached ||
-                string.Equals(Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG"), "1", StringComparison.Ordinal))
+            if (!SelfTest.IsRunning && (Debugger.IsAttached ||
+                string.Equals(Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG"), "1", StringComparison.Ordinal)))
             {
                 strUserName = Environment.UserName;
                 strPassword = "";

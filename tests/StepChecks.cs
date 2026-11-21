@@ -37,9 +37,13 @@ namespace SPI_Data_Comp_Tool
             };
 
             check("step engine: order, locks, busy, hidden steps", Engine);
+            check("step engine: constructor notifications wait for a live window and disposal cancels them", EngineLifecycle);
+            check("step engine: real text and checked-list events advance and relock steps", EngineUiEvents);
+            check("step engine: background refreshes run on the window thread", EngineWorkerRefresh);
             check("Compare Excel files: target, load, keys, columns, validate and compare unlock in order", ExcelSteps);
             check("Compare Excel files: a new source locks the later steps and keeps keys and columns (R2)", ExcelKeepsChoices);
             check("Compare databases: target, tables, load, keys, columns, set and compare unlock in order", DatabaseSteps);
+            check("Compare databases: shown profile selection and password edits advance without manual refresh", ProfileSelectionSteps);
             check("Compare list tables: steps follow the Databases / Excel folders tab", ListSteps);
             check("Generate scripts: script type, workbook, sheet, table name, generate", ScriptSteps);
             check("Execute scripts: test connection, then the steps of the chosen tab", ExecuteSteps);
@@ -87,6 +91,132 @@ namespace SPI_Data_Comp_Tool
                 aDone = true; bDone = false; skipB = true; flow.Refresh();
                 Require(c.Enabled && !flow.Steps[1].Shown, "a step that does not apply must let the next one through");
             }
+        }
+
+        private sealed class RecreatedStepForm : Form
+        {
+            internal RecreatedStepForm() { }
+            internal void RecreateWindow() { RecreateHandle(); }
+        }
+
+        private static void PumpEvents()
+        {
+            // Includes notifications queued by another notification, without sleeps or a
+            // direct flow.Refresh that would conceal a broken UI event subscription.
+            for (int i = 0; i < 4; i++) Application.DoEvents();
+        }
+
+        private static void EngineLifecycle()
+        {
+            using (var form = new RecreatedStepForm { ShowInTaskbar = false })
+            {
+                var input = new TextBox();
+                var next = new Button();
+                var strip = new StepStrip();
+                form.Controls.AddRange(new Control[] { strip, input, next });
+                int reads = 0;
+                var flow = new StepFlow(form, strip)
+                    .Add("Input", "Enter the input", () => { reads++; return input.Text == "ready"; }, input)
+                    .Add("Next", "Continue", () => false, next);
+                flow.Refresh();
+                reads = 0;
+                input.Text = "ready";
+                Require(reads == 0 && !next.Enabled,
+                    "A constructor-time input event evaluated an incomplete window inline.");
+
+                form.Show();
+                PumpEvents();
+                Require(reads > 0 && next.Enabled, "The first shown window did not evaluate its completed input state.");
+                input.Text = string.Empty; // Queue a refresh against the original handle.
+                form.RecreateWindow();
+                PumpEvents();
+                Require(!next.Enabled, "Recreating the window lost a queued input change.");
+                input.Text = "ready";
+                PumpEvents();
+                Require(next.Enabled, "The recreated window stopped accepting new input notifications.");
+
+                input.Text = string.Empty;
+                form.Dispose();
+                reads = 0;
+                flow.Later();
+                flow.Refresh();
+                PumpEvents();
+                Require(reads == 0, "A disposed window still ran readiness callbacks.");
+            }
+        }
+
+        private static void EngineUiEvents()
+        {
+            using (var form = new Form { ShowInTaskbar = false })
+            {
+                var input = new TextBox();
+                var choices = new CheckedListBox();
+                var next = new Button();
+                choices.Items.Add("Column");
+                form.Controls.AddRange(new Control[] { input, choices, next });
+                var flow = new StepFlow(form, null)
+                    .Add("Input", "Enter the input", () => input.Text == "ready", input)
+                    .Add("Columns", "Tick a column", () => choices.CheckedItems.Count > 0, choices)
+                    .Add("Next", "Continue", () => false, next);
+                flow.Refresh();
+                form.Show();
+                PumpEvents();
+                Require(!choices.Enabled && !next.Enabled, "The initial dependent steps were not locked.");
+                input.Text = "ready";
+                PumpEvents();
+                Require(choices.Enabled && !next.Enabled, "TextChanged did not advance to the column step.");
+                choices.SetItemChecked(0, true);
+                PumpEvents();
+                Require(next.Enabled, "ItemCheck read the old value and left the next step locked.");
+                input.Text = string.Empty;
+                PumpEvents();
+                Require(!choices.Enabled && !next.Enabled && choices.GetItemChecked(0),
+                    "Editing an earlier input failed to lock later steps or discarded the saved column choice.");
+                input.Text = "ready";
+                PumpEvents();
+                Require(next.Enabled, "Restoring an earlier input failed to reuse the retained column choice.");
+                choices.SetItemChecked(0, false);
+                PumpEvents();
+                Require(!next.Enabled, "Unticking the last column did not relock the next step.");
+            }
+        }
+
+        private static void EngineWorkerRefresh()
+        {
+            bool previousCheck = Control.CheckForIllegalCrossThreadCalls;
+            Control.CheckForIllegalCrossThreadCalls = true;
+            try
+            {
+                using (var form = new Form { ShowInTaskbar = false })
+                {
+                    var next = new Button();
+                    form.Controls.Add(next);
+                    bool ready = false;
+                    int callbackThread = 0;
+                    int windowThread = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                    var flow = new StepFlow(form, null)
+                        .Add("Input", "Wait for input", () =>
+                        {
+                            callbackThread = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                            return ready;
+                        })
+                        .Add("Next", "Continue", () => false, next);
+                    flow.Refresh();
+                    callbackThread = 0;
+                    var early = System.Threading.Tasks.Task.Run(() => flow.Refresh());
+                    Require(early.Wait(5000), "An early background refresh did not return.");
+                    Require(callbackThread == 0, "A background refresh evaluated controls before the window had a handle.");
+                    form.Show();
+                    PumpEvents();
+                    Require(!next.Enabled, "The worker scenario started with the next step unlocked.");
+                    var worker = System.Threading.Tasks.Task.Run(() => { ready = true; flow.Refresh(); });
+                    Require(worker.Wait(5000), "A background refresh blocked waiting for the window thread.");
+                    PumpEvents();
+                    Require(next.Enabled && callbackThread == windowThread,
+                        "A background refresh failed to advance on the window thread.");
+                }
+            }
+            finally { Control.CheckForIllegalCrossThreadCalls = previousCheck; }
         }
 
         private static OpenFileDialogData Chosen(string path)
@@ -243,6 +373,95 @@ namespace SPI_Data_Comp_Tool
                 Locked(form, "clb_ReferenceID", "cbL_SRC_Cols", "btn_Set", "btnGenerateOutput");
                 Require(keys.GetItemChecked(0) && columns.GetItemChecked(1), "a changed table cleared the keys and columns");
             }
+        }
+
+        private static void ProfileSelectionSteps()
+        {
+            List<DBC> previousProfiles = Profile.ProfileList;
+            string previousPath = Properties.Settings.Default.ProfilePathUser;
+            string folder = Path.Combine(Path.GetTempPath(), "spi-profile-steps-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(folder);
+            string path = Path.Combine(folder, "profiles.json");
+            try
+            {
+                Properties.Settings.Default.ProfilePathUser = string.Empty;
+                Profile.ProfileList = new List<DBC>();
+                File.WriteAllText(path, ProfileStore.SerializeForExport(new[]
+                {
+                    StepProfile("First", "server-one"), StepProfile("Second", "server-two")
+                }));
+                using (var form = new DB_Comparison_Form { ShowInTaskbar = false })
+                {
+                    form.Show();
+                    PumpEvents();
+                    var connection = Find<ConnectionPanel>(form, "connection");
+                    Exception selectionError = null;
+                    int applied = 0;
+                    connection.Failed += (sender, error) => selectionError = error;
+                    connection.ProfileApplied += (sender, details) => applied++;
+                    ProfileLoadResult result = connection.LoadSavedProfiles(path);
+                    Require(result.Loaded && !result.HasError && connection.ProfileList.Items.Count == 2,
+                        "A valid saved profile file did not populate the shown window's picker.");
+                    connection.ProfileList.SelectedIndex = 0;
+                    PumpEvents();
+                    Require(selectionError == null && applied == 1
+                        && connection.Source.DataSource.Text == "server-one-source"
+                        && connection.Target.DataSource.Text == "server-one-target",
+                        "Selecting a profile in the shown window did not apply both connection halves.");
+                    Require(connection.Source.Password.Text.Length == 0 && connection.Target.Password.Text.Length == 0,
+                        "The exported profile unexpectedly supplied stored passwords.");
+                    Require(!connection.Target.Group.Enabled, "A password-free Source connection incorrectly unlocked Target.");
+
+                    const string inputMarker = "synthetic-input";
+                    connection.Source.Password.Text = inputMarker;
+                    PumpEvents();
+                    Require(connection.Target.Group.Enabled, "Entering the Source password did not unlock Target through its input event.");
+                    connection.Target.Password.Text = inputMarker;
+                    PumpEvents();
+                    Open(form, "btn_Connect_Reference_ID");
+                    connection.Source.Password.Clear();
+                    PumpEvents();
+                    Require(!connection.Target.Group.Enabled, "Clearing an earlier password left Target unlocked.");
+                    Locked(form, "btn_Connect_Reference_ID");
+                    connection.Source.Password.Text = inputMarker;
+                    PumpEvents();
+                    Open(form, "btn_Connect_Reference_ID");
+                    Require(connection.Target.Password.Text == inputMarker, "Revisiting Source discarded the existing Target input.");
+
+                    connection.ProfileList.SelectedIndex = 1;
+                    PumpEvents();
+                    Require(selectionError == null && applied == 2
+                        && connection.Source.DataSource.Text == "server-two-source"
+                        && connection.Target.DataSource.Text == "server-two-target"
+                        && connection.Source.Password.Text.Length == 0 && connection.Target.Password.Text.Length == 0,
+                        "Changing profiles did not replace both connection halves and invalidate the previous credentials.");
+                    Locked(form, "btn_Connect_Reference_ID");
+                }
+            }
+            finally
+            {
+                Profile.ProfileList = previousProfiles;
+                Properties.Settings.Default.ProfilePathUser = previousPath;
+                Directory.Delete(folder, true);
+            }
+        }
+
+        private static DBC StepProfile(string name, string server)
+        {
+            return new DBC
+            {
+                profileName = name,
+                dbSRC = new DBConnectionDetailsProfile
+                {
+                    str_DBType = "SQL", bool_Rb_SQL = true, str_DataSource = server + "-source",
+                    str_DBName = "SourceDatabase", str_UserName = "synthetic-user", str_TableName = "dbo.SourceTable"
+                },
+                dbTRG = new DBConnectionDetailsProfile
+                {
+                    str_DBType = "SQL", bool_Rb_SQL = true, str_DataSource = server + "-target",
+                    str_DBName = "TargetDatabase", str_UserName = "synthetic-user", str_TableName = "dbo.TargetTable"
+                }
+            };
         }
 
         private static void ScriptSteps()

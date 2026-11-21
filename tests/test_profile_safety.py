@@ -72,11 +72,32 @@ class ProfileSafety(unittest.TestCase):
         form = source("UserProfileForm.cs")
         method = form.split("private void l_lb_ReadProfile_LinkClicked", 1)[1].split("private void boolToggleControlEnable", 1)[0]
         self.assertLess(method.index("ReadProfileFile("), method.index("Profile.ProfileList = imported"))
-        self.assertIn("ProfileStore.ParseJson(File.ReadAllText(path))", form)
+        self.assertIn("ProfileStore.ReadFile(path)", form)
         store = source("ProfileStore.cs")
         self.assertIn('profile.GetValue("dbSRC", StringComparison.OrdinalIgnoreCase) is JObject', store)
         self.assertIn('profile.GetValue("dbTRG", StringComparison.OrdinalIgnoreCase) is JObject', store)
         self.assertLess(store.index('profile.GetValue("dbSRC"'), store.index("array.ToObject<List<DBC>>()"))
+
+    def test_saved_profiles_use_the_same_validated_reader_without_applying_early(self) -> None:
+        store = source("ProfileStore.cs")
+        load = store.split("internal static ProfileLoadResult LoadSavedProfiles(string path)", 1)[1].split("private static ProfileLoadResult LoadFailure", 1)[0]
+        self.assertLess(load.index("ReadFile(path)"), load.index("Profile.ProfileList = candidate"))
+        self.assertIn("error is InvalidDataException", load)
+        self.assertNotIn("Properties.Settings.Default.Save", load)
+        self.assertIn("Settings > Connection profiles > Load profile", store)
+        self.assertIn("LoadRememberedProfiles(() => Properties.Settings.Default.ProfilePathUser)", store)
+        self.assertIn("error is ConfigurationErrorsException", store)
+        panel = source("ConnectionPanel.cs")
+        panel_load = panel.split("internal ProfileLoadResult LoadSavedProfiles()", 1)[1].split("internal void RefreshAvailableProfiles()", 1)[0]
+        self.assertIn("RefreshAvailableProfiles()", panel_load)
+        self.assertNotIn("ApplySelectedProfile", panel_load)
+        form = source("UserProfileForm.cs")
+        self.assertIn("ProfileLoadResult load = connection.LoadSavedProfiles()", form)
+        self.assertNotIn("SelfTest.IsRunning", form)
+        legacy = source("Common_Data.cs").split("public ComboBox ReadUserProfile", 1)[1].split("public DataTable GenerateTransposeTable", 1)[0]
+        self.assertNotIn("DeserializeObject", legacy)
+        self.assertNotIn("StreamReader", legacy)
+        self.assertIn("ProfileStore.LoadSavedProfiles()", legacy)
 
     def test_atomic_write_never_truncates_the_original(self) -> None:
         store = source("ProfileStore.cs")
@@ -89,7 +110,7 @@ class ProfileSafety(unittest.TestCase):
 
     def test_executable_checks_cover_candidates_locked_files_and_selection(self) -> None:
         checks = (ROOT / "tests" / "ProfileWorkflowChecks.cs").read_text()
-        for scenario in ("CheckCandidateLists(passed)", "CheckExportSnapshots(passed)", "CheckValidation(passed)", "CheckAtomicFiles(passed)", "CheckSelection(passed)"):
+        for scenario in ("CheckCandidateLists(passed)", "CheckExportSnapshots(passed)", "CheckValidation(passed)", "CheckAtomicFiles(passed)", "CheckSelection(passed)", "CheckSavedProfileLoading(passed)", "CheckSavedProfileFailures(passed)", "CheckUnavailableSettings(passed)"):
             self.assertIn(scenario, checks)
         self.assertIn("FileShare.None", checks)
         self.assertIn("Profile.ProfileList = previous", checks)

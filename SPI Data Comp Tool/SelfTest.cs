@@ -18,6 +18,7 @@ namespace SPI_Data_Comp_Tool
     ///                                                          .exe by Costura) and writes ok / FAIL per library;
     ///                                                          exit code 1 if any fails
     ///   "SPI Data Comp Tool.exe" --check-ui OUT_FILE           runs synthetic UI/profile regressions without databases
+    ///   "SPI Data Comp Tool.exe" --check-startup OUT_FILE      opens every task with synthetic saved-profile states
     ///   "SPI Data Comp Tool.exe" --check-excel-audit OUT_FILE  verifies the separate Excel Sheet Audit using temporary workbooks
     ///   "SPI Data Comp Tool.exe" --check-workspace-exit OUT_FILE tests successful application exit in an isolated process
     ///   "SPI Data Comp Tool.exe" --check-groups OUT_FILE       checks grouped-tool routes and safe workspace closure
@@ -34,8 +35,20 @@ namespace SPI_Data_Comp_Tool
 
         public static bool TryRun(string[] args)
         {
-            if (args == null || args.Length == 0) return false;
-            IsRunning = args[0].StartsWith("--", StringComparison.Ordinal);
+            if (args == null || args.Length < 2) return false;
+            string[] commands = { "--check-excel-audit", "--check-updates", "--check-inputs", "--list-forms",
+                "--check-assemblies", "--check-ui", "--check-startup", "--check-workspace-exit",
+                "--check-groups", "--check-steps", "--check-themes", "--open-form" };
+            if (!commands.Contains(args[0], StringComparer.Ordinal) ||
+                (args[0] == "--open-form" && args.Length < 3)) return false;
+
+            IsRunning = true;
+            // Checks use their own temporary fixtures and must not read a real user's remembered files.
+            // These overrides are in memory only; do not Save or Reset the user's settings here.
+            Properties.Settings.Default.ProfilePathUser = string.Empty;
+            Properties.Settings.Default.RuleFilePath = string.Empty;
+            // An event-handler exception must fail CI rather than leave a modal error dialog waiting.
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
             if (args[0] == "--check-excel-audit" && args.Length >= 2)
             {
                 Environment.ExitCode = ExcelAuditChecks.Run(args[1]);
@@ -64,6 +77,11 @@ namespace SPI_Data_Comp_Tool
             if (args[0] == "--check-ui" && args.Length >= 2)
             {
                 Environment.ExitCode = UiWorkflowChecks.Run(args[1]);
+                return true;
+            }
+            if (args[0] == "--check-startup" && args.Length >= 2)
+            {
+                Environment.ExitCode = StartupChecks.Run(args[1]);
                 return true;
             }
             if (args[0] == "--check-workspace-exit" && args.Length >= 2)
