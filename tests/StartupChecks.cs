@@ -269,7 +269,7 @@ namespace SPI_Data_Comp_Tool
                 var tabs = Find<TabControl>(page, "tabs_Settings");
                 var themes = Find<ComboBox>(page, "cb_Theme");
                 var close = Find<Button>(page, "btn_Close");
-                Require(tabs.TabPages.Count == 3, "Settings startup did not complete its three sections.");
+                Require(tabs.TabPages.Count == 4 && tabs.TabPages[3].Name == "tab_About", "Settings startup did not complete its four sections (About last).");
                 Require(themes.Items.Count == UiTheme.All.Length && ReferenceEquals(themes.SelectedItem, UiTheme.Current),
                     "Settings startup stopped before initializing the colour-theme picker.");
                 Require(ReferenceEquals(settings.AcceptButton, close) && ReferenceEquals(settings.CancelButton, close),

@@ -149,7 +149,7 @@ namespace SPI_Data_Comp_Tool
             TabControl tabs = Find<TabControl>(settings, "tabs_Settings");
             Require(settings.Visible && settings.IsHandleCreated && themes.Items.Count == UiTheme.All.Length
                 && ReferenceEquals(themes.SelectedItem, UiTheme.Current)
-                && tabs.TabPages.Count == 3 && tabs.SelectedTab.Name == "tab_Rules"
+                && tabs.TabPages.Count == 4 && tabs.SelectedTab.Name == "tab_Rules"
                 && ReferenceEquals(settings.AcceptButton, Find<Button>(settings, "btn_ImportRules"))
                 && ReferenceEquals(settings.CancelButton, Find<Button>(settings, "btn_Close")),
                 "An unavailable preference left the shown Settings form partially initialized.");
