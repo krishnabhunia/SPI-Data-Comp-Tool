@@ -74,10 +74,6 @@
             this.btn_Set = new System.Windows.Forms.Button();
             this.llbl_File_path = new System.Windows.Forms.LinkLabel();
             this.label13 = new System.Windows.Forms.Label();
-            this.label12 = new System.Windows.Forms.Label();
-            this.btn_Delete = new System.Windows.Forms.Button();
-            this.btn_Save = new System.Windows.Forms.Button();
-            this.comboBox2 = new System.Windows.Forms.ComboBox();
             this.lblCal = new System.Windows.Forms.Label();
             this.lblExpressionStatus = new System.Windows.Forms.Label();
             this.cbL_SRC_Cols = new System.Windows.Forms.CheckedListBox();
@@ -96,7 +92,6 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.lb_IgnoredCol_SRC = new System.Windows.Forms.ListBox();
             this.groupBox10 = new System.Windows.Forms.GroupBox();
-            this.button1 = new System.Windows.Forms.Button();
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.groupBox15 = new System.Windows.Forms.GroupBox();
             this.groupBox16 = new System.Windows.Forms.GroupBox();
@@ -916,58 +911,6 @@
             this.backgroundWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker1_ProgressChanged);
             this.backgroundWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker1_RunWorkerCompleted);
             // 
-            // label12
-            // 
-            this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(51, 22);
-            this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(63, 13);
-            this.label12.TabIndex = 18;
-            this.label12.Text = "Load Profile";
-            this.label12.Visible = false;
-            // 
-            // btn_Delete
-            // 
-            this.btn_Delete.Location = new System.Drawing.Point(6, 185);
-            this.btn_Delete.Name = "btn_Delete";
-            this.btn_Delete.Size = new System.Drawing.Size(14, 23);
-            this.btn_Delete.TabIndex = 17;
-            this.btn_Delete.Text = "Delete";
-            this.btn_Delete.UseVisualStyleBackColor = true;
-            this.btn_Delete.Visible = false;
-            this.btn_Delete.Click += new System.EventHandler(this.btn_Delete_Click);
-            // 
-            // btn_Save
-            // 
-            this.btn_Save.Location = new System.Drawing.Point(6, 156);
-            this.btn_Save.Name = "btn_Save";
-            this.btn_Save.Size = new System.Drawing.Size(24, 23);
-            this.btn_Save.TabIndex = 16;
-            this.btn_Save.Text = "Save";
-            this.btn_Save.UseVisualStyleBackColor = true;
-            this.btn_Save.Visible = false;
-            this.btn_Save.Click += new System.EventHandler(this.btn_Save_Click);
-            // 
-            // comboBox2
-            // 
-            this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(54, 57);
-            this.comboBox2.Name = "comboBox2";
-            this.comboBox2.Size = new System.Drawing.Size(24, 21);
-            this.comboBox2.TabIndex = 15;
-            this.comboBox2.Visible = false;
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(6, 57);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(42, 23);
-            this.button1.TabIndex = 26;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Visible = false;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
             // treeView1
             // 
             this.treeView1.Location = new System.Drawing.Point(15, 126);
@@ -977,14 +920,9 @@
             // 
             // groupBox15
             // 
-            this.groupBox15.Controls.Add(this.button1);
             this.groupBox15.Controls.Add(this.dataGridView1);
             this.groupBox15.Controls.Add(this.tb_Source_tableName_1);
             this.groupBox15.Controls.Add(this.tb_destination_tableName);
-            this.groupBox15.Controls.Add(this.label12);
-            this.groupBox15.Controls.Add(this.comboBox2);
-            this.groupBox15.Controls.Add(this.btn_Delete);
-            this.groupBox15.Controls.Add(this.btn_Save);
             this.groupBox15.Location = new System.Drawing.Point(1706, 15);
             this.groupBox15.Name = "groupBox15";
             this.groupBox15.Size = new System.Drawing.Size(59, 58);
@@ -1178,16 +1116,11 @@
         private System.Windows.Forms.GroupBox groupBox7;
         private System.Windows.Forms.CheckedListBox clb_ReferenceID;
         private System.Windows.Forms.Label lblCal;
-        private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.Button btn_Delete;
-        private System.Windows.Forms.Button btn_Save;
-        private System.Windows.Forms.ComboBox comboBox2;
         private System.Windows.Forms.GroupBox groupBox9;
         private System.Windows.Forms.CheckBox cb_IgnoreCase;
         private System.Windows.Forms.CheckBox cb_IncludeRule;
         private System.Windows.Forms.Button btn_RuleForm;
         private System.Windows.Forms.GroupBox groupBox10;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.GroupBox groupBox11;
         private System.Windows.Forms.TreeView treeView1;
         private System.Windows.Forms.GroupBox groupBox15;

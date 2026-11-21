@@ -84,7 +84,6 @@
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.btn_ListTableExcel = new System.Windows.Forms.Button();
-            this.lblDebugMsg = new System.Windows.Forms.Label();
             this.llbl_Folder_path = new System.Windows.Forms.LinkLabel();
             this.cb_IncludeRule = new System.Windows.Forms.CheckBox();
             this.cb_IgnoreCase = new System.Windows.Forms.CheckBox();
@@ -664,7 +663,6 @@
             // groupBox3
             // 
             this.groupBox3.Controls.Add(this.tabControl1);
-            this.groupBox3.Controls.Add(this.lblDebugMsg);
             this.groupBox3.Controls.Add(this.llbl_Folder_path);
             this.groupBox3.Controls.Add(this.cb_IncludeRule);
             this.groupBox3.Controls.Add(this.cb_IgnoreCase);
@@ -710,16 +708,6 @@
             this.btn_ListTableExcel.Text = "Browse List Table Excel";
             this.btn_ListTableExcel.UseVisualStyleBackColor = true;
             this.btn_ListTableExcel.Click += new System.EventHandler(this.btn_ListTableExcel_Click);
-            // 
-            // lblDebugMsg
-            // 
-            this.lblDebugMsg.AutoSize = true;
-            this.lblDebugMsg.Location = new System.Drawing.Point(9, 461);
-            this.lblDebugMsg.Name = "lblDebugMsg";
-            this.lblDebugMsg.Size = new System.Drawing.Size(63, 13);
-            this.lblDebugMsg.TabIndex = 36;
-            this.lblDebugMsg.Text = "lblDebuMsg";
-            this.lblDebugMsg.Visible = false;
             // 
             // llbl_Folder_path
             // 
@@ -1017,7 +1005,6 @@
         private System.Windows.Forms.Label label18;
         private System.Windows.Forms.ComboBox cb_UserProfileList;
         private System.ComponentModel.BackgroundWorker backgroundWorker2;
-        private System.Windows.Forms.Label lblDebugMsg;
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.Timer timer1;

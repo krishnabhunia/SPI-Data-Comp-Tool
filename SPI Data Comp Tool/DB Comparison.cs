@@ -1993,29 +1993,7 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void btn_Save_Click(object sender, EventArgs e)
-        {
-            try
-            {
 
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void btn_Delete_Click(object sender, EventArgs e)
-        {
-            try
-            {
-
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
 
         private void btn_RuleForm_Click(object sender, EventArgs e)
@@ -2040,10 +2018,6 @@ namespace SPI_Data_Comp_Tool
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            //test();
-        }
 
 
         private void UpdateLabel(Label lb, string str_msg = null)
