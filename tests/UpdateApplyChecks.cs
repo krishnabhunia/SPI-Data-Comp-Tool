@@ -30,6 +30,8 @@ namespace SPI_Data_Comp_Tool
                 passed("Update ZIP guards reject traversal, alternate data streams, duplicate paths, link attributes, unsupported files and oversized entries.");
                 CheckPackageVariants(root, version);
                 passed("Core-only portable packages and two empty upgrade-compatibility anchors are accepted; partial legacy packages still fail validation.");
+                CheckRuntimePrerequisites(root, version);
+                passed("Portable updates reject missing/unknown runtimes before changing files; .NET 4.8 minimum/newer release keys and legacy 4.6.2 packages are recognized.");
                 CheckPackage(root, version);
                 passed("Apply revalidates SHA-256, exact repository/asset, version, package size and installed/portable kind before handoff.");
                 CheckBusyGuards();
@@ -57,11 +59,54 @@ namespace SPI_Data_Comp_Tool
             return new List<KeyValuePair<string, string>>
             {
                 new KeyValuePair<string, string>(name, "synthetic-new-binary"),
-                new KeyValuePair<string, string>(name + ".config", "<configuration/>"),
+                new KeyValuePair<string, string>(name + ".config", RuntimeConfiguration("v4.8")),
                 new KeyValuePair<string, string>("portable/PNID_Reports/Source/instrument.txt", "synthetic source template"),
                 new KeyValuePair<string, string>("portable/PNID_Reports/Target_IPEP/instrument.txt", "synthetic target template"),
                 new KeyValuePair<string, string>("windows-x64/SPI_Data_Comp_Tool_" + version + ".exe", "ignored synthetic setup"),
             };
+        }
+
+        private static string RuntimeConfiguration(string version)
+        {
+            return "<configuration><startup><supportedRuntime version=\"v4.0\" sku=\".NETFramework,Version=" + version + "\"/></startup></configuration>";
+        }
+
+        private static void CheckRuntimePrerequisites(string root, UpdateVersion version)
+        {
+            RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.8"), 528040);
+            RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.8"), 533320);
+            RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.6.2"), 394802);
+            Expect<InvalidOperationException>(() => RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.8"), 528039), "A pre-4.8 runtime was accepted.");
+            Expect<InvalidOperationException>(() => RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.8"), 0), "An unknown installed runtime was accepted.");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration(RuntimeConfiguration("v4.9"), int.MaxValue), "An unknown required runtime was accepted.");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration("<configuration/>", 528040), "An undeclared runtime was accepted.");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration("<configuration><startup><supportedRuntime version=\"v4.0\"/><supportedRuntime version=\"v4.0\"/></startup></configuration>", 528040), "Ambiguous runtime declarations were accepted.");
+            Expect<XmlException>(() => RuntimeRequirements.ValidateConfiguration("<!DOCTYPE configuration [<!ENTITY x SYSTEM 'file:///synthetic-not-read'>]><configuration>&x;</configuration>", 528040), "A DTD runtime configuration was accepted.");
+
+            string duplicateStartup = RuntimeConfiguration("v4.8").Replace("<startup>", "<startup/><startup>");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration(duplicateStartup, 528040), "Duplicate startup sections with one declared runtime were accepted.");
+            Expect<InvalidDataException>(() => RuntimeRequirements.ValidateConfiguration(
+                RuntimeConfiguration("v4.8").Replace("</startup>", "</startup><startup/>"), 528040), "A trailing duplicate startup section was accepted.");
+            var invalidEntries = Entries(version);
+            invalidEntries[1] = new KeyValuePair<string, string>(invalidEntries[1].Key, duplicateStartup);
+            string ambiguousArchive = Archive(root, invalidEntries);
+
+            string archive = Archive(root, Entries(version));
+            string target = Path.Combine(root, "runtime-target");
+            string stage = Path.Combine(root, "runtime-stage");
+            Directory.CreateDirectory(target); Directory.CreateDirectory(stage);
+            string original = Path.Combine(target, "MySPI.exe");
+            File.WriteAllText(original, "original application");
+            bool settingsTouched = false;
+            Expect<InvalidOperationException>(() => UpdateApplyWorker.ApplyPortable(archive, target, "MySPI.exe", version,
+                stage, () => settingsTouched = true, null, (path, expected) => { }, 394802), "Update files were accepted on a missing runtime.");
+            Require(File.ReadAllText(original) == "original application" && !settingsTouched && !Directory.EnumerateFileSystemEntries(stage).Any(),
+                "A failed runtime preflight touched the application, settings or staging payload.");
+            Expect<InvalidDataException>(() => UpdateApplyWorker.ApplyPortable(ambiguousArchive, target, "MySPI.exe", version,
+                stage, () => settingsTouched = true, null, (path, expected) => { }, 528040), "An archive with duplicate startup sections was accepted.");
+            Require(File.ReadAllText(original) == "original application" && !settingsTouched && !Directory.EnumerateFileSystemEntries(stage).Any(),
+                "An ambiguous runtime configuration touched the application, settings or staging payload.");
+            UpdateApplyWorker.ValidatePortableArchive(archive, version, "MySPI.exe", 528040);
         }
 
         private static string Archive(string root, IList<KeyValuePair<string, string>> entries)

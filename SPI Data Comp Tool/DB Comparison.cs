@@ -242,7 +242,7 @@ namespace SPI_Data_Comp_Tool
                     DisplayMessage(lblStatus, profileLoad.Message, profileLoad.HasError ? Color.DarkRed : UiTheme.TextColor);
 
                 if (!SelfTest.IsRunning && cb_UserProfileList.Items.Count > 0 &&
-                    (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached))
+                    (GlobalDebug.boolIsGlobalDebug))
                 {
                     cb_UserProfileList.SelectedIndex = 0;
                 }
@@ -269,7 +269,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if ((Debugger.IsAttached) || (intExplicitCall == 1))
+                if ((GlobalDebug.boolIsGlobalDebug) || (intExplicitCall == 1))
                 {
                     cb_UserProfileList.Visible = true;
                 }
@@ -2225,7 +2225,7 @@ namespace SPI_Data_Comp_Tool
                 if (ex != null)
                 {
                     lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.Message.ToString());
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.boolIsGlobalDebug)
                     {
                         lblExpressionStatus.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }

@@ -420,8 +420,22 @@ namespace SPI_Data_Comp_Tool
                 foreach (string column in new[] { "TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME" }) metadata.Columns.Add(column);
                 Require(FormHelpers.FillTableNames(choice, metadata, "sql") == null, "An empty valid database table list returned a stale table.");
                 metadata.Rows.Add("synthetic-db", "dbo", "Items");
-                Require(FormHelpers.FillTableNames(choice, metadata, "sql") == "synthetic-db.dbo.Items"
-                    && metadata.Rows[0]["CompleteName"].ToString() == "synthetic-db.dbo.Items", "Valid SQL metadata produced an incorrect table choice.");
+                Require(FormHelpers.FillTableNames(choice, metadata, "sql") == "[synthetic-db].[dbo].[Items]"
+                    && metadata.Rows[0]["CompleteName"].ToString() == "[synthetic-db].[dbo].[Items]", "Valid SQL metadata produced an incorrect table choice.");
+                metadata.Rows.Add("db.with.dot", "schema space", "Order] O'Brien");
+                Require(FormHelpers.FillTableNames(choice, metadata, "sql") == "[db.with.dot].[schema space].[Order]] O'Brien]",
+                    "A SQL table picker treated metadata punctuation as part of the SQL syntax.");
+                metadata.Rows[1]["TABLE_NAME"] = DBNull.Value;
+                InvalidArgument(() => FormHelpers.FillTableNames(choice, metadata, "sql"));
+            }
+            using (var choice = new ComboBox())
+            using (var metadata = new DataTable())
+            {
+                metadata.Columns.Add("OWNER");
+                metadata.Columns.Add("TABLE_NAME");
+                metadata.Rows.Add("MixedCaseOwner", "Order Details.v2");
+                Require(FormHelpers.FillTableNames(choice, metadata, "oracle") == "\"MixedCaseOwner\".\"Order Details.v2\"",
+                    "An Oracle table picker changed the case or boundaries of quoted metadata identifiers.");
             }
             passed("Shared helpers handle empty/large progress safely and reject missing schemas or invalid summary names without erasing existing choices; valid summaries and empty metadata remain usable.");
         }

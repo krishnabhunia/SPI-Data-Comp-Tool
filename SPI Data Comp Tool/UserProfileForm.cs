@@ -116,7 +116,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 DisplayMessage(ex.Message.ToString(), true);
-                if (Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(ex.ToString(), true);
                 }
@@ -124,7 +124,7 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex1)
             {
                 DisplayMessage(ex1.Message.ToString(), true);
-                if (Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(ex1.ToString(), true);
                 }
@@ -485,6 +485,33 @@ namespace SPI_Data_Comp_Tool
             ProfileStore.RequireCurrentCatalog(editorCatalog);
         }
 
+        private void RequireEditorSnapshot(ProfileCatalog expectedCatalog, List<DBC> expectedProfiles)
+        {
+            if (!ReferenceEquals(editorCatalog, expectedCatalog) || !ReferenceEquals(editorProfiles, expectedProfiles))
+                throw new InvalidOperationException("The profile file changed while confirmation was open. Review the current profiles and try again.");
+            RequireEditorCatalog();
+        }
+
+        internal bool SaveSelectedProfile(List<DBC> candidate, string selectedName, Func<string> selectPath,
+            Action<string> persistPath = null)
+        {
+            if (selectPath == null) throw new ArgumentNullException(nameof(selectPath));
+            RequireEditorCatalog();
+            ProfileCatalog expectedCatalog = editorCatalog;
+            List<DBC> expectedProfiles = editorProfiles;
+            string path = selectPath();
+            if (path == null)
+            {
+                DisplayMessage("Save cancelled; current profiles and the existing file are unchanged.");
+                return false;
+            }
+            // The same editor can also receive events during a modal dialog. Its newer
+            // catalog must never authorize a candidate built from the previous one.
+            RequireEditorSnapshot(expectedCatalog, expectedProfiles);
+            SaveProfileFile(path, candidate, selectedName, persistPath);
+            return true;
+        }
+
         internal ProfileLoadResult SaveProfileFile(string path, List<DBC> candidate, string selectedName,
             Action<string> persistPath = null)
         {
@@ -550,18 +577,14 @@ namespace SPI_Data_Comp_Tool
 
                     DisplayMessage($"Saving Profile, Pls wait !!!");
 
-                    saveFileDialogFile = saveFileDialogFile.SaveFileDialogOnly("Save Profile in Json Format", $"Profile_{Environment.UserName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}", "json");
-
-                    if (saveFileDialogFile.BoolFileSaveStatus)
+                    SaveSelectedProfile(candidate, profileName, () =>
                     {
+                        saveFileDialogFile = saveFileDialogFile.SaveFileDialogOnly("Save Profile in Json Format", $"Profile_{Environment.UserName}_{common_Data.AppendDateInOutputFileName(DateTime.Now)}", "json");
+                        if (!saveFileDialogFile.BoolFileSaveStatus) return null;
                         if (!FormValidation.Check(this, () => FormValidation.OutputFile(saveFileDialogFile.Str_saveFileNameWithPath,
-                            btnSaveUserProfile, "profile output", ".json"), message => DisplayMessage(message, true))) return;
-                        SaveProfileFile(saveFileDialogFile.Str_saveFileNameWithPath, candidate, profileName);
-                    }
-                    else
-                    {
-                        DisplayMessage("Save cancelled; current profiles and the existing file are unchanged.");
-                    }
+                            btnSaveUserProfile, "profile output", ".json"), message => DisplayMessage(message, true))) return null;
+                        return saveFileDialogFile.Str_saveFileNameWithPath;
+                    });
                 }
                 else
                 {
@@ -665,6 +688,8 @@ namespace SPI_Data_Comp_Tool
                 // destination, and both the memory snapshot and disk file must still match it.
                 RequireEditorCatalog();
                 ProfileStore.RequireUnchangedFile(editorCatalog);
+                ProfileCatalog confirmedCatalog = editorCatalog;
+                List<DBC> confirmedProfiles = editorProfiles;
                 if (!confirm(selectedName))
                 {
                     DisplayMessage("Deletion cancelled; current profiles are unchanged.");
@@ -672,6 +697,7 @@ namespace SPI_Data_Comp_Tool
                 }
                 // The confirmation can dispatch other windows' events. DeleteProfileFile
                 // rechecks ownership and disk content, writes atomically, then publishes.
+                RequireEditorSnapshot(confirmedCatalog, confirmedProfiles);
                 DeleteProfileFile(selectedName);
                 return true;
             }

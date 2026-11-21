@@ -29,7 +29,7 @@ try {
     $exe = (Resolve-Path $AppPath).Path
     if (Test-Path $LogPath) { Remove-Item -LiteralPath $LogPath -Force }
     $process = Start-Process -FilePath $exe -ArgumentList '--check-sql-integration', "`"$LogPath`"" -PassThru
-    if (-not $process.WaitForExit(180000)) {
+    if (-not $process.WaitForExit(300000)) {
         Stop-Process -Id $process.Id -Force
         throw 'SQL Server integration checks timed out.'
     }

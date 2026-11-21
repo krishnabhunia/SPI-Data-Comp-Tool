@@ -548,6 +548,29 @@ namespace SPI_Data_Comp_Tool
                         "An edit after loading was overwritten or failure changed catalog ownership.");
 
                     File.WriteAllText(first, original);
+                    editor.ImportProfileFile(first, path => { });
+                    var beforeDialog = ProfileStore.Upsert(Profile.ProfileList, Example("New", "new-server"));
+                    ExpectStaleProfile(() => editor.SaveSelectedProfile(beforeDialog, "New", () =>
+                    {
+                        editor.ImportProfileFile(second, path => { });
+                        return first;
+                    }, path => { }));
+                    Check(File.ReadAllText(first) == original && File.ReadAllText(second) == original
+                        && ProfileStore.ActiveCatalog.FilePath == second && Profile.ProfileList.Count == 1,
+                        "A same-editor import during Save selection authorized a stale candidate or changed either file.");
+
+                    editor.ImportProfileFile(first, path => { });
+                    var picker = ((ConnectionPanel)editor.Controls.Find("connection", true)[0]).ProfileList;
+                    picker.SelectedIndex = -1;
+                    picker.SelectedIndex = 0;
+                    Check(!editor.DeleteSelectedProfile(name =>
+                    {
+                        editor.ImportProfileFile(second, path => { });
+                        return true;
+                    }) && File.ReadAllText(first) == original && File.ReadAllText(second) == original
+                        && ProfileStore.ActiveCatalog.FilePath == second && Profile.ProfileList.Count == 1,
+                        "A same-editor import redirected confirmed deletion to an unconfirmed catalog.");
+
                     Profile.ProfileList = new List<DBC>(Profile.ProfileList);
                     Check(ProfileStore.ActiveCatalog == null,
                         "Direct catalog replacement retained an unproven delete destination.");
@@ -555,7 +578,7 @@ namespace SPI_Data_Comp_Tool
                     Check(File.ReadAllText(first) == original && File.ReadAllText(second) == original,
                         "An unproven catalog replacement allowed deletion from an older active file.");
                 }
-                passed("Stale editors cannot save/delete after another catalog is published, external file edits are preserved, and direct global-list replacement invalidates file provenance.");
+                passed("Stale editors and same-editor dialog changes cannot redirect save/delete; external edits are preserved and direct list replacement invalidates file provenance.");
             }
             finally
             {

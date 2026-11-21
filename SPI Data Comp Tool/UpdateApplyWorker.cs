@@ -349,7 +349,7 @@ namespace SPI_Data_Comp_Tool
                 throw new InvalidDataException("SHA-256 verification failed; no update was applied.");
         }
 
-        internal static IList<UpdatePortableFile> ValidatePortableArchive(string package, UpdateVersion version, string executableName)
+        internal static IList<UpdatePortableFile> ValidatePortableArchive(string package, UpdateVersion version, string executableName, int? installedFrameworkRelease = null)
         {
             if (Path.GetFileName(executableName) != executableName || !executableName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Invalid portable executable filename.");
@@ -398,6 +398,18 @@ namespace SPI_Data_Comp_Tool
                         if (name == "windows-x64/" + archiveExe) continue;
                         string destination;
                         if (!allowed.TryGetValue(name, out destination)) throw new InvalidDataException("The archive contains an unsupported application file.");
+                        if (string.Equals(destination, executableName + ".config", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (entry.Length > 131072) throw new InvalidDataException("The update runtime configuration exceeds the safe size limit.");
+                            using (var reader = new StreamReader(entry.Open(), Encoding.UTF8, true))
+                            {
+                                var characters = new char[131073];
+                                int count = reader.ReadBlock(characters, 0, characters.Length);
+                                if (count > 131072) throw new InvalidDataException("The update runtime configuration exceeds the safe size limit.");
+                                RuntimeRequirements.ValidateConfiguration(new string(characters, 0, count),
+                                    installedFrameworkRelease ?? RuntimeRequirements.InstalledFrameworkRelease());
+                            }
+                        }
                         files.Add(new UpdatePortableFile { ArchiveName = name, RelativePath = destination });
                     }
                 }
@@ -414,8 +426,8 @@ namespace SPI_Data_Comp_Tool
             return files;
         }
 
-        // ExternalAttributes is not public until .NET Framework 4.7.2. Read the bounded classic
-        // central directory ourselves so the supported 4.6.2 runtime can reject link entries too.
+        // Read the bounded classic central directory to verify duplicate names and link metadata
+        // consistently with the declared ZIP entry count before extracting any payload.
         // Our release size/count limits cannot require ZIP64; unsupported archive variants fail closed.
         private static Dictionary<string, uint> ReadZipAttributes(Stream input)
         {
@@ -493,10 +505,11 @@ namespace SPI_Data_Comp_Tool
         }
 
         internal static void ApplyPortable(string package, string targetDirectory, string executableName, UpdateVersion version,
-            string stage, Action migrateSettings, Action<string, string> replaceFile = null, Action<string, UpdateVersion> validateExecutable = null)
+            string stage, Action migrateSettings, Action<string, string> replaceFile = null, Action<string, UpdateVersion> validateExecutable = null,
+            int? installedFrameworkRelease = null)
         {
             ValidateTargetDirectory(targetDirectory);
-            var files = ValidatePortableArchive(package, version, executableName);
+            var files = ValidatePortableArchive(package, version, executableName, installedFrameworkRelease);
             string payload = Path.Combine(stage, "payload-" + Guid.NewGuid().ToString("N"));
             string backup = Path.Combine(stage, "backup");
             RejectReparsePoints(payload); RejectReparsePoints(backup);

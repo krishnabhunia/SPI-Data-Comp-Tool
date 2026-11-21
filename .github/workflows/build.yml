@@ -128,6 +128,11 @@ jobs:
           "version=$v" >> $env:GITHUB_OUTPUT
           Write-Host "Version: $v"
       - run: nuget restore "SPI Data Comp Tool.sln" -NonInteractive
+      - name: Generate third-party dependency notices
+        shell: pwsh
+        run: |
+          python tools/generate_third_party_notices.py --packages-root packages --output dist/THIRD_PARTY_NOTICES.md
+          if ($LASTEXITCODE -ne 0) { throw 'Third-party notice generation failed' }
       - name: Build desktop application
         shell: pwsh
         run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release '/p:Platform=Any CPU' /warnaserror
@@ -281,6 +286,7 @@ jobs:
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
           if (-not (Test-Path $iscc)) { throw 'Inno Setup 6 (ISCC.exe) not found' }
           $src = (Resolve-Path "SPI Data Comp Tool/bin/x64/Release").Path
+          Copy-Item 'dist/THIRD_PARTY_NOTICES.md' -Destination $src
           if (Test-Path "$src/PNID_Reports") { throw 'Retired SQL templates leaked into the 64-bit build output' }
           $out = Join-Path $PWD 'dist/windows-x64'
           & $iscc /Qp "/DAppVersion=$ver" "/DNumericVersion=$num" "/DSourceDir=$src" "/DOutputDir=$out" windows/installer/SPI_Data_Comp_Tool.iss
@@ -295,6 +301,9 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "setup exit code $($p.ExitCode)" }
           $exe = Join-Path $dir 'SPI Data Comp Tool.exe'
           if (-not (Test-Path $exe)) { throw 'installed exe missing' }
+          $notice = Join-Path $dir 'THIRD_PARTY_NOTICES.md'
+          if (-not (Test-Path $notice)) { throw 'Installed third-party dependency notices are missing' }
+          if ((Get-FileHash $notice).Hash -ne (Get-FileHash 'dist/THIRD_PARTY_NOTICES.md').Hash) { throw 'Installed dependency notices differ from the restored package inventory' }
           if (Test-Path (Join-Path $dir 'PNID_Reports')) { throw 'Retired SQL templates or portable compatibility anchors leaked into the clean install' }
           $dlls = Get-ChildItem $dir -Recurse -Filter *.dll
           if ($dlls) { $dlls | ForEach-Object { Write-Host "::error::$($_.FullName)" }; throw 'DLL files in the install folder' }
@@ -370,17 +379,22 @@ jobs:
             echo "state=stable" >> "$GITHUB_OUTPUT"
           fi
           zip_name="SPI_Data_Comp_Tool_${VERSION}.zip"
+          # Older portable updaters accept only the original executable/configuration,
+          # compatibility anchors and installer paths. Keep the notice as a separate
+          # release asset; the installer also carries its own installed copy.
+          notice_name="SPI_Data_Comp_Tool_${VERSION}_THIRD_PARTY_NOTICES.md"
+          mv dist/THIRD_PARTY_NOTICES.md "${notice_name}"
           (cd dist && zip -qr "../${zip_name}" .)
           # the 64-bit installer also goes on the release page by itself, for a one-click download
           setup_name="SPI_Data_Comp_Tool_${VERSION}_x64_setup.exe"
           cp "dist/windows-x64/SPI_Data_Comp_Tool_${VERSION}.exe" "${setup_name}"
           sha256sum "${zip_name}" "${setup_name}" > "${zip_name}.sha256"
           cat "${zip_name}.sha256"
-          assets=("${zip_name}" "${zip_name}.sha256" "${setup_name}")
+          assets=("${zip_name}" "${zip_name}.sha256" "${setup_name}" "${notice_name}")
           if gh release view "${TAG}" >/dev/null 2>&1; then
             gh release upload "${TAG}" "${assets[@]}" --clobber
           else
-            flags=(--title "SPI Data Comparison Tool ${VERSION}" --generate-notes --target "${SHA}")
+            flags=(--title "SPI Data Comparison Tool ${VERSION}" --generate-notes --notes-file docs/RELEASE_PREREQUISITES.md --target "${SHA}")
             if [ "${PRE}" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
             gh release create "${TAG}" "${assets[@]}" "${flags[@]}"
           fi

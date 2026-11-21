@@ -53,6 +53,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#SourceDir}\{#ExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\{#ExeName}.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#ExeName}"
@@ -69,20 +70,20 @@ begin
   Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
 end;
 
-// .NET Framework 4.6.2 or later (Release key 394802+), which the app is built for.
-function DotNet462Installed(): Boolean;
+// .NET Framework 4.8 or later (minimum Release key 528040), which the app is built for.
+function DotNet48Installed(): Boolean;
 var
   Release: Cardinal;
 begin
   Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', Release)
-            and (Release >= 394802);
+            and (Release >= 528040);
 end;
 
 function InitializeSetup(): Boolean;
 begin
-  Result := DotNet462Installed();
+  Result := DotNet48Installed();
   if not Result then
-    SuppressibleMsgBox('{#AppName} needs Microsoft .NET Framework 4.6.2 or later.' + #13#10 +
+    SuppressibleMsgBox('{#AppName} needs Microsoft .NET Framework 4.8 or later.' + #13#10 +
       'Install it from https://dotnet.microsoft.com/download/dotnet-framework and run this setup again.',
       mbCriticalError, MB_OK, IDOK);
 end;

@@ -19,6 +19,7 @@ namespace SPI_Data_Comp_Tool
     ///                                                          exit code 1 if any fails
     ///   "SPI Data Comp Tool.exe" --check-ui OUT_FILE           runs synthetic UI/profile regressions without databases
     ///   "SPI Data Comp Tool.exe" --check-sql-integration OUT_FILE runs real comparisons only on the dedicated synthetic LocalDB instance
+    ///   "SPI Data Comp Tool.exe" --measure-comparison OUT_FILE records synthetic comparison timing/memory and verifies row counts
     ///   "SPI Data Comp Tool.exe" --check-startup OUT_FILE      opens every task with synthetic saved-profile states
     ///   "SPI Data Comp Tool.exe" --check-excel-audit OUT_FILE  verifies the separate Excel Sheet Audit using temporary workbooks
     ///   "SPI Data Comp Tool.exe" --check-workspace-exit OUT_FILE tests successful application exit in an isolated process
@@ -38,7 +39,7 @@ namespace SPI_Data_Comp_Tool
         {
             if (args == null || args.Length < 2) return false;
             string[] commands = { "--check-excel-audit", "--check-updates", "--check-inputs", "--list-forms",
-                "--check-assemblies", "--check-ui", "--check-sql-integration", "--check-startup", "--check-workspace-exit",
+                "--check-assemblies", "--check-ui", "--check-sql-integration", "--measure-comparison", "--check-startup", "--check-workspace-exit",
                 "--check-groups", "--check-steps", "--check-themes", "--open-form" };
             if (!commands.Contains(args[0], StringComparer.Ordinal) ||
                 (args[0] == "--open-form" && args.Length < 3)) return false;
@@ -83,6 +84,11 @@ namespace SPI_Data_Comp_Tool
             if (args[0] == "--check-sql-integration" && args.Length >= 2)
             {
                 Environment.ExitCode = DatabaseIntegrationChecks.Run(args[1]);
+                return true;
+            }
+            if (args[0] == "--measure-comparison" && args.Length >= 2)
+            {
+                Environment.ExitCode = ComparisonPerformanceChecks.Run(args[1]);
                 return true;
             }
             if (args[0] == "--check-startup" && args.Length >= 2)

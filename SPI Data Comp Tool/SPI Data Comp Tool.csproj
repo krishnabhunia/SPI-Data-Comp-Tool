@@ -9,7 +9,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>SPI_Data_Comp_Tool</RootNamespace>
     <AssemblyName>SPI Data Comp Tool</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
@@ -212,6 +212,7 @@
     <Compile Include="UpdateVersion.cs" />
     <Compile Include="UpdateFeedClient.cs" />
     <Compile Include="UpdateInstaller.cs" />
+    <Compile Include="RuntimeRequirements.cs" />
     <Compile Include="UpdateApplyWorker.cs" />
     <Compile Include="UpdatePreferences.cs" />
     <Compile Include="UpdatesControl.cs">
@@ -240,6 +241,9 @@
     <Compile Include="ComparisonRows.cs" />
     <Compile Include="..\tests\DatabaseIntegrationChecks.cs">
       <Link>Tests\DatabaseIntegrationChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\ComparisonPerformanceChecks.cs">
+      <Link>Tests\ComparisonPerformanceChecks.cs</Link>
     </Compile>
     <Compile Include="..\tests\ComparisonCorrectnessChecks.cs">
       <Link>Tests\ComparisonCorrectnessChecks.cs</Link>
@@ -427,9 +431,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.6.2">
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
       <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.6.2 %28x86 and x64%29</ProductName>
+      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">

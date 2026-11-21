@@ -1,6 +1,6 @@
 # SPI Data Comparison Tool
 
-Generic Windows Forms (.NET Framework 4.6.2) desktop utility for database and Excel comparison, workbook audits and data exports. It works against Oracle and SQL Server.
+Generic Windows Forms (.NET Framework 4.8) desktop utility for database and Excel comparison, workbook audits and data exports. It works against Oracle and SQL Server.
 
 The main window groups 10 tasks into three workspace tiles: **Comparison**, **Data & Reports**, and **Settings**. Switching tasks preserves each page's inputs and results. The SQL Scripts workspace and both its generation/execution forms have been removed. Database comparison and database-to-Excel export remain available.
 

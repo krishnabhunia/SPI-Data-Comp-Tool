@@ -35,7 +35,7 @@ class UpdateApplyContracts(unittest.TestCase):
         installer = (APP / "UpdateInstaller.cs").read_text()
         for marker in ("SHA256.Create()", "VerifyHash", "RejectReparsePoints", "RequireContained", "ReadZipAttributes", "0xA000", "MaximumExpandedBytes", "written > entry.Length", "written != entry.Length"):
             self.assertIn(marker, worker)
-        self.assertNotIn("entry.ExternalAttributes", worker)  # unavailable in .NET Framework 4.6.2
+        self.assertNotIn("entry.ExternalAttributes", worker)  # central-directory validation also checks duplicate names/counts
         self.assertIn("FileShare.Read", worker)
         self.assertIn("github.com", installer)
         self.assertIn("/krishnabhunia/SPI-Data-Comp-Tool/releases/download/", installer)

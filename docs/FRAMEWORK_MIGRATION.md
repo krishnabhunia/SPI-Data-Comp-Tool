@@ -1,47 +1,47 @@
-# .NET Framework migration plan
+# .NET Framework 4.8 adoption and acceptance
 
-Reviewed 22 November 2026. Tracking: [issue #7](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/7).
+## Adopted target
 
-## Lifecycle and current release
+The project, application runtime configuration, package target metadata, bootstrapper and installer now require **.NET Framework 4.8**. Both normal release builds and the separate compatibility workflow use that target. The compatibility script verifies the checked-in target and built configuration; it no longer overrides the target or rewrites the output configuration to make a candidate appear compatible.
 
-The released application still targets .NET Framework 4.6.2. Microsoft lists **12 January 2027** as that version's end of support. .NET Framework 4.8 and 4.8.1 follow the lifecycle of the supported Windows system on which they run. A newer targeting pack on a build machine does not by itself retarget the application or prove compatibility on customers' machines.
+Microsoft lists **12 January 2027** as .NET Framework 4.6.2's support end. Framework 4.8 follows the lifecycle of its supported Windows installation. The 4.8 target keeps compatibility with more Windows versions than 4.8.1; it does not establish product support for every operating system that can install the runtime.
 
-Primary references:
+Sources checked on 22 November 2026:
 
 - [Microsoft .NET Framework lifecycle](https://learn.microsoft.com/lifecycle/products/microsoft-net-framework)
-- [.NET Framework support policy](https://dotnet.microsoft.com/platform/support/policy/dotnet-framework)
-- [Framework versions included with Windows](https://learn.microsoft.com/en-us/dotnet/framework/install/on-server-2019)
-- [GitHub Windows 2022 runner software](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md)
+- [Framework and Windows versions](https://learn.microsoft.com/en-us/dotnet/framework/install/versions-and-dependencies)
+- [Minimum installed-framework Release values](https://learn.microsoft.com/en-us/dotnet/framework/install/how-to-determine-which-versions-are-installed)
 
-## Migration candidate and evidence
+Existing dependency versions and assembly asset paths are retained. A package's `lib/net462` asset remains usable by a 4.8 application; changing the application target does not require renaming that package directory or inventing a `net48` asset. Dependency loading, Oracle managed-driver assembly loading, spreadsheet exports and Costura embedding are exercised by the executable gates.
 
-The `Framework migration compatibility` workflow builds the current code against **.NET Framework 4.8** in both Any CPU and x64 configurations, with warnings treated as errors. It changes only its isolated output configuration to request 4.8 runtime behavior, then runs dependency loading, real-control UI/profile/comparison checks, startup/navigation, Excel audit, themes and controlled steps.
+## Install and update transition
 
-This is an executable migration experiment. It does not change the shipped project target, installer requirement, update feed or published packages. The existing packages and embedding configuration are exercised together, including Oracle.ManagedDataAccess, EPPlus, ClosedXML, Open XML and Costura. A green run establishes those checks on that Windows runner; it does not prove an Oracle connection, Microsoft Excel automation, every supported Windows version or a signed installer.
+The installer requires a framework registry Release value of at least **528040**, including later servicing versions. Its check runs before application installation. Portable-update preflight validates the declared runtime in the bounded configuration from the downloaded ZIP before changing files or settings. Missing, ambiguous and unknown runtime declarations fail closed. Tests cover the exact minimum, newer versions, a lower/unknown installed version and preserving the existing executable/settings on rejection.
 
-The first candidate is 4.8 to keep the migration compatible with the broader set of Windows versions that can install it. Before adoption, the owner must identify the Windows versions actually supported by the product. If all supported machines can run 4.8.1, that later target can be validated with the same procedure. Supporting a framework on an unsupported Windows version does not restore Windows support.
+**Older portable updaters cannot acquire this check before they install the new application.** Install [.NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48) first, or use the new installer. Both published release notes and automated PR download comments state this requirement. Keep the old application folder/installer and profile/rules files until the new build has been accepted. Installing 4.8 is an in-place framework update; rolling back SPI does not downgrade Windows' framework installation.
 
-## Adoption checklist
+No updater path installs the framework or changes machine registry settings automatically. For installed updates, the helper can migrate preferences before Inno Setup performs its prerequisite check, and attempts to roll those preferences back if setup fails. The portable rejection-before-write guarantee does not apply to that installed workflow. Existing application backups and rollback behavior remain in place.
 
-| Step | Required evidence | Current boundary |
+## Automated evidence and remaining acceptance
+
+| Area | Automated coverage | Remaining acceptance |
 | --- | --- | --- |
-| Confirm supported Windows versions | List of supported Windows editions/builds and whether each can install the selected framework | Product decision; not inferred from the developer's machine |
-| Validate the candidate build | Successful exact-commit `framework-48` check for Any CPU and x64, including embedded dependencies and executable regression groups | Automated in this repository |
-| Check provider compatibility | Disposable SQL Server and Oracle comparisons, distinct Source/Target connections, authentication failures, nulls/duplicates and Excel results | SQL Server has an isolated LocalDB check; Oracle acceptance still requires a disposable Oracle environment |
-| Validate spreadsheet paths | Existing engine/report checks plus supported Microsoft Excel automation on a Windows machine with Excel installed | Synthetic workbook checks run automatically; Excel automation requires separate acceptance |
-| Retarget release coherently | Update the project target, application configuration, package target metadata, installer runtime check, documentation and updater prerequisite handling in one PR | No release target change in this audit |
-| Validate upgrades and rollback | Old portable/installed version upgrades to the candidate; missing-runtime behavior fails with an actionable message; rollback restores files and preferences | Existing updater tests remain; cross-runtime installed acceptance is still required |
-| Decide release signing | Approved code-signing certificate/service and workflow, if signed releases are required | Current releases remain unsigned; no signing identity is invented |
-| Adopt before support ends | Reviewed beta on supported machines, then normal stable release before 12 January 2027 | No automatic merge or release-target change |
+| Project/runtime coherence | Project target, runtime SKU, package metadata and installer minimum agree | Successful check on the proposed PR's exact commit |
+| Windows runtime compatibility | Windows 2022 and 2025 runners, Any CPU and x64; real UI/profile/startup, themes, comparison/export, updater and dependency checks | Supported Windows client editions, desktop scaling/accessibility and Microsoft Excel automation |
+| Database providers | SQL Server disposable integration and Oracle assembly loading | Disposable Oracle server/authentication integration |
+| Deployment | Portable extraction/rollback regressions, installer creation and install/uninstall smoke tests | Upgrade from the user's installed versions on representative machines; missing-framework installer behavior on a disposable VM |
+| Performance | Deterministic synthetic matching timings, row-count assertions and memory measurements | Customer workbook/database shapes and operational limits; see [PERFORMANCE.md](PERFORMANCE.md) |
+| Signing | Existing unsigned build policy preserved | Owner-provided signing identity/service if signed distribution is required |
 
-## Running the experiment
+Successful checks establish the cases they execute, not unperformed manual acceptance. The PR remains unmerged until reviewed.
 
-On a disposable Windows build machine with Visual Studio MSBuild, the .NET Framework 4.8 targeting pack and NuGet:
+## Run the checks
+
+On a disposable Windows machine with Visual Studio MSBuild, the .NET Framework 4.8 developer pack and NuGet:
 
 ```powershell
 nuget restore "SPI Data Comp Tool.sln" -NonInteractive
-$env:RUNNER_TEMP = [System.IO.Path]::GetTempPath()
 ./tools/check_framework_compatibility.ps1
 ```
 
-Outputs go under `bin/Compatibility48` and `obj/Compatibility48`. They are not release packages. The script exits unsuccessfully if a build or executable check fails; a missing or failed check is not recorded as acceptance.
+Check outputs go to `bin/Compatibility48` and `obj/Compatibility48`. Logs and comparison measurements go to `RUNNER_TEMP`, or the system temporary directory when run locally. CI retains these as the `framework48-evidence-windows-2022` and `framework48-evidence-windows-2025` artifacts. Normal build outputs alone are packaged for release.

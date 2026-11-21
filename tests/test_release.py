@@ -101,6 +101,9 @@ class VersionOnThePullRequest(unittest.TestCase):
         self.assertIn("https://github.com/owner/repo/releases/tag/v2.5.3-beta004", body)
         self.assertIn("https://github.com/owner/repo/releases/download/v2.5.3-beta004/SPI_Data_Comp_Tool_2.5.3-beta004_x64_setup.exe", body)
         self.assertIn("can differ from this beta's number", body)
+        self.assertIn("Requires Microsoft .NET Framework 4.8 or later", body)
+        self.assertIn("before updating an older portable copy", body)
+        self.assertIn("--notes-file docs/RELEASE_PREREQUISITES.md", self.WORKFLOW)
 
     def test_stable_comment_names_the_normal_version(self):
         body = release.comment_body("stable", self.REPO, "v2.5.3", "abcdef1234567")

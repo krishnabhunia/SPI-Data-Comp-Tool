@@ -37,7 +37,8 @@ class ProfileSafety(unittest.TestCase):
         self.assertNotIn("dbc_AddNewUserProfile", form)
         self.assertIn("var replacement = new DBC", method)
         self.assertIn("ProfileStore.Upsert(Profile.ProfileList, replacement)", method)
-        self.assertLess(method.index("if (saveFileDialogFile.BoolFileSaveStatus)"), method.index("SaveProfileFile("))
+        self.assertIn("SaveSelectedProfile(candidate, profileName", method)
+        self.assertIn("if (!saveFileDialogFile.BoolFileSaveStatus) return null", method)
         store_save = source("ProfileStore.cs").split("internal static ProfileLoadResult SaveFile", 1)[1].split("internal static void RequireCurrentCatalog", 1)[0]
         self.assertLess(store_save.index("WriteAtomic(fullPath, json)"), store_save.index("Publish(candidate, fullPath)"))
         self.assertLess(store_save.index("Publish(candidate, fullPath)"), store_save.index("RememberChoice("))

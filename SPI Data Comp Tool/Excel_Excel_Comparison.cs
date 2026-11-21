@@ -185,7 +185,7 @@ namespace SPI_Data_Comp_Tool
 
             saveFileDialogFile = new SaveFileDialogFile();
 
-            if (Debugger.IsAttached)
+            if (GlobalDebug.boolIsGlobalDebug)
             {
                 btnLoad.Visible = true;
 
@@ -197,7 +197,7 @@ namespace SPI_Data_Comp_Tool
 
             lbl_InstrumentText.Text = "The Below Button will generate Required Item Tag and Short Item Tag for specific Input Source File which doesn't have any Unique reference ID other that Item Tag which get matched with Target Input File. Pls use this in old datasets.";
 
-            if (Debugger.IsAttached)
+            if (GlobalDebug.boolIsGlobalDebug)
             {
                 button1.Visible = true;
                 btn_TestSystemMemoryOutException.Visible = true;
@@ -804,7 +804,7 @@ namespace SPI_Data_Comp_Tool
 
                 DisplayMessage("Saving Output File !!!");
 
-                if (!(Debugger.IsAttached))
+                if (!(GlobalDebug.boolIsGlobalDebug))
                 {
                     saveFileDialogFile = saveFileDialogFile.SaveFileDialogExcelFileOnly("Save Output File", $"{firstExcelData.SimpleFileName_WithoutExt}_{secondExcelData.SimpleFileName_WithoutExt}_{common_Data.AppendDateInOutputFileName(DateTime.Now).ToString()}");
                 }
@@ -1866,7 +1866,7 @@ namespace SPI_Data_Comp_Tool
                     llbl_filePath.Visible = true;
                     label1.Visible = true;
 
-                    if (!(Debugger.IsAttached))
+                    if (!(GlobalDebug.boolIsGlobalDebug))
                     {
                         Process.Start(saveFileDialogFile.Str_saveFileNameWithPath);
                     }
@@ -2343,7 +2343,7 @@ namespace SPI_Data_Comp_Tool
                     lblError.Visible = true;
                     lblError.ForeColor = Color.Red;
                     lblError.Text = Common_Data.RedactConnectionCredentials(ex.Message);
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.boolIsGlobalDebug)
                     {
                         lblError.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }

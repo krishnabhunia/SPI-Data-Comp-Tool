@@ -35,7 +35,7 @@ namespace SPI_Data_Comp_Tool
                 if (ex != null)
                 {
                     control.Text = Common_Data.RedactConnectionCredentials(ex.Message);
-                    if (Debugger.IsAttached)
+                    if (GlobalDebug.boolIsGlobalDebug)
                     {
                         control.Text = Common_Data.RedactConnectionCredentials(ex.ToString());
                     }
@@ -162,11 +162,14 @@ namespace SPI_Data_Comp_Tool
                 string name;
                 if (dbType == "oracle")
                 {
-                    name = $"{dr["OWNER"]}.{dr["TABLE_NAME"]}";
+                    name = QuoteDatabaseIdentifier(dr["OWNER"], dbType) + "."
+                        + QuoteDatabaseIdentifier(dr["TABLE_NAME"], dbType);
                 }
                 else if (dbType == "sql")
                 {
-                    name = $"{dr["TABLE_CATALOG"]}.{dr["TABLE_SCHEMA"]}.{dr["TABLE_NAME"]}";
+                    name = QuoteDatabaseIdentifier(dr["TABLE_CATALOG"], dbType) + "."
+                        + QuoteDatabaseIdentifier(dr["TABLE_SCHEMA"], dbType) + "."
+                        + QuoteDatabaseIdentifier(dr["TABLE_NAME"], dbType);
                 }
                 else
                 {
@@ -184,6 +187,17 @@ namespace SPI_Data_Comp_Tool
             comboBox.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
             comboBox.DataSource = tables;
             return last;
+        }
+
+        // Metadata values are individual identifiers, not preformatted SQL expressions. Quote
+        // each part separately so spaces, dots, reserved words and ']' stay inside that name.
+        private static string QuoteDatabaseIdentifier(object value, string dbType)
+        {
+            string name = Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture);
+            if (string.IsNullOrEmpty(name) || name.IndexOf('\0') >= 0)
+                throw new ArgumentException("The database table list contains an empty or invalid identifier.");
+            return dbType == "sql" ? "[" + name.Replace("]", "]]") + "]"
+                : "\"" + name.Replace("\"", "\"\"") + "\"";
         }
     }
 }

@@ -184,7 +184,7 @@ namespace SPI_Data_Comp_Tool
             try
             {
                 DisplayMessage(rtb_Log, ex.Message.ToString(), true);
-                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(rtb_Log, ex.ToString(), true);
                 }
@@ -192,7 +192,7 @@ namespace SPI_Data_Comp_Tool
             catch (Exception ex1)
             {
                 DisplayMessage(rtb_Log, ex1.Message.ToString(), true);
-                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(rtb_Log, ex1.ToString(), true);
                 }
@@ -217,7 +217,7 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (GlobalDebug.boolIsGlobalDebug || Debugger.IsAttached)
+                if (GlobalDebug.boolIsGlobalDebug)
                 {
                     DisplayMessage(rtb_Log, $"Debug Msg : {strMsg}", false, -1, Color.BlueViolet);
                 }
@@ -1728,11 +1728,11 @@ namespace SPI_Data_Comp_Tool
         public static bool boolIsGlobalDebug { get; private set; }
         public static bool ISGlobalDebug(string strUN, string strPassWD)
         {
-            // Developer mode is switched on only by an attached debugger or by an explicit
-            // opt-in environment variable. It used to be granted to hard-coded Windows user
-            // names and a hard-coded password, which anyone reading this public source could reuse.
-            if (!SelfTest.IsRunning && (Debugger.IsAttached ||
-                string.Equals(Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG"), "1", StringComparison.Ordinal)))
+            // Release builds cannot activate developer shortcuts through an environment
+            // variable or attached debugger. These arguments are legacy call-site compatibility,
+            // not a username/password authentication mechanism.
+            if (DeveloperModeAllowed(SelfTest.IsRunning, Debugger.IsAttached,
+                Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG")))
             {
                 strUserName = Environment.UserName;
                 strPassword = "";
@@ -1746,6 +1746,17 @@ namespace SPI_Data_Comp_Tool
                 boolIsGlobalDebug = false;
                 return false;
             }
+        }
+        internal static bool DeveloperModeAllowed(bool runningChecks, bool debuggerAttached, string requested)
+        {
+#if DEBUG
+            return !runningChecks && (debuggerAttached ||
+                string.Equals(requested, "1", StringComparison.Ordinal));
+#else
+            // This is a build policy, not an authorization boundary against code modified by
+            // somebody who controls the machine. Database permissions remain authoritative.
+            return false;
+#endif
         }
     }
 

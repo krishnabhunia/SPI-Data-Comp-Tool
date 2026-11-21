@@ -1278,7 +1278,7 @@ namespace SPI_Data_Comp_Tool
                     DefaultSettings(2);
                 }
 
-                if (Debugger.IsAttached & tabControl1.SelectedTab == tabPage_Excel)
+                if (GlobalDebug.boolIsGlobalDebug & tabControl1.SelectedTab == tabPage_Excel)
                 {
                     folderBrowserDialog1.SelectedPath = @"D:\Krishna\Projects\SPI\INPUT FILES\compare_multiple\MultiLevel Output\Output";
 

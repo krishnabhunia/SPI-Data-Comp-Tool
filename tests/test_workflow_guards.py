@@ -56,7 +56,7 @@ class WorkflowGuards(unittest.TestCase):
         config = (PROJ / "App.config").read_text(encoding="utf-8-sig")
         self.assertNotIn('<Reference Include="System.Net.Http"', project)
         self.assertNotIn('<assemblyIdentity name="System.Net.Http"', config)
-        self.assertIn("<TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>", project)
+        self.assertIn("<TargetFrameworkVersion>v4.8</TargetFrameworkVersion>", project)
 
     def test_every_form_must_open(self):
         workflow = (ROOT / ".github/workflows/build.yml").read_text()

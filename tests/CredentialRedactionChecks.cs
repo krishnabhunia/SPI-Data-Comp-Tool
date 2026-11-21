@@ -12,6 +12,7 @@ namespace SPI_Data_Comp_Tool
     {
         public static void Run(Action<string> passed)
         {
+            CheckDeveloperModePolicy(passed);
             Require(Common_Data.RedactConnectionCredentials(null) == null, "Null logging input changed.");
             Expect(string.Empty, string.Empty, "empty message");
             Expect("Completed: 12 rows.", "Completed: 12 rows.", "ordinary status");
@@ -63,6 +64,37 @@ namespace SPI_Data_Comp_Tool
 
             CheckFormDiagnosticRoutes();
             passed("Actual comparison/export form error handlers, worker status callbacks and audit logs redact synthetic credentials; Excel comparison errors stay visible without a debugger.");
+        }
+
+        private static void CheckDeveloperModePolicy(Action<string> passed)
+        {
+            foreach (bool runningChecks in new[] { false, true })
+            foreach (bool debuggerAttached in new[] { false, true })
+            foreach (string requested in new[] { null, "", "0", "1", "true", " 1 " })
+            {
+#if DEBUG
+                bool expected = !runningChecks && (debuggerAttached || requested == "1");
+#else
+                bool expected = false;
+#endif
+                Require(GlobalDebug.DeveloperModeAllowed(runningChecks, debuggerAttached, requested) == expected,
+                    "Developer activation did not obey the build/check policy.");
+            }
+            string previous = Environment.GetEnvironmentVariable("SPI_DATA_COMP_DEBUG");
+            try
+            {
+                Environment.SetEnvironmentVariable("SPI_DATA_COMP_DEBUG", "1");
+                Require(!GlobalDebug.ISGlobalDebug("synthetic-user", "synthetic-password"),
+                    "Self-test enabled developer shortcuts through its inherited environment.");
+                Require(!GlobalDebug.boolIsGlobalDebug && GlobalDebug.strPassword == string.Empty,
+                    "Developer authentication compatibility arguments were retained or granted access.");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("SPI_DATA_COMP_DEBUG", previous);
+                GlobalDebug.ISGlobalDebug(string.Empty, string.Empty);
+            }
+            passed("Developer shortcuts require a Debug build; Release rejects attached-debugger and environment activation, and self-tests cannot activate shortcuts.");
         }
 
         private static void CheckFormDiagnosticRoutes()

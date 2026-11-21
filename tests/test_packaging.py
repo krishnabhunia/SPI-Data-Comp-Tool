@@ -38,10 +38,11 @@ class Packaging(unittest.TestCase):
         self.assertIn("ArchitecturesInstallIn64BitMode=x64compatible", iss)
         self.assertIn("ArchitecturesAllowed=x64compatible", iss)
 
-    def test_installer_ships_only_application_and_configuration(self) -> None:
+    def test_installer_ships_application_configuration_and_dependency_notices(self) -> None:
         files = text(ISS).split("[Files]", 1)[1].split("[", 1)[0]
         sources = re.findall(r'Source: "([^"]+)"', files)
-        self.assertEqual(sources, [r"{#SourceDir}\{#ExeName}", r"{#SourceDir}\{#ExeName}.config"])
+        self.assertEqual(sources, [r"{#SourceDir}\{#ExeName}", r"{#SourceDir}\{#ExeName}.config",
+                                   r"{#SourceDir}\THIRD_PARTY_NOTICES.md"])
 
     def test_portable_compatibility_files_are_generated_empty_and_not_installed(self) -> None:
         workflow = text(REPO / ".github/workflows/build.yml")
