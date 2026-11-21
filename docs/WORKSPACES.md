@@ -21,7 +21,7 @@ The main window's left rail lists every current task once, grouped by workspace,
 
 The workspace shell keeps the existing **Ocean** (default), **Berry**, **Forest** and **Midnight** (dark) themes. No palette is removed or replaced. Choose **Settings > Preferences, rules & updates > General > Colour theme**; the General tab remains part of the existing preferences page, not another theme-specific form.
 
-Theme changes apply live to the rail, header/status areas and loaded workflow pages, including pages that are not currently visible. Newly opened tasks inherit the current palette. Recolouring does not recreate a page, clear its inputs/results or start an operation. Source/Target tints and semantic error/success colours remain distinct. Open Settings pickers stay synchronized, including the deliberate modal Import Rules dialog.
+Theme changes apply live to the rail, header/status areas and loaded workflow pages, including pages that are not currently visible. Newly opened tasks inherit the current palette. Recolouring does not recreate a page, clear its inputs/results or start an operation. Source/Target tints and semantic error/success colours remain distinct. Open Settings pickers stay synchronized, including several Settings windows opened by checks.
 
 The choice remains in `%AppData%\SPI Data Comparison Tool\theme.txt`, outside the installation folder. Ocean is the safe fallback for a missing, unreadable, unknown or oversized saved value. A failed save is reported while keeping the selected theme for the current session. Native Windows controls retain the rendering limitations described in [PROJECT_GUIDE.md](PROJECT_GUIDE.md).
 
@@ -53,7 +53,7 @@ The choice remains in `%AppData%\SPI Data Comparison Tool\theme.txt`, outside th
 | Close a workspace / exit from the main window | Prepare the loaded pages first. If a page refuses, show that page and keep existing work. Successful closure then completes page cleanup. |
 | Enter / Escape | Respect the selected page's normal dialog-key behaviour. No workspace-wide Enter action starts a job or an update. |
 
-Settings contains two task pages, not one combined profile/preferences editor. Updates and About are tabs of **Settings > Preferences, rules & updates**; the main window has no Help menu. Comparison **Import Rules** keeps a deliberate short-lived modal `User_Settings(true)` dialog: its synchronous caller receives the imported dataset only after closing it. That modal path is not the persistent Settings workspace and does not introduce another rules engine.
+Settings contains two task pages, not one combined profile/preferences editor. Updates and About are tabs of **Settings > Preferences, rules & updates**; the main window has no Help menu. Rules have one route: **Settings › Rules**. Comparison pages have no Import Rules button; they show a read-only *Rules: <file> (set in Settings)* line and read the saved file when **Include rules** is ticked.
 
 Installation is blocked by data workspaces, profile tasks and busy workers, including hidden pages. See [UPDATING.md](UPDATING.md) before installing or downgrading.
 

@@ -608,15 +608,23 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        public void OpenRuleForm()
+        /// <summary>The read-only "Rules: …" line of a comparison window. Rules are chosen only in Settings › Rules.</summary>
+        internal static string RulesFileLine()
         {
-            // Keep every comparison's Import Rules entry point, but use the common Settings window.
-            using (var settings = new User_Settings(true))
+            string path = AppPreferences.RuleFilePath;
+            return "Rules: " + (string.IsNullOrWhiteSpace(path) ? "none" : Path.GetFileName(path)) + " (set in Settings)";
+        }
+
+        /// <summary>Shows <see cref="RulesFileLine"/> in <paramref name="label"/> and refreshes it whenever the page is shown again.</summary>
+        internal static void ShowRulesFile(Label label, Control page)
+        {
+            Action show = () => { if (!label.IsDisposed) label.Text = RulesFileLine(); };
+            try { show(); } catch (Exception) { label.Text = "Rules: unavailable (set in Settings)"; }
+            page.VisibleChanged += (sender, e) =>
             {
-                settings.ShowDialog(Form.ActiveForm);
-                if (settings.ImportedRules != null)
-                    SetDsRulesCall(settings.ImportedRules, settings.ImportedRules.Tables[0].TableName);
-            }
+                if (!page.Visible) return;
+                try { show(); } catch (Exception) { label.Text = "Rules: unavailable (set in Settings)"; }
+            };
         }
 
         public DataTable AddColumns(DataTable dataTable, string strColName, Type typeDC = null)
@@ -789,20 +797,6 @@ namespace SPI_Data_Comp_Tool
             }
             return str_return;
         }
-        private void SetDsRulesCall(DataSet ds, string str_TableName)
-        {
-            try
-            {
-                dsRules = ds.Copy();
-                boolRules = true;
-                dsRules = ChangeColumnToString(dsRules);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
         public DataSet GetDatasetRules(string str_Rule = null)
         {
             try

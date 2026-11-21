@@ -1,4 +1,4 @@
-"""Compare Excel files - controlled steps: source, target, load, keys, columns, validate, compare."""
+"""Compare Excel files - controlled steps: source, target, load, keys, columns, compare (which validates first)."""
 from layout_gen import C, T, F, G
 
 DESIGNER = "Excel_Excel_Comparison.Designer.cs"
@@ -6,6 +6,8 @@ FORM_NAME = "Excel_Excel_Comparison"
 TITLE = "Compare Excel files"
 CLIENT = (1180, 760)
 MINIMUM = (980, 660)
+# Compare validates by itself; rules are chosen only in Settings; the two leftover test buttons are gone.
+DROP = ["btn_RuleForm", "btn_Validate", "button1", "btn_TestSystemMemoryOutException"]
 
 TEXTS = {
     "groupBox1": "Workbooks", "btn_FirstExcelSheet": "Choose source…", "btn_SecondExcelSheet": "Choose target…",
@@ -16,7 +18,7 @@ TEXTS = {
     "label4": "Source columns", "cb_select_first_clb": "Select all / none", "label5": "Target columns",
     "label6": "Ignored in Source", "label7": "Ignored in Target",
     "groupBox4": "Compare", "cb_IncludeDiff_Columns": "Only columns that differ", "cb_IgnoreCase": "Ignore case",
-    "cb_IncludeRule": "Include rules", "btn_RuleForm": "Open rules…", "btn_Validate": "Validate",
+    "cb_IncludeRule": "Include rules", "lbl_RulesFile": "Rules: none (set in Settings)",
     "btn_Compare": "Compare and generate Excel", "btn_Cancel": "Cancel", "label1": "Report", "llbl_filePath": "",
     "groupBox3": "Status", "label8": "Status:", "lbl_Status": "Okay", "lbl_Parameter": "", "lbl_Timer": "",
     "groupBox5": "Progress", "lbl_Percentage": "0 %",
@@ -56,8 +58,7 @@ COMPARE = T("tlp_Compare", cols=["50%", "50%"], rows=["auto"] * 8, autosize=True
     (C("cb_IncludeDiff_Columns", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 0, 2),
     (C("cb_IgnoreCase", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 1, 2),
     (C("cb_IncludeRule", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 2),
-    (C("btn_RuleForm", size=(110, 28), anchor="Right", margin=(0, 3, 0, 3)), 1, 2),
-    (C("btn_Validate", dock="Fill", size=(120, 32), margin=(0, 10, 0, 4)), 0, 3, 2),
+    (C("lbl_RulesFile", new="Label", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 1, 2),
     (C("btn_Compare", dock="Fill", size=(120, 36), margin=(0, 4, 0, 4)), 0, 4, 2),
     (C("btn_Cancel", dock="Fill", size=(100, 30), margin=(0, 0, 0, 6)), 0, 5, 2),
     (C("label1", autosize=True, anchor="Left", margin=(0, 4, 0, 2)), 0, 6, 2),
@@ -81,8 +82,6 @@ INSTRUMENT = T("tlp_Instrument", cols=["100%", "auto"], rows=["auto"], autosize=
     (C("lbl_InstrumentText", anchor="Left, Right", autosize=False, size=(400, 40), margin=(0, 0, 12, 0)), 0, 0),
     (F("flp_Instrument", [
         C("btnLoad", size=(300, 30), margin=(0, 0, 6, 0)),
-        C("button1", size=(75, 30), margin=(0, 0, 6, 0)),
-        C("btn_TestSystemMemoryOutException", size=(220, 30), margin=0),
     ], autosize=True, anchor="Right", margin=0), 1, 0),
 ])
 

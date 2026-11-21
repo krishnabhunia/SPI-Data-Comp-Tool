@@ -76,7 +76,7 @@ class ProfileSafety(unittest.TestCase):
         self.assertNotIn("profile.dbTRG.str_Password =", export)
 
     def test_profile_status_and_exception_log_uses_shared_redaction(self) -> None:
-        method = source("UserProfileForm.cs").split("private void DisplayMessage", 1)[1].split("private void LoadTable", 1)[0]
+        method = source("UserProfileForm.cs").split("private void DisplayMessage", 1)[1].split("private void FillCheckListBox", 1)[0]
         self.assertLess(method.index("Common_Data.RedactConnectionCredentials(strMsg)"), method.index("rtb_Log.SelectionStart"))
 
     def test_import_is_validated_before_replacing_active_profiles(self) -> None:

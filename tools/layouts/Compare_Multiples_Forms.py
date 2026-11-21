@@ -7,7 +7,7 @@ FORM_NAME = "Compare_Multiples_List_Tables_Forms"
 CLIENT = (1280, 880)
 MINIMUM = (1100, 760)
 TITLE = "Compare list tables"
-DROP = PANEL_DROP + ["groupBox5", "label15", "button1", "button2"]
+DROP = PANEL_DROP + ["groupBox5", "label15", "button1", "button2", "btn_RuleForm"]   # rules are chosen only in Settings
 
 TEXTS = dict(CONN_TEXTS, **{
     "tabPage_DB": "Databases", "tabPage_Excel": "Excel folders",
@@ -15,7 +15,7 @@ TEXTS = dict(CONN_TEXTS, **{
     "gb_Excel": "Excel folders", "label1": "Source folder", "label10": "Target folder",
     "groupBox1": "Compare", "groupBox4": "Output folder", "l_lb_Output_Set": "Choose output folder…",
     "cb_PK_As_ReferenceKey": "Reference key is the primary key", "cb_IncludeDiff_Columns": "Only columns that differ",
-    "cb_IgnoreCase": "Ignore case", "cb_IncludeRule": "Include rules", "btn_RuleForm": "Open rules…",
+    "cb_IgnoreCase": "Ignore case", "cb_IncludeRule": "Include rules", "lbl_RulesFile": "Rules: none (set in Settings)",
     "btn_ListTableExcel": "Choose list-table Excel…", "btn_Compare": "Compare and generate Excel", "btnCancel": "Cancel",
     "gb_Logs": "Log", "btn_ClearLogs": "Clear log", "lbl_Progress": "Progress",
 })
@@ -42,7 +42,7 @@ COMPARE = T("tlp_Compare", cols=["100%", "auto"], rows=["100%"] + ["auto"] * 7, 
     (C("cb_IncludeDiff_Columns", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 2, 2),
     (C("cb_IgnoreCase", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 3, 2),
     (C("cb_IncludeRule", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 4),
-    (C("btn_RuleForm", size=(110, 28), anchor="Right", margin=(0, 3, 0, 3)), 1, 4),
+    (C("lbl_RulesFile", new="Label", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 1, 4),
     (C("btn_ListTableExcel", dock="Fill", size=(160, 32), margin=(0, 8, 0, 4)), 0, 5, 2),
     (C("btn_Compare", dock="Fill", size=(160, 36), margin=(0, 4, 0, 4)), 0, 6, 2),
     (C("btnCancel", dock="Fill", size=(100, 30), margin=(0, 4, 0, 0)), 0, 7, 2),

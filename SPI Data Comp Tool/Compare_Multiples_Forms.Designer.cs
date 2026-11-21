@@ -40,7 +40,6 @@
             this.l_lb_Output_Set = new System.Windows.Forms.LinkLabel();
             this.l_lbl_outputFolder = new System.Windows.Forms.LinkLabel();
             this.cb_IncludeRule = new System.Windows.Forms.CheckBox();
-            this.btn_RuleForm = new System.Windows.Forms.Button();
             this.btn_Compare = new System.Windows.Forms.Button();
             this.btn_ListTableExcel = new System.Windows.Forms.Button();
             this.lbl_Progress = new System.Windows.Forms.Label();
@@ -67,6 +66,7 @@
             this.tlp_Excel = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Compare = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Output = new System.Windows.Forms.TableLayoutPanel();
+            this.lbl_RulesFile = new System.Windows.Forms.Label();
             this.tlp_Log = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Root.SuspendLayout();
             this.tabControl1.SuspendLayout();
@@ -291,7 +291,7 @@
             this.tlp_Compare.Controls.Add(this.cb_IgnoreCase, 0, 3);
             this.tlp_Compare.SetColumnSpan(this.cb_IgnoreCase, 2);
             this.tlp_Compare.Controls.Add(this.cb_IncludeRule, 0, 4);
-            this.tlp_Compare.Controls.Add(this.btn_RuleForm, 1, 4);
+            this.tlp_Compare.Controls.Add(this.lbl_RulesFile, 1, 4);
             this.tlp_Compare.Controls.Add(this.btn_ListTableExcel, 0, 5);
             this.tlp_Compare.SetColumnSpan(this.btn_ListTableExcel, 2);
             this.tlp_Compare.Controls.Add(this.btn_Compare, 0, 6);
@@ -392,16 +392,14 @@
             this.cb_IncludeRule.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.cb_IncludeRule.TabIndex = 24;
             // 
-            // btn_RuleForm
+            // lbl_RulesFile
             // 
-            this.btn_RuleForm.Name = "btn_RuleForm";
-            this.btn_RuleForm.UseVisualStyleBackColor = true;
-            this.btn_RuleForm.Click += new System.EventHandler(this.btn_RuleForm_Click);
-            this.btn_RuleForm.Text = "Open rules…";
-            this.btn_RuleForm.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
-            this.btn_RuleForm.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.btn_RuleForm.Size = new System.Drawing.Size(110, 28);
-            this.btn_RuleForm.TabIndex = 25;
+            this.lbl_RulesFile.Name = "lbl_RulesFile";
+            this.lbl_RulesFile.Text = "Rules: none (set in Settings)";
+            this.lbl_RulesFile.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
+            this.lbl_RulesFile.AutoSize = true;
+            this.lbl_RulesFile.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
+            this.lbl_RulesFile.TabIndex = 25;
             // 
             // btn_ListTableExcel
             // 
@@ -571,6 +569,8 @@
 
         #endregion
 
+        private System.Windows.Forms.Label lbl_RulesFile;
+
         private SPI_Data_Comp_Tool.StepStrip step_Strip;
 
         private System.Windows.Forms.TableLayoutPanel tlp_Root;
@@ -601,7 +601,6 @@
         private System.Windows.Forms.CheckBox cb_IncludeDiff_Columns;
         private System.Windows.Forms.CheckBox cb_IgnoreCase;
         private System.Windows.Forms.CheckBox cb_IncludeRule;
-        private System.Windows.Forms.Button btn_RuleForm;
         private System.ComponentModel.BackgroundWorker bgw_List;
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.Timer timer1;

@@ -57,7 +57,7 @@
             this.groupBox9 = new System.Windows.Forms.GroupBox();
             this.cb_IncludeRule = new System.Windows.Forms.CheckBox();
             this.cb_IgnoreCase = new System.Windows.Forms.CheckBox();
-            this.btn_RuleForm = new System.Windows.Forms.Button();
+            this.lbl_RulesFile = new System.Windows.Forms.Label();
             this.lblTimer = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label14 = new System.Windows.Forms.Label();
@@ -363,7 +363,7 @@
             // 
             this.groupBox9.Controls.Add(this.cb_IncludeRule);
             this.groupBox9.Controls.Add(this.cb_IgnoreCase);
-            this.groupBox9.Controls.Add(this.btn_RuleForm);
+            this.groupBox9.Controls.Add(this.lbl_RulesFile);
             this.groupBox9.Controls.Add(this.lblTimer);
             this.groupBox9.Controls.Add(this.label2);
             this.groupBox9.Controls.Add(this.label14);
@@ -405,15 +405,13 @@
             this.cb_IgnoreCase.Text = "Ignore Case";
             this.cb_IgnoreCase.UseVisualStyleBackColor = true;
             // 
-            // btn_RuleForm
+            // lbl_RulesFile
             // 
-            this.btn_RuleForm.Location = new System.Drawing.Point(122, 164);
-            this.btn_RuleForm.Name = "btn_RuleForm";
-            this.btn_RuleForm.Size = new System.Drawing.Size(121, 23);
-            this.btn_RuleForm.TabIndex = 13;
-            this.btn_RuleForm.Text = "Open Rule Form";
-            this.btn_RuleForm.UseVisualStyleBackColor = true;
-            this.btn_RuleForm.Click += new System.EventHandler(this.btn_RuleForm_Click);
+            this.lbl_RulesFile.AutoSize = true;
+            this.lbl_RulesFile.Location = new System.Drawing.Point(122, 168);
+            this.lbl_RulesFile.Name = "lbl_RulesFile";
+            this.lbl_RulesFile.TabIndex = 13;
+            this.lbl_RulesFile.Text = "Rules: none (set in Settings)";
             // 
             // lblTimer
             // 
@@ -651,7 +649,7 @@
         private System.Windows.Forms.Button btn_ClearAll;
         private System.Windows.Forms.CheckBox cb_IgnoreCase;
         private System.Windows.Forms.CheckBox cb_IncludeRule;
-        private System.Windows.Forms.Button btn_RuleForm;
+        private System.Windows.Forms.Label lbl_RulesFile;
         private System.Windows.Forms.CheckBox cb_Select_All_SRC;
         private System.Windows.Forms.CheckBox cb_Select_All_TRG;
         private System.Windows.Forms.Button btn_ID_For_SRC_TRG;

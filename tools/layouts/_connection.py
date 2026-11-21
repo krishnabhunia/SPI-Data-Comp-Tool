@@ -24,6 +24,14 @@ def panel():
     return C("connection", new="SPI_Data_Comp_Tool.ConnectionPanel", anchor="Left, Right", autosize=True, margin=0)
 
 
+def picker(name, label, combo):
+    """A table picker without its own load button (one button loads both lists)."""
+    return T(name, cols=["auto", "100%"], rows=["auto"], autosize=True, cells=[
+        (C(label, **LABEL), 0, 0),
+        (C(combo, **FIELD), 1, 0),
+    ])
+
+
 def table_picker(name, label, combo, button):
     return T(name, cols=["auto", "100%", "auto"], rows=["auto"], autosize=True, cells=[
         (C(label, **LABEL), 0, 0),

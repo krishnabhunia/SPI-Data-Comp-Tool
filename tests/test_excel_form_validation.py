@@ -20,7 +20,9 @@ class ExcelValidationContracts(unittest.TestCase):
 
     def test_comparison_rechecks_and_invalidates_inputs(self):
         source = self.read("Excel_Excel_Comparison.cs")
-        self.assertGreaterEqual(source.count("FormValidation.Check(this, ValidateComparisonInput"), 2)
+        # One Compare button (no separate Validate): Compare re-checks the inputs before it runs.
+        compare = source.split("private void btn_Compare_Click(", 1)[1].split("\n        }\n", 1)[0]
+        self.assertIn("FormValidation.Check(this, ValidateComparisonInput", compare)
         self.assertIn("clb_reference_ID.ItemCheck +=", source)
         self.assertIn("clb_firstExcel.ItemCheck +=", source)
         self.assertIn("ValidatePrimaryKeys", source)
