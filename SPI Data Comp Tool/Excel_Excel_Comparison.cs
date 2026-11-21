@@ -1202,7 +1202,7 @@ namespace SPI_Data_Comp_Tool
 
                     Logs.EnterLogsWithTime($"Data in dt_transpose datatable :Rows : {dt_transpose.Rows.Count}, Columns : {dt_transpose.Columns.Count}");
 
-                    if (Properties.Settings.Default.EPPlus_Excel_Save)
+                    if (AppPreferences.ExcelWriter == ExcelWriterMode.EPPlus)
                     {
                         Logs.EnterLogsWithTime($"Saving File with EPPlus started");
                         using (ExcelPackage pck = new ExcelPackage())
@@ -1294,7 +1294,7 @@ namespace SPI_Data_Comp_Tool
                         #endregion
 
                     }
-                    else if (Properties.Settings.Default.XL_Excel_Save)
+                    else
                     {
                         #region Old excel saving code
                         Logs.EnterLogsWithTime($"Saving File with XL Started");
@@ -1485,7 +1485,7 @@ namespace SPI_Data_Comp_Tool
 
                 Logs.EnterLogsWithTime($"Data in dtSummary datatable :Rows : {dtSummary.Rows.Count}, Columns : {dtSummary.Columns.Count}");
 
-                if (Properties.Settings.Default.EPPlus_Excel_Save)
+                if (AppPreferences.ExcelWriter == ExcelWriterMode.EPPlus)
                 {
                     //var r1 = colorPairs.AsQueryable().Skip(1020300).Take(5);
 
@@ -1554,7 +1554,7 @@ namespace SPI_Data_Comp_Tool
                         Logs.EnterLogsWithTime($"Saving File with EPPlus ended under PK");
                     }
                 }
-                else if (Properties.Settings.Default.XL_Excel_Save)
+                else
                 {
                     #region Old excel saving code
                     Logs.EnterLogsWithTime($"Saving File with XL Started");

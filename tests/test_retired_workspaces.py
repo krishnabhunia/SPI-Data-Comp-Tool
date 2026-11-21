@@ -14,11 +14,13 @@ RETIRED_FILES = (
     "SPI_Spec_Note_Creation_Utility", "ExcelFileReadCustomControl",
     "SPIDeltaChangeTrackerOptimised", "SPIDeltaChangeLegacyID", "SPI FK Extraction",
     "Table Extraction After Delta", "PreMergingTool_Form", "Pre_Merging_Duplicacy_Form",
+    "Generate IUD Script Form", "Execute Excel Scripts Form",
 )
 RETIRED_LAYOUTS = (
     "SPI_Spec_Note_Creation_Utility",
     "SPIDeltaChangeTrackerOptimised", "SPIDeltaChangeLegacyID", "SPI_FK_Extraction",
     "Table_Extraction_After_Delta", "PreMergingTool_Form", "Pre_Merging_Duplicacy_Form",
+    "Execute_Excel_Scripts_Form",
 )
 
 
@@ -61,12 +63,13 @@ class RetiredWorkspaces(unittest.TestCase):
                         ):
                             lines[node.lineno - 1:node.end_lineno] = [""] * (node.end_lineno - node.lineno + 1)
                     text = "".join(lines)
-                self.assertNotRegex(text, r"\b(?:analysis|premerge)\.")
-                self.assertNotRegex(text, r"\bWorkspaceKind\.(?:Analysis|PreMerge)\b")
-                self.assertNotRegex(text, r"\bbtn_Workspace(?:Analysis|PreMerge)\b")
+                self.assertNotRegex(text, r"\b(?:analysis|premerge|scripts)\.")
+                self.assertNotRegex(text, r"\bWorkspaceKind\.(?:Analysis|PreMerge|Scripts)\b")
+                self.assertNotRegex(text, r"\bbtn_Workspace(?:Analysis|PreMerge|Scripts)\b")
+                self.assertNotIn("SQL Scripts", text)
 
     def test_shared_workbook_validation_remains_available_to_retained_tools(self):
-        for name in ("CustomisedExcel.cs", "Execute Excel Scripts Form.cs"):
+        for name in ("CustomisedExcel.cs",):
             with self.subTest(form=name):
                 text = (APP / name).read_text(encoding="utf-8-sig")
                 self.assertIn("FormValidation.ValidateWorkbook(", text)
@@ -79,9 +82,14 @@ class RetiredWorkspaces(unittest.TestCase):
         checks = (ROOT / "tests/WorkspaceUiChecks.cs").read_text()
         self.assertIn("CheckRetiredWorkflowsAbsent();", checks)
         self.assertIn('assembly.GetType("SPI_Data_Comp_Tool." + name, false) == null', checks)
-        routes = re.findall(r'\{ "((?:comparison|scripts|reports|settings)\.[^"]+)", typeof\(', checks)
-        self.assertEqual(len(routes), 12)
-        self.assertEqual(len(set(routes)), 12)
+        for retired in ("scripts.generate", "scripts.execute", "Generate_IUD_Script_Form", "Execute_Excel_Scripts_Form"):
+            self.assertIn('"' + retired + '"', checks)
+        self.assertIn('main.Controls.Find("btn_Workspace" + name, true)', checks)
+        self.assertIn('menu.Items.Find("workspaceMenu_" + name, true)', checks)
+        self.assertIn('menu.Items.Find("taskMenu_" + route.Replace', checks)
+        routes = re.findall(r'\{ "((?:comparison|reports|settings)\.[^"]+)", typeof\(', checks)
+        self.assertEqual(len(routes), 10)
+        self.assertEqual(len(set(routes)), 10)
         self.assertIn("workspace.OpenTask(route.Key);", checks)
 
 

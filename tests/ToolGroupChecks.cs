@@ -7,7 +7,7 @@ using System.Windows.Forms;
 namespace SPI_Data_Comp_Tool
 {
     /// <summary>
-    /// Compatibility checks for the three retained formerly grouped tools, hosted by task
+    /// Compatibility checks for the two retained formerly grouped tools, hosted by task
     /// workspaces. Uses real controls without running database, import or export actions.
     /// Run by "SPI Data Comp Tool.exe" --check-groups OUT_FILE (see SelfTest.cs).
     /// </summary>
@@ -23,11 +23,6 @@ namespace SPI_Data_Comp_Tool
                     {
                         { "reports.excel", typeof(CustomisedExcel) },
                         { "reports.logs", typeof(MergeLogsExport) },
-                    }
-                },
-                { WorkspaceKind.Scripts, new Dictionary<string, Type>
-                    {
-                        { "scripts.generate", typeof(Generate_IUD_Script_Form) },
                     }
                 },
             };
@@ -141,10 +136,10 @@ namespace SPI_Data_Comp_Tool
 
         private static void BusyToolKeepsEveryPage()
         {
-            string[] keys = { "scripts.first", "scripts.busy", "scripts.last" };
+            string[] keys = { "reports.first", "reports.busy", "reports.last" };
             var definitions = keys.Select(key => new WorkspaceTask(key, key, "Synthetic close-guard probe",
-                WorkspaceKind.Scripts, () => new ProbeTool())).ToArray();
-            using (var window = new WorkspaceForm(WorkspaceKind.Scripts, definitions))
+                WorkspaceKind.DataReports, () => new ProbeTool())).ToArray();
+            using (var window = new WorkspaceForm(WorkspaceKind.DataReports, definitions))
             {
                 window.ShowInTaskbar = false;
                 window.Show();

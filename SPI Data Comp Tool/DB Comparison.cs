@@ -1781,7 +1781,7 @@ namespace SPI_Data_Comp_Tool
 
                 generateTransposeTable();
 
-                if (Properties.Settings.Default.EPPlus_Excel_Save)
+                if (AppPreferences.ExcelWriter == ExcelWriterMode.EPPlus)
                 {
                     using (ExcelPackage pck = new ExcelPackage())
                     {
@@ -1837,7 +1837,7 @@ namespace SPI_Data_Comp_Tool
                         FormValidation.WriteAtomically(saveFileDialogFile.Str_saveFileNameWithPath, temporary => pck.SaveAs(new FileInfo(temporary)));
                     }
                 }
-                else if (Properties.Settings.Default.XL_Excel_Save)
+                else
                 {
                     foreach (DataTable output in new[] { dt_unmatched_Capture, dt_oracle_only, dt_sql_only, dt_transpose })
                         FormValidation.ExcelTable(output, null, "Comparison output");

@@ -67,12 +67,31 @@ namespace SPI_Data_Comp_Tool
                 moved.Message.Contains("could not be found"),
                 "A copy whose own saved file is missing must say so and use the remembered file: " + moved.Message);
 
+            File.WriteAllText(saved, "{ invalid json");
+            Profile.ProfileList = null;
+            ProfileLoadResult malformed = ProfileStore.LoadRememberedProfiles(() => string.Empty);
+            Require(!malformed.Loaded && malformed.HasError && malformed.FilePath == saved
+                && malformed.Message.Contains("Load profile"),
+                "A malformed remembered file was silently ignored by a new copy: " + malformed.Message);
+            File.WriteAllText(saved, Legacy);
+            using (var held = new FileStream(saved, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                Profile.ProfileList = null;
+                ProfileLoadResult locked = ProfileStore.LoadRememberedProfiles(() => string.Empty);
+                Require(!locked.Loaded && locked.HasError && locked.FilePath == saved,
+                    "A locked remembered file was silently ignored by a new copy: " + locked.Message);
+            }
+
             File.Delete(saved);
+            Profile.ProfileList = null;
+            ProfileLoadResult missingReminder = ProfileStore.LoadRememberedProfiles(() => string.Empty);
+            Require(!missingReminder.Loaded && missingReminder.HasError,
+                "A missing remembered file was silently ignored by a new copy: " + missingReminder.Message);
             Profile.ProfileList = null;
             ProfileLoadResult gone = ProfileStore.LoadRememberedProfiles(() => missing);
             Require(!gone.Loaded && gone.HasError && Profile.ProfileList == null,
                 "When neither file exists the normal recovery message must be shown: " + gone.Message);
-            passed("A new copy of the app finds the last profiles file chosen on this computer; a missing one still reports how to recover");
+            passed("A new copy finds the shared profiles file; missing, malformed or locked shared files report recovery instead of disappearing silently");
         }
 
         private static void CheckStepReason(Action<string> passed)

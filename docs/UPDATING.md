@@ -29,9 +29,15 @@ Historical betas remain available for deliberate selection, but a high version n
 | Running copy | Selected download | What happens |
 |---|---|---|
 | Registered 64-bit installation | The selected version's `_x64_setup.exe` | The existing installer updates the same directory with the same per-user/all-users scope. Normal Windows User Account Control and SmartScreen checks still apply. The application restarts only after setup succeeds and the executable version is verified. |
-| Portable copy | The selected version's `.zip` | Only the application's executable, matching configuration and known PNID templates are staged and replaced. The current executable filename is retained, even if it contains an older version number. Unknown/user files are not deleted. A portable copy is not converted to an installed copy. |
+| Portable copy | The selected version's `.zip` | The application's executable and matching configuration are staged and replaced. The exact historical report-file allowlist is also accepted when present in a selected older package, preserving downgrade compatibility. The current executable filename is retained, even if it contains an older version number. Unknown/user files are not deleted. A portable copy is not converted to an installed copy. |
 
 Install detection uses the exact Inno Setup application identifier and installation directory, not just a folder name or the presence of an uninstaller. An installed update requires 64-bit Windows; the existing portable application is Any CPU. If a portable folder is not writable, move/extract the portable application to a user-writable location and update there; the updater does not circumvent filesystem permissions.
+
+### Compatibility after SQL Scripts retirement
+
+New source trees, application build output and installers contain no SQL report templates. A new portable distribution generates exactly two **zero-byte** files: `portable/PNID_Reports/Source/instrument.txt` and `portable/PNID_Reports/Target_IPEP/instrument.txt`. Already-released updaters require those paths before accepting an upgrade. These empty compatibility files contain no SQL and are unused by the current application; a clean installed copy does not need them.
+
+The current updater also accepts a portable archive containing only the executable and matching configuration. For downgrades, it retains the exact allowlist of 19 historical report filenames; if any such entries exist, both `instrument.txt` compatibility paths are required. Existing file replacement, backup and rollback rules still apply. The removal does not perform a cleanup of report folders or files already present in a user's installation or portable directory.
 
 ## Preferences and data
 

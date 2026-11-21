@@ -1,7 +1,7 @@
 ; 64-bit Windows installer for the SPI Data Comparison Tool (Inno Setup 6).
 ; CI builds it from the Release|x64 output, e.g.:
 ;   ISCC /DAppVersion=2.5.0-beta001 /DNumericVersion=2.5.0 /DSourceDir=<bin\x64\Release> /DOutputDir=<dist\windows-x64> SPI_Data_Comp_Tool.iss
-; The app is one .exe (its libraries are embedded by Costura), its .exe.config and the PNID_Reports templates.
+; The app is one .exe (its libraries are embedded by Costura) and its .exe.config.
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
@@ -53,7 +53,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#SourceDir}\{#ExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\{#ExeName}.config"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#SourceDir}\PNID_Reports\*"; DestDir: "{app}\PNID_Reports"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#ExeName}"

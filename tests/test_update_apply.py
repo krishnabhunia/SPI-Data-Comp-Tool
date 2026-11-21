@@ -67,11 +67,23 @@ class UpdateApplyContracts(unittest.TestCase):
 
     def test_runtime_cases_include_real_build_and_failure_recovery(self):
         checks = (ROOT / "tests/UpdateApplyChecks.cs").read_text()
-        for marker in ("CheckArchiveGuards", "CheckPackage", "CheckBusyGuards", "CheckSettings", "CheckRollback", "CheckRealExecutable", "Assembly.GetExecutingAssembly().Location", "Synthetic fourth-copy failure", "Synthetic migration failure"):
+        for marker in ("CheckArchiveGuards", "CheckPackageVariants", "CheckPackage", "CheckBusyGuards", "CheckSettings", "CheckRollback", "CheckRealExecutable", "Assembly.GetExecutingAssembly().Location", "Synthetic fourth-copy failure", "Synthetic migration failure"):
             self.assertIn(marker, checks)
         self.assertNotIn("Process.Start", checks)
         self.assertNotIn("InstallAndRestart(", checks)
         self.assertNotIn("RegistryKey", checks)
+
+    def test_core_only_and_legacy_archives_keep_a_closed_file_allowlist(self):
+        worker = (APP / "UpdateApplyWorker.cs").read_text()
+        self.assertIn("LegacyTemplateNames", worker)
+        self.assertIn('var requiredFiles = new List<string> { executableName, executableName + ".config" };', worker)
+        self.assertIn('if (files.Any(x => x.RelativePath.StartsWith("PNID_Reports/", StringComparison.OrdinalIgnoreCase)))', worker)
+        self.assertIn('"PNID_Reports/Source/instrument.txt", "PNID_Reports/Target_IPEP/instrument.txt"', worker)
+        self.assertIn("!allowed.TryGetValue(name, out destination)", worker)
+        checks = (ROOT / "tests/UpdateApplyChecks.cs").read_text()
+        self.assertIn("anchors.All(entry => entry.Length == 0)", checks)
+        self.assertIn("File.ReadAllText(legacyTemplate)", checks)
+        self.assertIn("File.ReadAllText(userLegacyFile)", checks)
 
     def test_previous_channel_migration_is_read_only_bounded_and_keeps_canonical_precedence(self):
         preferences = (APP / "UpdatePreferences.cs").read_text()

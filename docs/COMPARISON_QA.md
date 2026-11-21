@@ -1,6 +1,6 @@
 # Comparison and logging regression checklist
 
-> Use **disposable** SQL Server and Oracle databases and synthetic spreadsheets. A passing build or window-opening check does not establish comparison correctness or make data-modifying operations safe for production.
+> Use **disposable** SQL Server and Oracle databases and synthetic spreadsheets. A passing build or window-opening check does not establish comparison correctness or complete workflow coverage.
 
 ## Automated checks
 
@@ -12,6 +12,7 @@ These checks are configured in the repository. Inspect the successful [Actions r
 | **Windows data-integrity source checks** (`.github/workflows/data-integrity-checks.yml`) | Runs the Python regression suite on pull requests | Windows executable interaction or database integration |
 | **Build and checks** (`.github/workflows/build.yml`) | Builds the Windows application, validates generated layouts and runs regression checks | Proof that every business workflow is correct |
 | `--check-ui <log file>` | Executes synthetic Windows UI/profile/import checks: navigation, Settings/Rules, profile candidates, temporary-file writes, and comparison/workbook validation fixtures | Full Oracle/SQL Server integration, production files, or an exhaustive comparison dataset |
+| `--check-startup <log file>` | 40 real workspace-navigation scenarios: all 10 routes with no remembered profile and a valid legacy profile, plus five unavailable/invalid-file cases for the four profile-consuming routes | Live database connectivity, real profile files or complete task output correctness |
 | Workbook identity suite inside `--check-ui` (`tests/WorkbookIdentityChecks.cs`) | Engine and report on synthetic workbooks: value, type, formula, format and layout differences; primary keys; skipped checks; a report that opens without an Excel repair prompt | Real customer workbooks, very large files, or opening the report in Excel itself |
 | `--list-forms` / `--open-form` | Creates, shows and closes every listed window; a failed opening fails the check | Completing the workflow represented by each window |
 | Portable/installer checks | Loads embedded dependencies and smoke-tests the x64 installer and uninstaller | Upgrade/rollback compatibility across all previously released versions or Windows installations |
@@ -22,7 +23,7 @@ The UI checks use synthetic data and temporary test files, not real connection p
 
 [PR #20](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/pull/20) restored the exact state before PRs #17 and #18 at the owner's request. The application does **not** currently have the A/B application sign-in screen introduced in PR #17. Database connection authentication is a separate concern and must still be tested independently for source and target.
 
-Do **not** assume that the SQL preview, typed execution confirmation, transaction/rollback or cancellation safeguards from PR #18 are present. Any proposal to reintroduce those safeguards or redesign application authentication requires explicit owner approval and a separate reviewed change. This checklist does not restore or substitute for those controls.
+The SQL Scripts workspace and its generation/execution forms are now removed. The historical SQL preview, typed execution confirmation and transaction/rollback design from PR #18 was not restored. Any future proposal to reintroduce script execution or redesign application authentication requires a separate reviewed change; it is outside the current comparison/export acceptance scope.
 
 ## Manual Windows acceptance matrix
 
@@ -39,10 +40,10 @@ The following are **acceptance expectations to verify**, not a record of complet
 | Null vs empty string, case changes, numeric/decimal precision, dates | Behavior matches agreed comparison rules |
 | Connection failure or an exception while a password is present | Neither UI messages nor disk logs reveal connection-string password assignments |
 | Save a database profile while debugger is attached | Saved JSON has blank passwords for both source and target |
-| Execute SQL scripts from an Excel sheet | Use only disposable databases and synthetic records with restricted test accounts; review generated commands outside the app before execution and capture before/after data. Do not assume built-in preview, transaction rollback or cancellation, and **do not test on production** |
+| Current task inventory | Three workspace tiles and 10 task routes are available; retired script-generation/execution forms cannot be opened through menus, workspace routes or a self-test launch |
 
 ## Known follow-ups
 
 - Deterministic end-to-end Oracle/SQL Server/Excel comparison fixtures, measured performance/data-size limits and broader upgrade/rollback testing remain outstanding. See [issue #7](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/7); do not close it solely because builds, releases or UI smoke checks pass.
-- SQL-execution safety remains a separate decision and validation track. See [issue #9](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/9) and the rollback constraints above. Never exercise destructive acceptance scenarios against production.
+- [Issue #9](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/9) concerns the retired SQL-execution workflow. Removing that workflow does not implement or verify its historical safety proposals; any future reintroduction needs its own acceptance plan.
 - Credentials previously committed to Git history require owner-controlled rotation if still active. Removing current literals, masking logs or passing a secrets check does not rotate a credential or erase historical copies.

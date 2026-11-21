@@ -76,7 +76,7 @@ class EveryWindowCanBeOpened(unittest.TestCase):
             if not name.endswith(".Designer.cs"):
                 for m in re.finditer(r"(?<!abstract )class\s+(\w+)\s*:\s*(?:Form|WorkspacePageForm|UserControl)\b", src):
                     windows[m.group(1)] = name
-        self.assertEqual(len(windows), 18)
+        self.assertEqual(len(windows), 16)
         for window, home in windows.items():
             own_designer = home[:-3] + ".Designer.cs"
             opened = any(re.search(rf"new\s+(?:SPI_Data_Comp_Tool\.)?{window}\s*\(", src)

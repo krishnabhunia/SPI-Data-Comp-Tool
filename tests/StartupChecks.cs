@@ -24,7 +24,7 @@ namespace SPI_Data_Comp_Tool
 
         private static readonly HashSet<string> ProfileRoutes = new HashSet<string>(StringComparer.Ordinal)
         {
-            "comparison.database", "comparison.batch", "scripts.execute", "reports.database", "settings.profiles"
+            "comparison.database", "comparison.batch", "reports.database", "settings.profiles"
         };
 
         // Deliberately omit bool_Rb_SQL/bool_Rb_Oracle: older saved files used str_DBType alone.
@@ -72,7 +72,7 @@ namespace SPI_Data_Comp_Tool
                     new Scenario { Name = "null profile entry", Path = nullEntry, Invalid = true },
                     new Scenario { Name = "locked profile", Path = locked, Invalid = true, Locked = true },
                 };
-                Require(WorkspaceCatalog.Tasks.Count == 12, "The startup matrix must cover all twelve current task routes.");
+                Require(WorkspaceCatalog.Tasks.Count == 10, "The startup matrix must cover all ten current task routes.");
                 foreach (Scenario scenario in scenarios)
                 {
                     using (FileStream held = scenario.Locked
@@ -97,6 +97,7 @@ namespace SPI_Data_Comp_Tool
                         }
                     }
                 }
+                Require(checkedRoutes == 40, "The startup matrix must exercise ten routes twice and all four profile consumers with five unavailable-profile scenarios.");
                 Require(File.ReadAllText(valid) == LegacyProfileJson && File.ReadAllText(locked) == LegacyProfileJson,
                     "Opening a task changed a profile fixture.");
             }
@@ -253,26 +254,35 @@ namespace SPI_Data_Comp_Tool
                 Require(Get<DataTable>(page, "dtSummaryForList").Columns.Count == 5,
                     "Batch startup stopped before constructing its five-column summary table.");
             }
-            else if (page is Execute_Excel_Scripts_Form)
-            {
-                Fields(page, "common_Data", "dsPNIDReports", "dtGenerateScript", "dtExecute", "dtSelect", "dBConnectionDetails", "dBConnectionStatus_SRC", "steps");
-                Require(Find<CheckedListBox>(page, "clb_PNID_Reports").Items.Count == 10,
-                    "Script execution startup stopped before populating all ten report choices.");
-            }
             else if (page is SQL_DB_To_Excel)
                 Fields(page, "common_Data", "ds", "dt", "dt_sql", "dt_oracle", "lstTableDetails", "steps");
             else if (page is CustomisedExcel)
                 Fields(page, "common_Data", "dsCustomisedExcel", "openFileDialogData", "steps");
-            else if (page is Generate_IUD_Script_Form)
-                Fields(page, "common_Data", "dsGenerateScript", "openFileDialogData", "saveFileDialogFile", "steps");
             else if (page is Excel_Excel_Comparison)
                 Fields(page, "common_Data", "ds", "dsRules", "dsUnmatched", "firstExcelData", "secondExcelData", "steps");
             else if (page is UserProfileForm)
                 Fields(page, "common_Data", "dBConnectionDetails", "dBConnectionStatus_SRC", "dBConnectionStatus_TRG",
                     "openFileDialogData", "dBConnectionDetailsProfile", "saveFileDialogFile");
             else if (page is User_Settings)
-                Require(Find<TabControl>(page, "tabs_Settings").TabPages.Count == 3,
-                    "Settings startup did not complete its three sections.");
+            {
+                var settings = (User_Settings)page;
+                var tabs = Find<TabControl>(page, "tabs_Settings");
+                var themes = Find<ComboBox>(page, "cb_Theme");
+                var close = Find<Button>(page, "btn_Close");
+                Require(tabs.TabPages.Count == 3, "Settings startup did not complete its three sections.");
+                Require(themes.Items.Count == UiTheme.All.Length && ReferenceEquals(themes.SelectedItem, UiTheme.Current),
+                    "Settings startup stopped before initializing the colour-theme picker.");
+                Require(ReferenceEquals(settings.AcceptButton, close) && ReferenceEquals(settings.CancelButton, close),
+                    "Settings startup stopped before wiring its default buttons.");
+                TabPage initial = tabs.SelectedTab;
+                settings.ShowRules();
+                Require(tabs.SelectedTab.Name == "tab_Rules"
+                    && ReferenceEquals(settings.AcceptButton, Find<Button>(page, "btn_ImportRules")),
+                    "Opening the Rules section did not activate its import action.");
+                tabs.SelectedTab = initial;
+                Require(ReferenceEquals(settings.AcceptButton, close),
+                    "Returning to General did not restore its default action.");
+            }
             Require(page.Controls.Count > 0, "The task has no initialized controls.");
             FieldInfo steps = page.GetType().GetField("steps", BindingFlags.Instance | BindingFlags.NonPublic);
             if (steps != null)

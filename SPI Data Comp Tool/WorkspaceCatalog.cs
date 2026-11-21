@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
-    internal enum WorkspaceKind { Comparison, Scripts, DataReports, Settings }
+    internal enum WorkspaceKind { Comparison, DataReports, Settings }
 
     internal sealed class WorkspaceTask
     {
@@ -45,10 +45,6 @@ namespace SPI_Data_Comp_Tool
                 WorkspaceKind.Comparison, () => new WorkbookIdentityForm()),
             new WorkspaceTask("comparison.batch", "Batch comparison", "Compare a list of database tables or Excel files; retain per-item and batch reports.",
                 WorkspaceKind.Comparison, () => new Compare_Multiples_List_Tables_Forms()),
-            new WorkspaceTask("scripts.generate", "Generate scripts", "Create INSERT, UPDATE or DELETE scripts in a workbook. This task does not execute them.",
-                WorkspaceKind.Scripts, () => new Generate_IUD_Script_Form()),
-            new WorkspaceTask("scripts.execute", "Execute scripts & queries", "Explicit database execution and query/report exports. Commands can change data; use authorised databases only.",
-                WorkspaceKind.Scripts, () => new Execute_Excel_Scripts_Form()),
             new WorkspaceTask("reports.database", "Database to Excel", "Export selected database tables with the existing output options.",
                 WorkspaceKind.DataReports, () => new SQL_DB_To_Excel()),
             new WorkspaceTask("reports.excel", "Excel column selection", "Choose columns from the first worksheet and export a customised workbook.",
@@ -80,7 +76,6 @@ namespace SPI_Data_Comp_Tool
             switch (workspace)
             {
                 case WorkspaceKind.Comparison: return "Comparison";
-                case WorkspaceKind.Scripts: return "SQL Scripts";
                 case WorkspaceKind.DataReports: return "Data & Reports";
                 case WorkspaceKind.Settings: return "Settings";
                 default: throw new ArgumentOutOfRangeException(nameof(workspace));

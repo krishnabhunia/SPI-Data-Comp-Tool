@@ -9,7 +9,6 @@ PROJ = ROOT / "SPI Data Comp Tool"
 
 REMOVED = {  # hidden, never shown and never used: removed in the clean-up
     "DB Comparison": ["label12", "btn_Delete", "btn_Save", "comboBox2", "button1"],
-    "Execute Excel Scripts Form": ["label11"],
     "ViewForMultiReference": ["label6", "label5", "label4", "label3", "dataGridView1"],
 }
 

@@ -199,18 +199,6 @@
     <Compile Include="Excel_Excel_Comparison.Designer.cs">
       <DependentUpon>Excel_Excel_Comparison.cs</DependentUpon>
     </Compile>
-    <Compile Include="Execute Excel Scripts Form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Execute Excel Scripts Form.Designer.cs">
-      <DependentUpon>Execute Excel Scripts Form.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Generate IUD Script Form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Generate IUD Script Form.Designer.cs">
-      <DependentUpon>Generate IUD Script Form.cs</DependentUpon>
-    </Compile>
     <Compile Include="MergeLogsExport.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -218,6 +206,7 @@
       <DependentUpon>MergeLogsExport.cs</DependentUpon>
     </Compile>
     <Compile Include="AppVersion.cs" />
+    <Compile Include="AppPreferences.cs" />
     <Compile Include="InputCheck.cs" />
     <Compile Include="UpdateContracts.cs" />
     <Compile Include="UpdateVersion.cs" />
@@ -277,6 +266,9 @@
     </Compile>
     <Compile Include="..\tests\ProfileLoadChecks.cs">
       <Link>Tests\ProfileLoadChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\PreferenceChecks.cs">
+      <Link>Tests\PreferenceChecks.cs</Link>
     </Compile>
     <Compile Include="..\tests\ImportSchemaChecks.cs">
       <Link>Tests\ImportSchemaChecks.cs</Link>
@@ -376,12 +368,6 @@
     <EmbeddedResource Include="Excel_Excel_Comparison.resx">
       <DependentUpon>Excel_Excel_Comparison.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Execute Excel Scripts Form.resx">
-      <DependentUpon>Execute Excel Scripts Form.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Generate IUD Script Form.resx">
-      <DependentUpon>Generate IUD Script Form.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="MergeLogsExport.resx">
       <DependentUpon>MergeLogsExport.cs</DependentUpon>
     </EmbeddedResource>
@@ -452,63 +438,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.ico" />
-    <Content Include="PNID_Reports\Source\drawing.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Source\equipment.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Source\instrument.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Source\nozzle.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Source\opc.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Source\piperun.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Source\piping_component.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Source\PlantItem.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Source\PlantItem_Antwerp.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Source\representation.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Target_IPEP\drawing.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Target_IPEP\equipment.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Target_IPEP\instrument.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Target_IPEP\nozzle.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Target_IPEP\opc.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Target_IPEP\piperun.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Target_IPEP\piping_component.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Target_IPEP\PlantItem.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="PNID_Reports\Target_IPEP\representation.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

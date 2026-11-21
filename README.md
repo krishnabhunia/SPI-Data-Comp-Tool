@@ -1,8 +1,10 @@
 # SPI Data Comparison Tool
 
-Generic Windows Forms (.NET Framework 4.6.2) desktop utility for database and Excel comparison, SQL script generation/execution and data exports. It works against Oracle and SQL Server.
+Generic Windows Forms (.NET Framework 4.6.2) desktop utility for database and Excel comparison, workbook audits and data exports. It works against Oracle and SQL Server.
 
-The main window groups 12 tasks into four workspace tiles: **Comparison**, **SQL Scripts**, **Data & Reports**, and **Settings**. Switching tasks preserves each page's inputs and results. The retired Analysis & Migration and Pre-merge Checks workspaces, their task forms and their dedicated supporting code have been removed. The earlier application is preserved in [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0).
+The main window groups 10 tasks into three workspace tiles: **Comparison**, **Data & Reports**, and **Settings**. Switching tasks preserves each page's inputs and results. The SQL Scripts workspace and both its generation/execution forms have been removed. Database comparison and database-to-Excel export remain available.
+
+The earlier Analysis & Migration and Pre-merge Checks workspaces, their task forms and their dedicated supporting code also remain removed. The application before that retirement is preserved in [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0).
 
 The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes remain available. Choose one on the Settings preferences task's **General** tab; the home tiles, workspaces and loaded pages change colour immediately, without reopening the tasks. Ocean is the default; Midnight is the dark theme.
 

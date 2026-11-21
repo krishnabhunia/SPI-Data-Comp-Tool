@@ -28,6 +28,8 @@ namespace SPI_Data_Comp_Tool
                 Require(UpdateVersion.TryParse("9.8.7", out version), "Synthetic version could not be parsed.");
                 CheckArchiveGuards(root, version);
                 passed("Update ZIP guards reject traversal, alternate data streams, duplicate paths, link attributes, unsupported files and oversized entries.");
+                CheckPackageVariants(root, version);
+                passed("Core-only portable packages and two empty upgrade-compatibility anchors are accepted; partial legacy packages still fail validation.");
                 CheckPackage(root, version);
                 passed("Apply revalidates SHA-256, exact repository/asset, version, package size and installed/portable kind before handoff.");
                 CheckBusyGuards();
@@ -40,7 +42,7 @@ namespace SPI_Data_Comp_Tool
                 CheckRollback(root, version);
                 passed("Portable copy and settings failures restore replaced files, remove only newly created app-owned files and retain unrelated user files plus backups.");
                 CheckRealExecutable(root);
-                passed("The actual built application/configuration passes strict archive extraction, assembly/product-version and SHA-256 verification in an isolated portable destination.");
+                passed("The actual core-only application/configuration passes strict extraction, version and SHA-256 verification while preserving existing legacy and user files.");
             }
             finally
             {
@@ -105,7 +107,39 @@ namespace SPI_Data_Comp_Tool
             Require(!File.Exists(Path.Combine(untouched, "MySPI.exe")), "An invalid compressed stream reached the destination.");
             var missing = Entries(version); missing.RemoveAt(3);
             string incomplete = Archive(root, missing);
-            Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(incomplete, version, "MySPI.exe"), "Missing PNID template was accepted.");
+            Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(incomplete, version, "MySPI.exe"), "A partial legacy package without both compatibility anchors was accepted.");
+        }
+
+        private static void CheckPackageVariants(string root, UpdateVersion version)
+        {
+            const string legacyPrefix = "portable/PNID_Reports/";
+            var coreEntries = Entries(version).Where(entry => !entry.Key.StartsWith(legacyPrefix, StringComparison.Ordinal)).ToList();
+            var core = UpdateApplyWorker.ValidatePortableArchive(Archive(root, coreEntries), version, "MySPI.exe");
+            Require(core.Count == 2 && core.Any(file => file.RelativePath == "MySPI.exe")
+                && core.Any(file => file.RelativePath == "MySPI.exe.config"),
+                "A core-only portable package was rejected or mapped unexpected files.");
+            foreach (string required in new[] { ".exe", ".exe.config" })
+            {
+                string name = "portable/SPI_Data_Comp_Tool_" + version + required;
+                var missing = coreEntries.Where(entry => entry.Key != name).ToList();
+                Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(Archive(root, missing), version, "MySPI.exe"),
+                    "A core-only package without its executable or configuration was accepted.");
+            }
+
+            var compatibilityEntries = Entries(version).Select(entry => entry.Key.StartsWith(legacyPrefix, StringComparison.Ordinal)
+                ? new KeyValuePair<string, string>(entry.Key, string.Empty) : entry).ToList();
+            string compatibilityPackage = Archive(root, compatibilityEntries);
+            var compatible = UpdateApplyWorker.ValidatePortableArchive(compatibilityPackage, version, "MySPI.exe");
+            Require(compatible.Count == 4, "The portable compatibility package lost one of the required legacy paths.");
+            using (var file = File.OpenRead(compatibilityPackage))
+            using (var zip = new ZipArchive(file, ZipArchiveMode.Read))
+            {
+                var anchors = zip.Entries.Where(entry => entry.FullName.StartsWith(legacyPrefix, StringComparison.Ordinal)).ToList();
+                Require(anchors.Count == 2 && anchors.All(entry => entry.Length == 0)
+                    && anchors.Any(entry => entry.FullName == legacyPrefix + "Source/instrument.txt")
+                    && anchors.Any(entry => entry.FullName == legacyPrefix + "Target_IPEP/instrument.txt"),
+                    "The old-updater compatibility paths must be exactly two empty files, without SQL content.");
+            }
         }
 
         private static void PatchCentralUInt32(string file, int relativeOffset, uint value)
@@ -377,13 +411,16 @@ namespace SPI_Data_Comp_Tool
                 foreach (var pair in new[] { new KeyValuePair<string, string>(name, executable), new KeyValuePair<string, string>(name + ".config", executable + ".config") })
                     using (var input = File.OpenRead(pair.Value))
                     using (var output = zip.CreateEntry(pair.Key).Open()) input.CopyTo(output);
-                foreach (string side in new[] { "Source", "Target_IPEP" })
-                    using (var output = zip.CreateEntry("portable/PNID_Reports/" + side + "/instrument.txt").Open())
-                    using (var writer = new StreamWriter(output)) writer.Write("synthetic template");
             }
             string target = Path.Combine(root, "real-target"); string stage = Path.Combine(root, "real-stage");
             Directory.CreateDirectory(target); Directory.CreateDirectory(stage);
             File.WriteAllText(Path.Combine(target, "user-notes.txt"), "preserved");
+            string legacyFolder = Path.Combine(target, "PNID_Reports", "Source");
+            Directory.CreateDirectory(legacyFolder);
+            string legacyTemplate = Path.Combine(legacyFolder, "instrument.txt");
+            string userLegacyFile = Path.Combine(legacyFolder, "my-saved-notes.txt");
+            File.WriteAllText(legacyTemplate, "existing legacy template");
+            File.WriteAllText(userLegacyFile, "unrelated user content in an older folder");
             string local = Path.Combine(root, "real-local");
             string currentVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             string sourceConfig = Path.Combine(local, "SPI_Data_Comp_Tool.exe_Url_real_fixture", currentVersion, "user.config");
@@ -398,6 +435,9 @@ namespace SPI_Data_Comp_Tool
             string applied = Path.Combine(target, "RetainedPortableName.exe");
             Require(settingsMigrated && UpdateApplyWorker.HashFile(applied) == UpdateApplyWorker.HashFile(executable), "The real executable was not applied correctly.");
             Require(File.ReadAllText(Path.Combine(target, "user-notes.txt")) == "preserved", "The real apply changed a user file.");
+            Require(File.ReadAllText(legacyTemplate) == "existing legacy template"
+                && File.ReadAllText(userLegacyFile) == "unrelated user content in an older folder",
+                "A core-only apply removed or overwrote files left in an older application folder.");
             Require(File.ReadAllText(sourceConfig).Contains("preserved-profile-selection") && File.ReadAllText(sourceConfig).Contains("preserved-rules-selection"),
                 "The actual application apply did not preserve its migrated selections.");
             UpdateVersion wrong;

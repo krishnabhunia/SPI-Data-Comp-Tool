@@ -46,7 +46,9 @@ namespace SPI_Data_Comp_Tool
         internal const long MaximumPackageBytes = 536870912;
         private const long MaximumEntryBytes = 268435456;
         private const long MaximumExpandedBytes = 805306368;
-        private static readonly string[] TemplateNames =
+        // Older releases shipped these files. Keep their exact allowlist for downgrade support;
+        // current builds contain no SQL templates or code that executes them.
+        private static readonly string[] LegacyTemplateNames =
         {
             "Source/drawing.txt", "Source/equipment.txt", "Source/instrument.txt", "Source/nozzle.txt", "Source/opc.txt",
             "Source/piperun.txt", "Source/piping_component.txt", "Source/PlantItem.txt", "Source/PlantItem_Antwerp.txt", "Source/representation.txt",
@@ -357,7 +359,7 @@ namespace SPI_Data_Comp_Tool
                 { "portable/" + archiveExe, executableName },
                 { "portable/" + archiveExe + ".config", executableName + ".config" },
             };
-            foreach (string name in TemplateNames) allowed.Add("portable/PNID_Reports/" + name, "PNID_Reports/" + name);
+            foreach (string name in LegacyTemplateNames) allowed.Add("portable/PNID_Reports/" + name, "PNID_Reports/" + name);
             var allowedDirectories = new HashSet<string>(new[] { "portable", "portable/PNID_Reports", "portable/PNID_Reports/Source", "portable/PNID_Reports/Target_IPEP", "windows-x64" }, StringComparer.OrdinalIgnoreCase);
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var files = new List<UpdatePortableFile>();
@@ -400,9 +402,15 @@ namespace SPI_Data_Comp_Tool
                     }
                 }
             }
-            foreach (string required in new[] { executableName, executableName + ".config", "PNID_Reports/Source/instrument.txt", "PNID_Reports/Target_IPEP/instrument.txt" })
+            var requiredFiles = new List<string> { executableName, executableName + ".config" };
+            // Core-only packages are complete now. If legacy files are supplied, keep the old
+            // two-anchor requirement: a partially formed legacy package must still fail closed.
+            // New portable releases include only empty anchors for already-released updaters.
+            if (files.Any(x => x.RelativePath.StartsWith("PNID_Reports/", StringComparison.OrdinalIgnoreCase)))
+                requiredFiles.AddRange(new[] { "PNID_Reports/Source/instrument.txt", "PNID_Reports/Target_IPEP/instrument.txt" });
+            foreach (string required in requiredFiles)
                 if (!files.Any(x => string.Equals(x.RelativePath, required, StringComparison.OrdinalIgnoreCase)))
-                    throw new InvalidDataException("The portable archive is missing an executable, configuration, or required PNID template.");
+                    throw new InvalidDataException("The portable archive is missing an executable, configuration, or required legacy compatibility anchor.");
             return files;
         }
 

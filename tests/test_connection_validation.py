@@ -38,7 +38,8 @@ class ConnectionValidation(unittest.TestCase):
             self.assertIn(expected, store)
         self.assertIn("MaximumProfileBytes = 16 * 1024 * 1024", store)
         self.assertIn("stream.Length > MaximumProfileBytes", store)
-        self.assertIn("ProfileStore.ReadFile(path)", source("UserProfileForm.cs"))
+        self.assertIn("ProfileStore.ImportFile(path", source("UserProfileForm.cs"))
+        self.assertIn("List<DBC> candidate = ReadFile(path);", store)
 
     def test_profile_ports_are_range_checked_before_integer_materialization(self):
         store = source("ProfileStore.cs")
