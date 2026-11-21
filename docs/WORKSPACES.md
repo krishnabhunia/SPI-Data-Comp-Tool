@@ -6,13 +6,13 @@ The first-phase consolidation tracked in [issue #65](https://github.com/krishnab
 
 | Workspace | Tasks | Explicit routes |
 |---|---|---:|
-| Comparison | Database comparison; Excel comparison; Excel Sheet Audit; Batch comparison | 4 |
+| Comparison | Database comparison; Excel comparison; Excel Sheet Audit; Workbook identity check; Batch comparison | 5 |
 | Analysis & Migration | Specification gaps; Specification notes; Track data changes; Map legacy identifiers; Discover relationships; Extract after delta | 6 |
 | Pre-merge Checks | Integrity & one-database checks; Cross-database duplicates; Configuration | 3 |
 | SQL Scripts | Generate scripts; Execute scripts & queries | 2 |
 | Data & Reports | Database to Excel; Excel column selection; Merge log reports | 3 |
 | Settings | Preferences, rules & updates; Connection profiles | 2 |
-| **Total** | **19 distinct directly launched implementation types plus the separate Configuration mode** | **20** |
+| **Total** | **20 distinct directly launched implementation types plus the separate Configuration mode** | **21** |
 
 The main window's six themed `TileButton` home tiles open each workspace's first task. Its menu exposes every explicit task. The left navigation within a workspace switches between tasks without clearing inputs or results. No workflow page is created until it is selected, and choosing a workspace does not automatically run database queries, comparisons or report exports.
 
@@ -31,6 +31,7 @@ The choice remains in `%AppData%\SPI Data Comparison Tool\theme.txt`, outside th
 | `comparison.database` | `DB_Comparison_Form` | Database inputs and existing comparison modes. |
 | `comparison.excel` | `Excel_Excel_Comparison` | Workbook inputs; primary-key and non-primary-key modes remain. |
 | `comparison.excel-audit` | `ExcelSheetAuditForm` | Separate Design A audit of selected worksheets, optional mapped single/composite keys, formatting/layout and a two-sheet report. No existing engine is replaced. |
+| `comparison.identity` | `WorkbookIdentityForm` | Answers whether two workbooks are identical: all sheets or one sheet, rows by position or by a ticked primary key, 18 checks on screen and a five-sheet report. It uses its own engine; no existing task is replaced. |
 | `comparison.batch` | `Compare_Multiples_List_Tables_Forms` | Table/file lists, per-item processing and batch reports. |
 | `analysis.gaps` | `SPI_Analysis` | Connection setup and embedded results; form-pair alignment and export. |
 | `analysis.notes` | `SPI_Spec_Note_Creation_Utility` | Excel-to-note transformation; no database connection is required. |
@@ -76,7 +77,7 @@ The former three-group `ToolGroupWindow` host is superseded by the common worksp
 
 ## What this phase does not claim
 
-- The 21 existing concrete Form implementations remain. The common `WorkspaceForm` and separate `ExcelSheetAuditForm` make **23 concrete Form classes**; the abstract `WorkspacePageForm` is a lifecycle base, not another opening window. Normal navigation uses fewer independent workflow windows, not fewer business engines or source classes.
+- The 21 existing concrete Form implementations remain. The common `WorkspaceForm`, the separate `ExcelSheetAuditForm` and the `WorkbookIdentityForm` make **24 concrete Form classes**; the abstract `WorkspacePageForm` is a lifecycle base, not another opening window. Normal navigation uses fewer independent workflow windows, not fewer business engines or source classes.
 - Comparison algorithms, numeric-header matching, foreign-key inference and report schemas are not replaced by this interface change. Inferred relationships must not be treated as declared constraints, and custom SQL must not be assumed read-only.
 - SQL generation and execution remain separate. The reverted PR #18 preview/transaction/rollback behaviour is not restored; see [COMPARISON_QA.md](COMPARISON_QA.md).
 - A shared host is not a complete visual redesign of every older page. Rendering, keyboard use, scaling and real-world workflows still require Windows acceptance.
@@ -84,4 +85,4 @@ The former three-group `ToolGroupWindow` host is superseded by the common worksp
 
 ## Verification
 
-`WorkspaceUiChecks` is configured in the offline Windows UI runner to check the 20 routes, lazy construction, independent modes/sessions, transient mappings, failed creation, guarded close/exit, hidden workers and updater eligibility. The retained palette/source contracts and `ThemeChecks` runner cover four-theme consistency, eligible windows, live changes and temporary-file preference checks. The separate `--check-excel-audit` suite uses temporary workbook fixtures for the new audit; see [EXCEL_SHEET_AUDIT.md](EXCEL_SHEET_AUDIT.md). Existing form-opening checks and validation suites remain; [VALIDATION.md](VALIDATION.md) describes their coverage. These are configured checks, not a claim that a particular commit's continuous integration run has passed. They do not connect to live databases, execute user SQL or prove complete business-output parity.
+`WorkspaceUiChecks` is configured in the offline Windows UI runner to check the 21 routes, lazy construction, independent modes/sessions, transient mappings, failed creation, guarded close/exit, hidden workers and updater eligibility. The retained palette/source contracts and `ThemeChecks` runner cover four-theme consistency, eligible windows, live changes and temporary-file preference checks. The separate `--check-excel-audit` suite uses temporary workbook fixtures for the new audit; see [EXCEL_SHEET_AUDIT.md](EXCEL_SHEET_AUDIT.md). Existing form-opening checks and validation suites remain; [VALIDATION.md](VALIDATION.md) describes their coverage. These are configured checks, not a claim that a particular commit's continuous integration run has passed. They do not connect to live databases, execute user SQL or prove complete business-output parity.

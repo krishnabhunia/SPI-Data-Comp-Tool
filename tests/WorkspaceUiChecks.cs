@@ -20,7 +20,7 @@ namespace SPI_Data_Comp_Tool
         internal static void Run(Action<string> passed)
         {
             CheckCatalogAndRealPages();
-            passed("All 20 task routes retain their workflow types in six lazily loaded workspaces.");
+            passed("All 21 task routes retain their workflow types in six lazily loaded workspaces.");
             CheckNavigation();
             passed("Workspace navigation reuses pages and restores windows without replacing independent sessions or modes.");
             CheckCloseLifecycle();
@@ -296,6 +296,7 @@ namespace SPI_Data_Comp_Tool
                         { "comparison.database", typeof(DB_Comparison_Form) },
                         { "comparison.excel", typeof(Excel_Excel_Comparison) },
                         { "comparison.excel-audit", typeof(ExcelSheetAuditForm) },
+                        { "comparison.identity", typeof(WorkbookIdentityForm) },
                         { "comparison.batch", typeof(Compare_Multiples_List_Tables_Forms) },
                     }
                 },
@@ -336,7 +337,7 @@ namespace SPI_Data_Comp_Tool
                     }
                 },
             };
-            Require(WorkspaceCatalog.Tasks.Count() == 20, "A task route was lost or duplicated during consolidation.");
+            Require(WorkspaceCatalog.Tasks.Count() == 21, "A task route was lost or duplicated during consolidation.");
             foreach (var group in expected)
             {
                 Require(WorkspaceCatalog.TasksFor(group.Key).Count() == group.Value.Count,

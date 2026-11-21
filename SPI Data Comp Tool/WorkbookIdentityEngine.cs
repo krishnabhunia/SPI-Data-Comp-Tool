@@ -36,6 +36,21 @@ namespace SPI_Data_Comp_Tool
         internal string Sheet { get; }
     }
 
+    /// <summary>What a setup screen shows about one workbook before anything is compared.</summary>
+    internal sealed class IdentityFileInfo
+    {
+        /// <summary>Every worksheet of the workbook, in workbook order.</summary>
+        internal string[] Sheets { get; set; } = new string[0];
+        /// <summary>The sheet whose header row was read.</summary>
+        internal string Sheet { get; set; }
+        /// <summary>The header names of that sheet in column order; a name that repeats (ignoring case) is listed once.</summary>
+        internal string[] Headers { get; set; } = new string[0];
+        /// <summary>Header cells that hold a name.</summary>
+        internal int Columns { get; set; }
+        /// <summary>Rows below the header row, down to the last row that holds a value.</summary>
+        internal int DataRows { get; set; }
+    }
+
     /// <summary>Everything one comparison found. The rows are ready for the report sheets and for a results grid.</summary>
     internal sealed class IdentityResult
     {
@@ -192,6 +207,37 @@ namespace SPI_Data_Comp_Tool
             if (names == null) return null;
             string[] kept = names.Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Trim()).ToArray();
             return kept.Length == 0 ? null : kept;
+        }
+
+        /// <summary>
+        /// Reads the sheet names of one workbook and the header row of one sheet (the first sheet when none is named),
+        /// so that key columns can be offered before a comparison. The headers are found the same way Compare finds them.
+        /// </summary>
+        internal static IdentityFileInfo Inspect(string path, string sheet = null, int headerRow = 1, Func<bool> cancelled = null)
+        {
+            if (headerRow < 1) throw new ArgumentException("The header row must be 1 or more.");
+            using (var book = new IdentityWorkbook(path))
+            {
+                if (book.SheetNames.Count == 0) throw new InvalidDataException(Path.GetFileName(path) + " has no worksheets.");
+                string name = string.IsNullOrEmpty(sheet) ? book.SheetNames[0] : sheet;
+                if (!book.SheetNames.Contains(name)) throw new ArgumentException("Sheet '" + name + "' not found in " + Path.GetFileName(path) + ".");
+                IdentitySheet read = book.ReadSheet(name, cancelled);
+                var names = new List<string>();
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                int columns = 0;
+                foreach (Header header in HeaderList(read, headerRow))
+                {
+                    string text = header.Raw == null ? "" : header.Raw.Trim();
+                    if (text.Length == 0) continue;
+                    columns++;
+                    if (seen.Add(text.ToLowerInvariant())) names.Add(text);
+                }
+                return new IdentityFileInfo
+                {
+                    Sheets = book.SheetNames.ToArray(), Sheet = name, Headers = names.ToArray(), Columns = columns,
+                    DataRows = Math.Max(0, read.LastRow - headerRow),
+                };
+            }
         }
 
         // ------------------------------------------------------------------ small helpers

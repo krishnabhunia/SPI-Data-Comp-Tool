@@ -86,6 +86,58 @@ class WorkbookIdentityContracts(unittest.TestCase):
                      "Formula differs", "Row only in File "):
             self.assertIn(kind, engine)
 
+    def test_form_is_a_workspace_task_with_its_own_route(self) -> None:
+        catalog = code("WorkspaceCatalog.cs")
+        self.assertIn('new WorkspaceTask("comparison.identity", "Workbook identity check",', catalog)
+        self.assertIn("() => new WorkbookIdentityForm()", catalog)
+        # The two Excel tasks that existed before keep their routes and windows.
+        self.assertIn('new WorkspaceTask("comparison.excel",', catalog)
+        self.assertIn("() => new Excel_Excel_Comparison()", catalog)
+        self.assertIn("() => new ExcelSheetAuditForm()", catalog)
+        project = code("SPI Data Comp Tool.csproj")
+        self.assertIn('<Compile Include="WorkbookIdentityForm.cs">', project)
+        self.assertIn(r'<Compile Include="..\tests\WorkbookIdentityFormChecks.cs">', project)
+        runner = (ROOT / "tests/UiWorkflowChecks.cs").read_text(encoding="utf-8-sig")
+        self.assertIn("WorkbookIdentityFormChecks.Run(passed);", runner)
+
+    def test_form_works_in_the_background_and_guards_its_files(self) -> None:
+        form = code("WorkbookIdentityForm.cs")
+        for needed in ("public sealed class WorkbookIdentityForm : WorkspacePageForm", "BackgroundWorker worker",
+                       "FormValidation.LockInputs(this, cancel)", "WorkbookIdentityEngine.Compare(", "WorkbookIdentityEngine.Inspect(",
+                       "FormValidation.WriteAtomically(path, temporary =>", "FormValidation.DifferentFiles(report, a, output)",
+                       "FormValidation.DifferentFiles(report, b, output)", "MessageBoxDefaultButton.Button2", "protected override void OnFormClosing",
+                       "UiTheme.Apply(this, compare)", "IdentityReportWriter.Tables(finished)", "if (SelfTest.IsRunning) return;"):
+            self.assertIn(needed, form)
+        # One question only: replacing an existing report. Wrong inputs are shown beside the field instead.
+        self.assertEqual(form.count("MessageBox.Show("), 1)
+        # The engine is never called from the UI thread.
+        work = form.split("private void Work(object sender, DoWorkEventArgs args)", 1)[1].split("private void Completed(", 1)[0]
+        self.assertEqual(form.count("WorkbookIdentityEngine.Compare("), work.count("WorkbookIdentityEngine.Compare("))
+        self.assertEqual(form.count("WriteReport(compared, request.Report, cancelled);"), 1)
+        self.assertIn("WriteReport(compared, request.Report, cancelled);", work)
+        # Cancel pressed while the report is written is honoured before the report is put in place.
+        write = form.split("internal static void WriteReport(", 1)[1].split("private static IdentityFileInfo Inspect(", 1)[0]
+        self.assertEqual(form.count("IdentityReportWriter.Write("), write.count("IdentityReportWriter.Write("))
+        self.assertLess(write.index("IdentityReportWriter.Write(compared, temporary);"), write.index("throw new OperationCanceledException();"))
+        for forbidden in ("Microsoft.Office.Interop", "OfficeOpenXml", "Application.DoEvents", "python"):
+            self.assertNotIn(forbidden, form)
+
+    def test_result_tabs_and_report_sheets_share_one_source(self) -> None:
+        writer = code("IdentityReportWriter.cs")
+        self.assertIn("internal static IdentityTable[] Tables(IdentityResult res)", writer)
+        write = writer.split("internal static void Write(IdentityResult res, string path)", 1)[1].split("private static void Summary(", 1)[0]
+        self.assertIn("IdentityTable[] tables = Tables(res);", write)
+        self.assertNotIn('"Header in File A"', write)       # titles are not repeated in a second place
+        form = code("WorkbookIdentityForm.cs")
+        self.assertNotIn('"Header in File A"', form)
+        self.assertIn("internal const int PreviewRows = 1000;", form)
+
+    def test_guides_describe_the_form(self) -> None:
+        for name in ("docs/PROJECT_GUIDE.md", "docs/WORKSPACES.md", "docs/WORKBOOK_IDENTITY_CHECK.md", "README.md"):
+            self.assertTrue("Workbook identity check" in (ROOT / name).read_text(encoding="utf-8"), name)
+        self.assertTrue("`comparison.identity`" in (ROOT / "docs/WORKSPACES.md").read_text(encoding="utf-8"))
+        self.assertTrue("| `WorkbookIdentityForm` |" in (ROOT / "docs/VALIDATION.md").read_text(encoding="utf-8"))
+
     def test_guide_describes_the_engine(self) -> None:
         guide = (ROOT / "docs/PROJECT_GUIDE.md").read_text(encoding="utf-8")
         for name in ENGINE_FILES:

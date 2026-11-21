@@ -7,6 +7,19 @@ using ClosedXML.Excel;
 
 namespace SPI_Data_Comp_Tool
 {
+    /// <summary>One table of the report: the same titles and rows go to the report sheet and to the results grid.</summary>
+    internal sealed class IdentityTable
+    {
+        internal string Name { get; set; }
+        internal string[] Titles { get; set; }
+        internal double[] Widths { get; set; }
+        internal IList<object[]> Rows { get; set; }
+        /// <summary>1-based positions within <see cref="Titles"/> of the columns that hold a status word.</summary>
+        internal int[] StatusColumns { get; set; }
+        /// <summary>The text shown when the table has no rows.</summary>
+        internal string Empty { get; set; }
+    }
+
     /// <summary>
     /// Writes the workbook identity report: Summary, Headers, Data Differences, Format Differences and
     /// Layout &amp; Other. Same sheets and columns as the Python reference tool.
@@ -25,52 +38,95 @@ namespace SPI_Data_Comp_Tool
         private static readonly XLColor HeadFill = XLColor.FromHtml("#DDEBF7"), HeadText = XLColor.FromHtml("#1F3864"),
             Zebra = XLColor.FromHtml("#F2F2F2"), Good = XLColor.FromHtml("#1A3E8C"), Bad = XLColor.FromHtml("#C00000");
 
+        /// <summary>+1 for a status word that means "no difference", -1 for one that means "difference", 0 for a neutral word.</summary>
+        internal static int Tone(string word)
+        {
+            if (string.IsNullOrEmpty(word) || NeutralWords.Contains(word)) return 0;
+            return GoodWords.Contains(word) ? 1 : -1;
+        }
+
+        /// <summary>The five tables of the report, in sheet order. The Summary table is the list of checks.</summary>
+        internal static IdentityTable[] Tables(IdentityResult res)
+        {
+            var checks = new List<object[]>();
+            foreach (IdentityCheck check in IdentityResult.Checks)
+            {
+                long count = res.Count(check.Key);
+                bool skipped = res.Skipped.Contains(check.Key);
+                checks.Add(new object[]
+                {
+                    check.Label, skipped ? "SKIPPED" : count != 0 ? "DIFF" : "MATCH",
+                    count != 0 ? (object)(count.ToString("N0", CultureInfo.InvariantCulture) + " " + check.Unit) : 0, check.Sheet,
+                });
+            }
+
+            var titles = new List<string> { "Sheet", "Row", "Key", "Column", "Cell (A)", "Cell (B)", "Value in File A", "Value in File B",
+                "Difference Type", "Difference Type Flag", "Difference Type Value Flag", "Number Diff (B − A)" };
+            var widths = new List<double> { 22, 7, 22, 20, 9, 9, 30, 30, 34, 12, 12, 13 };
+            foreach (double threshold in res.Options.Thresholds)
+            {
+                titles.Add("Abs Diff > " + threshold.ToString("G", CultureInfo.InvariantCulture));
+                widths.Add(11);
+            }
+            IList<object[]> data = res.Data;
+            if (!res.Keyed)                                  // the Key column appears only when a primary key was used
+            {
+                titles.RemoveAt(2);
+                widths.RemoveAt(2);
+                data = res.Data.Select(row => row.Take(2).Concat(row.Skip(3)).ToArray()).ToList();
+            }
+
+            return new[]
+            {
+                new IdentityTable
+                {
+                    Name = SheetNames[0], Titles = new[] { "Check", "Result", "Differences", "Details in sheet" },
+                    Widths = new double[] { 62, 10, 16, 20 }, Rows = checks, StatusColumns = new[] { 2 }, Empty = "No checks",
+                },
+                new IdentityTable
+                {
+                    Name = SheetNames[1],
+                    Titles = new[] { "Sheet", "Col (A)", "Header in File A", "Col (B)", "Header in File B", "Name Check", "Position", "Font in File A",
+                        "Font in File B", "Font Check", "Alignment in File A", "Alignment in File B", "Alignment Check", "Status" },
+                    Widths = new double[] { 22, 8, 22, 8, 22, 18, 14, 24, 24, 11, 18, 18, 11, 9 },
+                    Rows = res.Headers, StatusColumns = new[] { 6, 7, 10, 13, 14 }, Empty = "No headers found",
+                },
+                new IdentityTable
+                {
+                    Name = SheetNames[2], Titles = titles.ToArray(), Widths = widths.ToArray(), Rows = data,
+                    StatusColumns = new[] { titles.IndexOf("Difference Type Value Flag") + 1 }, Empty = "No differences found",
+                },
+                new IdentityTable
+                {
+                    Name = SheetNames[3],
+                    Titles = new[] { "Sheet", "Area", "Column", "Cells (A)", "Cells (B)", "Cell Count", "Property", "File A", "File B" },
+                    Widths = new double[] { 22, 9, 20, 11, 11, 8, 22, 24, 24 }, Rows = res.Formats, StatusColumns = new int[0],
+                    Empty = res.Options.CompareFormats ? "No differences found" : "Cell formatting was not compared",
+                },
+                new IdentityTable
+                {
+                    Name = SheetNames[4], Titles = new[] { "Scope", "Check", "File A", "File B", "Status" },
+                    Widths = new double[] { 22, 40, 44, 44, 9 }, Rows = res.Layout, StatusColumns = new[] { 5 }, Empty = "No checks",
+                },
+            };
+        }
+
         internal static void Write(IdentityResult res, string path)
         {
             using (var workbook = new XLWorkbook())
             {
                 workbook.Style.Font.FontName = "Calibri";
                 workbook.Style.Font.FontSize = 11;
-                Summary(workbook.Worksheets.Add(SheetNames[0]), res);
-
-                Table(workbook.Worksheets.Add(SheetNames[1]), 1,
-                    new[] { "Sheet", "Col (A)", "Header in File A", "Col (B)", "Header in File B", "Name Check", "Position", "Font in File A", "Font in File B",
-                            "Font Check", "Alignment in File A", "Alignment in File B", "Alignment Check", "Status" },
-                    new double[] { 22, 8, 22, 8, 22, 18, 14, 24, 24, 11, 18, 18, 11, 9 },
-                    res.Headers, new[] { 6, 7, 10, 13, 14 }, "No headers found", true);
-
-                var titles = new List<string> { "Sheet", "Row", "Key", "Column", "Cell (A)", "Cell (B)", "Value in File A", "Value in File B",
-                    "Difference Type", "Difference Type Flag", "Difference Type Value Flag", "Number Diff (B − A)" };
-                var widths = new List<double> { 22, 7, 22, 20, 9, 9, 30, 30, 34, 12, 12, 13 };
-                foreach (double threshold in res.Options.Thresholds)
-                {
-                    titles.Add("Abs Diff > " + threshold.ToString("G", CultureInfo.InvariantCulture));
-                    widths.Add(11);
-                }
-                IList<object[]> data = res.Data;
-                if (!res.Keyed)                                  // the Key column appears only when a primary key was used
-                {
-                    titles.RemoveAt(2);
-                    widths.RemoveAt(2);
-                    data = res.Data.Select(row => row.Take(2).Concat(row.Skip(3)).ToArray()).ToList();
-                }
-                Table(workbook.Worksheets.Add(SheetNames[2]), 1, titles.ToArray(), widths.ToArray(), data,
-                    new[] { titles.IndexOf("Difference Type Value Flag") + 1 }, "No differences found", true);
-
-                Table(workbook.Worksheets.Add(SheetNames[3]), 1,
-                    new[] { "Sheet", "Area", "Column", "Cells (A)", "Cells (B)", "Cell Count", "Property", "File A", "File B" },
-                    new double[] { 22, 9, 20, 11, 11, 8, 22, 24, 24 },
-                    res.Formats, new int[0], res.Options.CompareFormats ? "No differences found" : "Cell formatting was not compared", true);
-
-                Table(workbook.Worksheets.Add(SheetNames[4]), 1,
-                    new[] { "Scope", "Check", "File A", "File B", "Status" }, new double[] { 22, 40, 44, 44, 9 },
-                    res.Layout, new[] { 5 }, "No checks", true);
-
+                IdentityTable[] tables = Tables(res);
+                Summary(workbook.Worksheets.Add(tables[0].Name), res, tables[0]);
+                for (int i = 1; i < tables.Length; i++)
+                    Table(workbook.Worksheets.Add(tables[i].Name), 1, tables[i].Titles, tables[i].Widths, tables[i].Rows, tables[i].StatusColumns,
+                        tables[i].Empty, true);
                 workbook.SaveAs(path);
             }
         }
 
-        private static void Summary(IXLWorksheet sheet, IdentityResult res)
+        private static void Summary(IXLWorksheet sheet, IdentityResult res, IdentityTable checks)
         {
             sheet.ShowGridLines = false;
             IXLCell title = sheet.Cell(1, 1);
@@ -101,20 +157,8 @@ namespace SPI_Data_Comp_Tool
             verdict.Style.Font.Bold = true;
             verdict.Style.Font.FontColor = res.Identical ? Good : Bad;
 
-            var rows = new List<object[]>();
-            foreach (IdentityCheck check in IdentityResult.Checks)
-            {
-                long count = res.Count(check.Key);
-                bool skipped = res.Skipped.Contains(check.Key);
-                rows.Add(new object[]
-                {
-                    check.Label, skipped ? "SKIPPED" : count != 0 ? "DIFF" : "MATCH",
-                    count != 0 ? (object)(count.ToString("N0", CultureInfo.InvariantCulture) + " " + check.Unit) : 0, check.Sheet,
-                });
-            }
             // No frozen pane here: a pane without a row or column split makes Excel repair the workbook.
-            int next = Table(sheet, 12, new[] { "Check", "Result", "Differences", "Details in sheet" }, new double[] { 62, 10, 16, 20 },
-                rows, new[] { 2 }, "No checks", false);
+            int next = Table(sheet, 12, checks.Titles, checks.Widths, checks.Rows, checks.StatusColumns, "No checks", false);
             foreach (string note in res.Notes) sheet.Cell(next++, 2).SetValue(Clean("Note: " + note));
         }
 
