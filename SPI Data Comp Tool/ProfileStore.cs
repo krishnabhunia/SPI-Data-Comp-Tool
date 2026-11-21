@@ -1,16 +1,123 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Globalization;
 using System.IO;
+using System.Security;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace SPI_Data_Comp_Tool
 {
+    /// <summary>The outcome of optional saved-profile loading; failure keeps the active catalog intact.</summary>
+    internal sealed class ProfileLoadResult
+    {
+        internal ProfileLoadResult(string filePath, bool loaded, bool hasError, string message)
+        {
+            FilePath = filePath;
+            Loaded = loaded;
+            HasError = hasError;
+            Message = message;
+        }
+
+        internal string FilePath { get; }
+        internal bool Loaded { get; }
+        internal bool HasError { get; }
+        internal string Message { get; }
+    }
+
     /// <summary>Builds candidate profile lists without changing the active list, then saves atomically.</summary>
     internal static class ProfileStore
     {
+        private const int MaximumProfileBytes = 16 * 1024 * 1024;
+
+        /// <summary>Reads and validates one complete document without changing settings or active profiles.</summary>
+        internal static List<DBC> ReadFile(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) ||
+                !string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Select a JSON profile file.");
+            using (var stream = new FileStream(Path.GetFullPath(path), FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                if (stream.Length == 0 || stream.Length > MaximumProfileBytes)
+                    throw new InvalidDataException("Select a nonempty profile JSON file no larger than 16 MiB.");
+                try
+                {
+                    using (var reader = new StreamReader(stream, new UTF8Encoding(false, true), true))
+                    {
+                        var text = new StringBuilder();
+                        var buffer = new char[4096];
+                        int count;
+                        while ((count = reader.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            if (text.Length + count > MaximumProfileBytes || stream.Length > MaximumProfileBytes)
+                                throw new InvalidDataException("Select a nonempty profile JSON file no larger than 16 MiB.");
+                            text.Append(buffer, 0, count);
+                        }
+                        return ParseJson(text.ToString());
+                    }
+                }
+                catch (DecoderFallbackException)
+                {
+                    throw new InvalidDataException("The profile file has invalid text encoding. Select a valid JSON profile file.");
+                }
+            }
+        }
+
+        internal static ProfileLoadResult LoadSavedProfiles()
+        {
+            return LoadRememberedProfiles(() => Properties.Settings.Default.ProfilePathUser);
+        }
+
+        // The setting itself can be unreadable when user.config is damaged. Keep the optional
+        // read inside this boundary and never repair/overwrite that file as a side effect.
+        internal static ProfileLoadResult LoadRememberedProfiles(Func<string> readPath)
+        {
+            try { return LoadSavedProfiles(readPath()); }
+            catch (Exception error) when (error is ConfigurationErrorsException ||
+                error is SettingsPropertyWrongTypeException || error is SettingsPropertyNotFoundException ||
+                error is IOException || error is UnauthorizedAccessException || error is SecurityException ||
+                (error is TypeInitializationException && error.InnerException is ConfigurationErrorsException))
+            {
+                return LoadFailure(null, "The saved profile setting could not be read. Your settings file has not been changed.");
+            }
+        }
+
+        /// <summary>Optional startup load: publish only validated documents; report expected file problems without aborting a form.</summary>
+        internal static ProfileLoadResult LoadSavedProfiles(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return new ProfileLoadResult(path, false, false, string.Empty);
+            try
+            {
+                List<DBC> candidate = ReadFile(path);
+                Profile.ProfileList = candidate;
+                return new ProfileLoadResult(path, true, false, "Profiles loaded from: " + path);
+            }
+            catch (Exception error) when (error is InvalidDataException || error is IOException || error is UnauthorizedAccessException ||
+                error is SecurityException || error is ArgumentException || error is NotSupportedException)
+            {
+                string reason;
+                if (error is InvalidDataException) reason = error.Message;
+                else if (error is FileNotFoundException || error is DirectoryNotFoundException)
+                    reason = "The saved profile file could not be found.";
+                else if (error is UnauthorizedAccessException || error is SecurityException)
+                    reason = "The saved profile file cannot be read with the current permissions.";
+                else if (error is ArgumentException || error is NotSupportedException)
+                    reason = "The saved profile location is invalid.";
+                else reason = "The saved profile file could not be read. It may be locked or unavailable.";
+                return LoadFailure(path, reason);
+            }
+        }
+
+        private static ProfileLoadResult LoadFailure(string path, string reason)
+        {
+            return new ProfileLoadResult(path, false, true, reason +
+                " Open Settings > Connection profiles > Load profile to select a valid JSON file." +
+                " Current profiles and entered connection details are unchanged.");
+        }
+
         internal static List<DBC> ParseJson(string json)
         {
             if (string.IsNullOrWhiteSpace(json) || json.Length > 16 * 1024 * 1024)
@@ -53,7 +160,21 @@ namespace SPI_Data_Comp_Tool
             try { profiles = array.ToObject<List<DBC>>(); }
             catch (JsonException) { throw new InvalidDataException("The profile file contains invalid connection values."); }
             Validate(profiles);
+            foreach (DBC profile in profiles)
+            {
+                RestoreProviderChoice(profile.dbSRC);
+                RestoreProviderChoice(profile.dbTRG);
+            }
             return profiles;
+        }
+
+        private static void RestoreProviderChoice(DBConnectionDetailsProfile side)
+        {
+            // Existing example/legacy documents express the provider through str_DBType alone.
+            // Validation has already rejected conflicting explicit flags and unsupported names.
+            if (side.bool_Rb_Oracle || side.bool_Rb_SQL) return;
+            side.bool_Rb_Oracle = string.Equals(side.str_DBType, "Oracle", StringComparison.OrdinalIgnoreCase);
+            side.bool_Rb_SQL = string.Equals(side.str_DBType, "SQL", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void ValidateJsonProperties(JObject value)
@@ -183,7 +304,7 @@ namespace SPI_Data_Comp_Tool
             // complete values only when connecting; reject declared values that contradict each other.
             if (side.bool_Rb_Oracle && side.bool_Rb_SQL)
                 throw new InvalidDataException("A saved connection cannot select Oracle and SQL Server together.");
-            if (side.bool_Rb_Oracle && side.bool_SQL_WA)
+            if ((side.bool_Rb_Oracle || string.Equals(side.str_DBType, "Oracle", StringComparison.OrdinalIgnoreCase)) && side.bool_SQL_WA)
                 throw new InvalidDataException("Oracle profiles cannot use SQL Server Windows authentication.");
             if (!string.IsNullOrWhiteSpace(side.str_DBType))
             {

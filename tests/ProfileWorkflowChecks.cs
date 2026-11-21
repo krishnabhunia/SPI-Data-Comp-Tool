@@ -1,11 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
+using System.Text;
+using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
 {
     internal static class ProfileWorkflowChecks
     {
+        private const string SyntheticManualPassword = "synthetic-manual-password";
+        private const string SyntheticUnsavedPassword = "synthetic-unsaved-password";
+
         public static void Run(Action<string> passed)
         {
             CheckCandidateLists(passed);
@@ -13,6 +19,9 @@ namespace SPI_Data_Comp_Tool
             CheckValidation(passed);
             CheckAtomicFiles(passed);
             CheckSelection(passed);
+            CheckSavedProfileLoading(passed);
+            CheckSavedProfileFailures(passed);
+            CheckUnavailableSettings(passed);
         }
 
         private static DBC Example(string name, string server)
@@ -201,6 +210,200 @@ namespace SPI_Data_Comp_Tool
             {
                 Profile.ProfileList = previous;
             }
+        }
+
+        private static void CheckSavedProfileLoading(Action<string> passed)
+        {
+            List<DBC> previous = Profile.ProfileList;
+            string previousPath = Properties.Settings.Default.ProfilePathUser;
+            string directory = Path.Combine(Path.GetTempPath(), "spi-profile-load-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                // This is the shape used by the repository's example and older saved files:
+                // str_DBType identifies the provider without the later Boolean radio fields.
+                const string legacyJson = "[{\"profileName\":\"Example Oracle to SQL\","
+                    + "\"dbSRC\":{\"str_DBType\":\"oracle\",\"str_DataSource\":\"synthetic-oracle\",\"str_DBName\":\"service\",\"str_UserName\":\"example-user\",\"str_Password\":\"\"},"
+                    + "\"dbTRG\":{\"str_DBType\":\"sql\",\"str_DataSource\":\"synthetic-sql\",\"str_DBName\":\"database\",\"str_UserName\":\"example-user\",\"str_Password\":\"\"}}]";
+                string path = Path.Combine(directory, "saved-profiles.JSON");
+                File.WriteAllText(path, legacyJson, new UTF8Encoding(true));
+                byte[] originalBytes = File.ReadAllBytes(path);
+                Properties.Settings.Default.ProfilePathUser = path; // In memory only; never save test settings.
+                Profile.ProfileList = new List<DBC> { Example("Previous", "previous-server") };
+                using (var panel = new ConnectionPanel())
+                {
+                    panel.AllowNewProfileName = true;
+                    panel.ProfileList.Text = "Unsaved name";
+                    panel.Source.DataSource.Text = "manual-server";
+                    panel.Source.Password.Text = SyntheticManualPassword;
+                    int applied = 0;
+                    int changed = 0;
+                    panel.ProfileApplied += (sender, details) => applied++;
+                    panel.InputChanged += (sender, e) => changed++;
+
+                    ProfileLoadResult loaded = panel.LoadSavedProfiles();
+                    Check(loaded.Loaded && !loaded.HasError && loaded.FilePath == path,
+                        "A valid remembered uppercase .JSON file was not loaded through the startup path.");
+                    Check(Profile.ProfileList.Count == 1 && Profile.ProfileList[0].dbSRC.bool_Rb_Oracle
+                        && !Profile.ProfileList[0].dbSRC.bool_Rb_SQL && Profile.ProfileList[0].dbTRG.bool_Rb_SQL
+                        && !Profile.ProfileList[0].dbTRG.bool_Rb_Oracle,
+                        "Legacy provider names did not restore both platform selections.");
+                    Check(panel.ProfileList.Items.Count == 1 && panel.ProfileList.SelectedIndex == -1
+                        && panel.ProfileList.Text == "Unsaved name" && panel.Source.DataSource.Text == "manual-server"
+                        && panel.Source.Password.Text == SyntheticManualPassword && applied == 0 && changed == 0,
+                        "Loading a profile catalog applied an early selection or changed manually entered fields.");
+                    panel.ProfileList.SelectedIndex = 0;
+                    Check(applied == 1 && panel.Source.Oracle.Checked && panel.Target.Sql.Checked
+                        && panel.Source.Port.Text == "1521" && panel.Source.DataSource.Text == "synthetic-oracle"
+                        && panel.Target.DataSource.Text == "synthetic-sql" && panel.Source.Password.Text == string.Empty,
+                        "Selecting a legacy profile did not apply its Source/Target provider and fields.");
+                    Check(Properties.Settings.Default.ProfilePathUser == path
+                        && Convert.ToBase64String(File.ReadAllBytes(path)) == Convert.ToBase64String(originalBytes),
+                        "Reading/normalizing a saved profile changed its file or remembered setting.");
+
+                    string explicitPath = Path.Combine(directory, "explicit-platforms.json");
+                    var explicitProfile = Example("Explicit SQL", "explicit-server");
+                    explicitProfile.dbSRC.bool_SQL_WA = true;
+                    ProfileStore.WriteAtomic(explicitPath, ProfileStore.SerializeForExport(new[] { explicitProfile }));
+                    ProfileLoadResult explicitLoad = panel.LoadSavedProfiles(explicitPath);
+                    Check(explicitLoad.Loaded && Profile.ProfileList[0].dbSRC.bool_Rb_SQL
+                        && Profile.ProfileList[0].dbSRC.bool_SQL_WA && Properties.Settings.Default.ProfilePathUser == path,
+                        "Explicit provider/authentication choices were changed or an optional load rewrote the saved path.");
+                }
+                passed("The actual saved-path loader reads BOM/uppercase JSON and legacy provider names, preserves fields until selection, and never rewrites profile files or settings.");
+            }
+            finally
+            {
+                Profile.ProfileList = previous;
+                Properties.Settings.Default.ProfilePathUser = previousPath;
+                Directory.Delete(directory, true);
+            }
+        }
+
+        private static void CheckSavedProfileFailures(Action<string> passed)
+        {
+            List<DBC> previous = Profile.ProfileList;
+            string directory = Path.Combine(Path.GetTempPath(), "spi-profile-recovery-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                var active = new List<DBC> { Example("Keep active", "active-server") };
+                Profile.ProfileList = active;
+                using (var panel = new ConnectionPanel())
+                {
+                    Exception selectionError = null;
+                    panel.Failed += (sender, error) => selectionError = error;
+                    panel.Source.DataSource.Text = "keep-manual-server";
+                    panel.Source.Password.Text = SyntheticUnsavedPassword;
+                    ProfileLoadResult absent = panel.LoadSavedProfiles((string)null);
+                    Check(!absent.Loaded && !absent.HasError && string.IsNullOrEmpty(absent.Message)
+                        && ReferenceEquals(Profile.ProfileList, active), "An unset saved path was treated as an error or erased active profiles.");
+
+                    string path = Path.Combine(directory, "broken.json");
+                    foreach (string json in new[]
+                    {
+                        "", "{", "null", "[null]", "{}",
+                        "[{\"profileName\":\"Missing sides\"}]",
+                        "[{\"profileName\":\"Null source\",\"dbSRC\":null,\"dbTRG\":{}}]",
+                        "[{\"profileName\":\"Null target\",\"dbSRC\":{},\"dbTRG\":null}]",
+                        "[{\"profileName\":\"Valid first\",\"dbSRC\":{},\"dbTRG\":{}},null]",
+                        "[{\"profileName\":\"Conflicting provider\",\"dbSRC\":{\"str_DBType\":\"oracle\",\"bool_Rb_SQL\":true},\"dbTRG\":{}}]",
+                        "[{\"profileName\":\"Invalid authentication\",\"dbSRC\":{\"str_DBType\":\"oracle\",\"bool_SQL_WA\":true},\"dbTRG\":{}}]",
+                        "[{\"profileName\":\"Overflow port\",\"dbSRC\":{},\"dbTRG\":{\"int_Oracle_DefaultPort\":99999999999999999999}}]",
+                    })
+                    {
+                        File.WriteAllText(path, json);
+                        CheckLoadFailure(panel, path, active);
+                        Check(File.ReadAllText(path) == json, "A rejected profile document was overwritten during recovery.");
+                    }
+                    CheckLoadFailure(panel, Path.Combine(directory, "missing.json"), active);
+                    CheckLoadFailure(panel, "\0invalid.json", active);
+                    string wrongExtension = Path.Combine(directory, "profiles.txt");
+                    File.WriteAllText(wrongExtension, "[]");
+                    CheckLoadFailure(panel, wrongExtension, active);
+                    File.WriteAllText(path, ProfileStore.SerializeForExport(active));
+                    using (var held = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+                        CheckLoadFailure(panel, path, active);
+                    File.WriteAllBytes(path, new byte[] { 0xff, 0x7b });
+                    CheckLoadFailure(panel, path, active);
+                    Check(File.ReadAllBytes(path)[0] == 0xff, "Invalid text encoding was repaired by overwriting the profile file.");
+                    using (var large = new FileStream(path, FileMode.Create, FileAccess.Write))
+                        large.SetLength(16 * 1024 * 1024 + 1);
+                    CheckLoadFailure(panel, path, active);
+                    Check(new FileInfo(path).Length == 16 * 1024 * 1024 + 1, "An oversized profile was changed during loading.");
+
+                    Profile.ProfileList = null;
+                    ProfileLoadResult noCatalog = panel.LoadSavedProfiles(Path.Combine(directory, "missing.json"));
+                    Check(noCatalog.HasError && Profile.ProfileList == null && panel.ProfileList.Items.Count == 0,
+                        "Missing saved profiles did not leave a null catalog usable for manual entry.");
+                    Profile.ProfileList = new List<DBC> { null, new DBC { profileName = "Broken entry", dbSRC = null } };
+                    Common_Data.GetUserProfile(panel.ProfileList);
+                    Check(panel.ProfileList.Items.Count == 1 && panel.ProfileList.SelectedIndex == -1,
+                        "Refreshing a legacy catalog with a null entry failed or automatically selected an invalid profile.");
+                    panel.ProfileList.SelectedIndex = 0;
+                    Check(selectionError is InvalidDataException && panel.Source.DataSource.Text == "keep-manual-server"
+                        && panel.Source.Password.Text == SyntheticUnsavedPassword,
+                        "Selecting a malformed in-memory profile partly changed the entered connection or did not report its error.");
+                    Check(Common_Data.GetUserProfile(null) == null, "A missing legacy profile picker was not handled safely.");
+                    using (var standalone = new ComboBox())
+                    {
+                        Common_Data.GetUserProfile(standalone);
+                        Check(standalone.Items.Count == 1, "A legacy picker failed on a null catalog entry.");
+                        Profile.ProfileList = null;
+                        Common_Data.GetUserProfile(standalone);
+                        Check(standalone.Items.Count == 0, "A null catalog left stale legacy choices visible.");
+                    }
+
+                    File.WriteAllText(path, ProfileStore.SerializeForExport(active));
+                    ProfileLoadResult recovered = panel.LoadSavedProfiles(path);
+                    Check(recovered.Loaded && !recovered.HasError && panel.ProfileList.Items.Count == 1
+                        && panel.Source.DataSource.Text == "keep-manual-server",
+                        "A valid file did not recover the same panel after earlier profile-loading failures.");
+                    File.WriteAllText(path, "[]");
+                    ProfileLoadResult empty = panel.LoadSavedProfiles(path);
+                    Check(empty.Loaded && Profile.ProfileList.Count == 0 && panel.ProfileList.Items.Count == 0
+                        && panel.Source.DataSource.Text == "keep-manual-server", "An empty valid catalog erased manual connection fields.");
+                }
+                passed("Missing/locked/invalid/oversized profiles and null catalog entries remain recoverable, preserve active data and manual fields, and a later valid file loads successfully.");
+            }
+            finally
+            {
+                Profile.ProfileList = previous;
+                Directory.Delete(directory, true);
+            }
+        }
+
+        private static void CheckLoadFailure(ConnectionPanel panel, string path, List<DBC> active)
+        {
+            string rememberedPath = Properties.Settings.Default.ProfilePathUser;
+            ProfileLoadResult failed = panel.LoadSavedProfiles(path);
+            Check(failed.HasError && !failed.Loaded && ReferenceEquals(Profile.ProfileList, active)
+                && panel.ProfileList.Items.Count == active.Count
+                && panel.Source.DataSource.Text == "keep-manual-server"
+                && panel.Source.Password.Text == SyntheticUnsavedPassword
+                && failed.Message.Contains("Settings > Connection profiles > Load profile")
+                && Properties.Settings.Default.ProfilePathUser == rememberedPath,
+                "An unavailable profile file aborted loading, lost the active catalog/fields, changed settings, or omitted its recovery path.");
+        }
+
+        private static void CheckUnavailableSettings(Action<string> passed)
+        {
+            List<DBC> previous = Profile.ProfileList;
+            try
+            {
+                var active = new List<DBC> { Example("Keep active", "active-server") };
+                Profile.ProfileList = active;
+                ProfileLoadResult failed = ProfileStore.LoadRememberedProfiles(() =>
+                {
+                    throw new ConfigurationErrorsException("Synthetic invalid user.config; no real settings file was accessed.");
+                });
+                Check(failed.HasError && !failed.Loaded && failed.FilePath == null
+                    && ReferenceEquals(Profile.ProfileList, active)
+                    && failed.Message.Contains("settings file has not been changed"),
+                    "An unreadable saved setting escaped the optional profile-load boundary or changed the active catalog.");
+                passed("An unreadable remembered setting reports a recovery warning without aborting startup or changing active profiles/settings files.");
+            }
+            finally { Profile.ProfileList = previous; }
         }
     }
 }
