@@ -280,6 +280,9 @@
     <Compile Include="WorkspaceCatalog.cs" />
     <Compile Include="WorkspaceForm.cs" />
     <Compile Include="ProfileStore.cs" />
+    <Compile Include="WorkbookIdentityReader.cs" />
+    <Compile Include="WorkbookIdentityEngine.cs" />
+    <Compile Include="IdentityReportWriter.cs" />
     <Compile Include="..\tests\UiWorkflowChecks.cs">
       <Link>Tests\UiWorkflowChecks.cs</Link>
     </Compile>
@@ -330,6 +333,9 @@
     </Compile>
     <Compile Include="..\tests\ToolGroupChecks.cs">
       <Link>Tests\ToolGroupChecks.cs</Link>
+    </Compile>
+    <Compile Include="..\tests\WorkbookIdentityChecks.cs">
+      <Link>Tests\WorkbookIdentityChecks.cs</Link>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="ThemeControls.cs" />

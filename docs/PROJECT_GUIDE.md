@@ -25,6 +25,7 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 | `SPI Data Comp Tool/UpdatesControl.cs` | The Updates tab inside the Settings preferences task; Help activates that same page |
 | `SPI Data Comp Tool/UpdateFeedClient.cs`, `UpdateVersion.cs` | Published release discovery, three-part version ordering and verified downloads |
 | `SPI Data Comp Tool/UpdateInstaller.cs`, `UpdateApplyWorker.cs`, `UpdatePreferences.cs` | Installed/portable update handoff, bounded file replacement and whitelisted preference preservation |
+| `SPI Data Comp Tool/WorkbookIdentityReader.cs`, `WorkbookIdentityEngine.cs`, `IdentityReportWriter.cs` | Workbook identity check engine: reads two workbooks, lists every difference and writes the five-sheet report. No window yet |
 
 ## Architecture
 ~~~mermaid
@@ -127,6 +128,24 @@ Profile edits build independent candidate lists. Cancelling a save does not chan
 Code: `UpdatesControl.cs`, `UpdateFeedClient.cs`, `UpdateInstaller.cs`, `UpdateApplyWorker.cs`, `UpdatePreferences.cs` and the presentation-only `MainForm.Updates.cs`. Three-part versions are compared numerically; a normal release ranks above the betas of the same version. Drafts, manual builds, four-part versions and incompatible/missing assets are excluded. Profile/rules paths and Excel-export preferences are preserved, not profile contents or database passwords.
 
 The repository's releases must remain publicly readable: the updater does not request GitHub credentials. The installer retains its conditional `/RELAUNCH=1` hook for already-released older updater clients; the current helper never supplies that switch and controls its own verified restart. See [UPDATING.md](UPDATING.md) for migration, first-upgrade instructions, safeguards and limitations.
+
+## Workbook identity check (engine)
+
+Answers one question: **are two Excel workbooks identical?** It is a C# port of the owner-approved Python tool (`krishnabhunia/excel-sheet-comparison`, folder `cld`) and applies the same rules, so both write the same report. This part has **no window and no route**; the form in the Comparison workspace is a separate change (this engine: [issue #77](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/77)). The existing **Excel comparison** task is unchanged.
+
+| SrNo. | Part | What it does |
+|---|---|---|
+| 1 | `WorkbookIdentityReader.cs` | Reads `.xlsx` / `.xlsm` with the Open XML SDK, read-only and shared, so a workbook open in Excel can be compared. It keeps what the file stores: values, cached formula results (nothing is recalculated), formulas (filled-down "shared" formulas are rebuilt), 12 style properties per cell format and the sheet layout. |
+| 2 | `WorkbookIdentityEngine.cs` | `WorkbookIdentityEngine.Compare(fileA, fileB, options, progress, cancelled)` returns an `IdentityResult`. No window code, so it can run on a background worker. |
+| 3 | `IdentityReportWriter.cs` | Writes the report with ClosedXML: Summary, Headers, Data Differences, Format Differences, Layout & Other. |
+
+- **Matching.** Sheets pair by name and columns by header name, both ignoring case; header names also ignore outer spaces. Rows pair by position, or by an optional primary key: one column or several, with different column names in each file. Key values match as exact text. Blank or repeated key values are warnings and pair in order of appearance.
+- **Checks (18, each MATCH or DIFF with a count).** Sheet count and names; header count, names, case and spacing, order, font, alignment; number of data rows; rows in only one file; row order; cell values; data types; formulas; cell font, alignment, number format, fill and borders; sheet layout (column widths, row heights, merged cells, freeze panes, auto-filter, hidden rows and columns, sheet visibility); comments, hyperlinks, data validation and conditional formatting.
+- **Same-platform columns.** `Difference Type Flag` is `Number` when both values are numbers or text that reads as a number (`"750"`, `" 45.5 "`), otherwise `Text`. `Difference Type Value Flag` is `True` when the values still differ on that platform and `False` when only the data type or notation differs. `Number` rows also carry `Number Diff (B − A)` and one Yes/No column per threshold (`0`, `0.01`, `0.1`, `1`), strictly greater than.
+- **Options.** `IdentityOptions`: header row, number tolerance, key columns, one chosen sheet per file, and switches to skip formatting, layout or formula checks. A skipped check shows `SKIPPED` in the Summary and is not counted.
+- **Formats of blank cells and rules.** A cell the file does not store is blank and shows the format of its row, else of its column, so a format set on a whole column is compared on its blank cells too. Conditional formats and data validations are compared by what the rule does (type, operator, formulas, the format it applies), not only by where it is; settings a rule type does not use, and its priority number, are left out so that the same rule saved by two programs reads the same.
+- **Limits.** `.xlsx` and `.xlsm` only. Text such as `1,200`, `₹500` or `10%` is not read as a number; dates and TRUE/FALSE cells compare as text. A formula that was never calculated in Excel has no saved result and compares as blank; the Summary says so. Merged cells, data validation and conditional formatting compare by cell address, not by key. Each report sheet lists at most 200,000 rows; the Summary still counts all.
+- **Checks of the engine:** `tests/WorkbookIdentityChecks.cs`, run in CI inside `--check-ui` on synthetic workbooks in a temporary folder, and `tests/test_workbook_identity.py` for source contracts. The engine's output was also compared cell by cell with the Python tool's report on the Python samples before this change; that comparison is not part of CI.
 
 ## Input checks
 - **One checker for every window:** `InputCheck.cs`. Before an action starts, the window lists what it needs and stops when something is missing or wrong:
