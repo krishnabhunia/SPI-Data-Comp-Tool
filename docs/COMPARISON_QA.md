@@ -12,6 +12,7 @@ These checks are configured in the repository. Inspect the successful [Actions r
 | **Windows data-integrity source checks** (`.github/workflows/data-integrity-checks.yml`) | Runs the Python regression suite on pull requests | Windows executable interaction or database integration |
 | **Build and checks** (`.github/workflows/build.yml`) | Builds the Windows application, validates generated layouts and runs regression checks | Proof that every business workflow is correct |
 | `--check-ui <log file>` | Executes synthetic Windows UI/profile/import checks: navigation, Settings/Rules, profile candidates and temporary-file writes, and a small Analysis fixture | Full Oracle/SQL Server integration, production files, or an exhaustive comparison dataset |
+| Workbook identity suite inside `--check-ui` (`tests/WorkbookIdentityChecks.cs`) | Engine and report on synthetic workbooks: value, type, formula, format and layout differences; primary keys; skipped checks; a report that opens without an Excel repair prompt | Real customer workbooks, very large files, or opening the report in Excel itself |
 | `--list-forms` / `--open-form` | Creates, shows and closes every listed window; a failed opening fails the check | Completing the workflow represented by each window |
 | Portable/installer checks | Loads embedded dependencies and smoke-tests the x64 installer and uninstaller | Upgrade/rollback compatibility across all previously released versions or Windows installations |
 
