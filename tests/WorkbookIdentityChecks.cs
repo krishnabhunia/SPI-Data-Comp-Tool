@@ -31,6 +31,7 @@ namespace SPI_Data_Comp_Tool
                 CheckColumnsAndOptions(folder, passed);
                 CheckFormatsAndLayout(folder, passed);
                 CheckReport(folder, passed);
+                CheckSetupHelpers(folder, passed);
             }
             finally
             {
@@ -450,6 +451,35 @@ namespace SPI_Data_Comp_Tool
         }
 
         // ------------------------------------------------------------------ report
+        // ------------------------------------------------------------------ what the setup screen and the result tabs use
+        private static void CheckSetupHelpers(string folder, Action<string> passed)
+        {
+            // A title above the header row, a blank header cell, a name that repeats in another case, and a second sheet.
+            string path = Book(folder, "inspect.xlsx",
+                new[] { R("Report title"), R("ID", "Name", null, "name", "Amount"), R(1, "Asha", null, "x", 5), R(2, "Sana", null, "y", 6) },
+                sheet => sheet.Workbook.Worksheets.Add("Second").Cell("A1").SetValue("Only"));
+            IdentityFileInfo first = WorkbookIdentityEngine.Inspect(path, null, 2);
+            Require(first.Sheets.SequenceEqual(new[] { "Data", "Second" }) && first.Sheet == "Data", "the sheets of a workbook were not listed in order");
+            Require(first.Headers.SequenceEqual(new[] { "ID", "Name", "Amount" }) && first.Columns == 4 && first.DataRows == 2,
+                "the header names, the number of columns or the number of data rows is wrong");
+            IdentityFileInfo second = WorkbookIdentityEngine.Inspect(path, "Second");
+            Require(second.Sheet == "Second" && second.Headers.SequenceEqual(new[] { "Only" }) && second.DataRows == 0, "a named sheet was not described");
+            Rejected<ArgumentException>(() => WorkbookIdentityEngine.Inspect(path, "Missing"), "a sheet that does not exist");
+            Rejected<ArgumentException>(() => WorkbookIdentityEngine.Inspect(path, null, 0), "header row 0");
+
+            // The result tabs and the report sheets come from the same tables.
+            string other = Book(folder, "inspect-b.xlsx", new[] { R("Report title"), R("ID", "Name", null, "name", "Amount"), R(1, "Asha", null, "x", 5), R(2, "Sana", null, "y", 7) });
+            IdentityResult res = Compare(path, other, o => { o.HeaderRow = 2; o.SheetA = "Data"; o.SheetB = "Data"; });
+            IdentityTable[] tables = IdentityReportWriter.Tables(res);
+            Require(tables.Select(table => table.Name).SequenceEqual(IdentityReportWriter.SheetNames), "the report tables are not the five report sheets");
+            Require(tables[0].Rows.Count == IdentityResult.Checks.Length && tables[2].Rows.Count == res.Data.Count && res.Data.Count == 1
+                && !tables[2].Titles.Contains("Key") && tables.All(table => table.Titles.Length == table.Widths.Length),
+                "the report tables do not hold the rows of the result");
+            Require(IdentityReportWriter.Tone("MATCH") == 1 && IdentityReportWriter.Tone("DIFF") == -1 && IdentityReportWriter.Tone("SKIPPED") == 0
+                && IdentityReportWriter.Tone("") == 0, "a status word has the wrong meaning");
+            passed("A workbook is described for the setup screen, and the result tabs use the same tables as the report sheets.");
+        }
+
         private static void CheckReport(string folder, Action<string> passed)
         {
             object[][] changed = Base();
