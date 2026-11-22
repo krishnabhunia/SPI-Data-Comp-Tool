@@ -89,14 +89,14 @@ class RetiredWorkspaces(unittest.TestCase):
         self.assertIn("!AllControls(main).OfType<TileButton>().Any()", checks)
         self.assertIn('main.Controls.Find("task_" + route.Replace', checks)
         self.assertIn('main.Controls.Find("task_" + task.Key.Replace', checks)
-        # 7 rail tasks (CheckCatalogAndRealPages) + the 6 comparison modes behind the two Compare tasks (CheckCompareModes)
+        # 6 rail tasks (CheckCatalogAndRealPages) + the 8 modes behind the Compare and Export tasks (CheckCompareModes)
         catalog = checks.split("private static void CheckCatalogAndRealPages()", 1)[1].split("private static void CheckCompareModes()", 1)[0]
         modes = checks.split("private static void CheckCompareModes()", 1)[1].split("private static void CheckCompareModeLifecycle()", 1)[0]
         routes = re.findall(r'\{ "((?:comparison|reports|settings)\.[^"]+)", typeof\(', catalog)
-        self.assertEqual(len(routes), 7)
-        self.assertEqual(len(set(routes)), 7)
-        mode_routes = re.findall(r'\{ "(comparison\.[^"]+)", typeof\(', modes)
-        self.assertEqual(len(set(mode_routes)), 6)
+        self.assertEqual(len(routes), 6)
+        self.assertEqual(len(set(routes)), 6)
+        mode_routes = re.findall(r'\{ "((?:comparison|reports)\.[^"]+)", typeof\(', modes)
+        self.assertEqual(len(set(mode_routes)), 8)
         self.assertIn("workspace.OpenTask(route.Key);", checks)
         self.assertIn("host.Choose(options)", modes)
 

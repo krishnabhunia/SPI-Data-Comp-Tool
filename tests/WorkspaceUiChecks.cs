@@ -22,9 +22,9 @@ namespace SPI_Data_Comp_Tool
             CheckRetiredWorkflowsAbsent();
             passed("Retired workflow routes, workspace categories and implementation types are absent from the application.");
             CheckCatalogAndRealPages();
-            passed("All 7 rail tasks open lazily in three groups; the 6 comparison workflows keep their types behind the two Compare mode bars.");
+            passed("All 6 rail tasks open lazily in three groups; the 8 workflows behind the Compare and Export mode bars keep their types.");
             CheckCompareModes();
-            passed("Each comparison workflow opens only through its Compare task's mode bar; unavailable combinations are disabled and each list mode shows only its own tab.");
+            passed("Each comparison and export workflow opens only through its task's mode bar; unavailable combinations are disabled and each list mode shows only its own tab.");
             CheckCompareModeLifecycle();
             passed("Compare modes keep their state while switching, pass on the workspace, refuse to close while one mode refuses and close every mode once.");
             CheckNavigation();
@@ -361,8 +361,7 @@ namespace SPI_Data_Comp_Tool
                 },
                 { WorkspaceKind.DataReports, new Dictionary<string, Type>
                     {
-                        { "reports.database", typeof(SQL_DB_To_Excel) },
-                        { "reports.excel", typeof(CustomisedExcel) },
+                        { "reports.export", typeof(CompareModePage) },
                         { "reports.logs", typeof(MergeLogsExport) },
                     }
                 },
@@ -373,7 +372,7 @@ namespace SPI_Data_Comp_Tool
                     }
                 },
             };
-            Require(WorkspaceCatalog.Tasks.Count() == 7, "A supported task route was lost or duplicated.");
+            Require(WorkspaceCatalog.Tasks.Count() == 6, "A supported task route was lost or duplicated.");
             foreach (var group in expected)
             {
                 Require(WorkspaceCatalog.TasksFor(group.Key).Count() == group.Value.Count,
@@ -417,9 +416,11 @@ namespace SPI_Data_Comp_Tool
                 { "comparison.excel-audit", typeof(ExcelSheetAuditForm) },
                 { "comparison.identity", typeof(WorkbookIdentityForm) },
                 { "comparison.batch-folders", typeof(Compare_Multiples_List_Tables_Forms) },
+                { "reports.database", typeof(SQL_DB_To_Excel) },
+                { "reports.excel", typeof(CustomisedExcel) },
             };
-            Require(WorkspaceCatalog.Modes.Select(mode => mode.Key).SequenceEqual(types.Keys), "The comparison modes changed.");
-            using (var workspace = new WorkspaceForm(WorkspaceKind.Comparison, WorkspaceCatalog.TasksFor(WorkspaceKind.Comparison)))
+            Require(WorkspaceCatalog.Modes.Select(mode => mode.Key).SequenceEqual(types.Keys), "The modes changed.");
+            using (var workspace = new WorkspaceForm(WorkspaceCatalog.Tasks, "SPI Data Comparison"))
             {
                 workspace.ShowInTaskbar = false;
                 workspace.Show();
@@ -435,10 +436,10 @@ namespace SPI_Data_Comp_Tool
                     Require(!page.TopLevel && page.Visible && ReferenceEquals(page.HostWorkspace, workspace),
                         "A comparison mode is not hosted visibly inside its task: " + mode.Key + ".");
                     for (int i = 0; i < options.Length; i++)
-                        Require(host.Controls.Find(CompareModePage.ChoiceName(i == 0 && railKey == "comparison.databases" ? "scope" : (i == 0 ? "check" : "files"), options[i]), true)
+                        Require(host.Controls.Find(CompareModePage.ChoiceName(host.AxisKeys[i], options[i]), true)
                             .OfType<RadioButton>().Single().Checked, "The mode bar does not show the chosen mode: " + mode.Key + ".");
                 }
-                Require(workspace.LoadedPages.Count == 2, "Choosing modes opened extra rail tasks.");
+                Require(workspace.LoadedPages.Count == 3, "Choosing modes opened extra rail tasks.");
 
                 var workbooks = (CompareModePage)workspace.OpenTask("comparison.workbooks");
                 workbooks.Choose("formatting", "pair");

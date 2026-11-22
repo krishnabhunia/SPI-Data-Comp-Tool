@@ -50,6 +50,10 @@ namespace SPI_Data_Comp_Tool
                 WorkspaceKind.Comparison, () => new WorkbookIdentityForm()),
             new WorkspaceTask("comparison.batch-folders", "Two folders", "Compare the workbooks of two folders by value; one report per file plus a summary.",
                 WorkspaceKind.Comparison, () => new Compare_Multiples_List_Tables_Forms(false)),
+            new WorkspaceTask("reports.database", "From a database", "Export selected database tables with the existing output options.",
+                WorkspaceKind.DataReports, () => new SQL_DB_To_Excel()),
+            new WorkspaceTask("reports.excel", "From a workbook", "Choose columns from the first worksheet and export a customised workbook.",
+                WorkspaceKind.DataReports, () => new CustomisedExcel()),
         });
 
         private static readonly ReadOnlyCollection<WorkspaceTask> tasks = Array.AsReadOnly(new[]
@@ -58,11 +62,9 @@ namespace SPI_Data_Comp_Tool
                 WorkspaceKind.Comparison, () => CompareModePage.Databases(CreateMode)),
             new WorkspaceTask("comparison.workbooks", "Compare workbooks", "One tool for value comparison, full sheet audit and identity check, for one pair or two folders.",
                 WorkspaceKind.Comparison, () => CompareModePage.Workbooks(CreateMode)),
-            new WorkspaceTask("reports.database", "Database to Excel", "Export selected database tables with the existing output options.",
-                WorkspaceKind.DataReports, () => new SQL_DB_To_Excel()),
-            new WorkspaceTask("reports.excel", "Excel column selection", "Choose columns from the first worksheet and export a customised workbook.",
-                WorkspaceKind.DataReports, () => new CustomisedExcel()),
-            new WorkspaceTask("reports.logs", "Merge log reports", "Convert merge logs into summary and rejected-record worksheets.",
+            new WorkspaceTask("reports.export", "Export", "Export database tables, or chosen columns of a workbook, to Excel.",
+                WorkspaceKind.DataReports, () => CompareModePage.Export(CreateMode)),
+            new WorkspaceTask("reports.logs", "Merge logs", "Convert merge logs into summary and rejected-record worksheets.",
                 WorkspaceKind.DataReports, () => new MergeLogsExport()),
             new WorkspaceTask("settings.preferences", "Preferences, rules & updates", "General preferences, comparison rules and explicit Normal/Beta updates.",
                 WorkspaceKind.Settings, () => new User_Settings(), false),
@@ -70,12 +72,15 @@ namespace SPI_Data_Comp_Tool
                 WorkspaceKind.Settings, () => new UserProfileForm(), false),
         });
 
-        /// <summary>The workflows behind the two Compare tasks' mode bars. They are not rail entries.</summary>
+        /// <summary>The workflows behind the Compare and Export tasks' mode bars. They are not rail entries.</summary>
         internal static IReadOnlyList<WorkspaceTask> Modes => modes;
 
         private static WorkspacePageForm CreateMode(string key) => FindMode(key).CreatePage();
 
-        /// <summary>The rail task and mode-bar choices that show a comparison mode.</summary>
+        /// <summary>The rail tasks that choose a workflow with a mode bar.</summary>
+        internal static readonly IReadOnlyList<string> ModeTasks = Array.AsReadOnly(new[] { "comparison.databases", "comparison.workbooks", "reports.export" });
+
+        /// <summary>The rail task and mode-bar choices that show a mode.</summary>
         internal static string TaskOfMode(string modeKey, out string[] options)
         {
             switch (modeKey)
@@ -86,14 +91,16 @@ namespace SPI_Data_Comp_Tool
                 case "comparison.excel-audit": options = new[] { "formatting", "pair" }; return "comparison.workbooks";
                 case "comparison.identity": options = new[] { "identical", "pair" }; return "comparison.workbooks";
                 case "comparison.batch-folders": options = new[] { "values", "folders" }; return "comparison.workbooks";
-                default: throw new ArgumentException("Unknown comparison mode: " + modeKey, nameof(modeKey));
+                case "reports.database": options = new[] { "database" }; return "reports.export";
+                case "reports.excel": options = new[] { "workbook" }; return "reports.export";
+                default: throw new ArgumentException("Unknown mode: " + modeKey, nameof(modeKey));
             }
         }
 
         internal static WorkspaceTask FindMode(string key)
         {
             var mode = modes.SingleOrDefault(item => item.Key == key);
-            if (mode == null) throw new ArgumentException("Unknown comparison mode: " + key, nameof(key));
+            if (mode == null) throw new ArgumentException("Unknown mode: " + key, nameof(key));
             return mode;
         }
 

@@ -72,10 +72,10 @@ namespace SPI_Data_Comp_Tool
                     new Scenario { Name = "null profile entry", Path = nullEntry, Invalid = true },
                     new Scenario { Name = "locked profile", Path = locked, Invalid = true, Locked = true },
                 };
-                Require(WorkspaceCatalog.Tasks.Count == 7 && WorkspaceCatalog.Modes.Count == 6,
-                    "The startup matrix must cover the five other rail tasks and the six modes of the two Compare tasks.");
-                // The two Compare tasks are opened through each of their modes; the other rail tasks directly.
-                List<WorkspaceTask> routes = WorkspaceCatalog.Tasks.Where(item => !(item.Key == "comparison.databases" || item.Key == "comparison.workbooks"))
+                Require(WorkspaceCatalog.Tasks.Count == 6 && WorkspaceCatalog.Modes.Count == 8,
+                    "The startup matrix must cover the three other rail tasks and the eight modes of the Compare and Export tasks.");
+                // The tasks with a mode bar are opened through each of their modes; the other rail tasks directly.
+                List<WorkspaceTask> routes = WorkspaceCatalog.Tasks.Where(item => !WorkspaceCatalog.ModeTasks.Contains(item.Key))
                     .Concat(WorkspaceCatalog.Modes).ToList();
                 foreach (Scenario scenario in scenarios)
                 {
@@ -142,6 +142,8 @@ namespace SPI_Data_Comp_Tool
                     bool mode = WorkspaceCatalog.Modes.Contains(task);
                     string railKey = mode ? WorkspaceCatalog.TaskOfMode(task.Key, out options) : task.Key;
                     WorkspacePageForm railPage = navigator.Open(owner, railKey);
+                    // A task with a mode bar first shows its default mode; that mode may legitimately read profiles.
+                    string defaultMode = mode ? ((CompareModePage)railPage).ActiveModeKey : null;
                     WorkspacePageForm page = mode ? ((CompareModePage)railPage).Choose(options) : railPage;
                     PumpEvents();
                     NoEventErrors(eventErrors, "opening the task");
@@ -192,7 +194,7 @@ namespace SPI_Data_Comp_Tool
                         }
                         CheckManualConnection(connection);
                     }
-                    else
+                    else if (defaultMode == null || !ProfileRoutes.Contains(defaultMode))
                     {
                         Require(ReferenceEquals(Profile.ProfileList, memory), "An unrelated task unexpectedly reloaded connection profiles.");
                     }

@@ -11,11 +11,11 @@ SQL Scripts is also retired. Its Generate scripts and Execute scripts & queries 
 | Workspace | Tasks | Explicit routes |
 |---|---|---:|
 | Comparison | **Compare databases** (One table · A list of tables); **Compare workbooks** (Values · Values and formatting · Identical?, for One pair · Two folders) | 2 |
-| Data & Reports | Database to Excel; Excel column selection; Merge log reports | 3 |
+| Data & Reports | **Export** (From a database · From a workbook); **Merge logs** | 2 |
 | Settings | Preferences, rules & updates; Connection profiles | 2 |
-| **Total** | **7 rail tasks; the two Compare tasks choose one of 6 comparison workflows with their mode bar** | **7** |
+| **Total** | **6 rail tasks; Compare databases, Compare workbooks and Export choose one of 8 workflows with their mode bar** | **6** |
 
-Each comparison workflow is reached in exactly one way: its Compare task's mode bar. A combination that a workflow cannot run is disabled (Two folders compares values only). Switching modes keeps each mode's page, inputs, results and running work; closing the task asks every loaded mode first and selects the one that refuses.
+Each comparison and export workflow is reached in exactly one way: its task's mode bar. A combination that a workflow cannot run is disabled (Two folders compares values only). Switching modes keeps each mode's page, inputs, results and running work; closing the task asks every loaded mode first and selects the one that refuses.
 
 The main window's left rail lists every current task once, grouped by workspace, and is the only way to open a task: there is no menu bar, no home tiles and no Help menu. Tasks open inside the main window; switching between them does not clear inputs or results. No workflow page is created until it is selected, and choosing a workspace does not automatically run database queries, comparisons or report exports.
 
@@ -39,9 +39,10 @@ The choice remains in `%AppData%\SPI Data Comparison Tool\theme.txt`, outside th
 | `comparison.excel-audit` (mode: Values and formatting · One pair) | `ExcelSheetAuditForm` | Separate Design A audit of selected worksheets, optional mapped single/composite keys, formatting/layout and a two-sheet report. No existing engine is replaced. |
 | `comparison.identity` (mode: Identical? · One pair) | `WorkbookIdentityForm` | Workbook identity check: answers whether two workbooks are identical: all sheets or one sheet, rows by position or by a ticked primary key, 18 checks on screen and a five-sheet report. It uses its own engine; no existing task is replaced. |
 | `comparison.batch-folders` (mode: Values · Two folders) | `Compare_Multiples_List_Tables_Forms` | Workbook folders by value; only its Excel folders tab; reads no connection profiles. |
-| `reports.database` | `SQL_DB_To_Excel` | Selected database-table exports. |
-| `reports.excel` | `CustomisedExcel` | Column projection from the first input worksheet. |
-| `reports.logs` | `MergeLogsExport` | Merge-log parsing into summaries and rejected-record reports. |
+| `reports.export` | `CompareModePage` | Rail task **Export**; its mode bar shows `reports.database` or `reports.excel`. |
+| `reports.database` (mode: From a database) | `SQL_DB_To_Excel` | Selected database-table exports. |
+| `reports.excel` (mode: From a workbook) | `CustomisedExcel` | Column projection from the first input worksheet. |
+| `reports.logs` (**Merge logs**) | `MergeLogsExport` | Merge-log parsing into summaries and rejected-record reports. |
 | `settings.preferences` | `User_Settings` | Existing General, Comparison rules and Updates tabs. |
 | `settings.profiles` | `UserProfileForm` | Real profile management with existing save/cancel safeguards. |
 
