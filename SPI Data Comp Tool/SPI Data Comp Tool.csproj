@@ -251,6 +251,9 @@
     <Compile Include="SelfTest.cs" />
     <Compile Include="WindowNavigator.cs" />
     <Compile Include="WorkspacePageForm.cs" />
+    <Compile Include="CompareModePage.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="WorkspaceCatalog.cs" />
     <Compile Include="WorkspaceForm.cs" />
     <Compile Include="ProfileStore.cs" />

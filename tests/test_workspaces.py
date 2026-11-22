@@ -17,15 +17,20 @@ def source(name):
 class WorkspaceContracts(unittest.TestCase):
     def test_catalog_contains_only_supported_task_routes(self):
         catalog = source("WorkspaceCatalog.cs")
-        routes = re.findall(r'new WorkspaceTask\("([^"]+)"', catalog)
-        self.assertEqual(len(routes), 10)
-        self.assertEqual(len(set(routes)), 10)
-        expected = {"comparison": 5, "reports": 3, "settings": 2}
-        self.assertIn("comparison.excel", routes)
-        self.assertIn("comparison.excel-audit", routes)
-        self.assertIn("comparison.identity", routes)
+        rail = catalog.split("private static readonly ReadOnlyCollection<WorkspaceTask> tasks", 1)[1].split("});", 1)[0]
+        modes = catalog.split("private static readonly ReadOnlyCollection<WorkspaceTask> modes", 1)[1].split("});", 1)[0]
+        routes = re.findall(r'new WorkspaceTask\("([^"]+)"', rail)
+        self.assertEqual(len(routes), 7)
+        self.assertEqual(len(set(routes)), 7)
+        expected = {"comparison": 2, "reports": 3, "settings": 2}
         for group, count in expected.items():
             self.assertEqual(sum(route.startswith(group + ".") for route in routes), count)
+        self.assertEqual(routes[:2], ["comparison.databases", "comparison.workbooks"])
+        # The six existing comparison workflows stay, reachable only through the two Compare tasks' mode bars.
+        mode_keys = re.findall(r'new WorkspaceTask\("([^"]+)"', modes)
+        self.assertEqual(mode_keys, ["comparison.database", "comparison.batch", "comparison.excel", "comparison.excel-audit",
+                                     "comparison.identity", "comparison.batch-folders"])
+        self.assertFalse(set(mode_keys) & set(routes))
         self.assertIn("() => new User_Settings(), false", catalog)
         self.assertIn("() => new UserProfileForm(), false", catalog)
 
@@ -33,8 +38,8 @@ class WorkspaceContracts(unittest.TestCase):
         pages = []
         for path in APP.glob("*.cs"):
             pages += re.findall(r"public (?:(?:partial|sealed) )?class (\w+) : WorkspacePageForm", path.read_text(encoding="utf-8-sig"))
-        self.assertEqual(len(pages), 11)
-        self.assertEqual(len(set(pages)), 11)
+        self.assertEqual(len(pages), 12)  # 11 workflow pages + the Compare mode host
+        self.assertEqual(len(set(pages)), 12)
         self.assertIn("public abstract class WorkspacePageForm : Form", source("WorkspacePageForm.cs"))
 
     def test_preparation_does_not_dispose_or_close_pages(self):

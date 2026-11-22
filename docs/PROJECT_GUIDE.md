@@ -1,14 +1,15 @@
 # SPI Data Comparison Tool — implementation guide
 
 ## Overview
-This is a **Windows Forms / C# desktop project** for database and Excel comparisons, workbook audits and data/report exports. Three workspaces host 10 current tasks: Comparison, Data & Reports and Settings. The SQL Scripts workspace and both its generation/execution forms have been removed. The earlier Analysis & Migration and Pre-merge Checks workspaces also remain removed; [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0) preserves the application before that earlier retirement. See [WORKSPACES.md](WORKSPACES.md) for the current task map and lifecycle boundaries; the presence of a task is not proof its complete workflow has been tested against live databases.
+This is a **Windows Forms / C# desktop project** for database and Excel comparisons, workbook audits and data/report exports. The left rail lists 7 tasks in three groups (Comparison, Data & Reports, Settings); **Compare databases** and **Compare workbooks** pick one of 6 comparison workflows with their mode bar (`CompareModePage`). The SQL Scripts workspace and both its generation/execution forms have been removed. The earlier Analysis & Migration and Pre-merge Checks workspaces also remain removed; [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0) preserves the application before that earlier retirement. See [WORKSPACES.md](WORKSPACES.md) for the current task map and lifecycle boundaries; the presence of a task is not proof its complete workflow has been tested against live databases.
 
 ## Verified source map
 | Source | Responsibility |
 |---|---|
 | `SPI Data Comp Tool/Program.cs` | Dispatches the isolated update helper, CI checks, or normal application startup |
 | `SPI Data Comp Tool/MainForm.cs` | Main window, three workspace entry points, catalog-driven menus, About and guarded exit |
-| `SPI Data Comp Tool/WorkspaceCatalog.cs` | Three workspace groups and 10 explicit task routes; advanced mapping opens an independent transient page |
+| `SPI Data Comp Tool/CompareModePage.cs` | Mode bar of Compare databases and Compare workbooks: each mode is an existing workflow page, created when first chosen and kept while switching |
+| `SPI Data Comp Tool/WorkspaceCatalog.cs` | 7 rail tasks in three groups plus the 6 comparison modes behind the two Compare tasks; advanced mapping opens an independent transient page |
 | `SPI Data Comp Tool/WindowNavigator.cs` | `WorkspaceNavigator`: default workspace/page reuse and explicit parallel sessions |
 | `SPI Data Comp Tool/WorkspaceForm.cs`, `WorkspacePageForm.cs` | Lazy page hosting, task switching and prepare-before-close lifecycle; existing business code remains in its page implementation |
 | `SPI Data Comp Tool/StepFlow.cs` | Controlled steps: `StepFlow` locks a step's controls until the step before is done; `StepStrip` shows the steps (done, current, locked) at the top of a window |
@@ -124,7 +125,7 @@ Excel column selection has no generated layout, so `StepStrip.Attach` places its
 | Comparison Import Rules buttons | Removed. Rules are chosen only in **Settings › Rules**; each comparison shows a read-only *Rules: <file> (set in Settings)* line that refreshes when the page is shown | Comparisons read the saved rules file when **Include rules** is ticked, exactly as before; an invalid or cancelled import in Settings keeps the previous rules file. |
 | Hidden profile prototypes and inactive Excel multithreading scaffold | Removed | Real profile management and active comparison/instrument workers remain. The advanced-mapping count display now describes its actual loaded Target snapshot. |
 
-There are **14 concrete production Form classes**: 10 directly routed tasks, `MainForm`, `AboutBox1`, `ViewForMultiReference` and the common `WorkspaceForm` host. `WorkspacePageForm` is an abstract lifecycle base, not another window to open. The retired workspaces' task forms, dedicated controls, layouts and resources are absent from the current build; historical releases retain their earlier implementations. The prior retirement archive at v2.16.0 remains unchanged. Excel Sheet Audit and Workbook identity check remain separate tasks and do not replace the original Excel comparison.
+There are **15 concrete production Form classes**: the 10 workflow forms (5 behind the Compare mode bars, as `Compare_Multiples_List_Tables_Forms` serves both list modes, plus the other 5 rail tasks), the `CompareModePage` mode host, `MainForm`, `AboutBox1`, `ViewForMultiReference` and the common `WorkspaceForm` host. `WorkspacePageForm` is an abstract lifecycle base, not another window to open. The retired workspaces' task forms, dedicated controls, layouts and resources are absent from the current build; historical releases retain their earlier implementations. The prior retirement archive at v2.16.0 remains unchanged. Excel Sheet Audit and Workbook identity check remain separate workflows (Compare workbooks › Values and formatting / Identical?) and do not replace the original value comparison.
 
 The workspace normalizes a page's window state before embedding it. Excel comparison retains a maximized default when used as a standalone window; carrying that state into a newly created, hidden workspace prevented its first hosted display. The startup matrix checks every route before the host has been shown, as well as subsequent reuse.
 
@@ -156,7 +157,7 @@ The repository's releases must remain publicly readable: the updater does not re
 
 ## Workbook identity check (form)
 
-`WorkbookIdentityForm` is the task **Comparison > Workbook identity check** (route `comparison.identity`). It only collects inputs and shows results; reading, comparing and writing the report are done by the engine described in the next section. The user guide is [WORKBOOK_IDENTITY_CHECK.md](WORKBOOK_IDENTITY_CHECK.md).
+`WorkbookIdentityForm` is **Compare workbooks › Identical?** (mode `comparison.identity`). It only collects inputs and shows results; reading, comparing and writing the report are done by the engine described in the next section. The user guide is [WORKBOOK_IDENTITY_CHECK.md](WORKBOOK_IDENTITY_CHECK.md).
 
 | SrNo. | Area | How it works |
 |---|---|---|

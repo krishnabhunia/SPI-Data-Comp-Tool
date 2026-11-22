@@ -88,7 +88,9 @@ class WorkbookIdentityContracts(unittest.TestCase):
 
     def test_form_is_a_workspace_task_with_its_own_route(self) -> None:
         catalog = code("WorkspaceCatalog.cs")
-        self.assertIn('new WorkspaceTask("comparison.identity", "Workbook identity check",', catalog)
+        # Compare workbooks › Identical? is its route (a mode of the Compare workbooks task).
+        self.assertIn('new WorkspaceTask("comparison.identity", "Identical?",', catalog)
+        self.assertIn('default: return "comparison.identity";', code("CompareModePage.cs"))
         self.assertIn("() => new WorkbookIdentityForm()", catalog)
         # The two Excel tasks that existed before keep their routes and windows.
         self.assertIn('new WorkspaceTask("comparison.excel",', catalog)

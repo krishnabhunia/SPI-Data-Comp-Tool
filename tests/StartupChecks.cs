@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -72,13 +72,17 @@ namespace SPI_Data_Comp_Tool
                     new Scenario { Name = "null profile entry", Path = nullEntry, Invalid = true },
                     new Scenario { Name = "locked profile", Path = locked, Invalid = true, Locked = true },
                 };
-                Require(WorkspaceCatalog.Tasks.Count == 10, "The startup matrix must cover all ten current task routes.");
+                Require(WorkspaceCatalog.Tasks.Count == 7 && WorkspaceCatalog.Modes.Count == 6,
+                    "The startup matrix must cover the five other rail tasks and the six modes of the two Compare tasks.");
+                // The two Compare tasks are opened through each of their modes; the other rail tasks directly.
+                List<WorkspaceTask> routes = WorkspaceCatalog.Tasks.Where(item => !(item.Key == "comparison.databases" || item.Key == "comparison.workbooks"))
+                    .Concat(WorkspaceCatalog.Modes).ToList();
                 foreach (Scenario scenario in scenarios)
                 {
                     using (FileStream held = scenario.Locked
                         ? new FileStream(scenario.Path, FileMode.Open, FileAccess.Read, FileShare.None) : null)
                     {
-                        foreach (WorkspaceTask task in WorkspaceCatalog.Tasks.Where(candidate => scenario.AllRoutes || ProfileRoutes.Contains(candidate.Key)))
+                        foreach (WorkspaceTask task in routes.Where(candidate => scenario.AllRoutes || ProfileRoutes.Contains(candidate.Key)))
                         {
                             eventErrors.Clear();
                             try
@@ -97,7 +101,7 @@ namespace SPI_Data_Comp_Tool
                         }
                     }
                 }
-                Require(checkedRoutes == 40, "The startup matrix must exercise ten routes twice and all four profile consumers with five unavailable-profile scenarios.");
+                Require(checkedRoutes == 42, "The startup matrix must exercise eleven routes twice and all four profile consumers with five unavailable-profile scenarios.");
                 Require(File.ReadAllText(valid) == LegacyProfileJson && File.ReadAllText(locked) == LegacyProfileJson,
                     "Opening a task changed a profile fixture.");
             }
@@ -134,7 +138,11 @@ namespace SPI_Data_Comp_Tool
                     owner.Show();
                     // Open through the real cold navigator: its new workspace has never been
                     // shown, and OpenTask must attach the page before the host gets a handle.
-                    WorkspacePageForm page = navigator.Open(owner, task.Key);
+                    string[] options = null;
+                    bool mode = WorkspaceCatalog.Modes.Contains(task);
+                    string railKey = mode ? WorkspaceCatalog.TaskOfMode(task.Key, out options) : task.Key;
+                    WorkspacePageForm railPage = navigator.Open(owner, railKey);
+                    WorkspacePageForm page = mode ? ((CompareModePage)railPage).Choose(options) : railPage;
                     PumpEvents();
                     NoEventErrors(eventErrors, "opening the task");
                     Require(page != null && !page.IsDisposed && page.Visible && page.IsHandleCreated,
@@ -142,7 +150,7 @@ namespace SPI_Data_Comp_Tool
                     Require(page.WindowState == FormWindowState.Normal,
                         "A hosted page retained standalone window state. " + PageState(page));
                     Require(navigator.LoadedWorkspaces.Count == 1 && page.HostWorkspace != null
-                        && ReferenceEquals(page.HostWorkspace.ActivePage, page), "The navigator did not activate the new task.");
+                        && ReferenceEquals(page.HostWorkspace.ActivePage, railPage), "The navigator did not activate the new task.");
                     CheckInitialization(page);
 
                     bool usesProfiles = ProfileRoutes.Contains(task.Key);
@@ -189,9 +197,10 @@ namespace SPI_Data_Comp_Tool
                         Require(ReferenceEquals(Profile.ProfileList, memory), "An unrelated task unexpectedly reloaded connection profiles.");
                     }
 
-                    WorkspacePageForm reopened = navigator.Open(owner, task.Key);
+                    WorkspacePageForm reopened = navigator.Open(owner, railKey);
                     PumpEvents();
-                    Require(ReferenceEquals(page, reopened) && navigator.LoadedWorkspaces.Count == 1,
+                    Require(ReferenceEquals(railPage, reopened) && navigator.LoadedWorkspaces.Count == 1
+                        && (!mode || ReferenceEquals(page, ((CompareModePage)railPage).ActiveMode)),
                         "Reopening the same route replaced the user's task instance.");
                     NoEventErrors(eventErrors, "selecting a profile or reopening the task");
                     Require(Properties.Settings.Default.ProfilePathUser == scenario.Path

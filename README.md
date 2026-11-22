@@ -2,15 +2,15 @@
 
 Generic Windows Forms (.NET Framework 4.8) desktop utility for database and Excel comparison, workbook audits and data exports. It works against Oracle and SQL Server.
 
-The main window groups 10 tasks into three workspace tiles: **Comparison**, **Data & Reports**, and **Settings**. Switching tasks preserves each page's inputs and results. The SQL Scripts workspace and both its generation/execution forms have been removed. Database comparison and database-to-Excel export remain available.
+The main window's left rail lists 7 tasks in three groups: **Comparison** (Compare databases, Compare workbooks), **Data & Reports** and **Settings**. Compare databases (One table / A list of tables) and Compare workbooks (Values / Values and formatting / Identical?, for One pair / Two folders) choose their workflow with a mode bar. Switching tasks or modes preserves each page's inputs and results. The SQL Scripts workspace and both its generation/execution forms have been removed. Database comparison and database-to-Excel export remain available.
 
 The earlier Analysis & Migration and Pre-merge Checks workspaces, their task forms and their dedicated supporting code also remain removed. The application before that retirement is preserved in [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0).
 
 The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes remain available. Choose one on the Settings preferences task's **General** tab; the home tiles, workspaces and loaded pages change colour immediately, without reopening the tasks. Ocean is the default; Midnight is the dark theme.
 
-**Comparison > Excel Sheet Audit** is a separate native C# form for two selected worksheets: optional single/composite keys, case-insensitive column-name matching, exact typed values, headers, formatting and layout. It exports exactly two sheets: **Summary** and **Data Differences**. The original **Excel comparison** task is unchanged. See the [audit guide](docs/EXCEL_SHEET_AUDIT.md) for validation, scope and resource limits.
+**Compare workbooks › Values and formatting** (Excel Sheet Audit) is a separate native C# form for two selected worksheets: optional single/composite keys, case-insensitive column-name matching, exact typed values, headers, formatting and layout. It exports exactly two sheets: **Summary** and **Data Differences**. The original value comparison (**Compare workbooks › Values**) is unchanged. See the [audit guide](docs/EXCEL_SHEET_AUDIT.md) for validation, scope and resource limits.
 
-**Comparison > Workbook identity check** answers one question: are two workbooks identical? It compares every sheet (or one chosen sheet) by row position or by an optional primary key, lists the 18 checks on screen and writes a five-sheet report: **Summary**, **Headers**, **Data Differences**, **Format Differences** and **Layout & Other**. See the [identity check guide](docs/WORKBOOK_IDENTITY_CHECK.md).
+**Compare workbooks › Identical?** (Workbook identity check) answers one question: are two workbooks identical? It compares every sheet (or one chosen sheet) by row position or by an optional primary key, lists the 18 checks on screen and writes a five-sheet report: **Summary**, **Headers**, **Data Differences**, **Format Differences** and **Layout & Other**. See the [identity check guide](docs/WORKBOOK_IDENTITY_CHECK.md).
 
 | SrNo. | Topic | Where |
 |---|---|---|

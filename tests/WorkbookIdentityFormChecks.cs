@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -154,14 +154,17 @@ namespace SPI_Data_Comp_Tool
         private static void CheckRoute(Action<string> passed)
         {
             WorkspaceTask task = WorkspaceCatalog.Find("comparison.identity");
-            Require(task.Workspace == WorkspaceKind.Comparison && task.Title == "Workbook identity check", "the task is not in the Comparison workspace");
+            string[] options;
+            Require(task.Workspace == WorkspaceKind.Comparison && task.Title == "Identical?"
+                && WorkspaceCatalog.TaskOfMode(task.Key, out options) == "comparison.workbooks" && options.SequenceEqual(new[] { "identical", "pair" }),
+                "the identity check is not the Identical? mode of Compare workbooks");
             using (WorkspacePageForm page = task.CreatePage())
                 Require(page.GetType() == typeof(WorkbookIdentityForm), "the route opens another window");
             using (WorkspacePageForm excel = WorkspaceCatalog.Find("comparison.excel").CreatePage())
             using (WorkspacePageForm audit = WorkspaceCatalog.Find("comparison.excel-audit").CreatePage())
                 Require(excel.GetType() == typeof(Excel_Excel_Comparison) && audit.GetType() == typeof(ExcelSheetAuditForm),
                     "an existing Excel task was replaced");
-            passed("Workbook identity check has its own route; the existing Excel tasks keep theirs.");
+            passed("Workbook identity check is Compare workbooks › Identical?; the existing Excel workflows keep their modes.");
         }
 
         private static void CheckInputs(string folder, string a, string b, Action<string> passed)

@@ -22,7 +22,11 @@ namespace SPI_Data_Comp_Tool
             CheckRetiredWorkflowsAbsent();
             passed("Retired workflow routes, workspace categories and implementation types are absent from the application.");
             CheckCatalogAndRealPages();
-            passed("All 10 task routes retain their workflow types in three lazily loaded workspaces.");
+            passed("All 7 rail tasks open lazily in three groups; the 6 comparison workflows keep their types behind the two Compare mode bars.");
+            CheckCompareModes();
+            passed("Each comparison workflow opens only through its Compare task's mode bar; unavailable combinations are disabled and each list mode shows only its own tab.");
+            CheckCompareModeLifecycle();
+            passed("Compare modes keep their state while switching, pass on the workspace, refuse to close while one mode refuses and close every mode once.");
             CheckNavigation();
             passed("Workspace navigation reuses pages and restores windows without replacing independent sessions or modes.");
             CheckCloseLifecycle();
@@ -351,11 +355,8 @@ namespace SPI_Data_Comp_Tool
             {
                 { WorkspaceKind.Comparison, new Dictionary<string, Type>
                     {
-                        { "comparison.database", typeof(DB_Comparison_Form) },
-                        { "comparison.excel", typeof(Excel_Excel_Comparison) },
-                        { "comparison.excel-audit", typeof(ExcelSheetAuditForm) },
-                        { "comparison.identity", typeof(WorkbookIdentityForm) },
-                        { "comparison.batch", typeof(Compare_Multiples_List_Tables_Forms) },
+                        { "comparison.databases", typeof(CompareModePage) },
+                        { "comparison.workbooks", typeof(CompareModePage) },
                     }
                 },
                 { WorkspaceKind.DataReports, new Dictionary<string, Type>
@@ -372,7 +373,7 @@ namespace SPI_Data_Comp_Tool
                     }
                 },
             };
-            Require(WorkspaceCatalog.Tasks.Count() == 10, "A supported task route was lost or duplicated.");
+            Require(WorkspaceCatalog.Tasks.Count() == 7, "A supported task route was lost or duplicated.");
             foreach (var group in expected)
             {
                 Require(WorkspaceCatalog.TasksFor(group.Key).Count() == group.Value.Count,
@@ -403,6 +404,96 @@ namespace SPI_Data_Comp_Tool
                     workspace.Close();
                     Require(workspace.IsDisposed, "An idle workspace failed to close.");
                 }
+            }
+        }
+
+        private static void CheckCompareModes()
+        {
+            var types = new Dictionary<string, Type>
+            {
+                { "comparison.database", typeof(DB_Comparison_Form) },
+                { "comparison.batch", typeof(Compare_Multiples_List_Tables_Forms) },
+                { "comparison.excel", typeof(Excel_Excel_Comparison) },
+                { "comparison.excel-audit", typeof(ExcelSheetAuditForm) },
+                { "comparison.identity", typeof(WorkbookIdentityForm) },
+                { "comparison.batch-folders", typeof(Compare_Multiples_List_Tables_Forms) },
+            };
+            Require(WorkspaceCatalog.Modes.Select(mode => mode.Key).SequenceEqual(types.Keys), "The comparison modes changed.");
+            using (var workspace = new WorkspaceForm(WorkspaceKind.Comparison, WorkspaceCatalog.TasksFor(WorkspaceKind.Comparison)))
+            {
+                workspace.ShowInTaskbar = false;
+                workspace.Show();
+                foreach (var mode in types)
+                {
+                    string[] options;
+                    string railKey = WorkspaceCatalog.TaskOfMode(mode.Key, out options);
+                    var host = (CompareModePage)workspace.OpenTask(railKey);
+                    WorkspacePageForm page = host.Choose(options);
+                    Application.DoEvents();
+                    Require(page.GetType() == mode.Value && ReferenceEquals(host.ActiveMode, page) && host.ActiveModeKey == mode.Key,
+                        "The mode bar opened the wrong workflow for " + mode.Key + ".");
+                    Require(!page.TopLevel && page.Visible && ReferenceEquals(page.HostWorkspace, workspace),
+                        "A comparison mode is not hosted visibly inside its task: " + mode.Key + ".");
+                    for (int i = 0; i < options.Length; i++)
+                        Require(host.Controls.Find(CompareModePage.ChoiceName(i == 0 && railKey == "comparison.databases" ? "scope" : (i == 0 ? "check" : "files"), options[i]), true)
+                            .OfType<RadioButton>().Single().Checked, "The mode bar does not show the chosen mode: " + mode.Key + ".");
+                }
+                Require(workspace.LoadedPages.Count == 2, "Choosing modes opened extra rail tasks.");
+
+                var workbooks = (CompareModePage)workspace.OpenTask("comparison.workbooks");
+                workbooks.Choose("formatting", "pair");
+                Func<string, string, RadioButton> choice = (axis, option) =>
+                    workbooks.Controls.Find(CompareModePage.ChoiceName(axis, option), true).OfType<RadioButton>().Single();
+                Require(!choice("files", "folders").Enabled && choice("files", "pair").Enabled,
+                    "Two folders stayed available for a check it cannot run.");
+                workbooks.Choose("values", "folders");
+                Require(!choice("check", "formatting").Enabled && !choice("check", "identical").Enabled && choice("check", "values").Enabled,
+                    "A check that cannot run on two folders stayed available.");
+                bool refused = false;
+                try { workbooks.Choose("identical", "folders"); }
+                catch (ArgumentException) { refused = true; }
+                Require(refused, "An unavailable mode combination was accepted.");
+
+                var databases = (CompareModePage)workspace.OpenTask("comparison.databases");
+                var list = (Compare_Multiples_List_Tables_Forms)databases.Choose("list");
+                var folders = (Compare_Multiples_List_Tables_Forms)workbooks.Choose("values", "folders");
+                Func<Form, string[]> tabs = form => form.Controls.Find("tabControl1", true).OfType<TabControl>().Single()
+                    .TabPages.Cast<TabPage>().Select(tab => tab.Name).ToArray();
+                Require(tabs(list).SequenceEqual(new[] { "tabPage_DB" }) && tabs(folders).SequenceEqual(new[] { "tabPage_Excel" }),
+                    "A list mode shows the other mode's tab, a second way to reach it.");
+                workspace.Close();
+            }
+        }
+
+        private static void CheckCompareModeLifecycle()
+        {
+            var created = new Dictionary<string, TestPage>();
+            Func<string, WorkspacePageForm> create = key => { var page = new TestPage(key); created[key] = page; return page; };
+            var tasks = new[] { Task("comparison.synthetic", WorkspaceKind.Comparison, () => CompareModePage.Databases(create)) };
+            using (var workspace = new WorkspaceForm(WorkspaceKind.Comparison, tasks))
+            {
+                workspace.ShowInTaskbar = false;
+                workspace.Show();
+                var host = (CompareModePage)workspace.OpenTask("comparison.synthetic");
+                var table = (TestPage)host.ActiveMode;
+                Require(table != null && table.Name == "comparison.database", "Compare databases did not start with One table.");
+                table.Draft.Text = "Retained table input";
+                var list = (TestPage)host.Choose("list");
+                Require(!table.Visible && list.Visible && ReferenceEquals(list.HostWorkspace, workspace),
+                    "Switching modes did not hide the other mode or pass on the workspace.");
+                Require(ReferenceEquals(table, host.Choose("table")) && table.Draft.Text == "Retained table input" && created.Count == 2,
+                    "Switching modes recreated a mode or lost its input.");
+                host.Choose("list");
+                table.VetoClose = true;
+                workspace.CloseActivePage();
+                Require(!host.IsDisposed && !table.IsDisposed && !list.IsDisposed && ReferenceEquals(host.ActiveMode, table),
+                    "A refusing mode did not stop the task closing, or was not selected.");
+                Require(!workspace.TryPrepareWorkspaceClose(CloseReason.UserClosing), "Workspace close ignored a refusing mode.");
+                table.VetoClose = false;
+                workspace.CloseActivePage();
+                Require(host.IsDisposed && table.IsDisposed && list.IsDisposed && table.ClosedCount == 1 && list.ClosedCount == 1,
+                    "Closing the task did not close every mode exactly once.");
+                workspace.Close();
             }
         }
 
@@ -703,7 +794,7 @@ namespace SPI_Data_Comp_Tool
                 Require(about != null, "Settings has no embedded About page.");
                 Require(UpdateInstaller.CanInstallForms(new Form[] { shell, preferences, about }, out reason),
                     "Settings with its embedded About page prevented use of its own updater: " + reason);
-                shell.OpenTask("comparison.database");
+                shell.OpenTask("comparison.databases");
                 var comparison = shell.ActivePage;
                 shell.OpenTask("settings.preferences");
                 Require(!UpdateInstaller.CanInstallForms(new Form[] { shell, preferences, about }, out reason) &&
