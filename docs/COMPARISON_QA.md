@@ -51,7 +51,7 @@ The following are **acceptance expectations to verify**, not a record of complet
 | Null vs empty string, case changes, numeric/decimal precision, dates | Behavior matches agreed comparison rules |
 | Connection failure or an exception while a password is present | Neither UI messages nor disk logs reveal connection-string password assignments |
 | Save a database profile while debugger is attached | Saved JSON has blank passwords for both source and target |
-| Current task inventory | Three workspace tiles and 10 task routes are available; retired script-generation/execution forms cannot be opened through menus, workspace routes or a self-test launch |
+| Current task inventory | The rail's 7 tasks and the 6 comparison modes behind Compare databases / Compare workbooks are available; retired script-generation/execution forms cannot be opened through menus, workspace routes or a self-test launch |
 
 ## Known follow-ups
 

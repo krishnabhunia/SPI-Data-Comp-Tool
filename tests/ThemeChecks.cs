@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -231,7 +231,9 @@ namespace SPI_Data_Comp_Tool
                     settings.Show(main);
 
                     // Exercise real workflow factories but never click a data or updater action.
-                    WorkspacePageForm database = comparison.OpenTask("comparison.database");
+                    var databases = (CompareModePage)comparison.OpenTask("comparison.databases");
+                    WorkspacePageForm database = databases.ActiveMode;
+                    Require(database is DB_Comparison_Form, "Compare databases did not start with One table.");
                     var draft = new TextBox
                     {
                         Name = "tb_HostedThemeProbe", Text = "Retained draft selection", Dock = DockStyle.Bottom,
@@ -243,7 +245,9 @@ namespace SPI_Data_Comp_Tool
                     };
                     database.Controls.Add(error);
                     error.ForeColor = Color.Red;
-                    WorkspacePageForm excel = comparison.OpenTask("comparison.excel");
+                    var workbooks = (CompareModePage)comparison.OpenTask("comparison.workbooks");
+                    WorkspacePageForm excel = workbooks.ActiveMode;
+                    Require(excel is Excel_Excel_Comparison, "Compare workbooks did not start with Values, one pair.");
                     var preferences = (User_Settings)settings.OpenTask("settings.preferences");
                     var picker = preferences.Controls.Find("cb_Theme", true).OfType<ComboBox>().Single();
                     var rulePicker = rules.Controls.Find("cb_Theme", true).OfType<ComboBox>().Single();
@@ -265,7 +269,7 @@ namespace SPI_Data_Comp_Tool
                         Pump();
                         Require(UiTheme.Current == p && rulePicker.SelectedItem == p,
                             p.Name + ": the embedded Settings picker and Rules dialog disagree.");
-                        Require(ReferenceEquals(comparison.ActivePage, excel) && comparison.LoadedPages.Count == 2
+                        Require(ReferenceEquals(comparison.ActivePage, workbooks) && comparison.LoadedPages.Count == 2
                             && excel.Visible && !database.Visible && draft.Text == "Retained draft selection",
                             p.Name + ": changing theme replaced, selected or cleared a workflow page.");
                         Require(error.ForeColor == p.Danger,
@@ -277,20 +281,24 @@ namespace SPI_Data_Comp_Tool
                         Require(Inspect(rules, p));
                         foreach (WorkspacePageForm page in comparison.LoadedPages)
                             Require(Inspect(page, p));  // Includes pages hidden by task navigation.
-                        RequireNavigationTheme(comparison, "comparison.excel", p);
+                        foreach (WorkspacePageForm page in databases.LoadedModes.Concat(workbooks.LoadedModes))
+                            Require(Inspect(page, p));  // Includes modes hidden by the mode bar.
+                        RequireNavigationTheme(comparison, "comparison.workbooks", p);
                         RequireNavigationTheme(settings, "settings.preferences", p);
                     }
 
                     UiTheme.Use(UiTheme.Midnight, false);
-                    WorkspacePageForm latePage = comparison.OpenTask("comparison.batch");
-                    Require(comparison.LoadedPages.Count == 3 && !latePage.TopLevel,
-                        "Opening a task after a theme switch lost lazy hosting or replaced an existing page.");
+                    Require(ReferenceEquals(databases, comparison.OpenTask("comparison.databases")), "Reopening Compare databases replaced it.");
+                    WorkspacePageForm latePage = databases.Choose("list");
+                    Require(comparison.LoadedPages.Count == 2 && databases.LoadedModes.Count == 2 && !latePage.TopLevel
+                        && latePage is Compare_Multiples_List_Tables_Forms,
+                        "Opening a mode after a theme switch lost lazy hosting or replaced an existing page.");
                     Require(Inspect(latePage, UiTheme.Midnight));
-                    RequireNavigationTheme(comparison, "comparison.batch", UiTheme.Midnight);
-                    Require(ReferenceEquals(database, comparison.OpenTask("comparison.database"))
+                    Require(Inspect(databases, UiTheme.Midnight));
+                    RequireNavigationTheme(comparison, "comparison.databases", UiTheme.Midnight);
+                    Require(ReferenceEquals(database, databases.Choose("table"))
                         && draft.Text == "Retained draft selection",
                         "Returning to a hidden workflow after theme changes lost its retained state.");
-                    RequireNavigationTheme(comparison, "comparison.database", UiTheme.Midnight);
                     comparison.Close();
                     settings.Close();
                     main.Close();

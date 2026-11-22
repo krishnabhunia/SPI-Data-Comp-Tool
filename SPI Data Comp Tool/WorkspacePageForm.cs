@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 
 namespace SPI_Data_Comp_Tool
@@ -12,7 +12,23 @@ namespace SPI_Data_Comp_Tool
         private bool completingWorkspaceClose;
         private bool closedNotificationRaised;
 
-        internal WorkspaceForm HostWorkspace { get; set; }
+        private WorkspaceForm hostWorkspace;
+
+        internal WorkspaceForm HostWorkspace
+        {
+            get { return hostWorkspace; }
+            set
+            {
+                hostWorkspace = value;
+                OnHostWorkspaceChanged();
+            }
+        }
+
+        /// <summary>A page that hosts other pages (see <see cref="CompareModePage"/>) passes its workspace on.</summary>
+        internal virtual void OnHostWorkspaceChanged() { }
+
+        /// <summary>True while the workspace finishes an accepted close; guards must not run again.</summary>
+        protected bool CompletingWorkspaceClose => completingWorkspaceClose;
 
         internal bool PrepareWorkspaceClose(CloseReason reason)
         {

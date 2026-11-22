@@ -123,9 +123,26 @@ namespace SPI_Data_Comp_Tool
             steps.Refresh();
         }
 
-        public Compare_Multiples_List_Tables_Forms()
+        /// <summary>Compare databases › A list of tables, or Compare workbooks › Two folders: each shows only its own tab.</summary>
+        internal Compare_Multiples_List_Tables_Forms(bool databases) : this((bool?)databases)
+        {
+        }
+
+        public Compare_Multiples_List_Tables_Forms() : this((bool?)null)
+        {
+        }
+
+        private Compare_Multiples_List_Tables_Forms(bool? databasesOnly)
         {
             InitializeComponent();
+            if (databasesOnly.HasValue)
+            {
+                // Before start-up reads profiles: Two folders has no database tab and reads none.
+                TabPage keep = databasesOnly.Value ? tabPage_DB : tabPage_Excel;
+                TabPage drop = databasesOnly.Value ? tabPage_Excel : tabPage_DB;
+                tabControl1.SelectedTab = keep;
+                tabControl1.TabPages.Remove(drop);
+            }
             Common_Data.ShowRulesFile(lbl_RulesFile, this);   // rules are chosen only in Settings › Rules
             FormClosing += (sender, args) =>
             {
@@ -198,14 +215,18 @@ namespace SPI_Data_Comp_Tool
                 //checkRules = new CheckRules();
 
                 dsAllColumns = new DataSet();
-                ProfileLoadResult profileLoad = connection.LoadSavedProfiles();
-                if (cb_UserProfileList.Items.Count > 0)
+                // Compare workbooks › Two folders has no database tab, so it does not read connection profiles.
+                if (tabControl1.TabPages.Contains(tabPage_DB))
                 {
-                    cb_UserProfileList.SelectedIndex = 0;
-                }
+                    ProfileLoadResult profileLoad = connection.LoadSavedProfiles();
+                    if (cb_UserProfileList.Items.Count > 0)
+                    {
+                        cb_UserProfileList.SelectedIndex = 0;
+                    }
 
-                if (!string.IsNullOrEmpty(profileLoad.Message))
-                    Common_Data.DisplayMessage(rtb_Log, profileLoad.Message, profileLoad.HasError);
+                    if (!string.IsNullOrEmpty(profileLoad.Message))
+                        Common_Data.DisplayMessage(rtb_Log, profileLoad.Message, profileLoad.HasError);
+                }
 
                 if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName))
                 {

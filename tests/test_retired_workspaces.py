@@ -89,10 +89,16 @@ class RetiredWorkspaces(unittest.TestCase):
         self.assertIn("!AllControls(main).OfType<TileButton>().Any()", checks)
         self.assertIn('main.Controls.Find("task_" + route.Replace', checks)
         self.assertIn('main.Controls.Find("task_" + task.Key.Replace', checks)
-        routes = re.findall(r'\{ "((?:comparison|reports|settings)\.[^"]+)", typeof\(', checks)
-        self.assertEqual(len(routes), 10)
-        self.assertEqual(len(set(routes)), 10)
+        # 7 rail tasks (CheckCatalogAndRealPages) + the 6 comparison modes behind the two Compare tasks (CheckCompareModes)
+        catalog = checks.split("private static void CheckCatalogAndRealPages()", 1)[1].split("private static void CheckCompareModes()", 1)[0]
+        modes = checks.split("private static void CheckCompareModes()", 1)[1].split("private static void CheckCompareModeLifecycle()", 1)[0]
+        routes = re.findall(r'\{ "((?:comparison|reports|settings)\.[^"]+)", typeof\(', catalog)
+        self.assertEqual(len(routes), 7)
+        self.assertEqual(len(set(routes)), 7)
+        mode_routes = re.findall(r'\{ "(comparison\.[^"]+)", typeof\(', modes)
+        self.assertEqual(len(set(mode_routes)), 6)
         self.assertIn("workspace.OpenTask(route.Key);", checks)
+        self.assertIn("host.Choose(options)", modes)
 
 
 if __name__ == "__main__":

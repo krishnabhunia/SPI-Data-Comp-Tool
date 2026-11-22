@@ -10,10 +10,12 @@ SQL Scripts is also retired. Its Generate scripts and Execute scripts & queries 
 
 | Workspace | Tasks | Explicit routes |
 |---|---|---:|
-| Comparison | Database comparison; Excel comparison; Excel Sheet Audit; Workbook identity check; Batch comparison | 5 |
+| Comparison | **Compare databases** (One table · A list of tables); **Compare workbooks** (Values · Values and formatting · Identical?, for One pair · Two folders) | 2 |
 | Data & Reports | Database to Excel; Excel column selection; Merge log reports | 3 |
 | Settings | Preferences, rules & updates; Connection profiles | 2 |
-| **Total** | **10 distinct directly launched implementation types** | **10** |
+| **Total** | **7 rail tasks; the two Compare tasks choose one of 6 comparison workflows with their mode bar** | **7** |
+
+Each comparison workflow is reached in exactly one way: its Compare task's mode bar. A combination that a workflow cannot run is disabled (Two folders compares values only). Switching modes keeps each mode's page, inputs, results and running work; closing the task asks every loaded mode first and selects the one that refuses.
 
 The main window's left rail lists every current task once, grouped by workspace, and is the only way to open a task: there is no menu bar, no home tiles and no Help menu. Tasks open inside the main window; switching between them does not clear inputs or results. No workflow page is created until it is selected, and choosing a workspace does not automatically run database queries, comparisons or report exports.
 
@@ -29,11 +31,14 @@ The choice remains in `%AppData%\SPI Data Comparison Tool\theme.txt`, outside th
 
 | Route key | Implementation | Retained distinction |
 |---|---|---|
-| `comparison.database` | `DB_Comparison_Form` | Database inputs and existing comparison modes. |
-| `comparison.excel` | `Excel_Excel_Comparison` | Workbook inputs; primary-key and non-primary-key modes remain. |
-| `comparison.excel-audit` | `ExcelSheetAuditForm` | Separate Design A audit of selected worksheets, optional mapped single/composite keys, formatting/layout and a two-sheet report. No existing engine is replaced. |
-| `comparison.identity` | `WorkbookIdentityForm` | Answers whether two workbooks are identical: all sheets or one sheet, rows by position or by a ticked primary key, 18 checks on screen and a five-sheet report. It uses its own engine; no existing task is replaced. |
-| `comparison.batch` | `Compare_Multiples_List_Tables_Forms` | Table/file lists, per-item processing and batch reports. |
+| `comparison.databases` | `CompareModePage` | Rail task **Compare databases**; its mode bar shows `comparison.database` or `comparison.batch`. |
+| `comparison.workbooks` | `CompareModePage` | Rail task **Compare workbooks**; its mode bar shows `comparison.excel`, `comparison.excel-audit`, `comparison.identity` or `comparison.batch-folders`. |
+| `comparison.database` (mode: One table) | `DB_Comparison_Form` | Database inputs and existing comparison modes. |
+| `comparison.batch` (mode: A list of tables) | `Compare_Multiples_List_Tables_Forms` | Table lists, per-table processing and batch reports; only its Databases tab. |
+| `comparison.excel` (mode: Values · One pair) | `Excel_Excel_Comparison` | Workbook inputs; primary-key and non-primary-key modes remain. |
+| `comparison.excel-audit` (mode: Values and formatting · One pair) | `ExcelSheetAuditForm` | Separate Design A audit of selected worksheets, optional mapped single/composite keys, formatting/layout and a two-sheet report. No existing engine is replaced. |
+| `comparison.identity` (mode: Identical? · One pair) | `WorkbookIdentityForm` | Workbook identity check: answers whether two workbooks are identical: all sheets or one sheet, rows by position or by a ticked primary key, 18 checks on screen and a five-sheet report. It uses its own engine; no existing task is replaced. |
+| `comparison.batch-folders` (mode: Values · Two folders) | `Compare_Multiples_List_Tables_Forms` | Workbook folders by value; only its Excel folders tab; reads no connection profiles. |
 | `reports.database` | `SQL_DB_To_Excel` | Selected database-table exports. |
 | `reports.excel` | `CustomisedExcel` | Column projection from the first input worksheet. |
 | `reports.logs` | `MergeLogsExport` | Merge-log parsing into summaries and rejected-record reports. |
