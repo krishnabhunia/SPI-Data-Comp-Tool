@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Configuration;
 using System.IO;
 using System.Linq;
@@ -151,7 +151,7 @@ namespace SPI_Data_Comp_Tool
                 && ReferenceEquals(themes.SelectedItem, UiTheme.Current)
                 && tabs.TabPages.Count == 4 && tabs.SelectedTab.Name == "tab_Rules"
                 && ReferenceEquals(settings.AcceptButton, Find<Button>(settings, "btn_ImportRules"))
-                && ReferenceEquals(settings.CancelButton, Find<Button>(settings, "btn_Close")),
+                && settings.CancelButton == null && !settings.Controls.Find("btn_Close", true).Any(),
                 "An unavailable preference left the shown Settings form partially initialized.");
         }
 

@@ -58,8 +58,6 @@
             this.tab_About = new System.Windows.Forms.TabPage();
             this.pnl_About = new System.Windows.Forms.Panel();
             this.tlp_Logs = new System.Windows.Forms.TableLayoutPanel();
-            this.flp_SettingsActions = new System.Windows.Forms.FlowLayoutPanel();
-            this.btn_Close = new System.Windows.Forms.Button();
             this.tlp_Root.SuspendLayout();
             this.tabs_Settings.SuspendLayout();
             this.tab_General.SuspendLayout();
@@ -74,7 +72,6 @@
             this.tab_About.SuspendLayout();
             this.gb_Logs.SuspendLayout();
             this.tlp_Logs.SuspendLayout();
-            this.flp_SettingsActions.SuspendLayout();
             this.SuspendLayout();
             // 
             // tlp_Root
@@ -82,13 +79,11 @@
             this.tlp_Root.Name = "tlp_Root";
             this.tlp_Root.ColumnCount = 1;
             this.tlp_Root.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_Root.RowCount = 3;
+            this.tlp_Root.RowCount = 2;
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 140F));
-            this.tlp_Root.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_Root.Controls.Add(this.tabs_Settings, 0, 0);
             this.tlp_Root.Controls.Add(this.gb_Logs, 0, 1);
-            this.tlp_Root.Controls.Add(this.flp_SettingsActions, 0, 2);
             this.tlp_Root.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Root.AutoSize = false;
             this.tlp_Root.TabIndex = 0;
@@ -405,27 +400,6 @@
             this.lbl_Progress.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
             this.lbl_Progress.TabIndex = 29;
             // 
-            // flp_SettingsActions
-            // 
-            this.flp_SettingsActions.Name = "flp_SettingsActions";
-            this.flp_SettingsActions.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            this.flp_SettingsActions.WrapContents = false;
-            this.flp_SettingsActions.Controls.Add(this.btn_Close);
-            this.flp_SettingsActions.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flp_SettingsActions.AutoSize = true;
-            this.flp_SettingsActions.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.flp_SettingsActions.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.flp_SettingsActions.TabIndex = 30;
-            // 
-            // btn_Close
-            // 
-            this.btn_Close.Name = "btn_Close";
-            this.btn_Close.Text = "Close";
-            this.btn_Close.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.btn_Close.Size = new System.Drawing.Size(100, 32);
-            this.btn_Close.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btn_Close.TabIndex = 31;
-            // 
             // User_Settings
             // 
             this.Name = "User_Settings";
@@ -466,8 +440,6 @@
             this.gb_Logs.PerformLayout();
             this.tlp_Logs.ResumeLayout(false);
             this.tlp_Logs.PerformLayout();
-            this.flp_SettingsActions.ResumeLayout(false);
-            this.flp_SettingsActions.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -498,9 +470,6 @@
         private System.Windows.Forms.TextBox tb_RulesPath;
         private System.Windows.Forms.Button btn_ImportRules;
         private System.Windows.Forms.Label lbl_RulesStatus;
-        private System.Windows.Forms.FlowLayoutPanel flp_SettingsActions;
-        private System.Windows.Forms.Button btn_Close;
-
         private System.Windows.Forms.TableLayoutPanel tlp_Root;
         private System.Windows.Forms.TableLayoutPanel tlp_SaveExcel;
         private System.Windows.Forms.TableLayoutPanel tlp_Logs;

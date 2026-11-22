@@ -48,7 +48,10 @@ class SettingsRules(unittest.TestCase):
         self.assertIn("this.tb_RulesPath.ReadOnly = true;", designer)
         src = source("User_Settings.cs")
         self.assertIn("tabs_Settings.SelectedTab = tab_Rules;", src)
-        self.assertIn("CancelButton = btn_Close;", src)
+        # No Close button of its own: like every task, Settings closes with the window's "Close task".
+        self.assertNotIn("btn_Close", src)
+        self.assertNotIn("CancelButton =", src)
+        self.assertNotIn("btn_Close", designer)
         self.assertIn("btn_ClearLogs.Click += (sender, e) => rtb_Log.Clear();", src)
 
     def test_startup_never_reads_rules_or_writes_preferences(self):

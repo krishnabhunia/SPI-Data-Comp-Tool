@@ -25,8 +25,6 @@ namespace SPI_Data_Comp_Tool
             AddAboutTab();
             btn_ImportRules.Click += btn_ImportRules_Click;
             btn_ClearLogs.Click += (sender, e) => rtb_Log.Clear();
-            btn_Close.Click += (sender, e) => Close();
-            CancelButton = btn_Close;
             tabs_Settings.SelectedIndexChanged += (sender, e) => UpdateAcceptButton();
             UiTheme.Apply(this, btn_ImportRules);
 
@@ -91,8 +89,9 @@ namespace SPI_Data_Comp_Tool
             gb_Logs.Visible = !showingUpdates;
             tlp_Root.RowStyles[1].SizeType = SizeType.Absolute;
             tlp_Root.RowStyles[1].Height = showingUpdates ? 0F : 140F;
-            // Enter must never accidentally start installation.
-            AcceptButton = showingUpdates ? null : tabs_Settings.SelectedTab == tab_Rules ? btn_ImportRules : btn_Close;
+            // Enter must never accidentally start installation. Like every task, Settings has no Close button of
+            // its own ("Close task" closes it), so Enter only imports rules on the Rules tab.
+            AcceptButton = !showingUpdates && tabs_Settings.SelectedTab == tab_Rules ? btn_ImportRules : null;
         }
 
         private void btn_ImportRules_Click(object sender, EventArgs e)

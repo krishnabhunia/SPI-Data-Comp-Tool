@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -268,20 +268,20 @@ namespace SPI_Data_Comp_Tool
                 var settings = (User_Settings)page;
                 var tabs = Find<TabControl>(page, "tabs_Settings");
                 var themes = Find<ComboBox>(page, "cb_Theme");
-                var close = Find<Button>(page, "btn_Close");
                 Require(tabs.TabPages.Count == 4 && tabs.TabPages[3].Name == "tab_About", "Settings startup did not complete its four sections (About last).");
                 Require(themes.Items.Count == UiTheme.All.Length && ReferenceEquals(themes.SelectedItem, UiTheme.Current),
                     "Settings startup stopped before initializing the colour-theme picker.");
-                Require(ReferenceEquals(settings.AcceptButton, close) && ReferenceEquals(settings.CancelButton, close),
-                    "Settings startup stopped before wiring its default buttons.");
+                Require(settings.AcceptButton == null && settings.CancelButton == null
+                    && !page.Controls.Find("btn_Close", true).Any(),
+                    "Settings has its own Close button or default action; it closes with the window's Close task like every task.");
                 TabPage initial = tabs.SelectedTab;
                 settings.ShowRules();
                 Require(tabs.SelectedTab.Name == "tab_Rules"
                     && ReferenceEquals(settings.AcceptButton, Find<Button>(page, "btn_ImportRules")),
                     "Opening the Rules section did not activate its import action.");
                 tabs.SelectedTab = initial;
-                Require(ReferenceEquals(settings.AcceptButton, close),
-                    "Returning to General did not restore its default action.");
+                Require(settings.AcceptButton == null,
+                    "Returning to General kept the Rules import as the Enter action.");
             }
             Require(page.Controls.Count > 0, "The task has no initialized controls.");
             FieldInfo steps = page.GetType().GetField("steps", BindingFlags.Instance | BindingFlags.NonPublic);
