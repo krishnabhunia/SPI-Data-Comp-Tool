@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,7 +21,7 @@ namespace SPI_Data_Comp_Tool
             {
                 { WorkspaceKind.DataReports, new Dictionary<string, Type>
                     {
-                        { "reports.excel", typeof(CustomisedExcel) },
+                        { "reports.export", typeof(CompareModePage) },
                         { "reports.logs", typeof(MergeLogsExport) },
                     }
                 },

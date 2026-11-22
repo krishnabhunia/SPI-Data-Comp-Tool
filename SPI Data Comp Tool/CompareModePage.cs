@@ -7,8 +7,9 @@ using System.Windows.Forms;
 namespace SPI_Data_Comp_Tool
 {
     /// <summary>
-    /// One rail task with a mode bar (redesign C2): "Compare databases" (one table / a list of tables) and
-    /// "Compare workbooks" (Values / Values and formatting / Identical? × One pair / Two folders).
+    /// One rail task with a mode bar (redesign C2): "Compare databases" (one table / a list of tables),
+    /// "Compare workbooks" (Values / Values and formatting / Identical? × One pair / Two folders) and
+    /// "Export" (from a database / from a workbook).
     /// Each mode is an existing workflow page, created when it is first chosen and kept while switching,
     /// so its inputs, results and running work survive. There is no other way to open those workflows.
     /// </summary>
@@ -124,7 +125,16 @@ namespace SPI_Data_Comp_Tool
                 }, create);
         }
 
+        internal static CompareModePage Export(Func<string, WorkspacePageForm> create)
+        {
+            return new CompareModePage("Export", null,
+                new[] { new Axis("source", string.Empty, Option("database", "From a database"), Option("workbook", "From a workbook")) },
+                picked => picked[0] == "database" ? "reports.database" : "reports.excel", create);
+        }
+
         private static KeyValuePair<string, string> Option(string key, string label) => new KeyValuePair<string, string>(key, label);
+
+        internal IReadOnlyList<string> AxisKeys => axes.Select(axis => axis.Key).ToList().AsReadOnly();
 
         internal WorkspacePageForm ActiveMode { get; private set; }
         internal string ActiveModeKey { get; private set; }

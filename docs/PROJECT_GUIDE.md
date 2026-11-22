@@ -1,7 +1,7 @@
 # SPI Data Comparison Tool — implementation guide
 
 ## Overview
-This is a **Windows Forms / C# desktop project** for database and Excel comparisons, workbook audits and data/report exports. The left rail lists 7 tasks in three groups (Comparison, Data & Reports, Settings); **Compare databases** and **Compare workbooks** pick one of 6 comparison workflows with their mode bar (`CompareModePage`). The SQL Scripts workspace and both its generation/execution forms have been removed. The earlier Analysis & Migration and Pre-merge Checks workspaces also remain removed; [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0) preserves the application before that earlier retirement. See [WORKSPACES.md](WORKSPACES.md) for the current task map and lifecycle boundaries; the presence of a task is not proof its complete workflow has been tested against live databases.
+This is a **Windows Forms / C# desktop project** for database and Excel comparisons, workbook audits and data/report exports. The left rail lists 6 tasks in three groups (Comparison, Data & Reports, Settings); **Compare databases**, **Compare workbooks** and **Export** pick one of 8 workflows with their mode bar (`CompareModePage`). The SQL Scripts workspace and both its generation/execution forms have been removed. The earlier Analysis & Migration and Pre-merge Checks workspaces also remain removed; [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0) preserves the application before that earlier retirement. See [WORKSPACES.md](WORKSPACES.md) for the current task map and lifecycle boundaries; the presence of a task is not proof its complete workflow has been tested against live databases.
 
 ## Verified source map
 | Source | Responsibility |
@@ -9,7 +9,7 @@ This is a **Windows Forms / C# desktop project** for database and Excel comparis
 | `SPI Data Comp Tool/Program.cs` | Dispatches the isolated update helper, CI checks, or normal application startup |
 | `SPI Data Comp Tool/MainForm.cs` | Main window, three workspace entry points, catalog-driven menus, About and guarded exit |
 | `SPI Data Comp Tool/CompareModePage.cs` | Mode bar of Compare databases and Compare workbooks: each mode is an existing workflow page, created when first chosen and kept while switching |
-| `SPI Data Comp Tool/WorkspaceCatalog.cs` | 7 rail tasks in three groups plus the 6 comparison modes behind the two Compare tasks; advanced mapping opens an independent transient page |
+| `SPI Data Comp Tool/WorkspaceCatalog.cs` | 6 rail tasks in three groups plus the 8 modes behind the Compare and Export tasks; advanced mapping opens an independent transient page |
 | `SPI Data Comp Tool/WindowNavigator.cs` | `WorkspaceNavigator`: default workspace/page reuse and explicit parallel sessions |
 | `SPI Data Comp Tool/WorkspaceForm.cs`, `WorkspacePageForm.cs` | Lazy page hosting, task switching and prepare-before-close lifecycle; existing business code remains in its page implementation |
 | `SPI Data Comp Tool/StepFlow.cs` | Controlled steps: `StepFlow` locks a step's controls until the step before is done; `StepStrip` shows the steps (done, current, locked) at the top of a window |
@@ -106,8 +106,8 @@ Five retained tasks show a step strip above their controls. A step remains locke
 | Excel comparison | Source workbook → Target workbook → Load both files → Reference key → Columns to compare → Compare. The reference-key step includes the primary-key option; the Compare step holds the options and its one Compare button checks the inputs first (there is no separate Validate button). |
 | Database comparison | Source connection → Target connection → Tables (one **Load table lists** button fills both pickers) → Load → Reference key → Columns → Compare. The one Compare button prepares and checks the mapping first (there is no separate Set button). |
 | Batch comparison | Connections on the Databases tab, or Source folder → Target folder on the Excel folders tab; then Table list → Output folder → Compare. |
-| Database to Excel | Connection → Load tables → Tables → Export. |
-| Excel column selection | Workbook → Columns → Create. |
+| Export › From a database | Connection → Load tables → Tables → Export. |
+| Export › From a workbook | Workbook → Columns → Create. |
 
 Changing an earlier input locks dependent steps again. Database and Excel comparison restore checked keys and columns after reloading when the same names still exist, but require validation again. Their advanced-mapping modes continue in a separate mapping page after loading; the ordinary key/column steps do not apply to that mode. The step strip does not replace action-time validation.
 

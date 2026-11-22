@@ -20,16 +20,18 @@ class WorkspaceContracts(unittest.TestCase):
         rail = catalog.split("private static readonly ReadOnlyCollection<WorkspaceTask> tasks", 1)[1].split("});", 1)[0]
         modes = catalog.split("private static readonly ReadOnlyCollection<WorkspaceTask> modes", 1)[1].split("});", 1)[0]
         routes = re.findall(r'new WorkspaceTask\("([^"]+)"', rail)
-        self.assertEqual(len(routes), 7)
-        self.assertEqual(len(set(routes)), 7)
-        expected = {"comparison": 2, "reports": 3, "settings": 2}
+        self.assertEqual(len(routes), 6)
+        self.assertEqual(len(set(routes)), 6)
+        expected = {"comparison": 2, "reports": 2, "settings": 2}
         for group, count in expected.items():
             self.assertEqual(sum(route.startswith(group + ".") for route in routes), count)
         self.assertEqual(routes[:2], ["comparison.databases", "comparison.workbooks"])
-        # The six existing comparison workflows stay, reachable only through the two Compare tasks' mode bars.
+        # The existing comparison and export workflows stay, reachable only through their task's mode bar.
         mode_keys = re.findall(r'new WorkspaceTask\("([^"]+)"', modes)
         self.assertEqual(mode_keys, ["comparison.database", "comparison.batch", "comparison.excel", "comparison.excel-audit",
-                                     "comparison.identity", "comparison.batch-folders"])
+                                     "comparison.identity", "comparison.batch-folders", "reports.database", "reports.excel"])
+        self.assertIn('new WorkspaceTask("reports.export", "Export",', rail)
+        self.assertIn('new WorkspaceTask("reports.logs", "Merge logs",', rail)
         self.assertFalse(set(mode_keys) & set(routes))
         self.assertIn("() => new User_Settings(), false", catalog)
         self.assertIn("() => new UserProfileForm(), false", catalog)
