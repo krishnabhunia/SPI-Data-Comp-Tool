@@ -86,7 +86,7 @@ class ControlledSteps(unittest.TestCase):
         src = read("Excel_Excel_Comparison.cs")
         steps = body(src, "private void BuildSteps()")
         order = ['"Source workbook"', '"Target workbook"', '"Load both files"', '"Reference key"',
-                 '"Columns to compare"', '"Options and validate"', '"Compare"']
+                 '"Columns to compare"', '"Compare"']
         positions = [steps.index(name) for name in order]
         self.assertEqual(positions, sorted(positions), "steps out of order")
         self.assertRegex(steps, r'(?s)"Target workbook".*?btn_SecondExcelSheet\)')

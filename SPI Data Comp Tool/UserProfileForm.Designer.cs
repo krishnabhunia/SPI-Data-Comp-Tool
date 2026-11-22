@@ -30,11 +30,9 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(UserProfileForm));
             this.groupBox14 = new System.Windows.Forms.GroupBox();
-            this.btn_Load_SRC_Table = new System.Windows.Forms.Button();
             this.cb_SRC_TableName = new System.Windows.Forms.ComboBox();
             this.label16 = new System.Windows.Forms.Label();
             this.cb_TRG_TableName = new System.Windows.Forms.ComboBox();
-            this.btn_Load_TRG_Table = new System.Windows.Forms.Button();
             this.label17 = new System.Windows.Forms.Label();
             this.groupBox10 = new System.Windows.Forms.GroupBox();
             this.btn_ClearLogs = new System.Windows.Forms.Button();
@@ -148,15 +146,13 @@
             // tlp_SRC_Table
             // 
             this.tlp_SRC_Table.Name = "tlp_SRC_Table";
-            this.tlp_SRC_Table.ColumnCount = 3;
+            this.tlp_SRC_Table.ColumnCount = 2;
             this.tlp_SRC_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_SRC_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_SRC_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_SRC_Table.RowCount = 1;
             this.tlp_SRC_Table.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_SRC_Table.Controls.Add(this.label16, 0, 0);
             this.tlp_SRC_Table.Controls.Add(this.cb_SRC_TableName, 1, 0);
-            this.tlp_SRC_Table.Controls.Add(this.btn_Load_SRC_Table, 2, 0);
             this.tlp_SRC_Table.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_SRC_Table.AutoSize = true;
             this.tlp_SRC_Table.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
@@ -183,33 +179,21 @@
             this.cb_SRC_TableName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.cb_SRC_TableName.TabIndex = 7;
             // 
-            // btn_Load_SRC_Table
-            // 
-            this.btn_Load_SRC_Table.Name = "btn_Load_SRC_Table";
-            this.btn_Load_SRC_Table.UseVisualStyleBackColor = true;
-            this.btn_Load_SRC_Table.Click += new System.EventHandler(this.btn_Load_SRC_Table_Click);
-            this.btn_Load_SRC_Table.Text = "Load tables";
-            this.btn_Load_SRC_Table.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
-            this.btn_Load_SRC_Table.Size = new System.Drawing.Size(110, 30);
-            this.btn_Load_SRC_Table.TabIndex = 8;
-            // 
             // tlp_TRG_Table
             // 
             this.tlp_TRG_Table.Name = "tlp_TRG_Table";
-            this.tlp_TRG_Table.ColumnCount = 3;
+            this.tlp_TRG_Table.ColumnCount = 2;
             this.tlp_TRG_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_TRG_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlp_TRG_Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_TRG_Table.RowCount = 1;
             this.tlp_TRG_Table.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.tlp_TRG_Table.Controls.Add(this.label17, 0, 0);
             this.tlp_TRG_Table.Controls.Add(this.cb_TRG_TableName, 1, 0);
-            this.tlp_TRG_Table.Controls.Add(this.btn_Load_TRG_Table, 2, 0);
             this.tlp_TRG_Table.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_TRG_Table.AutoSize = true;
             this.tlp_TRG_Table.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlp_TRG_Table.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.tlp_TRG_Table.TabIndex = 9;
+            this.tlp_TRG_Table.TabIndex = 8;
             // 
             // label17
             // 
@@ -218,7 +202,7 @@
             this.label17.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label17.AutoSize = true;
             this.label17.Margin = new System.Windows.Forms.Padding(0, 3, 12, 3);
-            this.label17.TabIndex = 10;
+            this.label17.TabIndex = 9;
             // 
             // cb_TRG_TableName
             // 
@@ -228,17 +212,7 @@
             this.cb_TRG_TableName.Name = "cb_TRG_TableName";
             this.cb_TRG_TableName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.cb_TRG_TableName.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.cb_TRG_TableName.TabIndex = 11;
-            // 
-            // btn_Load_TRG_Table
-            // 
-            this.btn_Load_TRG_Table.Name = "btn_Load_TRG_Table";
-            this.btn_Load_TRG_Table.UseVisualStyleBackColor = true;
-            this.btn_Load_TRG_Table.Click += new System.EventHandler(this.btn_Load_TRG_Table_Click);
-            this.btn_Load_TRG_Table.Text = "Load tables";
-            this.btn_Load_TRG_Table.Margin = new System.Windows.Forms.Padding(8, 0, 0, 0);
-            this.btn_Load_TRG_Table.Size = new System.Drawing.Size(110, 30);
-            this.btn_Load_TRG_Table.TabIndex = 12;
+            this.cb_TRG_TableName.TabIndex = 10;
             // 
             // cb_FullName
             // 
@@ -249,18 +223,18 @@
             this.cb_FullName.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.cb_FullName.AutoSize = true;
             this.cb_FullName.Margin = new System.Windows.Forms.Padding(0, 6, 0, 0);
-            this.cb_FullName.TabIndex = 13;
+            this.cb_FullName.TabIndex = 11;
             // 
             // btn_Connect_Reference_ID
             // 
             this.btn_Connect_Reference_ID.Name = "btn_Connect_Reference_ID";
             this.btn_Connect_Reference_ID.UseVisualStyleBackColor = true;
             this.btn_Connect_Reference_ID.Click += new System.EventHandler(this.btn_Connect_Reference_ID_Click);
-            this.btn_Connect_Reference_ID.Text = "Connect and load tables";
+            this.btn_Connect_Reference_ID.Text = "Test connection";
             this.btn_Connect_Reference_ID.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
             this.btn_Connect_Reference_ID.Margin = new System.Windows.Forms.Padding(0, 6, 0, 0);
             this.btn_Connect_Reference_ID.Size = new System.Drawing.Size(190, 32);
-            this.btn_Connect_Reference_ID.TabIndex = 14;
+            this.btn_Connect_Reference_ID.TabIndex = 12;
             // 
             // tlp_Side
             // 
@@ -275,7 +249,7 @@
             this.tlp_Side.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Side.AutoSize = false;
             this.tlp_Side.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.tlp_Side.TabIndex = 15;
+            this.tlp_Side.TabIndex = 13;
             // 
             // groupBox2
             // 
@@ -288,7 +262,7 @@
             this.groupBox2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.groupBox2.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
             this.groupBox2.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox2.TabIndex = 16;
+            this.groupBox2.TabIndex = 14;
             // 
             // tlp_Profile
             // 
@@ -303,7 +277,7 @@
             this.tlp_Profile.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Profile.AutoSize = true;
             this.tlp_Profile.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Profile.TabIndex = 17;
+            this.tlp_Profile.TabIndex = 15;
             // 
             // btnSaveUserProfile
             // 
@@ -314,7 +288,7 @@
             this.btnSaveUserProfile.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnSaveUserProfile.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
             this.btnSaveUserProfile.Size = new System.Drawing.Size(120, 32);
-            this.btnSaveUserProfile.TabIndex = 18;
+            this.btnSaveUserProfile.TabIndex = 16;
             // 
             // btnDeleteUserProfile
             // 
@@ -325,7 +299,7 @@
             this.btnDeleteUserProfile.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnDeleteUserProfile.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btnDeleteUserProfile.Size = new System.Drawing.Size(120, 32);
-            this.btnDeleteUserProfile.TabIndex = 19;
+            this.btnDeleteUserProfile.TabIndex = 17;
             // 
             // groupBox1
             // 
@@ -336,7 +310,7 @@
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox1.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.groupBox1.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox1.TabIndex = 20;
+            this.groupBox1.TabIndex = 18;
             // 
             // tlp_ProfileFile
             // 
@@ -351,7 +325,7 @@
             this.tlp_ProfileFile.Controls.Add(this.l_lb_ReadProfile, 0, 1);
             this.tlp_ProfileFile.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_ProfileFile.AutoSize = false;
-            this.tlp_ProfileFile.TabIndex = 21;
+            this.tlp_ProfileFile.TabIndex = 19;
             // 
             // label10
             // 
@@ -360,7 +334,7 @@
             this.label10.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.label10.AutoSize = true;
             this.label10.Margin = new System.Windows.Forms.Padding(0, 0, 0, 6);
-            this.label10.TabIndex = 22;
+            this.label10.TabIndex = 20;
             // 
             // l_lb_ReadProfile
             // 
@@ -371,7 +345,7 @@
             this.l_lb_ReadProfile.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.l_lb_ReadProfile.AutoSize = true;
             this.l_lb_ReadProfile.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.l_lb_ReadProfile.TabIndex = 23;
+            this.l_lb_ReadProfile.TabIndex = 21;
             // 
             // groupBox10
             // 
@@ -382,7 +356,7 @@
             this.groupBox10.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox10.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
             this.groupBox10.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox10.TabIndex = 24;
+            this.groupBox10.TabIndex = 22;
             // 
             // tlp_Log
             // 
@@ -396,7 +370,7 @@
             this.tlp_Log.Controls.Add(this.btn_ClearLogs, 0, 1);
             this.tlp_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Log.AutoSize = false;
-            this.tlp_Log.TabIndex = 25;
+            this.tlp_Log.TabIndex = 23;
             // 
             // rtb_Log
             // 
@@ -406,7 +380,7 @@
             this.rtb_Log.Text = "";
             this.rtb_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtb_Log.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.rtb_Log.TabIndex = 26;
+            this.rtb_Log.TabIndex = 24;
             // 
             // btn_ClearLogs
             // 
@@ -418,7 +392,7 @@
             this.btn_ClearLogs.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.btn_ClearLogs.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
             this.btn_ClearLogs.Size = new System.Drawing.Size(110, 30);
-            this.btn_ClearLogs.TabIndex = 27;
+            this.btn_ClearLogs.TabIndex = 25;
             // 
             // UserProfileForm
             // 
@@ -479,11 +453,9 @@
 
         private System.Windows.Forms.GroupBox groupBox14;
         private System.Windows.Forms.CheckBox cb_FullName;
-        private System.Windows.Forms.Button btn_Load_SRC_Table;
         private System.Windows.Forms.ComboBox cb_SRC_TableName;
         private System.Windows.Forms.Label label16;
         private System.Windows.Forms.ComboBox cb_TRG_TableName;
-        private System.Windows.Forms.Button btn_Load_TRG_Table;
         private System.Windows.Forms.Label label17;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Button btnSaveUserProfile;

@@ -12,7 +12,8 @@ GUARDED = {
     "Compare_Multiples_Forms.cs": ["btn_TestDBConnection_Click"],
     "DB Comparison.cs": ["btn_Load_SRC_Table_Click", "btn_Load_TRG_Table_Click"],
     "SQL_DB_To_Excel.cs": ["btn_Connect_Click"],
-    "UserProfileForm.cs": ["btn_Load_SRC_Table_Click", "btn_Load_TRG_Table_Click", "btn_Connect_Reference_ID_Click"],
+    # the profile editor only tests the connection (it no longer loads table lists)
+    "UserProfileForm.cs": ["btn_Connect_Reference_ID_Click"],
 }
 
 
@@ -45,7 +46,7 @@ class InputChecks(unittest.TestCase):
                         self.assertNotIn(connect, before, f"{connect} runs before the input check")
 
     def test_source_and_target_buttons_check_their_own_half(self) -> None:
-        for name in ("DB Comparison.cs", "UserProfileForm.cs"):
+        for name in ("DB Comparison.cs",):
             src = code(PROJ / name)
             for handler, half in (("btn_Load_SRC_Table_Click", "target: false"), ("btn_Load_TRG_Table_Click", "source: false")):
                 self.assertIn(f"connection.AddChecks(InputCheck.For(this), {half}).Report()", self.handler_body(src, handler),

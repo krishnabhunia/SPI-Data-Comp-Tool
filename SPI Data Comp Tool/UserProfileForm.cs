@@ -18,10 +18,7 @@ namespace SPI_Data_Comp_Tool
 {
     public partial class UserProfileForm : WorkspacePageForm
     {
-        private string strQuery;
         private string str_DBName;
-        private string strSQLConnection;
-        private string strOracleConnection;
 
         private DBConnectionStatus dBConnectionStatus_SRC, dBConnectionStatus_TRG;
         private DBConnectionDetails dBConnectionDetails;
@@ -49,12 +46,6 @@ namespace SPI_Data_Comp_Tool
         private OpenFileDialogData openFileDialogData;
         private DBConnectionDetailsProfile dBConnectionDetailsProfile;
 
-        private OracleDataAdapter oracleDA;
-        private SqlDataAdapter sqlDA;
-
-        private DataTable dt_oracle;
-        private DataTable dt_LoadSRC;
-        private DataTable dt_sql;
         private string str_tableName;
 
         private SaveFileDialogFile saveFileDialogFile;
@@ -184,64 +175,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void LoadTable(DBConnectionStatus DB_CS, ComboBox comboBox, CheckBox cbSQLWA)
-        {
-            try
-            {
-                DisplayMessage("Pls Wait, Loading !!!");
-
-                if (DB_CS.strDBType.ToLower() == "oracle")
-                {
-                    strQuery = "SELECT * FROM all_tables where OWNER != 'SYS' ORDER BY OWNER, TABLE_NAME";
-
-                    //strOracleConnection = "Data Source=(DESCRIPTION =" + "(ADDRESS = (PROTOCOL = TCP)" +
-                    //    "(HOST = " + tb_SRC_DataSource.Text + " )(PORT = " + tb_SRC_DefaultPort.Text + "))"
-                    //    + "(CONNECT_DATA =" + "(SERVER = DEDICATED)" + "(SERVICE_NAME = " + tb_SRC_DBName.Text + ")));"
-                    //    + "User Id=" + tb_SRC_UserName.Text + ";Password=" + tb_SRC_Password.Text + ";";
-
-                    strOracleConnection = DB_CS.strConnectionString;
-
-                    oracleDA = new OracleDataAdapter(strQuery, strOracleConnection);
-                    dt_oracle = new DataTable();
-                    oracleDA.Fill(dt_oracle);
-                    dt_oracle.TableName = "Load Table Name";
-                    FillCheckListBox(comboBox, dt_oracle, "oracle");
-                    dt_LoadSRC = dt_oracle.Copy();
-                }
-
-                //if (rb_SRC_SQL.Checked)
-                if (DB_CS.strDBType.ToLower() == "sql")
-                {
-                    strQuery = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_SCHEMA, TABLE_NAME";
-
-                    //if (cbSQLWA.CheckState == CheckState.Checked)
-                    //{
-                    //    strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    //+ "; Integrated Security = true ";
-                    //}
-                    //else if (cbSQLWA.CheckState == CheckState.Unchecked)
-                    //{
-                    //    strSQLConnection = "Data Source = " + tb_SRC_DataSource.Text + ";Initial Catalog = " + tb_SRC_DBName.Text
-                    //+ "; User ID = " + tb_SRC_UserName.Text + "; " + "Password = " + tb_SRC_Password.Text + ";";
-                    //}
-
-                    strSQLConnection = DB_CS.strConnectionString;
-
-                    dt_sql = new DataTable();
-                    sqlDA = new SqlDataAdapter(strQuery, strSQLConnection);
-                    sqlDA.Fill(dt_sql);
-
-                    dt_sql.TableName = "Source SQL";
-                    FillCheckListBox(comboBox, dt_sql, "sql");
-                    dt_LoadSRC = dt_sql.Copy();
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
         private void FillCheckListBox(ComboBox comboBox, DataTable dataTable, string str_dbType)
         {
             try
@@ -259,30 +192,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void btn_Load_SRC_Table_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // stop here when an input is missing or wrong: marks at the fields, reasons in the log
-                if (!connection.AddChecks(InputCheck.For(this), target: false).Report()) return;
-                ConnectToDB("SRC");
-                if (dBConnectionStatus_SRC.boolConnection)
-                {
-                    DisplayMessage("Loading Table/Schema for Source");
-                    LoadTable(dBConnectionStatus_SRC, cb_SRC_TableName, cb_WindowAuthentication_SRC);
-                    DisplayMessage("Source Loaded Successfully", false, -1, Color.DarkBlue);
-                }
-                else
-                {
-                    cb_SRC_TableName.DataSource = null;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
         private void DisplayMemberInComboBox()
         {
@@ -309,29 +218,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void btn_Load_TRG_Table_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // stop here when an input is missing or wrong: marks at the fields, reasons in the log
-                if (!connection.AddChecks(InputCheck.For(this), source: false).Report()) return;
-                ConnectToDB("TRG");
-                if (dBConnectionStatus_TRG.boolConnection)
-                {
-                    DisplayMessage("Loading Table/Schema for Target");
-                    LoadTable(dBConnectionStatus_TRG, cb_TRG_TableName, cb_WindowAuthentication_TRG);
-                    DisplayMessage("Target Loaded Successfully", false, -1, Color.DarkBlue);
-                }
-                else
-                {
-                    cb_TRG_TableName.DataSource = null;
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
         private void ConnectToDB(string strFor = null)
         {

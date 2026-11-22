@@ -1,6 +1,6 @@
 """User profiles (UserProfileForm) - the Connection panel in profile-editor use."""
 from layout_gen import C, T, F, G
-from _connection import PANEL_DROP, LABEL, FIELD, panel, table_picker
+from _connection import PANEL_DROP, LABEL, FIELD, panel, picker
 
 DESIGNER = "UserProfileForm.Designer.cs"
 FORM_NAME = "UserProfileForm"
@@ -9,13 +9,12 @@ MINIMUM = (980, 640)
 TITLE = "User profiles"
 
 # label1 was the old "Select profile" caption; the panel has its own
-DROP = PANEL_DROP + ["label1"]
+DROP = PANEL_DROP + ["label1", "btn_Load_SRC_Table", "btn_Load_TRG_Table"]   # profiles only test, save and delete
 
 TEXTS = {
     "groupBox14": "Connection", "cb_FullName": "Show full names in lists",
     "label16": "Source table", "label17": "Target table",
-    "btn_Load_SRC_Table": "Load tables", "btn_Load_TRG_Table": "Load tables",
-    "btn_Connect_Reference_ID": "Connect and load tables",
+    "btn_Connect_Reference_ID": "Test connection",
     "groupBox2": "Profile", "btnSaveUserProfile": "Save profile", "btnDeleteUserProfile": "Delete profile",
     "groupBox1": "Profile file", "label10": "Profiles are read from a .json file.",
     "l_lb_ReadProfile": "Choose a profile file…",
@@ -26,8 +25,8 @@ TEXTS = {
 
 
 TABLES = T("tlp_Tables", cols=["50%", "100", "50%"], rows=["auto", "auto"], autosize=True, cells=[
-    (table_picker("tlp_SRC_Table", "label16", "cb_SRC_TableName", "btn_Load_SRC_Table"), 0, 0),
-    (table_picker("tlp_TRG_Table", "label17", "cb_TRG_TableName", "btn_Load_TRG_Table"), 2, 0),
+    (picker("tlp_SRC_Table", "label16", "cb_SRC_TableName"), 0, 0),
+    (picker("tlp_TRG_Table", "label17", "cb_TRG_TableName"), 2, 0),
     (C("cb_FullName", autosize=True, anchor="Left", margin=(0, 6, 0, 0)), 0, 1),
     (C("btn_Connect_Reference_ID", size=(190, 32), anchor="Right", margin=(0, 6, 0, 0)), 2, 1),
 ], margin=(0, 8, 0, 0))

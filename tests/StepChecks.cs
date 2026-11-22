@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -233,7 +233,7 @@ namespace SPI_Data_Comp_Tool
                 form.CreateControl();
                 StepFlow flow = Get<StepFlow>(form, "steps");
                 flow.Refresh();
-                Locked(form, "btn_SecondExcelSheet", "btn_SelectLoad", "clb_reference_ID", "cb_Primary_Key", "clb_firstExcel", "btn_Validate", "btn_Compare");
+                Locked(form, "btn_SecondExcelSheet", "btn_SelectLoad", "clb_reference_ID", "cb_Primary_Key", "clb_firstExcel", "btn_Compare");
                 Open(form, "btn_FirstExcelSheet");
 
                 Set(form, "chosenFirst", Chosen(@"C:\data\source.xlsx")); flow.Refresh();
@@ -247,23 +247,22 @@ namespace SPI_Data_Comp_Tool
                 Loaded(form);
                 flow.Refresh();
                 Open(form, "clb_reference_ID", "cb_Primary_Key");
-                Locked(form, "clb_firstExcel", "btn_Validate", "btn_Compare");
+                Locked(form, "clb_firstExcel", "btn_Compare");
 
                 var keys = Find<CheckedListBox>(form, "clb_reference_ID");
                 var columns = Find<CheckedListBox>(form, "clb_firstExcel");
                 keys.SetItemChecked(0, true); flow.Refresh();
                 Open(form, "clb_firstExcel", "cb_select_first_clb");
-                Locked(form, "btn_Validate", "btn_Compare");
-                columns.SetItemChecked(1, true); flow.Refresh();
-                Open(form, "btn_Validate", "cb_IgnoreCase", "cb_IncludeRule");
                 Locked(form, "btn_Compare");
+                columns.SetItemChecked(1, true); flow.Refresh();
+                // one Compare button: it checks the inputs itself, so it opens with the options
+                Open(form, "btn_Compare", "cb_IgnoreCase", "cb_IncludeRule");
                 Set(form, "boolValidate", true); flow.Refresh();
-                Open(form, "btn_Compare");
 
                 columns.SetItemChecked(1, false);   // invalidates the validation
                 flow.Refresh();
                 Require(!Get<bool>(form, "boolValidate"), "a changed column kept the old validation");
-                Locked(form, "btn_Validate", "btn_Compare");
+                Locked(form, "btn_Compare");
             }
         }
 
@@ -308,7 +307,7 @@ namespace SPI_Data_Comp_Tool
 
                 typeof(Excel_Excel_Comparison).GetMethod("InvalidateLoad", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(form, null);
                 flow.Refresh();
-                Locked(form, "clb_reference_ID", "clb_firstExcel", "btn_Validate", "btn_Compare");
+                Locked(form, "clb_reference_ID", "clb_firstExcel", "btn_Compare");
                 Open(form, "btn_SelectLoad");
                 Require(!Get<bool>(form, "boolValidate"), "a new workbook kept the old validation");
                 Require(keys.GetItemChecked(0) && columns.GetItemChecked(1), "a new workbook cleared the keys and columns");
@@ -334,20 +333,20 @@ namespace SPI_Data_Comp_Tool
                 Fill(connection.Source, false);
                 flow.Refresh();
                 Require(!connection.Target.Group.Enabled, "Target connection open while Source is empty");
-                Locked(form, "cb_SRC_TableName", "btn_Load_SRC_Table", "btn_Connect_Reference_ID", "clb_ReferenceID", "cbL_SRC_Cols", "btn_Set", "btnGenerateOutput");
+                Locked(form, "cb_SRC_TableName", "btn_Load_SRC_Table", "btn_Connect_Reference_ID", "clb_ReferenceID", "cbL_SRC_Cols", "btnGenerateOutput");
 
                 Fill(connection.Source, true); flow.Refresh();
                 Require(connection.Target.Group.Enabled, "Target connection did not unlock after Source");
                 Locked(form, "cb_SRC_TableName", "btn_Connect_Reference_ID");
                 Fill(connection.Target, true); flow.Refresh();
-                Open(form, "cb_SRC_TableName", "btn_Load_SRC_Table");
-                Locked(form, "cb_TRG_TableName", "btn_Connect_Reference_ID");
+                // one Tables step: a single "Load table lists" button fills both pickers
+                Open(form, "cb_SRC_TableName", "btn_Load_SRC_Table", "cb_TRG_TableName");
+                Locked(form, "btn_Connect_Reference_ID");
                 Find<ComboBox>(form, "cb_SRC_TableName").Text = "SRC_TABLE"; flow.Refresh();
-                Open(form, "cb_TRG_TableName");
                 Locked(form, "btn_Connect_Reference_ID");
                 Find<ComboBox>(form, "cb_TRG_TableName").Text = "TRG_TABLE"; flow.Refresh();
                 Open(form, "btn_Connect_Reference_ID", "cb_ColumnMapping");
-                Locked(form, "clb_ReferenceID", "cb_PrimaryKey", "cbL_SRC_Cols", "btn_Set", "btnGenerateOutput");
+                Locked(form, "clb_ReferenceID", "cb_PrimaryKey", "cbL_SRC_Cols", "btnGenerateOutput");
 
                 Set(form, "comparisonInputsLoaded", true);
                 var keys = Find<CheckedListBox>(form, "clb_ReferenceID");
@@ -356,19 +355,17 @@ namespace SPI_Data_Comp_Tool
                 columns.Items.AddRange(new object[] { "ID", "VALUE" });
                 flow.Refresh();
                 Open(form, "clb_ReferenceID", "cb_PrimaryKey");
-                Locked(form, "cbL_SRC_Cols", "btn_Set");
+                Locked(form, "cbL_SRC_Cols", "btnGenerateOutput");
                 keys.SetItemChecked(0, true); flow.Refresh();
                 Open(form, "cbL_SRC_Cols", "cb_selectAll_toggle");
-                Locked(form, "btn_Set");
-                columns.SetItemChecked(1, true); flow.Refresh();
-                Open(form, "btn_Set", "cb_IgnoreCase");
                 Locked(form, "btnGenerateOutput");
-                Set(form, "comparisonPrepared", true); flow.Refresh();
-                Open(form, "btnGenerateOutput");
+                columns.SetItemChecked(1, true); flow.Refresh();
+                // one Compare button: it prepares the mapping itself (no separate Set step)
+                Open(form, "btnGenerateOutput", "cb_IgnoreCase", "cb_IncludeRule");
 
                 Find<ComboBox>(form, "cb_SRC_TableName").Text = "OTHER";   // invalidates the loaded tables
                 flow.Refresh();
-                Locked(form, "clb_ReferenceID", "cbL_SRC_Cols", "btn_Set", "btnGenerateOutput");
+                Locked(form, "clb_ReferenceID", "cbL_SRC_Cols", "btnGenerateOutput");
                 Require(keys.GetItemChecked(0) && columns.GetItemChecked(1), "a changed table cleared the keys and columns");
             }
         }

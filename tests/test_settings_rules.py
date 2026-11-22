@@ -18,17 +18,28 @@ class SettingsRules(unittest.TestCase):
             self.assertFalse((PROJ / name).exists(), name)
         self.assertNotIn("Form_Rules", source("SPI Data Comp Tool.csproj"))
 
-    def test_all_existing_import_entry_points_are_retained(self):
+    def test_rules_are_chosen_only_in_settings(self):
+        # One way to reach the rules: Settings > Rules. Each comparison shows a read-only line instead of a button.
         for name in ("DB Comparison.cs", "Excel_Excel_Comparison.cs", "Compare_Multiples_Forms.cs",
                      "ViewForMultiReference.cs"):
             with self.subTest(form=name):
-                self.assertIn("common_Data.OpenRuleForm();", source(name))
+                src = source(name)
+                self.assertIn("Common_Data.ShowRulesFile(lbl_RulesFile, this);", src)
+                self.assertNotIn("OpenRuleForm", src)
+                self.assertNotIn("btn_RuleForm", src)
+                self.assertNotIn("btn_RuleForm", source(name.replace(".cs", ".Designer.cs")))
+                self.assertIn("lbl_RulesFile", source(name.replace(".cs", ".Designer.cs")))
         src = source("Common_Data.cs")
-        dialog = src.split("public void OpenRuleForm()", 1)[1].split("public DataTable AddColumns", 1)[0]
-        self.assertIn("using (var settings = new User_Settings(true))", dialog)
-        self.assertIn("settings.ShowDialog(Form.ActiveForm)", dialog)
-        self.assertIn("if (settings.ImportedRules != null)", dialog)
-        self.assertIn("SetDsRulesCall(settings.ImportedRules", dialog)
+        self.assertNotIn("OpenRuleForm", src)
+        line = src.split("internal static string RulesFileLine()", 1)[1].split("internal static void ShowRulesFile", 1)[0]
+        self.assertIn("AppPreferences.RuleFilePath", line)
+        self.assertIn("(set in Settings)", line)
+        shown = src.split("internal static void ShowRulesFile(Label label, Control page)", 1)[1].split("public DataTable AddColumns", 1)[0]
+        self.assertIn("page.VisibleChanged +=", shown)
+        status = src.split("public bool GetRulesStatus()", 1)[1].split("public DataTable RemoveColumn", 1)[0]
+        self.assertIn("AppPreferences.RuleFilePath", status)
+        settings = source("User_Settings.cs")
+        self.assertIn("AppPreferences.TrySaveRulesPath(fileName, out warning)", settings)
 
     def test_rules_are_a_settings_tab(self):
         designer = source("User_Settings.Designer.cs")

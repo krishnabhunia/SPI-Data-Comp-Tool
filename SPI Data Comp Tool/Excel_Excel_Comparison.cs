@@ -125,6 +125,7 @@ namespace SPI_Data_Comp_Tool
         public Excel_Excel_Comparison()
         {
             InitializeComponent();
+            Common_Data.ShowRulesFile(lbl_RulesFile, this);   // rules are chosen only in Settings › Rules
 
             lblError.ForeColor = Color.Red;
             boolStatus = true;
@@ -197,11 +198,6 @@ namespace SPI_Data_Comp_Tool
 
             lbl_InstrumentText.Text = "The Below Button will generate Required Item Tag and Short Item Tag for specific Input Source File which doesn't have any Unique reference ID other that Item Tag which get matched with Target Input File. Pls use this in old datasets.";
 
-            if (GlobalDebug.boolIsGlobalDebug)
-            {
-                button1.Visible = true;
-                btn_TestSystemMemoryOutException.Visible = true;
-            }
 
             dsUnmatched = new DataSet();
             clb_reference_ID.ItemCheck += (sender, args) => InvalidateComparison();
@@ -323,9 +319,8 @@ namespace SPI_Data_Comp_Tool
                     clb_reference_ID, cb_Primary_Key)
                 .Add(() => "Columns to compare", () => "Tick at least one column to compare",
                     () => StepFlow.CheckedNames(clb_firstExcel).Except(StepFlow.CheckedNames(clb_reference_ID)).Any(), singleSheet, clb_firstExcel, cb_select_first_clb, clb_secondExcel)
-                .Add(() => "Options and validate", () => "Choose the options and validate", () => boolValidate, singleSheet,
-                    cb_IncludeDiff_Columns, cb_IgnoreCase, cb_IncludeRule, btn_RuleForm, btn_Validate)
-                .Add(() => "Compare", () => "Compare and generate the Excel report", () => compareFinished, singleSheet, btn_Compare);
+                .Add(() => "Compare", () => "Choose the options, then compare (inputs are checked first)", () => compareFinished, singleSheet,
+                    cb_IncludeDiff_Columns, cb_IgnoreCase, cb_IncludeRule, btn_Compare);
             steps.Refresh();
         }
 
@@ -510,14 +505,6 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
-                if (boolSelectedBothFile)
-                {
-                    btn_Validate.Enabled = true;
-                }
-                else
-                {
-                    btn_Validate.Enabled = false;
-                }
                 //setData();
                 //clb_reference_ID.SelectionMode = SelectionMode.None;
             }
@@ -625,7 +612,6 @@ namespace SPI_Data_Comp_Tool
         private async void btn_SelectLoad_Click(object sender, EventArgs e)
         {
             if (!FormValidation.Check(this, ValidateIdle, message => DisplayMessage(message, true))) return;
-            bool loadingSucceeded = false;
             string restoredText = string.Empty;
             isLoading = true;
             changeEnabledStatus(false);
@@ -695,8 +681,7 @@ namespace SPI_Data_Comp_Tool
                     else if (clb_firstExcel.Items.Count > 0) cb_select_first_clb.Checked = true;
                 }
                 lbl_Parameter.Text = "Rows: " + source.Rows.Count + "; Columns: " + source.Columns.Count;
-                lbl_LoadStatus.Text = "Loaded successfully. Select keys and columns, then validate." + restoredText;
-                loadingSucceeded = true;
+                lbl_LoadStatus.Text = "Loaded successfully. Select keys and columns, then compare." + restoredText;
             }
             catch (Exception ex)
             {
@@ -708,27 +693,19 @@ namespace SPI_Data_Comp_Tool
                 if (!IsDisposed && !Disposing)
                 {
                     changeEnabledStatus(true);
-                    btn_Compare.Enabled = !loadingSucceeded && boolValidate;
-                    btn_Validate.Enabled = boolSelectedBothFile;
+                    btn_Compare.Enabled = true;   // the steps keep it locked until keys and columns are ticked
                 }
             }
         }
 
-        private void btn_Validate_Click(object sender, EventArgs e)
+        /// <summary>Keys are not comparison columns: Compare unticks them (this was the separate Validate button).</summary>
+        private void UntickKeysFromColumns()
         {
-            boolValidate = false;
-            btn_Compare.Enabled = false;
-            if (!FormValidation.Check(this, ValidateComparisonInput, message => DisplayMessage(message, true))) return;
-            // Keys are not comparison columns; make that existing distinction explicit in the UI.
-            foreach (string key in clb_reference_ID.CheckedItems)
+            foreach (string key in clb_reference_ID.CheckedItems.Cast<string>().ToList())
             {
                 int index = clb_firstExcel.FindStringExact(key);
                 if (index >= 0) clb_firstExcel.SetItemChecked(index, false);
             }
-            boolValidate = true;
-            btn_Compare.Enabled = true;
-            if (steps != null) steps.Refresh();
-            DisplayMessage("Inputs validated. Compare rechecks them before starting.");
         }
 
         private void changeEnabledStatus(bool boolEnabledStatus)
@@ -738,8 +715,6 @@ namespace SPI_Data_Comp_Tool
                 btn_Compare.Enabled = boolEnabledStatus;
                 btn_SelectLoad.Enabled = boolEnabledStatus;
                 btnLoad.Enabled = boolEnabledStatus;
-                btn_RuleForm.Enabled = boolEnabledStatus;
-                btn_Validate.Enabled = boolEnabledStatus;
                 cb_select_first_clb.Enabled = boolEnabledStatus;
 
                 llbl_filePath.Enabled = boolEnabledStatus;
@@ -751,7 +726,6 @@ namespace SPI_Data_Comp_Tool
                 cb_MultiReference.Enabled = boolEnabledStatus;
                 clb_reference_ID.Enabled = clb_firstExcel.Enabled = clb_secondExcel.Enabled = boolEnabledStatus;
                 cb_IncludeRule.Enabled = boolEnabledStatus;
-                btn_RuleForm.Enabled = boolEnabledStatus;
 
                 if (steps != null) steps.Busy = !boolEnabledStatus;
 
@@ -779,7 +753,9 @@ namespace SPI_Data_Comp_Tool
         {
             try
             {
+                // One button: Compare checks the inputs first (there is no separate Validate step).
                 if (!FormValidation.Check(this, ValidateComparisonInput, message => DisplayMessage(message, true))) return;
+                UntickKeysFromColumns();
                 boolValidate = true;
                 boolStatus = true;
                 if (GlobalDebug.ISGlobalDebug(Environment.UserName, Environment.UserName))
@@ -1902,7 +1878,7 @@ namespace SPI_Data_Comp_Tool
             finally
             {
                 changeEnabledStatus(true);
-                btn_Compare.Enabled = boolValidate;
+                btn_Compare.Enabled = true;
                 timer1.Enabled = false;
                 if (steps != null) steps.Refresh();
             }
@@ -1993,17 +1969,6 @@ namespace SPI_Data_Comp_Tool
 
         }
 
-        private void btn_RuleForm_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                common_Data.OpenRuleForm();
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
         private void btnLoad_Click_1(object sender, EventArgs e)
         {
@@ -2042,8 +2007,6 @@ namespace SPI_Data_Comp_Tool
         {
             boolValidate = false;
             compareFinished = false;
-            btn_Compare.Enabled = false;
-            btn_Validate.Enabled = boolSelectedBothFile && !isLoading;
             if (steps != null) steps.Later();
         }
 
@@ -2117,66 +2080,7 @@ namespace SPI_Data_Comp_Tool
             return column + (value == null || value == DBNull.Value ? " IS NULL" : " = '" + value.ToString().Replace("'", "''") + "'");
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            try
-            {
 
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-
-        private void Test_SYSTEM_OUT_OF_MEMORYEXCEPTION()
-        {
-            try
-            {
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    //using (ExcelPackage pck = new ExcelPackage(ms))
-                    //{
-                    //    pck.SaveAs(new FileInfo($@"C:\Users\Krishna Bhunia\Desktop\LogFolder\Test.xlsx"));
-                    //    Logs.EnterLogsWithTime($"Saving File with EPPlus started under PK");
-                    //    worksheet = pck.Workbook.Worksheets.Add("Mismatch");
-                    //    worksheet.Cells["A1"].LoadFromDataTable(ds.Tables[0], true);
-                    //    worksheet.Cells["A1"].LoadFromDataTable(ds.Tables[1], true);
-                    //}
-
-                    //ExcelPackage excel = new ExcelPackage();
-
-                    //// name of the sheet
-                    //var workSheet = excel.Workbook.Worksheets.Add("Sheet1");
-                    //excel.SaveAs(new FileInfo($@"C:\Users\Krishna Bhunia\Desktop\LogFolder\Test.xlsx"));
-
-                    //workSheet.Cells["A1"].LoadFromDataTable(ds.Tables[0],true);
-                    //excel.Save();
-
-                    //workSheet = excel.Workbook.Worksheets.Add("Sheet2");
-                    //workSheet.Cells["A1"].LoadFromDataTable(ds.Tables[1], true);
-
-                    //excel.Save();
-                    //excel.Dispose();
-                }
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
-        private void btn_TestSystemMemoryOutException_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                Test_SYSTEM_OUT_OF_MEMORYEXCEPTION();
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-
-        }
 
         private void DisplayMessage(string str_Msg, bool boolError = false)
         {

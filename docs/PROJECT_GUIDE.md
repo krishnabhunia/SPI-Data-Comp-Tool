@@ -102,8 +102,8 @@ Five retained tasks show a step strip above their controls. A step remains locke
 
 | Task | Step order |
 |---|---|
-| Excel comparison | Source workbook → Target workbook → Load both files → Reference key → Columns to compare → Options and validate → Compare. The reference-key step includes the primary-key option. |
-| Database comparison | Source connection → Target connection → Source table → Target table → Load → Reference key → Columns → Set and validate → Compare. |
+| Excel comparison | Source workbook → Target workbook → Load both files → Reference key → Columns to compare → Compare. The reference-key step includes the primary-key option; the Compare step holds the options and its one Compare button checks the inputs first (there is no separate Validate button). |
+| Database comparison | Source connection → Target connection → Tables (one **Load table lists** button fills both pickers) → Load → Reference key → Columns → Compare. The one Compare button prepares and checks the mapping first (there is no separate Set button). |
 | Batch comparison | Connections on the Databases tab, or Source folder → Target folder on the Excel folders tab; then Table list → Output folder → Compare. |
 | Database to Excel | Connection → Load tables → Tables → Export. |
 | Excel column selection | Workbook → Columns → Create. |
@@ -118,10 +118,10 @@ Excel column selection has no generated layout, so `StepStrip.Attach` places its
 
 | Previous UI | Current route | Preserved behaviour |
 |---|---|---|
-| Separate workflow windows | Three workspaces with 10 explicit task routes | Retained engines, inputs, outputs and per-task state remain. A page is created only when selected. Reopening returns to the same page; Ctrl/open-separate creates an independent supported session. |
+| Separate workflow windows | Three workspaces with 10 explicit task routes | Retained engines, inputs, outputs and per-task state remain. A page is created only when selected. Reopening returns to the same page; the page's **New session** button creates an independent supported session. |
 | Database/Excel advanced-mapping window | Transient Advanced mapping page in the current Comparison workspace | Every invocation keeps a fresh copied input snapshot; mappings from different loads are not silently reused. Standalone callers remain supported. |
-| Profile editor and application settings windows | Settings workspace: Connection profiles and Preferences, rules & updates tasks | Preferences retains General / Comparison rules / Updates tabs. Help's update shortcut activates the same preferences page. Profiles and preferences do not share mutable form state. |
-| Comparison Import Rules dialog | Short-lived modal `User_Settings(true)`, opened on Comparison rules | Synchronous callers receive the imported dataset only after the dialog closes; invalid/cancelled imports retain existing rules. This deliberate modal path is separate from the persistent Settings workspace. |
+| Profile editor and application settings windows | Settings workspace: Connection profiles and Preferences, rules & updates tasks | Preferences has General / Comparison rules / Updates / About tabs; the rail's Settings entry is the only way to reach them (no Help menu). Profiles and preferences do not share mutable form state. |
+| Comparison Import Rules buttons | Removed. Rules are chosen only in **Settings › Rules**; each comparison shows a read-only *Rules: <file> (set in Settings)* line that refreshes when the page is shown | Comparisons read the saved rules file when **Include rules** is ticked, exactly as before; an invalid or cancelled import in Settings keeps the previous rules file. |
 | Hidden profile prototypes and inactive Excel multithreading scaffold | Removed | Real profile management and active comparison/instrument workers remain. The advanced-mapping count display now describes its actual loaded Target snapshot. |
 
 There are **14 concrete production Form classes**: 10 directly routed tasks, `MainForm`, `AboutBox1`, `ViewForMultiReference` and the common `WorkspaceForm` host. `WorkspacePageForm` is an abstract lifecycle base, not another window to open. The retired workspaces' task forms, dedicated controls, layouts and resources are absent from the current build; historical releases retain their earlier implementations. The prior retirement archive at v2.16.0 remains unchanged. Excel Sheet Audit and Workbook identity check remain separate tasks and do not replace the original Excel comparison.

@@ -183,6 +183,10 @@ namespace SPI_Data_Comp_Tool
         public DB_Comparison_Form()
         {
             InitializeComponent();
+            Common_Data.ShowRulesFile(lbl_RulesFile, this);   // rules are chosen only in Settings › Rules
+            // One "Load table lists" button fills both pickers (there is no second Target button).
+            btn_Load_SRC_Table.Click -= btn_Load_SRC_Table_Click;
+            btn_Load_SRC_Table.Click += (sender, e) => LoadBothTableLists(sender, e);
             FormClosing += (sender, args) =>
             {
                 if (backgroundWorker1.IsBusy)
@@ -728,10 +732,9 @@ namespace SPI_Data_Comp_Tool
                 .Add("Source connection", "Fill in the source connection", () => StepFlow.Passes(() => connection.Source.ValidateInput()))
                 .Add("Target connection", "Fill in the target connection", () => StepFlow.Passes(() => connection.Target.ValidateInput()),
                     connection.Target.Group)
-                .Add("Source table", "Choose or type the source table", () => cb_SRC_TableName.Text.Trim().Length > 0,
-                    cb_SRC_TableName, btn_Load_SRC_Table)
-                .Add("Target table", "Choose or type the target table", () => cb_TRG_TableName.Text.Trim().Length > 0,
-                    cb_TRG_TableName, btn_Load_TRG_Table)
+                .Add("Tables", "Load the table lists or type both table names",
+                    () => cb_SRC_TableName.Text.Trim().Length > 0 && cb_TRG_TableName.Text.Trim().Length > 0,
+                    btn_Load_SRC_Table, cb_SRC_TableName, cb_TRG_TableName)
                 .Add(() => "Load", () => cb_ColumnMapping.Checked ? "Connect and load; the mapping opens in the Multi-reference comparison task"
                     : "Connect and load both tables", () => comparisonInputsLoaded, null, btn_Connect_Reference_ID, cb_ColumnMapping)
                 .Add(() => "Reference key", () => "Tick at least one reference key", () => clb_ReferenceID.CheckedItems.Count > 0, sameNames,
@@ -739,9 +742,8 @@ namespace SPI_Data_Comp_Tool
                 .Add(() => "Columns", () => "Tick at least one column to compare",
                     () => StepFlow.CheckedNames(cbL_SRC_Cols).Except(StepFlow.CheckedNames(clb_ReferenceID)).Any(), sameNames,
                     cbL_SRC_Cols, cb_selectAll_toggle)
-                .Add(() => "Set and validate", () => "Choose the options, then set and validate", () => comparisonPrepared, sameNames,
-                    cb_IncludeRule, btn_RuleForm, cb_IgnoreCase, btn_Set)
-                .Add(() => "Compare", () => "Compare and generate the Excel report", () => compareFinished, sameNames, btnGenerateOutput);
+                .Add(() => "Compare", () => "Choose the options, then compare (inputs are checked first)", () => compareFinished, sameNames,
+                    cb_IncludeRule, cb_IgnoreCase, btnGenerateOutput);
             connection.InputChanged += (sender, args) => steps.Later();
             connection.ProfileApplied += (sender, args) => steps.Later();
             steps.Refresh();
@@ -858,7 +860,6 @@ namespace SPI_Data_Comp_Tool
             //cb_TRG_TableName.Enabled = enabledStatus;
 
             btn_Connect_Reference_ID.Enabled = enabledStatus;
-            btn_Set.Enabled = enabledStatus;
             btnGenerateOutput.Enabled = enabledStatus;
 
             //tb_FileName.Enabled = enabledStatus;
@@ -938,7 +939,8 @@ namespace SPI_Data_Comp_Tool
                 DisplayError(ex);
             }
         }
-        private void btn_Set_Click(object sender, EventArgs e)
+        /// <summary>Prepares the keys and columns for Compare (this was the separate "Set and validate" button).</summary>
+        private void PrepareComparison()
         {
             if (!ValidateComparisonInputs(false)) return;
             try
@@ -1098,6 +1100,12 @@ namespace SPI_Data_Comp_Tool
 
         private void btnGenerateOutput_Click(object sender, EventArgs e)
         {
+            // One button: Compare prepares and checks the keys and columns first.
+            if (!comparisonPrepared)
+            {
+                PrepareComparison();
+                if (!comparisonPrepared) return;   // PrepareComparison already showed why
+            }
             if (!ValidateComparisonInputs(true)) return;
             try
             {
@@ -1996,17 +2004,6 @@ namespace SPI_Data_Comp_Tool
 
 
 
-        private void btn_RuleForm_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                common_Data.OpenRuleForm();
-            }
-            catch (Exception ex)
-            {
-                DisplayError(ex);
-            }
-        }
 
         private void cb_IncludeRule_CheckedChanged(object sender, EventArgs e)
         {
@@ -2031,6 +2028,12 @@ namespace SPI_Data_Comp_Tool
             {
                 DisplayError(ex);
             }
+        }
+
+        private void LoadBothTableLists(object sender, EventArgs e)
+        {
+            btn_Load_SRC_Table_Click(sender, e);
+            btn_Load_TRG_Table_Click(sender, e);
         }
 
         private void btn_Load_SRC_Table_Click(object sender, EventArgs e)
@@ -2101,7 +2104,7 @@ namespace SPI_Data_Comp_Tool
         {
             if (!FormValidation.Check(this, () =>
             {
-                FormValidation.IsBusy(backgroundWorker1, btn_Load_TRG_Table);
+                FormValidation.IsBusy(backgroundWorker1, btn_Load_SRC_Table);
                 connection.Target.ValidateInput();
             }, message => FormHelpers.ShowText(lblExpressionStatus, message, Color.Red))) return;
             try
@@ -2378,8 +2381,8 @@ namespace SPI_Data_Comp_Tool
                 FormValidation.Columns(ds.Tables[1], keys, clb_ReferenceID, "target reference-key");
                 FormValidation.Columns(ds.Tables[0], compared, cbL_SRC_Cols, "source comparison");
                 FormValidation.Columns(ds.Tables[1], compared, cbL_SRC_Cols, "target comparison");
-                if (requirePrepared) FormValidation.Require(comparisonPrepared, btn_Set,
-                    "Click Set again after changing the reference keys or comparison columns.");
+                if (requirePrepared) FormValidation.Require(comparisonPrepared, btnGenerateOutput,
+                    "The reference keys or comparison columns could not be prepared. Check them and compare again.");
                 if (cb_IncludeRule.Checked) FormValidation.Require(common_Data.GetRulesStatus(), cb_IncludeRule,
                     "Import valid comparison rules, or clear Include rules.");
             }, message => FormHelpers.ShowText(lblExpressionStatus, message, Color.Red));

@@ -1,6 +1,6 @@
 """Compare DB (DB_Comparison_Form) - template for every Source/Target window."""
 from layout_gen import C, T, F, G
-from _connection import PANEL_DROP, LABEL, FIELD, panel, table_picker
+from _connection import PANEL_DROP, LABEL, FIELD, panel, picker
 
 DESIGNER = "DB Comparison.Designer.cs"
 FORM_NAME = "DB_Comparison_Form"
@@ -13,15 +13,18 @@ DROP = PANEL_DROP + [
     # Retire the hidden dummy-profile prototype; the real shared profile picker remains.
     "groupBox16", "lbl_ProfileStatus", "label10", "tb_ProfileName",
     "btn_SaveProfile", "btn_LoadProfile", "treeView1",
+    # One "Load table lists" button fills both pickers; Compare prepares and validates by itself;
+    # rules are chosen only in Settings (shown here as a read-only line).
+    "btn_Load_TRG_Table", "btn_Set", "btn_RuleForm",
 ]
 
 TEXTS = {
     "groupBox14": "Connection", "cb_FullName": "Show full names in lists",
     "label16": "Source table", "label17": "Target table",
-    "btn_Load_SRC_Table": "Load tables", "btn_Load_TRG_Table": "Load tables",
+    "btn_Load_SRC_Table": "Load table lists",
     "groupBox3": "Compare", "cb_ColumnMapping": "Different column names / RefID comparison",
-    "cb_IncludeRule": "Include rules", "btn_RuleForm": "Open rules…", "cb_IgnoreCase": "Ignore case",
-    "btn_Connect_Reference_ID": "Connect and load", "btn_Set": "Set and validate",
+    "cb_IncludeRule": "Include rules", "lbl_RulesFile": "Rules: none (set in Settings)", "cb_IgnoreCase": "Ignore case",
+    "btn_Connect_Reference_ID": "Connect and load",
     "btnGenerateOutput": "Compare and generate Excel", "btn_Cancel": "Cancel", "btn_Clear_Reset": "Clear / Reset",
     "label13": "Report", "llbl_File_path": "",
     "groupBox9": "View data", "groupBox7": "Reference key", "cb_PrimaryKey": "Select primary key",
@@ -41,18 +44,18 @@ PROPS = {
 
 # the Source and Target pickers line up under the panel's two halves (its Copy column is 100 px)
 TABLES = T("tlp_Tables", cols=["50%", "100", "50%"], rows=["auto", "auto"], autosize=True, cells=[
-    (table_picker("tlp_SRC_Table", "label16", "cb_SRC_TableName", "btn_Load_SRC_Table"), 0, 0),
-    (table_picker("tlp_TRG_Table", "label17", "cb_TRG_TableName", "btn_Load_TRG_Table"), 2, 0),
-    (C("cb_FullName", autosize=True, anchor="Left", margin=(0, 6, 0, 0)), 0, 1, 3),
+    (picker("tlp_SRC_Table", "label16", "cb_SRC_TableName"), 0, 0),
+    (picker("tlp_TRG_Table", "label17", "cb_TRG_TableName"), 2, 0),
+    (C("cb_FullName", autosize=True, anchor="Left", margin=(0, 6, 0, 0)), 0, 1, 2),
+    (C("btn_Load_SRC_Table", size=(150, 30), anchor="Right", margin=(0, 6, 0, 0)), 2, 1),
 ], margin=(0, 8, 0, 0))
 
 COMPARE = T("tlp_Compare", cols=["50%", "50%"], rows=["auto"] * 7 + ["100%", "auto", "auto"], cells=[
     (C("cb_ColumnMapping", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 0, 2),
     (C("cb_IncludeRule", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 1),
-    (C("btn_RuleForm", size=(110, 28), anchor="Right", margin=(0, 3, 0, 3)), 1, 1),
+    (C("lbl_RulesFile", new="Label", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 1, 1),
     (C("cb_IgnoreCase", autosize=True, anchor="Left", margin=(0, 3, 0, 3)), 0, 2, 2),
     (C("btn_Connect_Reference_ID", dock="Fill", size=(120, 34), margin=(0, 12, 0, 4)), 0, 3, 2),
-    (C("btn_Set", dock="Fill", size=(120, 34), margin=(0, 4, 0, 4)), 0, 4, 2),
     (C("btnGenerateOutput", dock="Fill", size=(120, 36), margin=(0, 4, 0, 8)), 0, 5, 2),
     (C("btn_Cancel", dock="Fill", size=(100, 30), margin=(0, 0, 4, 0)), 0, 6),
     (C("btn_Clear_Reset", dock="Fill", size=(100, 30), margin=(4, 0, 0, 0)), 1, 6),

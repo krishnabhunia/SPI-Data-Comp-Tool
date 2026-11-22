@@ -62,9 +62,7 @@
             this.cb_IncludeDiff_Columns = new System.Windows.Forms.CheckBox();
             this.cb_IgnoreCase = new System.Windows.Forms.CheckBox();
             this.cb_IncludeRule = new System.Windows.Forms.CheckBox();
-            this.btn_RuleForm = new System.Windows.Forms.Button();
             this.btn_Cancel = new System.Windows.Forms.Button();
-            this.btn_Validate = new System.Windows.Forms.Button();
             this.llbl_filePath = new System.Windows.Forms.LinkLabel();
             this.label1 = new System.Windows.Forms.Label();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
@@ -73,10 +71,8 @@
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.backgroundWorkerInstrument = new System.ComponentModel.BackgroundWorker();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
-            this.button1 = new System.Windows.Forms.Button();
             this.lbl_InstrumentText = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.btn_TestSystemMemoryOutException = new System.Windows.Forms.Button();
             this.tlp_Root = new System.Windows.Forms.TableLayoutPanel();
             this.step_Strip = new SPI_Data_Comp_Tool.StepStrip();
             this.tlp_Files = new System.Windows.Forms.TableLayoutPanel();
@@ -90,6 +86,7 @@
             this.tlp_IgnTrg = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Right = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Compare = new System.Windows.Forms.TableLayoutPanel();
+            this.lbl_RulesFile = new System.Windows.Forms.Label();
             this.tlp_Status = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Progress = new System.Windows.Forms.TableLayoutPanel();
             this.tlp_Instrument = new System.Windows.Forms.TableLayoutPanel();
@@ -536,9 +533,7 @@
             this.tlp_Compare.Controls.Add(this.cb_IgnoreCase, 0, 1);
             this.tlp_Compare.SetColumnSpan(this.cb_IgnoreCase, 2);
             this.tlp_Compare.Controls.Add(this.cb_IncludeRule, 0, 2);
-            this.tlp_Compare.Controls.Add(this.btn_RuleForm, 1, 2);
-            this.tlp_Compare.Controls.Add(this.btn_Validate, 0, 3);
-            this.tlp_Compare.SetColumnSpan(this.btn_Validate, 2);
+            this.tlp_Compare.Controls.Add(this.lbl_RulesFile, 1, 2);
             this.tlp_Compare.Controls.Add(this.btn_Compare, 0, 4);
             this.tlp_Compare.SetColumnSpan(this.btn_Compare, 2);
             this.tlp_Compare.Controls.Add(this.btn_Cancel, 0, 5);
@@ -585,28 +580,14 @@
             this.cb_IncludeRule.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.cb_IncludeRule.TabIndex = 35;
             // 
-            // btn_RuleForm
+            // lbl_RulesFile
             // 
-            this.btn_RuleForm.Name = "btn_RuleForm";
-            this.btn_RuleForm.UseVisualStyleBackColor = true;
-            this.btn_RuleForm.Click += new System.EventHandler(this.btn_RuleForm_Click);
-            this.btn_RuleForm.Text = "Open rules…";
-            this.btn_RuleForm.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
-            this.btn_RuleForm.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
-            this.btn_RuleForm.Size = new System.Drawing.Size(110, 28);
-            this.btn_RuleForm.TabIndex = 36;
-            // 
-            // btn_Validate
-            // 
-            this.btn_Validate.Enabled = false;
-            this.btn_Validate.Name = "btn_Validate";
-            this.btn_Validate.UseVisualStyleBackColor = true;
-            this.btn_Validate.Click += new System.EventHandler(this.btn_Validate_Click);
-            this.btn_Validate.Text = "Validate";
-            this.btn_Validate.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.btn_Validate.Margin = new System.Windows.Forms.Padding(0, 10, 0, 4);
-            this.btn_Validate.Size = new System.Drawing.Size(120, 32);
-            this.btn_Validate.TabIndex = 37;
+            this.lbl_RulesFile.Name = "lbl_RulesFile";
+            this.lbl_RulesFile.Text = "Rules: none (set in Settings)";
+            this.lbl_RulesFile.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
+            this.lbl_RulesFile.AutoSize = true;
+            this.lbl_RulesFile.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
+            this.lbl_RulesFile.TabIndex = 36;
             // 
             // btn_Compare
             // 
@@ -618,7 +599,7 @@
             this.btn_Compare.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_Compare.Margin = new System.Windows.Forms.Padding(0, 4, 0, 4);
             this.btn_Compare.Size = new System.Drawing.Size(120, 36);
-            this.btn_Compare.TabIndex = 38;
+            this.btn_Compare.TabIndex = 37;
             // 
             // btn_Cancel
             // 
@@ -629,7 +610,7 @@
             this.btn_Cancel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn_Cancel.Margin = new System.Windows.Forms.Padding(0, 0, 0, 6);
             this.btn_Cancel.Size = new System.Drawing.Size(100, 30);
-            this.btn_Cancel.TabIndex = 39;
+            this.btn_Cancel.TabIndex = 38;
             // 
             // label1
             // 
@@ -639,7 +620,7 @@
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label1.AutoSize = true;
             this.label1.Margin = new System.Windows.Forms.Padding(0, 4, 0, 2);
-            this.label1.TabIndex = 40;
+            this.label1.TabIndex = 39;
             // 
             // llbl_filePath
             // 
@@ -653,7 +634,7 @@
             this.llbl_filePath.AutoSize = false;
             this.llbl_filePath.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.llbl_filePath.Size = new System.Drawing.Size(100, 40);
-            this.llbl_filePath.TabIndex = 41;
+            this.llbl_filePath.TabIndex = 40;
             // 
             // groupBox3
             // 
@@ -664,7 +645,7 @@
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.groupBox3.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox3.TabIndex = 42;
+            this.groupBox3.TabIndex = 41;
             // 
             // tlp_Status
             // 
@@ -687,7 +668,7 @@
             this.tlp_Status.SetColumnSpan(this.lblError, 2);
             this.tlp_Status.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Status.AutoSize = false;
-            this.tlp_Status.TabIndex = 43;
+            this.tlp_Status.TabIndex = 42;
             // 
             // label8
             // 
@@ -696,7 +677,7 @@
             this.label8.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.label8.AutoSize = true;
             this.label8.Margin = new System.Windows.Forms.Padding(0, 0, 6, 4);
-            this.label8.TabIndex = 44;
+            this.label8.TabIndex = 43;
             // 
             // lbl_Status
             // 
@@ -706,7 +687,7 @@
             this.lbl_Status.AutoSize = false;
             this.lbl_Status.Margin = new System.Windows.Forms.Padding(0, 0, 0, 4);
             this.lbl_Status.Size = new System.Drawing.Size(100, 60);
-            this.lbl_Status.TabIndex = 45;
+            this.lbl_Status.TabIndex = 44;
             // 
             // lbl_Parameter
             // 
@@ -715,7 +696,7 @@
             this.lbl_Parameter.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_Parameter.AutoSize = true;
             this.lbl_Parameter.Margin = new System.Windows.Forms.Padding(0, 0, 0, 4);
-            this.lbl_Parameter.TabIndex = 46;
+            this.lbl_Parameter.TabIndex = 45;
             // 
             // lbl_Timer
             // 
@@ -724,7 +705,7 @@
             this.lbl_Timer.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_Timer.AutoSize = true;
             this.lbl_Timer.Margin = new System.Windows.Forms.Padding(0, 0, 0, 4);
-            this.lbl_Timer.TabIndex = 47;
+            this.lbl_Timer.TabIndex = 46;
             // 
             // lblError
             // 
@@ -733,7 +714,7 @@
             this.lblError.Visible = false;
             this.lblError.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblError.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.lblError.TabIndex = 48;
+            this.lblError.TabIndex = 47;
             // 
             // groupBox5
             // 
@@ -746,7 +727,7 @@
             this.groupBox5.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.groupBox5.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
             this.groupBox5.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox5.TabIndex = 49;
+            this.groupBox5.TabIndex = 48;
             // 
             // tlp_Progress
             // 
@@ -761,7 +742,7 @@
             this.tlp_Progress.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Progress.AutoSize = true;
             this.tlp_Progress.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Progress.TabIndex = 50;
+            this.tlp_Progress.TabIndex = 49;
             // 
             // progressBar1
             // 
@@ -769,7 +750,7 @@
             this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right));
             this.progressBar1.Margin = new System.Windows.Forms.Padding(0, 4, 16, 4);
             this.progressBar1.Size = new System.Drawing.Size(300, 14);
-            this.progressBar1.TabIndex = 51;
+            this.progressBar1.TabIndex = 50;
             // 
             // lbl_Percentage
             // 
@@ -779,7 +760,7 @@
             this.lbl_Percentage.AutoSize = true;
             this.lbl_Percentage.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.lbl_Percentage.MinimumSize = new System.Drawing.Size(120, 0);
-            this.lbl_Percentage.TabIndex = 52;
+            this.lbl_Percentage.TabIndex = 51;
             // 
             // groupBox7
             // 
@@ -792,7 +773,7 @@
             this.groupBox7.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.groupBox7.Margin = new System.Windows.Forms.Padding(0, 12, 0, 0);
             this.groupBox7.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.groupBox7.TabIndex = 53;
+            this.groupBox7.TabIndex = 52;
             // 
             // tlp_Instrument
             // 
@@ -807,7 +788,7 @@
             this.tlp_Instrument.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Instrument.AutoSize = true;
             this.tlp_Instrument.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlp_Instrument.TabIndex = 54;
+            this.tlp_Instrument.TabIndex = 53;
             // 
             // lbl_InstrumentText
             // 
@@ -817,7 +798,7 @@
             this.lbl_InstrumentText.AutoSize = false;
             this.lbl_InstrumentText.Margin = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.lbl_InstrumentText.Size = new System.Drawing.Size(400, 40);
-            this.lbl_InstrumentText.TabIndex = 55;
+            this.lbl_InstrumentText.TabIndex = 54;
             // 
             // flp_Instrument
             // 
@@ -825,13 +806,11 @@
             this.flp_Instrument.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
             this.flp_Instrument.WrapContents = false;
             this.flp_Instrument.Controls.Add(this.btnLoad);
-            this.flp_Instrument.Controls.Add(this.button1);
-            this.flp_Instrument.Controls.Add(this.btn_TestSystemMemoryOutException);
             this.flp_Instrument.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Right));
             this.flp_Instrument.AutoSize = true;
             this.flp_Instrument.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flp_Instrument.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.flp_Instrument.TabIndex = 56;
+            this.flp_Instrument.TabIndex = 55;
             // 
             // btnLoad
             // 
@@ -841,29 +820,7 @@
             this.btnLoad.Click += new System.EventHandler(this.btnLoad_Click_1);
             this.btnLoad.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
             this.btnLoad.Size = new System.Drawing.Size(300, 30);
-            this.btnLoad.TabIndex = 57;
-            // 
-            // button1
-            // 
-            this.button1.Name = "button1";
-            this.button1.Text = "Test";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Visible = false;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            this.button1.Margin = new System.Windows.Forms.Padding(0, 0, 6, 0);
-            this.button1.Size = new System.Drawing.Size(75, 30);
-            this.button1.TabIndex = 58;
-            // 
-            // btn_TestSystemMemoryOutException
-            // 
-            this.btn_TestSystemMemoryOutException.Name = "btn_TestSystemMemoryOutException";
-            this.btn_TestSystemMemoryOutException.Text = "Test System Memory Out Exception";
-            this.btn_TestSystemMemoryOutException.UseVisualStyleBackColor = true;
-            this.btn_TestSystemMemoryOutException.Visible = false;
-            this.btn_TestSystemMemoryOutException.Click += new System.EventHandler(this.btn_TestSystemMemoryOutException_Click);
-            this.btn_TestSystemMemoryOutException.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
-            this.btn_TestSystemMemoryOutException.Size = new System.Drawing.Size(220, 30);
-            this.btn_TestSystemMemoryOutException.TabIndex = 59;
+            this.btnLoad.TabIndex = 56;
             // 
             // backgroundWorker1
             // 
@@ -947,6 +904,8 @@
 
         #endregion
 
+        private System.Windows.Forms.Label lbl_RulesFile;
+
         private System.Windows.Forms.TableLayoutPanel tlp_Root;
         private SPI_Data_Comp_Tool.StepStrip step_Strip;
         private System.Windows.Forms.TableLayoutPanel tlp_Files;
@@ -987,7 +946,6 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Button btn_Validate;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.Button btn_Compare;
@@ -999,7 +957,6 @@
         private System.Windows.Forms.Button btnLoad;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.CheckBox cb_IncludeRule;
-        private System.Windows.Forms.Button btn_RuleForm;
         private System.Windows.Forms.CheckBox cb_IgnoreCase;
         private System.Windows.Forms.CheckBox cb_IncludeDiff_Columns;
         private System.Windows.Forms.CheckBox cb_MultiReference;
@@ -1008,7 +965,5 @@
         private System.Windows.Forms.Label lbl_InstrumentText;
         private System.Windows.Forms.CheckBox cb_Primary_Key;
         private System.Windows.Forms.Timer timer1;
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.Button btn_TestSystemMemoryOutException;
     }
 }

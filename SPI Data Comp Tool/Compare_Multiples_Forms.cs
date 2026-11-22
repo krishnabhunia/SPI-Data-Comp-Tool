@@ -118,7 +118,7 @@ namespace SPI_Data_Comp_Tool
                 .Add("Output folder", "Choose the output folder",
                     () => boolFolderPathSelected && System.IO.Directory.Exists(l_lbl_outputFolder.Text), l_lb_Output_Set, l_lbl_outputFolder)
                 .Add("Compare", "Choose the options, then compare and generate Excel", () => compareFinished,
-                    cb_PK_As_ReferenceKey, cb_IncludeDiff_Columns, cb_IgnoreCase, cb_IncludeRule, btn_RuleForm, btn_Compare);
+                    cb_PK_As_ReferenceKey, cb_IncludeDiff_Columns, cb_IgnoreCase, cb_IncludeRule, btn_Compare);
             steps.Watch(tabControl1, btn_TestDBConnection);
             steps.Refresh();
         }
@@ -126,6 +126,7 @@ namespace SPI_Data_Comp_Tool
         public Compare_Multiples_List_Tables_Forms()
         {
             InitializeComponent();
+            Common_Data.ShowRulesFile(lbl_RulesFile, this);   // rules are chosen only in Settings › Rules
             FormClosing += (sender, args) =>
             {
                 if (bgw_List.IsBusy)
@@ -1550,17 +1551,6 @@ namespace SPI_Data_Comp_Tool
         }
 
 
-        private void btn_RuleForm_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                common_Data.OpenRuleForm();
-            }
-            catch (Exception ex)
-            {
-                Common_Data.DisplayError(rtb_Log, ex);
-            }
-        }
 
 
         private void l_lb_Output_Open_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

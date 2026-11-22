@@ -89,6 +89,7 @@ namespace SPI_Data_Comp_Tool
         public ViewForMultiReference()
         {
             InitializeComponent();
+            Common_Data.ShowRulesFile(lbl_RulesFile, this);   // rules are chosen only in Settings › Rules
             // on Load, so the lists the other constructor fills are themed too
             Load += (sender, e) => UiTheme.Apply(this);
 
@@ -757,17 +758,6 @@ namespace SPI_Data_Comp_Tool
             }
         }
 
-        private void btn_RuleForm_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                common_Data.OpenRuleForm();
-            }
-            catch (Exception ex)
-            {
-                DisplayError(label2,ex);
-            }
-        }
 
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
