@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -103,7 +103,8 @@ namespace SPI_Data_Comp_Tool
                 {
                     // Inspect every loaded page, including hidden tabs. A hidden profile or data
                     // task still holds user work and must block replacement of the executable.
-                    if (workspace.Workspace != WorkspaceKind.Settings ||
+                    // The main window's grouped shell lists every task; judge it by the pages it has loaded.
+                    if ((!workspace.Grouped && workspace.Workspace != WorkspaceKind.Settings) ||
                         !CanInstallForms(workspace.LoadedPages.Cast<Form>(), out reason))
                     {
                         reason = "Close all data workspaces and profile tasks before installing an update.";
@@ -116,7 +117,8 @@ namespace SPI_Data_Comp_Tool
                     }
                     continue;
                 }
-                if (!(form is MainForm) && !(form is User_Settings))
+                // AboutBox1 is embedded in Settings > About and holds no work.
+                if (!(form is MainForm) && !(form is User_Settings) && !(form is AboutBox1))
                 {
                     reason = "Save your work and close all task windows before installing an update.";
                     return false;

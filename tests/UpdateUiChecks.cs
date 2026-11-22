@@ -77,7 +77,7 @@ namespace SPI_Data_Comp_Tool
             CheckShortUpdatesViewport();
             passed("Update actions remain visible in short viewports; release lists and notes yield height while their content remains scrollable.");
             CheckSettingsNavigation();
-            passed("Help reuses Settings > Updates, preserves other settings sections and makes update actions usable at minimum size.");
+            passed("Settings > Updates is the single entry (rail only, no Help menu), preserves other settings sections and keeps update actions usable at minimum size.");
         }
 
         private static void Require(bool condition, string message)
@@ -580,23 +580,24 @@ namespace SPI_Data_Comp_Tool
             {
                 main.Show();
                 Application.DoEvents();
-                var menu = Find<MenuStrip>(main, "menuStrip1");
                 Require(Find<Label>(main, "lbl_Version").Text == MainForm.BuildVersionStatus(AppVersion.Full),
                     "The main window does not show its actual build version and channel.");
-                Require(menu.Items.Find("updateToolStripMenuItem", true).Length == 0,
-                    "A second automatic-update menu entry survived consolidation.");
-                menu.Items.Find("taskMenu_settings_preferences", true).OfType<ToolStripMenuItem>().Single().PerformClick();
+                Require(main.Controls.Find("menuStrip1", true).Length == 0 && main.Controls.Find("checkForUpdatesToolStripMenuItem", true).Length == 0,
+                    "A menu entry still repeats Settings > Updates.");
+                // The rail's Settings entry is the only way in; reopening it reuses the same hosted page.
+                Find<Button>(main, "task_settings_preferences").PerformClick();
                 Application.DoEvents();
-                var settings = Application.OpenForms.OfType<User_Settings>().Single();
+                var settings = (User_Settings)main.Shell.ActivePage;
                 var log = Find<RichTextBox>(settings, "rtb_Log");
                 log.Text = "Synthetic retained rules log";
-                menu.Items.Find("checkForUpdatesToolStripMenuItem", true).OfType<ToolStripMenuItem>().Single().PerformClick();
-                Application.DoEvents();
-                Require(ReferenceEquals(settings, main.ShowUpdatesSettings()) && Application.OpenForms.OfType<User_Settings>().Count() == 1,
-                    "Help created a duplicate Settings/Updates window.");
+                Require(ReferenceEquals(settings, main.ShowUpdatesSettings()) &&
+                    main.Shell.LoadedPages.OfType<User_Settings>().Count() == 1 && !Application.OpenForms.OfType<User_Settings>().Any(form => form.TopLevel),
+                    "Opening Updates created a duplicate Settings/Updates page or window.");
                 var tabs = Find<TabControl>(settings, "tabs_Settings");
-                Require(tabs.TabPages.Count == 3 && tabs.SelectedTab.Name == "tab_Updates" && settings.AcceptButton == null,
-                    "Help did not open Updates or Enter can implicitly start an action.");
+                Require(tabs.TabPages.Count == 4 && tabs.SelectedTab.Name == "tab_Updates" && settings.AcceptButton == null,
+                    "Settings did not open Updates or Enter can implicitly start an action.");
+                Require(tabs.TabPages[3].Name == "tab_About" && settings.Controls.Find("pnl_About", true).Single().Controls.OfType<AboutBox1>().Count() == 1,
+                    "About is not the single Settings tab that replaced the Help menu.");
                 Require(tabs.TabPages.Cast<TabPage>().Count(tab => tab.Name == "tab_Updates") == 1 &&
                     settings.Controls.Find("updatesControl", true).Length == 1,
                     "Settings contains duplicate Updates pages or updater controls.");
@@ -604,7 +605,8 @@ namespace SPI_Data_Comp_Tool
                     "The unrelated log consumes the Updates workspace.");
                 // A hosted page has no standalone minimum: resize the real workspace,
                 // which includes navigation/header/footer space, instead of setting the page to 0x0.
-                Form owner = settings.HostWorkspace ?? (Form)settings;
+                // The page is hosted in the main window's shell, so the main window sets the real minimum.
+                Form owner = settings.HostWorkspace != null && settings.HostWorkspace.TopLevel ? settings.HostWorkspace : (Form)main;
                 owner.Size = owner.MinimumSize;
                 owner.PerformLayout();
                 settings.PerformLayout();

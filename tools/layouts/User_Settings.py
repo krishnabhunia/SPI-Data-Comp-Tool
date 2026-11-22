@@ -1,4 +1,4 @@
-"""One settings window for output preferences, comparison rules and explicit updates."""
+"""One settings window for output preferences, comparison rules, explicit updates and About."""
 from layout_gen import C, T, F, G, TABS
 
 DESIGNER = "User_Settings.Designer.cs"
@@ -11,6 +11,7 @@ TEXTS = {
     "tab_General": "General",
     "tab_Rules": "Comparison rules",
     "tab_Updates": "Updates",
+    "tab_About": "About",
     "gb_SaveExcel": "Save Excel files with",
     "gb_Theme": "Colour theme",
     "lbl_Theme": "Theme",
@@ -64,6 +65,8 @@ LAYOUT = T("tlp_Root", cols=["100%"], rows=["100%", "140", "auto"], cells=[
             ])),
         G("tab_Updates", new="TabPage", child=C("updatesControl", new="SPI_Data_Comp_Tool.UpdatesControl",
             dock="Fill", margin=0)),
+        # the only About page: the main window has no Help menu (AboutBox1 is embedded here at run time)
+        G("tab_About", new="TabPage", child=C("pnl_About", new="Panel", dock="Fill", margin=0)),
     ]), 0, 0),
     (G("gb_Logs", T("tlp_Logs", cols=["auto", "100%"], rows=["100%", "auto"], cells=[
         (C("rtb_Log", dock="Fill", margin=(0, 0, 0, 8)), 0, 0, 2),

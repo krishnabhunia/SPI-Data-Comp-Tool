@@ -84,9 +84,11 @@ class RetiredWorkspaces(unittest.TestCase):
         self.assertIn('assembly.GetType("SPI_Data_Comp_Tool." + name, false) == null', checks)
         for retired in ("scripts.generate", "scripts.execute", "Generate_IUD_Script_Form", "Execute_Excel_Scripts_Form"):
             self.assertIn('"' + retired + '"', checks)
-        self.assertIn('main.Controls.Find("btn_Workspace" + name, true)', checks)
-        self.assertIn('menu.Items.Find("workspaceMenu_" + name, true)', checks)
-        self.assertIn('menu.Items.Find("taskMenu_" + route.Replace', checks)
+        # The main window has no menu bar or tiles; the rail lists each supported route once and no retired one.
+        self.assertIn("!AllControls(main).OfType<MenuStrip>().Any()", checks)
+        self.assertIn("!AllControls(main).OfType<TileButton>().Any()", checks)
+        self.assertIn('main.Controls.Find("task_" + route.Replace', checks)
+        self.assertIn('main.Controls.Find("task_" + task.Key.Replace', checks)
         routes = re.findall(r'\{ "((?:comparison|reports|settings)\.[^"]+)", typeof\(', checks)
         self.assertEqual(len(routes), 10)
         self.assertEqual(len(set(routes)), 10)

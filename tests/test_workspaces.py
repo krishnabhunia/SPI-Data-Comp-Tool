@@ -63,23 +63,29 @@ class WorkspaceContracts(unittest.TestCase):
     def test_update_policy_inspects_all_loaded_tasks(self):
         policy = source("UpdateInstaller.cs").split("internal static bool CanInstallForms", 1)[1].split("internal static bool HasBusyWorker", 1)[0]
         self.assertIn("workspace.Workspace != WorkspaceKind.Settings", policy)
+        self.assertIn("!workspace.Grouped && workspace.Workspace != WorkspaceKind.Settings", policy)
+        self.assertIn("!(form is AboutBox1)", policy)
         self.assertIn("workspace.LoadedPages.Cast<Form>()", policy)
         self.assertIn("HasBusyWorker(workspace)", policy)
         self.assertNotIn(".Visible", policy)
 
-    def test_menu_and_home_navigation_share_catalog_routes(self):
+    def test_one_rail_is_the_only_way_to_open_a_task(self):
         main = source("MainForm.cs")
-        self.assertIn("WorkspaceCatalog.TasksFor(kind)", main)
-        self.assertIn("Tag = task.Key", main)
-        self.assertIn('workspaces.Open(this, "settings.preferences")', main)
+        self.assertIn('new WorkspaceForm(WorkspaceCatalog.Tasks, "SPI Data Comparison")', main)
+        self.assertIn('shell.OpenTask("settings.preferences")', main)
+        self.assertIn("shell.TryPrepareWorkspaceClose(e.CloseReason)", main)
         self.assertIn("workspaces.TryPrepareCloseAll(e.CloseReason)", main)
         self.assertIn("OwnedForms.OfType<WorkspaceForm>()", main)
         designer = source("MainForm.Designer.cs")
-        self.assertNotIn("this.helpToolStripMenuItem", designer)
-        tiles = re.findall(r"private SPI_Data_Comp_Tool.TileButton (btn_Workspace\w+);", designer)
-        self.assertEqual(set(tiles), {"btn_Workspace" + group for group in
-                                     ("Comparison", "Reports", "Settings")})
-        self.assertEqual(len(tiles), 3)
+        for removed in ("helpToolStripMenuItem", "menuStrip1", "TileButton", "btn_Workspace"):
+            self.assertNotIn(removed, designer)
+        workspace = source("WorkspaceForm.cs")
+        # The shell lists every task once, under its group; a New session window has no rail of its own.
+        self.assertIn('Name = "group_" + task.Workspace', workspace)
+        self.assertIn("internal bool ShowNavigation", workspace)
+        navigator = source("WindowNavigator.cs")
+        self.assertIn("if (openInMain != null && !separate) return openInMain(routeKey);", navigator)
+        self.assertIn("window.ShowNavigation = false;", navigator)
 
     def test_offline_windows_checks_are_compiled_and_invoked(self):
         project = source("SPI Data Comp Tool.csproj")
@@ -89,23 +95,16 @@ class WorkspaceContracts(unittest.TestCase):
         for file in ("WorkspacePageForm.cs", "WorkspaceCatalog.cs", "WorkspaceForm.cs"):
             self.assertIn('<Compile Include="' + file + '"', project)
 
-    def test_generator_escapes_text_and_workspace_tiles_use_distinct_hints(self):
+    def test_generator_escapes_text_and_rail_tasks_use_catalog_titles(self):
         spec = importlib.util.spec_from_file_location("workspace_layout_generator", ROOT / "tools/layout_gen.py")
         generator = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(generator)
         self.assertEqual(generator.cs('one\ntwo\r\n"quoted"\\path\tvalue'), 'one\\ntwo\\r\\n\\"quoted\\"\\\\path\\tvalue')
-        designer = source("MainForm.Designer.cs")
-        titles = re.findall(r'this\.(btn_Workspace\w+)\.Text = "([^"\n]+)";', designer)
-        hints = dict(re.findall(r'this\.(btn_Workspace\w+)\.Hint = "([^"\n]+)";', designer))
-        self.assertEqual(len(titles), 3)
-        self.assertEqual(len(hints), 3)
-        for tile, title in titles:
-            with self.subTest(tile=tile):
-                self.assertNotIn("\\n", title)
-                self.assertNotIn("\\r", title)
-                self.assertIn(tile, hints)
-                self.assertTrue(hints[tile].strip())
-                self.assertNotEqual(title, hints[tile])
+        workspace = source("WorkspaceForm.cs")
+        # Rail buttons show the catalog title and expose the description to screen readers.
+        self.assertIn("Text = task.Title", workspace)
+        self.assertIn("AccessibleDescription = task.Description", workspace)
+        self.assertIn("UseMnemonic = false", workspace)
 
 
 if __name__ == "__main__":

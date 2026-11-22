@@ -74,8 +74,8 @@ class Updater(unittest.TestCase):
         self.assertEqual(designer.count("this.tabs_Settings.Controls.Add(this.tab_Updates);"), 1)
         self.assertEqual(designer.count("new SPI_Data_Comp_Tool.UpdatesControl()"), 1)
         checks = text(REPO / "tests" / "UiWorkflowChecks.cs")
-        self.assertIn("tabs.TabPages.Count == 3", checks)
-        for index, name in enumerate(("tab_General", "tab_Rules", "tab_Updates")):
+        self.assertIn("tabs.TabPages.Count == 4", checks)
+        for index, name in enumerate(("tab_General", "tab_Rules", "tab_Updates", "tab_About")):
             self.assertIn(f'tabs.TabPages[{index}].Name == "{name}"', checks)
 
     def test_old_installer_relaunch_is_preserved_without_double_restarting_new_updates(self) -> None:

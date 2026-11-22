@@ -55,6 +55,8 @@
             this.lbl_RulesStatus = new System.Windows.Forms.Label();
             this.tab_Updates = new System.Windows.Forms.TabPage();
             this.updatesControl = new SPI_Data_Comp_Tool.UpdatesControl();
+            this.tab_About = new System.Windows.Forms.TabPage();
+            this.pnl_About = new System.Windows.Forms.Panel();
             this.tlp_Logs = new System.Windows.Forms.TableLayoutPanel();
             this.flp_SettingsActions = new System.Windows.Forms.FlowLayoutPanel();
             this.btn_Close = new System.Windows.Forms.Button();
@@ -69,6 +71,7 @@
             this.tab_Rules.SuspendLayout();
             this.tlp_Rules.SuspendLayout();
             this.tab_Updates.SuspendLayout();
+            this.tab_About.SuspendLayout();
             this.gb_Logs.SuspendLayout();
             this.tlp_Logs.SuspendLayout();
             this.flp_SettingsActions.SuspendLayout();
@@ -96,6 +99,7 @@
             this.tabs_Settings.Controls.Add(this.tab_General);
             this.tabs_Settings.Controls.Add(this.tab_Rules);
             this.tabs_Settings.Controls.Add(this.tab_Updates);
+            this.tabs_Settings.Controls.Add(this.tab_About);
             this.tabs_Settings.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabs_Settings.TabIndex = 1;
             // 
@@ -329,6 +333,21 @@
             this.updatesControl.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.updatesControl.TabIndex = 22;
             // 
+            // tab_About
+            // 
+            this.tab_About.Name = "tab_About";
+            this.tab_About.Text = "About";
+            this.tab_About.Controls.Add(this.pnl_About);
+            this.tab_About.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
+            this.tab_About.TabIndex = 23;
+            // 
+            // pnl_About
+            // 
+            this.pnl_About.Name = "pnl_About";
+            this.pnl_About.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnl_About.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
+            this.pnl_About.TabIndex = 24;
+            // 
             // gb_Logs
             // 
             this.gb_Logs.Name = "gb_Logs";
@@ -337,7 +356,7 @@
             this.gb_Logs.Controls.Add(this.tlp_Logs);
             this.gb_Logs.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gb_Logs.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
-            this.gb_Logs.TabIndex = 23;
+            this.gb_Logs.TabIndex = 25;
             // 
             // tlp_Logs
             // 
@@ -354,7 +373,7 @@
             this.tlp_Logs.Controls.Add(this.lbl_Progress, 1, 1);
             this.tlp_Logs.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tlp_Logs.AutoSize = false;
-            this.tlp_Logs.TabIndex = 24;
+            this.tlp_Logs.TabIndex = 26;
             // 
             // rtb_Log
             // 
@@ -364,7 +383,7 @@
             this.rtb_Log.Text = "";
             this.rtb_Log.Dock = System.Windows.Forms.DockStyle.Fill;
             this.rtb_Log.Margin = new System.Windows.Forms.Padding(0, 0, 0, 8);
-            this.rtb_Log.TabIndex = 25;
+            this.rtb_Log.TabIndex = 27;
             // 
             // btn_ClearLogs
             // 
@@ -375,7 +394,7 @@
             this.btn_ClearLogs.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.btn_ClearLogs.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_ClearLogs.Size = new System.Drawing.Size(110, 30);
-            this.btn_ClearLogs.TabIndex = 26;
+            this.btn_ClearLogs.TabIndex = 28;
             // 
             // lbl_Progress
             // 
@@ -384,7 +403,7 @@
             this.lbl_Progress.Anchor = ((System.Windows.Forms.AnchorStyles)(System.Windows.Forms.AnchorStyles.Left));
             this.lbl_Progress.AutoSize = true;
             this.lbl_Progress.Margin = new System.Windows.Forms.Padding(12, 0, 0, 0);
-            this.lbl_Progress.TabIndex = 27;
+            this.lbl_Progress.TabIndex = 29;
             // 
             // flp_SettingsActions
             // 
@@ -396,7 +415,7 @@
             this.flp_SettingsActions.AutoSize = true;
             this.flp_SettingsActions.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flp_SettingsActions.Margin = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.flp_SettingsActions.TabIndex = 28;
+            this.flp_SettingsActions.TabIndex = 30;
             // 
             // btn_Close
             // 
@@ -405,7 +424,7 @@
             this.btn_Close.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.btn_Close.Size = new System.Drawing.Size(100, 32);
             this.btn_Close.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btn_Close.TabIndex = 29;
+            this.btn_Close.TabIndex = 31;
             // 
             // User_Settings
             // 
@@ -441,6 +460,8 @@
             this.tlp_Rules.PerformLayout();
             this.tab_Updates.ResumeLayout(false);
             this.tab_Updates.PerformLayout();
+            this.tab_About.ResumeLayout(false);
+            this.tab_About.PerformLayout();
             this.gb_Logs.ResumeLayout(false);
             this.gb_Logs.PerformLayout();
             this.tlp_Logs.ResumeLayout(false);
@@ -453,6 +474,9 @@
         }
 
         #endregion
+
+        private System.Windows.Forms.TabPage tab_About;
+        private System.Windows.Forms.Panel pnl_About;
 
         private System.Windows.Forms.TableLayoutPanel tlp_General;
         private System.Windows.Forms.GroupBox gb_Theme;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -37,6 +37,10 @@ namespace SPI_Data_Comp_Tool
             passed("Background workers remain detectable and protected while their workspace page is hidden.");
             CheckUpdaterPolicy();
             passed("Only a Settings workspace containing preferences alone is eligible for updating; hidden profile pages still block installation.");
+            CheckShellUpdaterPolicy();
+            passed("The main window's rail shell can install an update once only Settings pages (with About) are loaded; a loaded data task still blocks it.");
+            CheckSessionMappingNavigation();
+            passed("A New session window has no rail, but shows its own list while an advanced-mapping snapshot is open so both pages stay reachable.");
             CheckDialogKeys();
             passed("Enter and Escape use only the active page's buttons; null buttons never trigger inactive tasks or recursive navigation.");
             CheckHostedInputChecks();
@@ -289,6 +293,15 @@ namespace SPI_Data_Comp_Tool
             return exitCode;
         }
 
+        private static IEnumerable<Control> AllControls(Control root)
+        {
+            foreach (Control child in root.Controls)
+            {
+                yield return child;
+                foreach (Control nested in AllControls(child)) yield return nested;
+            }
+        }
+
         private static void CheckRetiredWorkflowsAbsent()
         {
             string[] retiredRoutes = {
@@ -319,18 +332,16 @@ namespace SPI_Data_Comp_Tool
                 "The application exposes a retired or unexpected workspace category.");
             using (var main = new MainForm())
             {
-                string[] retiredGroups = { "Analysis", "PreMerge", "Scripts" };
-                var menu = main.Controls.Find("menuStrip1", true).OfType<MenuStrip>().Single();
-                foreach (string name in retiredGroups)
-                {
-                    Require(!main.Controls.Find("btn_Workspace" + name, true).Any(),
-                        "A retired workspace still has a home tile: " + name);
-                    Require(!menu.Items.Find("workspaceMenu_" + name, true).Any(),
-                        "A retired workspace still has a menu: " + name);
-                }
+                // One rail is the only way in: no menu bar, no home tiles, and no rail entry for a retired route.
+                Require(!main.Controls.Find("menuStrip1", true).Any() && !AllControls(main).OfType<MenuStrip>().Any(),
+                    "The main window still has a menu bar that repeats the rail.");
+                Require(!AllControls(main).OfType<TileButton>().Any(), "The main window still has home tiles that repeat the rail.");
                 foreach (string route in retiredRoutes)
-                    Require(!menu.Items.Find("taskMenu_" + route.Replace('.', '_'), true).Any(),
-                        "A retired workflow still has a menu entry: " + route);
+                    Require(!main.Controls.Find("task_" + route.Replace('.', '_'), true).Any(),
+                        "A retired workflow still has a rail entry: " + route);
+                foreach (WorkspaceTask task in WorkspaceCatalog.Tasks)
+                    Require(main.Controls.Find("task_" + task.Key.Replace('.', '_'), true).Length == 1,
+                        "The rail does not list this task exactly once: " + task.Key);
             }
         }
 
@@ -674,6 +685,58 @@ namespace SPI_Data_Comp_Tool
                     "An open non-Settings workspace failed to block installation.");
                 settings.Close();
                 comparison.Close();
+            }
+        }
+
+        private static void CheckShellUpdaterPolicy()
+        {
+            using (var shell = new WorkspaceForm(WorkspaceCatalog.Tasks, "SPI Data Comparison"))
+            {
+                shell.ShowInTaskbar = false;
+                shell.Show();
+                string reason;
+                Require(UpdateInstaller.CanInstallForms(new Form[] { shell }, out reason),
+                    "The empty rail shell blocked installation because of its first task's workspace kind.");
+                shell.OpenTask("settings.preferences");
+                var preferences = (User_Settings)shell.ActivePage;
+                var about = AllControls(preferences).OfType<AboutBox1>().SingleOrDefault();
+                Require(about != null, "Settings has no embedded About page.");
+                Require(UpdateInstaller.CanInstallForms(new Form[] { shell, preferences, about }, out reason),
+                    "Settings with its embedded About page prevented use of its own updater: " + reason);
+                shell.OpenTask("comparison.database");
+                var comparison = shell.ActivePage;
+                shell.OpenTask("settings.preferences");
+                Require(!UpdateInstaller.CanInstallForms(new Form[] { shell, preferences, about }, out reason) &&
+                    !string.IsNullOrWhiteSpace(reason), "A loaded but hidden data task did not block installation.");
+                comparison.Close();
+                Require(UpdateInstaller.CanInstallForms(new Form[] { shell, preferences, about }, out reason),
+                    "Closing the data task left the shell permanently ineligible for updating.");
+                shell.Close();
+            }
+        }
+
+        private static void CheckSessionMappingNavigation()
+        {
+            var tasks = new[] { Task("comparison.session", WorkspaceKind.Comparison, () => new TestPage("session")) };
+            using (var session = new WorkspaceForm(WorkspaceKind.Comparison, tasks))
+            {
+                session.ShowInTaskbar = false;
+                session.ShowNavigation = false;
+                session.Show();
+                session.OpenTask("comparison.session");
+                var page = (TestPage)session.ActivePage;
+                Require(!session.ShowNavigation, "A New session window showed a rail.");
+                var mapping = (TestPage)session.OpenTransient("Advanced mapping", () => new TestPage("mapping"));
+                Require(session.ShowNavigation && session.Controls.Find("task_transient_1", true).Length == 1 &&
+                    session.Controls.Find("task_comparison_session", true).Length == 1,
+                    "A New session window hid the way back to its advanced-mapping snapshot.");
+                session.Controls.Find("task_comparison_session", true).OfType<Button>().Single().PerformClick();
+                Require(ReferenceEquals(page, session.ActivePage), "The session's own task could not be reselected.");
+                session.Controls.Find("task_transient_1", true).OfType<Button>().Single().PerformClick();
+                Require(ReferenceEquals(mapping, session.ActivePage), "The mapping snapshot could not be revisited.");
+                mapping.Close();
+                Require(!session.ShowNavigation, "The session list stayed after its last mapping snapshot closed.");
+                session.Close();
             }
         }
 

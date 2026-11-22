@@ -34,9 +34,9 @@ class GroupedToolCompatibility(unittest.TestCase):
 
     def test_navigation_has_one_workspace_authority(self) -> None:
         main = code("MainForm.cs")
-        self.assertIn("WorkspaceCatalog.TasksFor(kind)", main)
-        self.assertIn("OpenTask(route.Key)", main)
-        self.assertIn("workspaces.Open(this, route, (ModifierKeys & Keys.Control) == Keys.Control)", main)
+        self.assertIn('new WorkspaceForm(WorkspaceCatalog.Tasks, "SPI Data Comparison")', main)
+        self.assertIn("workspaces.Open(this, route, separateSession)", main)
+        self.assertNotIn("ModifierKeys", main + code("WorkspaceForm.cs"))
         self.assertNotIn("OpenTool<T>", main)
         for path in PROJ.glob("*.cs"):
             with self.subTest(file=path.name):
