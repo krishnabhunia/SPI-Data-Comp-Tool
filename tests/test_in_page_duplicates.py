@@ -40,6 +40,21 @@ class InPageDuplicates(unittest.TestCase):
                 with self.subTest(window=window, control=name):
                     self.assertNotRegex(designer, rf"\bthis\.{name}\b", why)
 
+    def test_no_task_page_has_its_own_close_button(self) -> None:
+        # One way to close a task in every page: the window's "Close task" button.
+        for designer in sorted(PROJ.glob("*.Designer.cs")):
+            if designer.name.startswith("AboutBox1"):
+                continue  # its OK button is hidden when About is embedded in Settings
+            text = source(designer.name)
+            with self.subTest(designer=designer.name):
+                self.assertNotRegex(text, r'\.Text = "&?(Close|Exit|E&xit)";')
+        for code in ("WorkbookIdentityForm.cs", "ExcelSheetAuditForm.cs", "CompareModePage.cs", "WorkspaceForm.cs"):
+            path = PROJ / code
+            if path.exists() and code != "WorkspaceForm.cs":
+                with self.subTest(code=code):
+                    self.assertNotRegex(source(code), r'Text = "&?(Close|Exit)"')
+        self.assertIn('Text = "Close task"', source("WorkspaceForm.cs"))
+
     def test_one_load_button_fills_both_table_pickers(self) -> None:
         code = source("DB Comparison.cs")
         both = code.split("private void LoadBothTableLists(", 1)[1].split("\n        }\n", 1)[0]

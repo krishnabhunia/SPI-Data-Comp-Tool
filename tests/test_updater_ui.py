@@ -39,7 +39,7 @@ class UpdaterUiContracts(unittest.TestCase):
         self.assertIn("FocusCheckButton()", navigation)
         self.assertNotIn("CheckForUpdatesAsync()", navigation)
         self.assertIn("gb_Logs.Visible = !showingUpdates", settings)
-        self.assertIn("AcceptButton = showingUpdates ? null", settings)
+        self.assertIn("AcceptButton = !showingUpdates && tabs_Settings.SelectedTab == tab_Rules ? btn_ImportRules : null;", settings)
 
     def test_explicit_filters_and_numeric_sorting(self):
         ui = source("UpdatesControl.cs")

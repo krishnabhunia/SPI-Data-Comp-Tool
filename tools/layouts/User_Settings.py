@@ -1,4 +1,6 @@
-"""One settings window for output preferences, comparison rules, explicit updates and About."""
+"""One settings page for output preferences, comparison rules, explicit updates and About.
+
+No Close button of its own: like every task, it closes with the window's "Close task" button."""
 from layout_gen import C, T, F, G, TABS
 
 DESIGNER = "User_Settings.Designer.cs"
@@ -25,19 +27,19 @@ TEXTS = {
     "gb_Logs": "Log",
     "btn_ClearLogs": "Clear log",
     "lbl_Progress": "",
-    "btn_Close": "Close",
 }
+
+DROP = ["btn_Close", "flp_SettingsActions"]   # one way to close a task: "Close task" at the bottom of the window
 
 PROPS = {
     "cb_Theme": {"DropDownStyle": "System.Windows.Forms.ComboBoxStyle.DropDownList", "AccessibleName": '"Colour theme"'},
     "swatch_Theme": {"AccessibleName": '"Colours of the chosen theme"',
                      "AccessibleRole": "System.Windows.Forms.AccessibleRole.Graphic"},
     "tb_RulesPath": {"ReadOnly": "true", "AccessibleName": '"Comparison rules file"'},
-    "btn_Close": {"DialogResult": "System.Windows.Forms.DialogResult.Cancel"},
     "lbl_RulesStatus": {"AutoEllipsis": "true"},
 }
 
-LAYOUT = T("tlp_Root", cols=["100%"], rows=["100%", "140", "auto"], cells=[
+LAYOUT = T("tlp_Root", cols=["100%"], rows=["100%", "140"], cells=[
     (TABS("tabs_Settings", new="TabControl", pages=[
         G("tab_General", new="TabPage", child=T("tlp_General", cols=["100%"], rows=["92", "112", "100%"], cells=[
             (G("gb_SaveExcel", T(
@@ -73,6 +75,4 @@ LAYOUT = T("tlp_Root", cols=["100%"], rows=["100%", "140", "auto"], cells=[
         (C("btn_ClearLogs", size=(110, 30), anchor="Left", margin=0), 0, 1),
         (C("lbl_Progress", autosize=True, anchor="Left", margin=(12, 0, 0, 0)), 1, 1),
     ])), 0, 1),
-    (F("flp_SettingsActions", items=[C("btn_Close", new="Button", size=(100, 32), margin=0)],
-       direction="RightToLeft", dock="Fill", margin=(0, 8, 0, 0)), 0, 2),
 ])
