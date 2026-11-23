@@ -23,6 +23,7 @@ The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes rem
 | 7 | Separate Excel Sheet Audit: Design A, key mappings, two-sheet report and limits | [docs/EXCEL_SHEET_AUDIT.md](docs/EXCEL_SHEET_AUDIT.md) |
 | 8 | Workbook identity check: are two workbooks identical? Inputs, the five-sheet report and limits | [docs/WORKBOOK_IDENTITY_CHECK.md](docs/WORKBOOK_IDENTITY_CHECK.md) |
 | 9 | Open-issue evidence, remaining acceptance and framework migration plan | [docs/ISSUE_AUDIT.md](docs/ISSUE_AUDIT.md), [docs/FRAMEWORK_MIGRATION.md](docs/FRAMEWORK_MIGRATION.md) |
+| 10 | Code signing: why Windows says "Unknown publisher", what the build signs and the owner's one-time set-up | [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md) |
 
 ## Quick start
 

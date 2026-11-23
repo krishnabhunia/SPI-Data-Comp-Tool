@@ -114,6 +114,13 @@ jobs:
   windows-build:
     needs: version
     runs-on: windows-2022
+    env:
+      # Code signing (docs/CODE_SIGNING.md). Empty until the owner adds the four repository secrets;
+      # tools/sign_windows.ps1 then skips signing and the build is unchanged.
+      SIGN_ES_USERNAME: ${{ secrets.SIGN_ES_USERNAME }}
+      SIGN_ES_PASSWORD: ${{ secrets.SIGN_ES_PASSWORD }}
+      SIGN_ES_CREDENTIAL_ID: ${{ secrets.SIGN_ES_CREDENTIAL_ID }}
+      SIGN_ES_TOTP_SECRET: ${{ secrets.SIGN_ES_TOTP_SECRET }}
     steps:
       - uses: actions/checkout@v6
       - uses: NuGet/setup-nuget@v3
@@ -264,6 +271,9 @@ jobs:
           Rename-Item "$dst/SPI Data Comp Tool.exe.config" "$name.exe.config"
           if (Test-Path "$dst/app.publish") { throw 'ClickOnce output leaked into portable/' }
           Get-ChildItem dist -Recurse | ForEach-Object { $_.FullName }
+      - name: Sign the portable exe
+        shell: pwsh
+        run: ./tools/sign_windows.ps1 -Path (Get-ChildItem dist/portable -Filter *.exe).FullName
       - name: Portable build is one exe (libraries embedded)
         shell: pwsh
         run: |
@@ -277,6 +287,9 @@ jobs:
       - name: Build 64-bit application
         shell: pwsh
         run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release /p:Platform=x64 /warnaserror
+      - name: Sign the 64-bit exe that the installer copies
+        shell: pwsh
+        run: ./tools/sign_windows.ps1 -Path "SPI Data Comp Tool/bin/x64/Release/SPI Data Comp Tool.exe"
       - name: Build 64-bit installer
         shell: pwsh
         run: |
@@ -292,6 +305,9 @@ jobs:
           & $iscc /Qp "/DAppVersion=$ver" "/DNumericVersion=$num" "/DSourceDir=$src" "/DOutputDir=$out" windows/installer/SPI_Data_Comp_Tool.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC failed ($LASTEXITCODE)" }
           Get-ChildItem $out | ForEach-Object { Write-Host "$($_.Name)  $([math]::Round($_.Length / 1MB, 1)) MB" }
+      - name: Sign the installer
+        shell: pwsh
+        run: ./tools/sign_windows.ps1 -Path (Get-ChildItem dist/windows-x64 -Filter *.exe).FullName
       - name: Test the installer (silent install, check, uninstall)
         shell: pwsh
         run: |
