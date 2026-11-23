@@ -54,9 +54,12 @@ class UpdateIntegrationTests(unittest.TestCase):
 
     def test_both_portable_and_installed_builds_execute_update_regressions(self):
         workflow = (ROOT / ".github/workflows/build.yml").read_text()
-        self.assertEqual(workflow.count("-ArgumentList '--check-ui'"), 2)
-        self.assertIn("x64-ui-workflow-checks.txt", workflow)
-        self.assertIn("64-bit UI workflow checks failed", workflow)
+        self.assertEqual(workflow.count("-ArgumentList '--check-ui'"), 1)
+        self.assertIn("./tools/test_windows_installer.ps1", workflow)
+        installer = (ROOT / "tools/test_windows_installer.ps1").read_text()
+        self.assertIn("'assemblies','ui','startup'", installer)
+        self.assertIn('Invoke-CheckedProcess $exe @("--check-$check"', installer)
+        self.assertIn('Missing x64 $check check log', installer)
 
     def test_json_formatting_is_unambiguous_alongside_xml(self):
         source = (APP / "UpdatePreferences.cs").read_text()

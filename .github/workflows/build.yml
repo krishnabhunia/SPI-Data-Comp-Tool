@@ -12,6 +12,24 @@ concurrency:
   group: build-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 jobs:
+  signing-policy:
+    runs-on: ubuntu-24.04
+    outputs:
+      enabled: ${{ steps.policy.outputs.enabled }}
+      status: ${{ steps.policy.outputs.status }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate optional signing policy
+        id: policy
+        env:
+          WINDOWS_SIGNING_MODE: ${{ vars.WINDOWS_SIGNING_MODE }}
+          WINDOWS_SIGNING_THUMBPRINT: ${{ vars.WINDOWS_SIGNING_THUMBPRINT }}
+          WINDOWS_SIGNING_STORE: ${{ vars.WINDOWS_SIGNING_STORE }}
+          WINDOWS_SIGNING_TIMESTAMP_URL: ${{ vars.WINDOWS_SIGNING_TIMESTAMP_URL }}
+          WINDOWS_SIGNING_RUNNER_ISOLATED: ${{ vars.WINDOWS_SIGNING_RUNNER_ISOLATED }}
+          REF_PROTECTED: ${{ github.ref_protected }}
+        run: python3 tools/signing_policy.py
+
   documentation:
     runs-on: ubuntu-24.04
     steps:
@@ -112,7 +130,7 @@ jobs:
         run: python3 tools/release.py plan --reserve
 
   windows-build:
-    needs: version
+    needs: [version, signing-policy]
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
@@ -136,6 +154,9 @@ jobs:
       - name: Build desktop application
         shell: pwsh
         run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release '/p:Platform=Any CPU' /warnaserror
+      - name: Windows Authenticode rejection checks
+        shell: pwsh
+        run: ./tests/check_signing.ps1 -FixturePath 'SPI Data Comp Tool/bin/Release/SPI Data Comp Tool.exe'
       - name: UI workflow regression checks
         shell: pwsh
         run: |
@@ -294,55 +315,122 @@ jobs:
           Get-ChildItem $out | ForEach-Object { Write-Host "$($_.Name)  $([math]::Round($_.Length / 1MB, 1)) MB" }
       - name: Test the installer (silent install, check, uninstall)
         shell: pwsh
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: ./tools/test_windows_installer.ps1 -SetupPath "dist/windows-x64/SPI_Data_Comp_Tool_$env:VERSION.exe" -NoticePath 'dist/THIRD_PARTY_NOTICES.md'
+      - name: Validate distribution and prepare isolated handoff
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          SIGNING_ENABLED: ${{ needs.signing-policy.outputs.enabled }}
         run: |
-          $setup = (Get-ChildItem dist/windows-x64 -Filter *.exe).FullName
-          $dir = Join-Path $env:RUNNER_TEMP 'spi-install'
-          $p = Start-Process $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=`"$dir`"" -Wait -PassThru
-          if ($p.ExitCode -ne 0) { throw "setup exit code $($p.ExitCode)" }
-          $exe = Join-Path $dir 'SPI Data Comp Tool.exe'
-          if (-not (Test-Path $exe)) { throw 'installed exe missing' }
-          $notice = Join-Path $dir 'THIRD_PARTY_NOTICES.md'
-          if (-not (Test-Path $notice)) { throw 'Installed third-party dependency notices are missing' }
-          if ((Get-FileHash $notice).Hash -ne (Get-FileHash 'dist/THIRD_PARTY_NOTICES.md').Hash) { throw 'Installed dependency notices differ from the restored package inventory' }
-          if (Test-Path (Join-Path $dir 'PNID_Reports')) { throw 'Retired SQL templates or portable compatibility anchors leaked into the clean install' }
-          $dlls = Get-ChildItem $dir -Recurse -Filter *.dll
-          if ($dlls) { $dlls | ForEach-Object { Write-Host "::error::$($_.FullName)" }; throw 'DLL files in the install folder' }
-          $b = [IO.File]::ReadAllBytes($exe); $pe = [BitConverter]::ToInt32($b, 0x3C)
-          $machine = [BitConverter]::ToUInt16($b, $pe + 4)
-          if ($machine -ne 0x8664) { throw ('installed exe is not 64-bit (machine 0x{0:X})' -f $machine) }
-          $log = Join-Path $env:RUNNER_TEMP 'x64-assemblies.txt'
-          $c = Start-Process $exe -ArgumentList '--check-assemblies', "`"$log`"" -Wait -PassThru
-          Get-Content $log | ForEach-Object { Write-Host $_ }
-          if ($c.ExitCode -ne 0) { throw 'a library failed to load from the installed 64-bit exe' }
-          $uiLog = Join-Path $env:RUNNER_TEMP 'x64-ui-workflow-checks.txt'
-          $ui = Start-Process $exe -ArgumentList '--check-ui', "`"$uiLog`"" -PassThru
-          if (-not $ui.WaitForExit(60000)) { & tools/ci_window_report.ps1 -ProcessId $ui.Id; Stop-Process -Id $ui.Id -Force; throw '64-bit UI workflow checks timed out' }
-          if (Test-Path $uiLog) { Get-Content $uiLog | ForEach-Object { Write-Host $_ } }
-          if ($ui.ExitCode -ne 0 -or -not (Test-Path $uiLog)) { throw '64-bit UI workflow checks failed' }
-          $startupLog = Join-Path $env:RUNNER_TEMP 'x64-startup-checks.txt'
-          $startup = Start-Process $exe -ArgumentList '--check-startup', "`"$startupLog`"" -PassThru
-          if (-not $startup.WaitForExit(120000)) { & tools/ci_window_report.ps1 -ProcessId $startup.Id; Stop-Process -Id $startup.Id -Force; throw '64-bit saved-profile startup checks timed out' }
-          if (Test-Path $startupLog) { Get-Content $startupLog | ForEach-Object { Write-Host $_ } }
-          if ($startup.ExitCode -ne 0 -or -not (Test-Path $startupLog)) { throw '64-bit saved-profile startup checks failed' }
-          Get-ChildItem $dir -Recurse -File | ForEach-Object { Write-Host "installed: $($_.FullName.Substring($dir.Length))" }
-          Start-Process (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
-          for ($i = 0; $i -lt 30 -and (Test-Path $exe); $i++) { Start-Sleep 1 }
-          if (Test-Path $exe) { throw 'uninstall left the exe behind' }
-          Write-Host "64-bit installer: installed, 64-bit exe, no DLL files, libraries load, uninstalled cleanly"
+          python tools/signing_handoff.py distribution --root dist --version $env:VERSION
+          if ($LASTEXITCODE -ne 0) { throw 'Distribution layout is not updater-compatible' }
+          if ($env:SIGNING_ENABLED -eq 'true') {
+            python tools/signing_handoff.py prepare --root signing-input --dist dist --x64 'SPI Data Comp Tool/bin/x64/Release' --version $env:VERSION --sha $env:GITHUB_SHA --run-id $env:GITHUB_RUN_ID --attempt $env:GITHUB_RUN_ATTEMPT
+            if ($LASTEXITCODE -ne 0) { throw 'Signing handoff failed' }
+          } else {
+            Write-Host 'Windows signing: unsigned; SmartScreen warning is not fixed'
+          }
+      - name: Upload temporary signing input
+        if: needs.signing-policy.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: spi-signing-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: signing-input/
+          if-no-files-found: error
+          retention-days: 1
       - uses: actions/upload-artifact@v6
+        if: needs.signing-policy.outputs.enabled == 'false'
         with:
           name: SPI_Data_Comp_Tool_${{ steps.ver.outputs.version }}
           path: dist/
           if-no-files-found: error
 
+  windows-sign:
+    needs: [version, signing-policy, windows-build, documentation, secrets-guard]
+    if: >-
+      needs.signing-policy.outputs.enabled == 'true' &&
+      github.event_name == 'push' && github.ref == 'refs/heads/master' && github.ref_protected
+    # Labels route jobs; they are NOT a security boundary. The external runner broker
+    # must admit only this protected-master job before attaching any signing identity.
+    runs-on: [self-hosted, Windows, X64, spi-code-signing]
+    environment: windows-code-signing
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    env:
+      WINDOWS_SIGNING_MODE: store
+      WINDOWS_SIGNING_THUMBPRINT: ${{ vars.WINDOWS_SIGNING_THUMBPRINT }}
+      WINDOWS_SIGNING_STORE: ${{ vars.WINDOWS_SIGNING_STORE || 'CurrentUser' }}
+      WINDOWS_SIGNING_TIMESTAMP_URL: ${{ vars.WINDOWS_SIGNING_TIMESTAMP_URL }}
+      WINDOWS_SIGNING_RUNNER_ISOLATED: ${{ vars.WINDOWS_SIGNING_RUNNER_ISOLATED }}
+      REF_PROTECTED: ${{ github.ref_protected }}
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v7
+        with:
+          name: spi-signing-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: signing-input
+      - name: Sign and verify release and Inno-generated executables
+        shell: pwsh
+        run: ./tools/sign_windows_release.ps1 -Version $env:VERSION -InputRoot signing-input -OutputRoot dist-signed
+      - name: Signed portable assemblies load
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "dist-signed/portable/SPI_Data_Comp_Tool_$env:VERSION.exe").Path
+          $log = Join-Path $env:RUNNER_TEMP 'signed-portable-assemblies.txt'
+          $process = Start-Process $exe -ArgumentList '--check-assemblies', "`"$log`"" -WindowStyle Hidden -PassThru
+          if (-not $process.WaitForExit(60000)) { Stop-Process -Id $process.Id -Force; throw 'Signed portable check timed out' }
+          if (-not (Test-Path $log) -or $process.ExitCode -ne 0) { throw 'Signed portable check failed' }
+          Get-Content $log | ForEach-Object { Write-Host $_ }
+      - name: Verify installed signatures and exercise signed installer
+        shell: pwsh
+        run: ./tools/test_windows_installer.ps1 -SetupPath "dist-signed/windows-x64/SPI_Data_Comp_Tool_$env:VERSION.exe" -NoticePath 'dist-signed/THIRD_PARTY_NOTICES.md' -PayloadPath 'signing-input/x64/SPI Data Comp Tool.exe' -RequireSignature
+      - name: Verify final signed bytes after smoke checks
+        shell: pwsh
+        run: ./tools/verify_windows_distribution.ps1 -Root dist-signed -Version $env:VERSION
+      - uses: actions/upload-artifact@v6
+        with:
+          name: SPI_Data_Comp_Tool_${{ needs.version.outputs.version }}
+          # Upload contents, not an authored ZIP: one download/extraction reveals platform folders.
+          path: dist-signed/
+          if-no-files-found: error
+
+  cleanup-signing-input:
+    needs: [signing-policy, windows-build, windows-sign]
+    if: always() && needs.signing-policy.outputs.enabled == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write  # only this job deletes the exact current-run temporary input
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Remove temporary same-run signing input
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/cleanup_signing_handoff.py
+
   release:
     # PR -> GitHub pre-release vX.Y.Z-betaNNN; merge to master -> GitHub release vX.Y.Z (latest).
     # The version is shown in this check's name and in one comment on the PR - never typed into a PR title.
     name: Publish ${{ needs.version.outputs.version }}
-    needs: [version, windows-build, documentation, secrets-guard]
+    needs: [version, windows-build, documentation, secrets-guard, signing-policy, windows-sign, cleanup-signing-input]
     if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+      always() && needs.version.result == 'success' && needs.windows-build.result == 'success' &&
+      needs.documentation.result == 'success' && needs.secrets-guard.result == 'success' &&
+      needs.signing-policy.result == 'success' &&
+      ((needs.signing-policy.outputs.enabled == 'false' && needs.windows-sign.result == 'skipped') ||
+       (needs.signing-policy.outputs.enabled == 'true' && needs.windows-sign.result == 'success' && needs.cleanup-signing-input.result == 'success')) &&
+      (github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -362,6 +450,7 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
           PRE: ${{ needs.version.outputs.prerelease }}
           SHA: ${{ needs.version.outputs.head }}
+          SIGNING_STATUS: ${{ needs.signing-policy.outputs.status }}
         run: |
           set -euo pipefail
           if [ "${PRE}" = "true" ]; then
@@ -378,6 +467,7 @@ jobs:
           else
             echo "state=stable" >> "$GITHUB_OUTPUT"
           fi
+          python3 tools/release.py notes > "${RUNNER_TEMP}/release-notes.md"
           zip_name="SPI_Data_Comp_Tool_${VERSION}.zip"
           # Older portable updaters accept only the original executable/configuration,
           # compatibility anchors and installer paths. Keep the notice as a separate
@@ -394,7 +484,7 @@ jobs:
           if gh release view "${TAG}" >/dev/null 2>&1; then
             gh release upload "${TAG}" "${assets[@]}" --clobber
           else
-            flags=(--title "SPI Data Comparison Tool ${VERSION}" --generate-notes --notes-file docs/RELEASE_PREREQUISITES.md --target "${SHA}")
+            flags=(--title "SPI Data Comparison Tool ${VERSION}" --generate-notes --notes-file "${RUNNER_TEMP}/release-notes.md" --target "${SHA}")
             if [ "${PRE}" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
             gh release create "${TAG}" "${assets[@]}" "${flags[@]}"
           fi
@@ -408,6 +498,7 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
           HEAD_SHA: ${{ needs.version.outputs.head }}
           STATE: ${{ steps.publish.outputs.state }}
+          SIGNING_STATUS: ${{ needs.signing-policy.outputs.status }}
         run: |
           set -euo pipefail
           # A PR run that ends (or is re-run) after the PR was merged must not replace "Released as ..."

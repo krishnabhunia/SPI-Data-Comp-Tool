@@ -151,7 +151,17 @@ def release_assets(version):
     ]
 
 
-def comment_body(state, repo, tag, sha):
+def signing_notice(status):
+    if status == "unsigned":
+        return ("**Windows signing: unsigned.** No trusted signing identity was used; "
+                "the SmartScreen warning is not fixed. SHA-256 checksums verify download integrity, not publisher identity.")
+    if status == "signed":
+        return ("**Windows signing: signed and verified.** Authenticode publisher signatures and RFC 3161 timestamps "
+                "were verified for this build. SmartScreen reputation is independent; warnings can still appear.")
+    raise ValueError("Unknown Windows signing status")
+
+
+def comment_body(state, repo, tag, sha, signing="unsigned"):
     """The text CI keeps on the pull request, so the version is read there and not typed into the title."""
     p = parse_tag(tag)
     if not p:
@@ -176,6 +186,8 @@ def comment_body(state, repo, tag, sha):
     else:
         raise SystemExit(f"unknown comment state {state}")
     lines += [
+        "",
+        signing_notice(signing),
         "",
         "**Requires Microsoft .NET Framework 4.8 or later.** Install the runtime before updating an older portable copy, "
         "or use the installer, which checks the prerequisite before changing application files. "
@@ -275,7 +287,10 @@ def main(argv):
         ASSEMBLY_INFO.write_text(stamp_text(text, argv[2].replace("-manual", "")), encoding="utf-8-sig")
         print(f"stamped {argv[2]}")
     elif len(argv) == 3 and argv[1] == "comment":
-        sys.stdout.write(comment_body(argv[2], os.environ["GITHUB_REPOSITORY"], os.environ["TAG"], os.environ["HEAD_SHA"]))
+        sys.stdout.write(comment_body(argv[2], os.environ["GITHUB_REPOSITORY"], os.environ["TAG"], os.environ["HEAD_SHA"], os.environ.get("SIGNING_STATUS", "unsigned")))
+    elif len(argv) == 2 and argv[1] == "notes":
+        sys.stdout.write((ROOT / "docs/RELEASE_PREREQUISITES.md").read_text(encoding="utf-8"))
+        sys.stdout.write("\n\n## Windows publisher signatures\n\n" + signing_notice(os.environ.get("SIGNING_STATUS", "unsigned")) + "\n")
     else:
         print(__doc__)
         return 2

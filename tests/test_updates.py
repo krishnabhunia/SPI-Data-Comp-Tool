@@ -100,7 +100,10 @@ class Updater(unittest.TestCase):
             self.assertNotIn(forbidden, checks)
         self.assertIn('lines.Add("FAIL " + ex)', checks)
         self.assertIn("return 1;", checks)
-        self.assertEqual(workflow.count("-ArgumentList '--check-ui'"), 2)
+        self.assertEqual(workflow.count("-ArgumentList '--check-ui'"), 1)
+        installer = text(REPO / "tools/test_windows_installer.ps1")
+        self.assertIn("'assemblies','ui','startup'", installer)
+        self.assertIn('Invoke-CheckedProcess $exe @("--check-$check"', installer)
 
     def test_release_cleanup_remains_manual_and_requires_explicit_delete_confirmation(self) -> None:
         workflow = text(REPO / ".github" / "workflows" / "release-cleanup.yml")

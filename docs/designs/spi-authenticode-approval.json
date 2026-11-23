@@ -6,11 +6,11 @@
   "artifact": "docs/designs/spi-authenticode-r1.html",
   "artifact_sha256": "1f3e7d1e97b40c3ba0a830bd05166ac1136a5f036bebb835684a40407e9aa619",
   "proposed_version": "4.4.1",
-  "state": "design_prepared_awaiting_approval",
+  "state": "approved_implementation_in_progress",
   "prepared_date_asia_kolkata": "2026-11-23",
   "approval_message_id": null,
   "approval_time": null,
-  "implementation_pr": null,
+  "implementation_pr": "https://github.com/krishnabhunia/SPI-Data-Comp-Tool/pull/116",
   "base_branch": "master",
   "base_sha": "6b5c397a8be9f61517559aaf3ae331c3cbbdd606",
   "not_verified": [
@@ -18,5 +18,6 @@
     "Trusted certificate/provider authentication and actual signed release",
     "On-device SmartScreen reputation",
     "Implementation tests, builds, independent review and new-change CI"
-  ]
+  ],
+  "approval_message_ref": "2026-11-23 active chat: explicit user approval of r1 implementation and PR creation"
 }

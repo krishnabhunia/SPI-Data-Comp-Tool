@@ -23,7 +23,11 @@ class WorkflowGuards(unittest.TestCase):
         self.assertIn('Write-Host "Opened $ok of $($forms.Count) windows"', windows)
         self.assertIn('Write-Host "::error::window did not open: $x"', windows)
         self.assertIn("if ($failed) { throw", windows)
-        self.assertIn('Write-Host "64-bit installer: installed, 64-bit exe, no DLL files, libraries load, uninstalled cleanly"', windows)
+        installer = (ROOT / "tools/test_windows_installer.ps1").read_text()
+        self.assertIn("./tools/test_windows_installer.ps1", windows)
+        self.assertIn("64-bit installer: installed, 64-bit exe, no DLL files, libraries load, uninstalled cleanly", installer)
+        for check in ("'assemblies','ui','startup'", "installed exe is not 64-bit", "uninstall left the exe behind"):
+            self.assertIn(check, installer)
         self.assertIn("actions/upload-artifact@v6", windows)
 
     def test_release_and_version_summaries_are_preserved(self):
@@ -33,12 +37,14 @@ class WorkflowGuards(unittest.TestCase):
         self.assertIn('echo "### Not published: ${TAG}', release)
         self.assertIn('echo "### Released ${TAG}"', release)
         self.assertIn('cat "${RUNNER_TEMP}/version-comment.md" >> "$GITHUB_STEP_SUMMARY"', release)
-        self.assertIn("needs: [version, windows-build, documentation, secrets-guard]", release)
+        self.assertIn("needs: [version, windows-build, documentation, secrets-guard, signing-policy, windows-sign, cleanup-signing-input]", release)
+        self.assertIn("needs.windows-sign.result == 'success'", release)
+        self.assertIn("needs.cleanup-signing-input.result == 'success'", release)
 
     def test_actions_keep_the_reviewed_major_version_policy(self):
         workflow = (ROOT / ".github/workflows/build.yml").read_text()
         actions = re.findall(r"uses:\s+([^\s]+)", workflow)
-        self.assertEqual(len(actions), 9)
+        self.assertEqual(len(actions), 15)
         for action in actions:
             with self.subTest(action=action):
                 self.assertRegex(action, r"@v\d+$")
