@@ -33,12 +33,12 @@ class WorkflowGuards(unittest.TestCase):
         self.assertIn('echo "### Not published: ${TAG}', release)
         self.assertIn('echo "### Released ${TAG}"', release)
         self.assertIn('cat "${RUNNER_TEMP}/version-comment.md" >> "$GITHUB_STEP_SUMMARY"', release)
-        self.assertIn("needs: [version, windows-build, documentation, secrets-guard]", release)
+        self.assertIn("needs: [version, windows-build, sign, documentation, secrets-guard]", release)
 
     def test_actions_keep_the_reviewed_major_version_policy(self):
         workflow = (ROOT / ".github/workflows/build.yml").read_text()
         actions = re.findall(r"uses:\s+([^\s]+)", workflow)
-        self.assertEqual(len(actions), 9)
+        self.assertEqual(len(actions), 14)  # 9 + the master-only sign job's checkout, download, nuget, msbuild, upload
         for action in actions:
             with self.subTest(action=action):
                 self.assertRegex(action, r"@v\d+$")
