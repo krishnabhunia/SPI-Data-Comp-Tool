@@ -16,8 +16,13 @@ def portable_paths(version):
             "portable/PNID_Reports/Target_IPEP/instrument.txt"}
 
 
+def store_path(version):
+    portable_paths(version)  # validate before constructing a path from metadata
+    return f"store/SPI_Data_Comp_Tool_{version}_x64.msix"
+
+
 def handoff_paths(version):
-    return portable_paths(version) | {"x64/SPI Data Comp Tool.exe", "x64/SPI Data Comp Tool.exe.config", "THIRD_PARTY_NOTICES.md"}
+    return portable_paths(version) | {"x64/SPI Data Comp Tool.exe", "x64/SPI Data Comp Tool.exe.config", "THIRD_PARTY_NOTICES.md", store_path(version)}
 
 
 def check_files(root, expected):
@@ -85,7 +90,7 @@ def verify(root, version, sha, run_id, attempt):
 
 
 def check_distribution(root, version):
-    check_files(root, portable_paths(version) | {f"windows-x64/SPI_Data_Comp_Tool_{version}.exe", "THIRD_PARTY_NOTICES.md"})
+    check_files(root, portable_paths(version) | {f"windows-x64/SPI_Data_Comp_Tool_{version}.exe", "THIRD_PARTY_NOTICES.md", store_path(version)})
 
 
 def main():

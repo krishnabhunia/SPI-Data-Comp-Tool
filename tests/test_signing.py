@@ -59,7 +59,7 @@ class Handoff(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.dist, self.x64, self.bundle = (self.root / n for n in ("dist", "x64", "input"))
-        for path in handoff.portable_paths(self.version) | {"windows-x64/SPI_Data_Comp_Tool_4.4.1.exe", "THIRD_PARTY_NOTICES.md"}:
+        for path in handoff.portable_paths(self.version) | {"windows-x64/SPI_Data_Comp_Tool_4.4.1.exe", "THIRD_PARTY_NOTICES.md", handoff.store_path(self.version)}:
             file = self.dist / path
             file.parent.mkdir(parents=True, exist_ok=True)
             file.write_bytes(b"" if path.endswith("instrument.txt") else b"test build bytes")
@@ -79,6 +79,24 @@ class Handoff(unittest.TestCase):
 
     def test_altered_payload_is_rejected(self):
         (self.bundle / "x64/SPI Data Comp Tool.exe").write_bytes(b"altered")
+        with self.assertRaises(ValueError):
+            self.verify()
+
+    def test_store_submission_is_carried_unchanged_and_tampering_is_rejected(self):
+        name = handoff.store_path(self.version)
+        self.assertEqual((self.bundle / name).read_bytes(), (self.dist / name).read_bytes())
+        (self.bundle / name).write_bytes(b"altered store submission")
+        with self.assertRaises(ValueError):
+            self.verify()
+
+    def test_missing_or_extra_store_submission_is_rejected(self):
+        file = self.bundle / handoff.store_path(self.version)
+        original = file.read_bytes()
+        file.unlink()
+        with self.assertRaises(ValueError):
+            self.verify()
+        file.write_bytes(original)
+        (file.parent / "unexpected.msix").write_bytes(original)
         with self.assertRaises(ValueError):
             self.verify()
 
@@ -137,6 +155,12 @@ class SigningReleaseStatus(unittest.TestCase):
         self.assertIn("application and installer signed", text)
         self.assertIn("not covered by this backend", text)
         self.assertNotIn("signing: signed and verified", text)
+
+    def test_exe_signing_never_claims_a_store_published_msix(self):
+        for signing in ("unsigned", "signed", "signed-app-and-setup"):
+            text = release.comment_body("stable", "owner/repo", "v4.4.1", "a" * 40, signing)
+            self.assertIn("unsigned Partner Center submission package", text)
+            self.assertIn("Store certification and Microsoft-signed distribution are still required", text)
 
 
 if __name__ == "__main__":

@@ -148,6 +148,7 @@ def release_assets(version):
         ("64-bit installer", f"SPI_Data_Comp_Tool_{version}_x64_setup.exe"),
         ("Portable + installer (zip)", f"SPI_Data_Comp_Tool_{version}.zip"),
         ("Checksums (SHA-256)", f"SPI_Data_Comp_Tool_{version}.zip.sha256"),
+        ("Partner Center submission (unsigned MSIX)", f"SPI_Data_Comp_Tool_{version}_x64.msix"),
     ]
 
 
@@ -163,6 +164,12 @@ def signing_notice(status):
                 "and timestamps on the portable app, installed app and outer installer. Its uninstaller and temporary "
                 "setup copies are not covered by this backend. SmartScreen warnings can still appear.")
     raise ValueError("Unknown Windows signing status")
+
+
+def store_submission_notice():
+    return ("**MSIX: unsigned Partner Center submission package.** Configure the reserved Microsoft Store identity "
+            "before submission. Store certification and Microsoft-signed distribution are still required; "
+            "the disposable CI test certificate is never distributed.")
 
 
 def comment_body(state, repo, tag, sha, signing="unsigned"):
@@ -192,6 +199,8 @@ def comment_body(state, repo, tag, sha, signing="unsigned"):
     lines += [
         "",
         signing_notice(signing),
+        "",
+        store_submission_notice(),
         "",
         "**Requires Microsoft .NET Framework 4.8 or later.** Install the runtime before updating an older portable copy, "
         "or use the installer, which checks the prerequisite before changing application files. "
@@ -295,6 +304,7 @@ def main(argv):
     elif len(argv) == 2 and argv[1] == "notes":
         sys.stdout.write((ROOT / "docs/RELEASE_PREREQUISITES.md").read_text(encoding="utf-8"))
         sys.stdout.write("\n\n## Windows publisher signatures\n\n" + signing_notice(os.environ.get("SIGNING_STATUS", "unsigned")) + "\n")
+        sys.stdout.write("\n\n## Microsoft Store submission\n\n" + store_submission_notice() + "\n")
     else:
         print(__doc__)
         return 2

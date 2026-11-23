@@ -14,6 +14,9 @@ $env:SPI_SIGNING_TEMP_ROOT = (New-Item -ItemType Directory -Path (Join-Path $env
 $env:TEMP = $env:SPI_SIGNING_TEMP_ROOT
 $env:TMP = $env:SPI_SIGNING_TEMP_ROOT
 Copy-Item -LiteralPath "$inputDir/portable" -Destination $outputDir -Recurse
+# MSIX is an unsigned Partner Center submission asset. Preserve its hash-bound
+# bytes; the EXE signing backend does not certify or publish a Store package.
+Copy-Item -LiteralPath "$inputDir/store" -Destination $outputDir -Recurse
 Copy-Item -LiteralPath "$inputDir/THIRD_PARTY_NOTICES.md" -Destination $outputDir
 Copy-Item -LiteralPath "$inputDir/THIRD_PARTY_NOTICES.md" -Destination "$inputDir/x64"
 Sign-SpiFile -Path "$outputDir/portable/SPI_Data_Comp_Tool_$Version.exe"

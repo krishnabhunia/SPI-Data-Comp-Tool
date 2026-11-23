@@ -25,7 +25,8 @@ namespace SPI_Data_Comp_Tool
         {
             string error;
             Installation = DetectInstallation(Assembly.GetExecutingAssembly().Location, out error);
-            detectionError = error;
+            // A Microsoft Store copy is updated by the Store; its files are read-only to the app.
+            detectionError = PackagedApp.IsPackaged ? PackagedApp.StoreUpdateReason : error;
         }
 
         internal static UpdateInstallation DetectInstallation(string executable, out string error)

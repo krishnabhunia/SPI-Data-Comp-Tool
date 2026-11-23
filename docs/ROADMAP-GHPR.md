@@ -4,7 +4,7 @@ Queue numbers are permanent request identifiers, separate from issue numbers. Re
 
 | Queue | Request | State | Issue | Design | PR / Version |
 |---|---|---|---|---|---|
-| Q1 | Legitimate optional Windows Authenticode signing <!-- ghpr-request: spi-authenticode-20261123-8f916eda-39ba-47ad-8a9e-2a52c758ec19 --> | Approved 23 November 2026 — built in PR #116; conflict resolution against PR #115 awaiting updated checks | [#113](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/113) | [r1](designs/spi-authenticode-r1.html) | [PR #116](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/pull/116) / CI-managed version |
+| Q1 | Legitimate optional Windows Authenticode signing <!-- ghpr-request: spi-authenticode-20261123-8f916eda-39ba-47ad-8a9e-2a52c758ec19 --> | Approved 23 November 2026 — built in PR #116; integration of master PRs #115 and #118 awaiting updated checks | [#113](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/issues/113) | [r1](designs/spi-authenticode-r1.html) | [PR #116](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/pull/116) / CI-managed version |
 
 ## Q1 scope
 
