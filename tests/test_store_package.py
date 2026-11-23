@@ -1,6 +1,5 @@
 """Microsoft Store (MSIX) package: manifest, logos, build script, CI install test, release asset and
 the rule that a Store copy never updates itself (docs/MICROSOFT_STORE.md)."""
-import struct
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -8,7 +7,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "SPI Data Comp Tool"
 MANIFEST = ROOT / "windows" / "msix" / "AppxManifest.xml"
-ASSETS = ROOT / "windows" / "msix" / "Assets"
 WORKFLOW = (ROOT / ".github" / "workflows" / "build.yml").read_text()
 NS = {
     "f": "http://schemas.microsoft.com/appx/manifest/foundation/windows10",
@@ -17,12 +15,6 @@ NS = {
     "desktop": "http://schemas.microsoft.com/appx/manifest/desktop/windows10",
     "rescap": "http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities",
 }
-
-
-def png_size(path):
-    data = path.read_bytes()
-    assert data[:8] == b"\x89PNG\r\n\x1a\n", f"{path.name} is not a PNG"
-    return struct.unpack(">II", data[16:24])
 
 
 def step(name):
@@ -55,13 +47,16 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(alias.get("Alias"), "spi-data-comp-tool.exe")
         self.assertIn("Microsoft\\WindowsApps\\spi-data-comp-tool.exe", WORKFLOW)
 
-    def test_every_referenced_logo_exists_at_its_size(self):
-        expected = {"StoreLogo.png": 50, "Square44x44Logo.png": 44,
-                    "Square150x150Logo.png": 150, "Square310x310Logo.png": 310}
+    def test_every_referenced_logo_is_drawn_by_the_build_script(self):
+        script = (ROOT / "tools" / "build_msix.ps1").read_text()
+        expected = {"StoreLogo.png": 50, "Square44x44Logo.png": 44, "Square150x150Logo.png": 150}
         for name, px in expected.items():
             self.assertIn("Assets\\" + name, self.text)
-            self.assertEqual(png_size(ASSETS / name), (px, px), name)
-        self.assertEqual(sorted(p.name for p in ASSETS.iterdir()), sorted(expected))
+            self.assertIn(f"@('{name}', {px},", script)
+        self.assertIn("'SPI Data Comp Tool/app.ico'", script)
+        self.assertEqual(sorted(set(__import__("re").findall(r"Assets\\(\w+\.png)", self.text))), sorted(expected))
+        # no committed images: the repository keeps only the app's own generated images
+        self.assertFalse((ROOT / "windows" / "msix" / "Assets").exists())
 
 
 class BuildScriptTests(unittest.TestCase):

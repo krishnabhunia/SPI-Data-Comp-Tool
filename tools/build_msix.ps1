@@ -28,7 +28,7 @@ if ($Publisher -notmatch '^CN=') { throw "Publisher '$Publisher' must start with
 
 $root = Split-Path $PSScriptRoot -Parent
 $template = Join-Path $root 'windows/msix/AppxManifest.xml'
-$assets = Join-Path $root 'windows/msix/Assets'
+$icon = Join-Path $root 'SPI Data Comp Tool/app.ico'
 $source = (Resolve-Path $SourceDir).Path
 $exe = Join-Path $source 'SPI Data Comp Tool.exe'
 if (-not (Test-Path $exe)) { throw "The 64-bit app is missing: $exe" }
@@ -40,7 +40,26 @@ try {
     Get-ChildItem $source -File | Where-Object { $_.Extension -notin '.pdb', '.xml', '.application', '.manifest' } |
         Copy-Item -Destination $layout
     if (Get-ChildItem $layout -Filter *.dll) { throw 'DLL files next to the exe: the libraries must be embedded' }
-    Copy-Item $assets -Destination (Join-Path $layout 'Assets') -Recurse
+    # Store logos are drawn from the app icon here, so the repository keeps only its generated images.
+    Add-Type -AssemblyName System.Drawing
+    $assetDir = Join-Path $layout 'Assets'
+    New-Item -ItemType Directory -Force $assetDir | Out-Null
+    $source256 = New-Object System.Drawing.Icon $icon, 256, 256
+    $art = $source256.ToBitmap()
+    try {
+        foreach ($logo in @(@('StoreLogo.png', 50, 1), @('Square44x44Logo.png', 44, 2), @('Square150x150Logo.png', 150, 25))) {
+            $px = $logo[1]; $pad = $logo[2]
+            $bitmap = New-Object System.Drawing.Bitmap $px, $px, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+            $g = [System.Drawing.Graphics]::FromImage($bitmap)
+            $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+            $g.Clear([System.Drawing.Color]::Transparent)
+            $g.DrawImage($art, $pad, $pad, $px - 2 * $pad, $px - 2 * $pad)
+            $g.Dispose()
+            $bitmap.Save((Join-Path $assetDir $logo[0]), [System.Drawing.Imaging.ImageFormat]::Png)
+            $bitmap.Dispose()
+        }
+    }
+    finally { $art.Dispose(); $source256.Dispose() }
 
     # Values go into XML attributes and text, so escape them.
     $values = @{
