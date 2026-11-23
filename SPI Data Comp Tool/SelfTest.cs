@@ -29,6 +29,8 @@ namespace SPI_Data_Comp_Tool
     ///                                                           the one before is done) in the step-by-step windows
     ///   "SPI Data Comp Tool.exe" --check-themes OUT_FILE       builds every window in every colour theme and checks
     ///                                                          that its text stays readable (tests/ThemeChecks.cs)
+    ///   "SPI Data Comp Tool.exe" --check-package OUT_FILE packaged|unpackaged  checks the Microsoft Store package
+    ///                                                          identity and that a Store copy never self-updates
     /// </summary>
     internal static class SelfTest
     {
@@ -40,7 +42,7 @@ namespace SPI_Data_Comp_Tool
             if (args == null || args.Length < 2) return false;
             string[] commands = { "--check-excel-audit", "--check-updates", "--check-inputs", "--list-forms",
                 "--check-assemblies", "--check-ui", "--check-sql-integration", "--measure-comparison", "--check-startup", "--check-workspace-exit",
-                "--check-groups", "--check-steps", "--check-themes", "--open-form" };
+                "--check-groups", "--check-steps", "--check-themes", "--check-package", "--open-form" };
             if (!commands.Contains(args[0], StringComparer.Ordinal) ||
                 (args[0] == "--open-form" && args.Length < 3)) return false;
 
@@ -69,6 +71,11 @@ namespace SPI_Data_Comp_Tool
             if (args[0] == "--list-forms" && args.Length >= 2)
             {
                 File.WriteAllLines(args[1], FormTypes().Select(t => t.FullName));
+                return true;
+            }
+            if (args[0] == "--check-package" && args.Length >= 3)
+            {
+                Environment.ExitCode = CheckPackage(args[1], args[2]);
                 return true;
             }
             if (args[0] == "--check-assemblies" && args.Length >= 2)
@@ -123,6 +130,25 @@ namespace SPI_Data_Comp_Tool
             }
             IsRunning = false;
             return false;
+        }
+
+        /// <summary>Checks the Microsoft Store package identity ("packaged" or "unpackaged" expected) and,
+        /// for a Store copy, that the app's own updater refuses to replace the read-only package files.</summary>
+        private static int CheckPackage(string outFile, string expected)
+        {
+            bool packaged = PackagedApp.IsPackaged;
+            string reason;
+            bool canInstall = new UpdateInstaller().CanInstall(out reason);
+            var lines = new System.Collections.Generic.List<string>
+            {
+                "packaged=" + packaged + (packaged ? " (" + PackagedApp.FullName + ")" : string.Empty),
+                "updater can install=" + canInstall + (string.IsNullOrEmpty(reason) ? string.Empty : " (" + reason + ")"),
+            };
+            bool ok = expected == (packaged ? "packaged" : "unpackaged") &&
+                (!packaged || (!canInstall && reason == PackagedApp.StoreUpdateReason));
+            lines.Add(ok ? "ok   package check" : "FAIL package check: expected " + expected);
+            File.WriteAllLines(outFile, lines);
+            return ok ? 0 : 1;
         }
 
         /// <summary>Loads the app's references and theirs, all the way down, the same way the app would.</summary>

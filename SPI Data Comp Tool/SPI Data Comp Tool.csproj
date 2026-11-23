@@ -211,6 +211,7 @@
     <Compile Include="UpdateContracts.cs" />
     <Compile Include="UpdateVersion.cs" />
     <Compile Include="UpdateFeedClient.cs" />
+    <Compile Include="PackagedApp.cs" />
     <Compile Include="UpdateInstaller.cs" />
     <Compile Include="RuntimeRequirements.cs" />
     <Compile Include="UpdateApplyWorker.cs" />
