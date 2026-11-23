@@ -44,8 +44,23 @@ try {
     Add-Type -AssemblyName System.Drawing
     $assetDir = Join-Path $layout 'Assets'
     New-Item -ItemType Directory -Force $assetDir | Out-Null
-    $source256 = New-Object System.Drawing.Icon $icon, 256, 256
-    $art = $source256.ToBitmap()
+    # Use the icon's largest frame. A 256 px frame is stored as PNG, which Icon.ToBitmap cannot
+    # read on .NET Framework, so read that frame from the .ico directory directly.
+    $bytes = [IO.File]::ReadAllBytes($icon)
+    $best = $null
+    for ($i = 0; $i -lt [BitConverter]::ToUInt16($bytes, 4); $i++) {
+        $entry = 6 + 16 * $i
+        $size = if ($bytes[$entry] -eq 0) { 256 } else { [int] $bytes[$entry] }
+        if (-not $best -or $size -gt $best.Size) {
+            $best = @{ Size = $size; Length = [BitConverter]::ToInt32($bytes, $entry + 8); Offset = [BitConverter]::ToInt32($bytes, $entry + 12) }
+        }
+    }
+    if (-not $best) { throw "No image in $icon" }
+    $frame = New-Object byte[] $best.Length
+    [Array]::Copy($bytes, $best.Offset, $frame, 0, $best.Length)
+    $source256 = New-Object IO.MemoryStream (, $frame)
+    if ($frame[0] -eq 0x89 -and $frame[1] -eq 0x50) { $art = [System.Drawing.Image]::FromStream($source256) }
+    else { $art = (New-Object System.Drawing.Icon $icon, $best.Size, $best.Size).ToBitmap() }
     try {
         foreach ($logo in @(@('StoreLogo.png', 50, 1), @('Square44x44Logo.png', 44, 2), @('Square150x150Logo.png', 150, 25))) {
             $px = $logo[1]; $pad = $logo[2]
