@@ -7,7 +7,8 @@
   hardware token or in a cloud HSM. GitHub's runners cannot use a USB token, so the build signs through
   SSL.com eSigner with SSL.com's CodeSignTool. See docs/CODE_SIGNING.md for the one-time set-up.
 
-  The four repository secrets below are passed in as environment variables:
+  The four secrets of the protected "code-signing" environment are passed in as environment variables
+  (only to the signing steps of the master-only "sign" job):
     SIGN_ES_USERNAME, SIGN_ES_PASSWORD, SIGN_ES_CREDENTIAL_ID, SIGN_ES_TOTP_SECRET
   - none set  -> signing is skipped (the build works exactly as before, unsigned)
   - some set  -> the build fails, so a half-finished set-up is never mistaken for a signed release
@@ -15,9 +16,13 @@
 
 .PARAMETER Path
   The files to sign. Each file is signed in place.
+
+.PARAMETER CheckOnly
+  Only report whether signing is set up: writes configured=true/false to the step's GitHub output.
 #>
 param(
-    [Parameter(Mandatory = $true)][string[]] $Path
+    [string[]] $Path,
+    [switch] $CheckOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,11 +43,20 @@ function Test-SigningConfigured {
     return $true
 }
 
-if (-not (Test-SigningConfigured)) {
+$configured = Test-SigningConfigured
+if ($CheckOnly) {
+    if ($env:GITHUB_OUTPUT) { "configured=$($configured.ToString().ToLowerInvariant())" | Out-File $env:GITHUB_OUTPUT -Append -Encoding utf8 }
+}
+if (-not $configured) {
     # Plain output, not a workflow annotation: the build stays free of warnings until signing is set up.
     Write-Host "Code signing skipped: no signing certificate is set up yet (see docs/CODE_SIGNING.md). Files stay unsigned."
     exit 0
 }
+if ($CheckOnly) {
+    Write-Host "Code signing is set up."
+    exit 0
+}
+if (-not $Path) { throw 'Give the files to sign with -Path.' }
 
 $files = foreach ($p in $Path) {
     $resolved = @(Resolve-Path $p -ErrorAction Stop)
