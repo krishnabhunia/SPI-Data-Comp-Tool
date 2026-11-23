@@ -144,7 +144,16 @@ namespace SPI_Data_Comp_Tool
                 "packaged=" + packaged + (packaged ? " (" + PackagedApp.FullName + ")" : string.Empty),
                 "updater can install=" + canInstall + (string.IsNullOrEmpty(reason) ? string.Empty : " (" + reason + ")"),
             };
-            bool ok = expected == (packaged ? "packaged" : "unpackaged") &&
+            string storage = UpdatePreferences.ResolveStorageDirectory();
+            string folderKeyed = UpdatePreferences.GetStorageDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            lines.Add("preferences folder=" + storage);
+            // Every Store version shares one preferences folder; other copies keep one per install folder.
+            bool storageOk = packaged
+                ? storage == UpdatePreferences.GetPackageStorageDirectory(PackagedApp.FamilyName) && storage != folderKeyed
+                : storage == folderKeyed;
+            bool familyOk = PackagedApp.FamilyNameOf("App.Name_1.2.3.0_x64__abc123") == "App.Name_abc123" &&
+                PackagedApp.FamilyNameOf("bad") == null;
+            bool ok = expected == (packaged ? "packaged" : "unpackaged") && storageOk && familyOk &&
                 (!packaged || (!canInstall && reason == PackagedApp.StoreUpdateReason));
             lines.Add(ok ? "ok   package check" : "FAIL package check: expected " + expected);
             File.WriteAllLines(outFile, lines);

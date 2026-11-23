@@ -22,6 +22,18 @@ namespace SPI_Data_Comp_Tool
         /// <summary>The package full name, or null when the app runs outside a package.</summary>
         internal static string FullName { get { return fullName.Value; } }
 
+        /// <summary>The package family name (Name_PublisherId), the same for every version of the
+        /// package, or null outside a package. Saved data keyed by it survives Store updates.</summary>
+        internal static string FamilyName { get { return FamilyNameOf(FullName); } }
+
+        /// <summary>Name_Version_Architecture_ResourceId_PublisherId → Name_PublisherId.</summary>
+        internal static string FamilyNameOf(string packageFullName)
+        {
+            if (string.IsNullOrEmpty(packageFullName)) return null;
+            string[] parts = packageFullName.Split('_');
+            return parts.Length == 5 && parts[0].Length > 0 && parts[4].Length > 0 ? parts[0] + "_" + parts[4] : null;
+        }
+
         private static string ReadFullName()
         {
             try

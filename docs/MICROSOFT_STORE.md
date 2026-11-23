@@ -26,6 +26,10 @@ Store packages are installed read-only and updated by the Store. When the app ru
 unavailable with the reason *"This copy was installed from the Microsoft Store. The Store installs its
 updates for you."* The portable and installer copies keep the in-app updater.
 
+Each Store update installs into a new versioned folder, so a Store copy keeps its saved preferences in
+a folder named after the package family (the same for every version) instead of the install folder.
+The package needs Windows 10 version 1903 or later, the first version with .NET Framework 4.8 built in.
+
 ## One-time setup (Krishna)
 
 | SrNo. | Where | What to do |

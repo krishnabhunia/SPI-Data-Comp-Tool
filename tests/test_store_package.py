@@ -41,6 +41,9 @@ class ManifestTests(unittest.TestCase):
         self.assertIsNotNone(self.root.find("f:Capabilities/rescap:Capability[@Name='runFullTrust']", NS))
         family = self.root.find("f:Dependencies/f:TargetDeviceFamily", NS)
         self.assertEqual(family.get("Name"), "Windows.Desktop")
+        # .NET Framework 4.8 is built in from Windows 10 1903 (18362); the package cannot install it
+        self.assertEqual(family.get("MinVersion"), "10.0.18362.0")
+        self.assertIn('<supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.8"', (APP / "App.config").read_text(encoding="utf-8-sig"))
 
     def test_execution_alias_used_by_the_ci_install_test(self):
         alias = self.root.find(".//desktop:ExecutionAlias", NS)
@@ -137,6 +140,15 @@ class StoreCopyNeverSelfUpdatesTests(unittest.TestCase):
         self.assertIn("detectionError = PackagedApp.IsPackaged ? PackagedApp.StoreUpdateReason : error;", installer)
         can_install = installer.split("public bool CanInstall(out string reason)", 1)[1]
         self.assertLess(can_install.index("if (detectionError != null)"), can_install.index("IsApplying"))
+
+    def test_store_preferences_survive_package_updates(self):
+        prefs = (APP / "UpdatePreferences.cs").read_text(encoding="utf-8-sig")
+        self.assertIn("storageDirectory = ResolveStorageDirectory();", prefs)
+        resolve = prefs.split("internal static string ResolveStorageDirectory()", 1)[1].split("internal static string GetStorageDirectory", 1)[0]
+        self.assertIn("PackagedApp.FamilyName", resolve)
+        self.assertIn("GetPackageStorageDirectory(family)", resolve)
+        selftest = (APP / "SelfTest.cs").read_text(encoding="utf-8-sig")
+        self.assertIn("storage != folderKeyed", selftest)
 
     def test_self_test_mode_checks_identity_and_updater(self):
         selftest = (APP / "SelfTest.cs").read_text(encoding="utf-8-sig")
