@@ -1,6 +1,6 @@
 # Windows publisher signing
 
-The published 4.4.0 portable EXE and installer are unsigned. The optional signing pipeline does not acquire a certificate or configure a signing service. Until the external setup below is complete, releases remain **unsigned**, and their notes and version comment say so. SHA-256 checksums check download integrity; they do not establish a publisher.
+The published 4.4.0 portable EXE and installer are unsigned. These optional signing backends do not acquire a certificate or configure a signing service. When neither backend is configured, releases remain **unsigned**, and their notes and version comment say so. Configure the chosen backend using its guide below. SHA-256 checksums check download integrity; they do not establish a publisher.
 
 A valid public-trust Authenticode signature displays the validated certificate identity. Microsoft still evaluates SmartScreen reputation independently, and signed files can still warn. EV certificates no longer receive automatic SmartScreen reputation. Do not disable Defender/SmartScreen, remove download-zone information, install a test root or claim a warning-free release. See [Microsoft's explanation](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation).
 

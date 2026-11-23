@@ -36,7 +36,7 @@ If only some of the four secrets exist, the build fails with the names of the mi
 | SrNo. | Effect | Detail |
 |---|---|---|
 | 1 | Publisher name | "Unknown publisher" becomes the name on the certificate straight away |
-| 2 | SmartScreen | Microsoft builds trust from download history. A newly signed app can still show the blue screen for its first downloads; it stops once the certificate has gained reputation. EV certificates no longer skip this |
+| 2 | SmartScreen | Microsoft evaluates file and publisher reputation. A newly signed app can still show the warning, and reputation does not guarantee a prompt-free installation. EV certificates no longer receive an automatic exemption |
 | 3 | Updates from inside the app | Unaffected; files are checked by SHA-256 as before |
 
 Until a backend is configured and a newly signed build is produced, existing unsigned downloads can continue to show Windows warnings. Keep normal SmartScreen, download-zone and certificate-trust protections enabled.
