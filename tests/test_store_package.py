@@ -102,6 +102,7 @@ class WorkflowTests(unittest.TestCase):
 
     def test_install_test_signs_only_a_throwaway_copy_and_cleans_up(self):
         test = step("Test the Store package (install, run, uninstall)")
+        self.assertIn("shell: powershell", test)   # Appx cmdlets need Windows PowerShell
         self.assertIn("New-SelfSignedCertificate", test)
         self.assertIn("-NotAfter (Get-Date).AddDays(1)", test)
         self.assertIn("$test = Join-Path $env:RUNNER_TEMP", test)
