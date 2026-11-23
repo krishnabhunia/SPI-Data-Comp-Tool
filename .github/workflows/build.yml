@@ -347,6 +347,104 @@ jobs:
           path: dist/
           if-no-files-found: error
 
+  sign:
+    # Mutually exclusive with windows-sign: retain the SSL.com setup from PR #115
+    # when the isolated certificate-store backend is not selected.
+    # Code signing (docs/CODE_SIGNING.md) runs only for a push to master, never for a pull request: the
+    # signing secrets live in the protected "code-signing" environment, so code that has not been merged
+    # cannot read them or get itself signed. Betas from pull requests stay unsigned.
+    name: Sign ${{ needs.version.outputs.version }}
+    needs: [version, windows-build, signing-policy, documentation, secrets-guard]
+    if: >-
+      needs.signing-policy.outputs.enabled == 'false' &&
+      github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: windows-2022
+    environment: code-signing
+    outputs:
+      signing_status: ${{ steps.setup.outputs.configured == 'true' && 'signed-app-and-setup' || 'unsigned' }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Is signing set up?
+        id: setup
+        shell: pwsh
+        env:
+          SIGN_ES_USERNAME: ${{ secrets.SIGN_ES_USERNAME }}
+          SIGN_ES_PASSWORD: ${{ secrets.SIGN_ES_PASSWORD }}
+          SIGN_ES_CREDENTIAL_ID: ${{ secrets.SIGN_ES_CREDENTIAL_ID }}
+          SIGN_ES_TOTP_SECRET: ${{ secrets.SIGN_ES_TOTP_SECRET }}
+        run: ./tools/sign_windows.ps1 -CheckOnly
+      - uses: actions/download-artifact@v7
+        if: steps.setup.outputs.configured == 'true'
+        with:
+          name: SPI_Data_Comp_Tool_${{ needs.version.outputs.version }}
+          path: dist
+      - uses: NuGet/setup-nuget@v3
+        if: steps.setup.outputs.configured == 'true'
+      - uses: microsoft/setup-msbuild@v3
+        if: steps.setup.outputs.configured == 'true'
+      - name: Rebuild the 64-bit application (deterministic, same commit as the tested build)
+        if: steps.setup.outputs.configured == 'true'
+        shell: pwsh
+        run: |
+          python tools/release.py stamp '${{ needs.version.outputs.version }}'
+          if ($LASTEXITCODE -ne 0) { throw 'stamp failed' }
+          nuget restore "SPI Data Comp Tool.sln" -NonInteractive
+          if ($LASTEXITCODE -ne 0) { throw 'nuget restore failed' }
+          msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release /p:Platform=x64 /warnaserror
+          if ($LASTEXITCODE -ne 0) { throw 'msbuild failed' }
+      - name: Sign the portable exe and the 64-bit exe the installer copies
+        if: steps.setup.outputs.configured == 'true'
+        shell: pwsh
+        env:
+          SIGN_ES_USERNAME: ${{ secrets.SIGN_ES_USERNAME }}
+          SIGN_ES_PASSWORD: ${{ secrets.SIGN_ES_PASSWORD }}
+          SIGN_ES_CREDENTIAL_ID: ${{ secrets.SIGN_ES_CREDENTIAL_ID }}
+          SIGN_ES_TOTP_SECRET: ${{ secrets.SIGN_ES_TOTP_SECRET }}
+        run: ./tools/sign_windows.ps1 -Path (Get-ChildItem dist/portable -Filter *.exe).FullName, "SPI Data Comp Tool/bin/x64/Release/SPI Data Comp Tool.exe"
+      - name: Rebuild the installer around the signed exe
+        if: steps.setup.outputs.configured == 'true'
+        shell: pwsh
+        run: |
+          $ver = '${{ needs.version.outputs.version }}'
+          $num = ($ver -split '-')[0]
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          if (-not (Test-Path $iscc)) { throw 'Inno Setup 6 (ISCC.exe) not found' }
+          $src = (Resolve-Path "SPI Data Comp Tool/bin/x64/Release").Path
+          Copy-Item 'dist/THIRD_PARTY_NOTICES.md' -Destination $src
+          $out = Join-Path $PWD 'dist/windows-x64'
+          Get-ChildItem -LiteralPath $out -Filter *.exe -File | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+          & $iscc /Qp "/DAppVersion=$ver" "/DNumericVersion=$num" "/DSourceDir=$src" "/DOutputDir=$out" windows/installer/SPI_Data_Comp_Tool.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed ($LASTEXITCODE)" }
+      - name: Sign the installer
+        if: steps.setup.outputs.configured == 'true'
+        shell: pwsh
+        env:
+          SIGN_ES_USERNAME: ${{ secrets.SIGN_ES_USERNAME }}
+          SIGN_ES_PASSWORD: ${{ secrets.SIGN_ES_PASSWORD }}
+          SIGN_ES_CREDENTIAL_ID: ${{ secrets.SIGN_ES_CREDENTIAL_ID }}
+          SIGN_ES_TOTP_SECRET: ${{ secrets.SIGN_ES_TOTP_SECRET }}
+        run: ./tools/sign_windows.ps1 -Path (Get-ChildItem dist/windows-x64 -Filter *.exe).FullName
+      - name: Signed installer still installs a signed app
+        if: steps.setup.outputs.configured == 'true'
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem dist/windows-x64 -Filter *.exe).FullName
+          $dir = Join-Path $env:RUNNER_TEMP 'spi-signed-install'
+          $p = Start-Process $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=`"$dir`"" -WindowStyle Hidden -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "setup exit code $($p.ExitCode)" }
+          $exe = Join-Path $dir 'SPI Data Comp Tool.exe'
+          if ((Get-AuthenticodeSignature $exe).Status -ne 'Valid') { throw 'the installed app is not signed' }
+          Start-Process (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -WindowStyle Hidden -Wait
+      - uses: actions/upload-artifact@v6
+        if: steps.setup.outputs.configured == 'true'
+        with:
+          name: SPI_Data_Comp_Tool_${{ needs.version.outputs.version }}
+          path: dist/
+          overwrite: true
+          if-no-files-found: error
+
+
   windows-sign:
     needs: [version, signing-policy, windows-build, documentation, secrets-guard]
     if: >-
@@ -422,13 +520,17 @@ jobs:
     # PR -> GitHub pre-release vX.Y.Z-betaNNN; merge to master -> GitHub release vX.Y.Z (latest).
     # The version is shown in this check's name and in one comment on the PR - never typed into a PR title.
     name: Publish ${{ needs.version.outputs.version }}
-    needs: [version, windows-build, documentation, secrets-guard, signing-policy, windows-sign, cleanup-signing-input]
+    needs: [version, windows-build, sign, documentation, secrets-guard, signing-policy, windows-sign, cleanup-signing-input]
     if: >-
       always() && needs.version.result == 'success' && needs.windows-build.result == 'success' &&
       needs.documentation.result == 'success' && needs.secrets-guard.result == 'success' &&
       needs.signing-policy.result == 'success' &&
-      ((needs.signing-policy.outputs.enabled == 'false' && needs.windows-sign.result == 'skipped') ||
-       (needs.signing-policy.outputs.enabled == 'true' && needs.windows-sign.result == 'success' && needs.cleanup-signing-input.result == 'success')) &&
+      contains(fromJSON('["success", "skipped"]'), needs.sign.result) &&
+      ((needs.signing-policy.outputs.enabled == 'false' && needs.windows-sign.result == 'skipped' &&
+        ((github.event_name == 'push' && needs.sign.result == 'success') ||
+         (github.event_name == 'pull_request' && needs.sign.result == 'skipped'))) ||
+       (needs.signing-policy.outputs.enabled == 'true' && needs.sign.result == 'skipped' &&
+        needs.windows-sign.result == 'success' && needs.cleanup-signing-input.result == 'success')) &&
       (github.event_name == 'push' ||
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
     runs-on: ubuntu-24.04
@@ -450,7 +552,7 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
           PRE: ${{ needs.version.outputs.prerelease }}
           SHA: ${{ needs.version.outputs.head }}
-          SIGNING_STATUS: ${{ needs.signing-policy.outputs.status }}
+          SIGNING_STATUS: ${{ needs.windows-sign.result == 'success' && 'signed' || needs.sign.outputs.signing_status || 'unsigned' }}
         run: |
           set -euo pipefail
           if [ "${PRE}" = "true" ]; then
@@ -498,7 +600,7 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
           HEAD_SHA: ${{ needs.version.outputs.head }}
           STATE: ${{ steps.publish.outputs.state }}
-          SIGNING_STATUS: ${{ needs.signing-policy.outputs.status }}
+          SIGNING_STATUS: ${{ needs.windows-sign.result == 'success' && 'signed' || needs.sign.outputs.signing_status || 'unsigned' }}
         run: |
           set -euo pipefail
           # A PR run that ends (or is re-run) after the PR was merged must not replace "Released as ..."

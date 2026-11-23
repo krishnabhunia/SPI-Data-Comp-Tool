@@ -37,14 +37,14 @@ class WorkflowGuards(unittest.TestCase):
         self.assertIn('echo "### Not published: ${TAG}', release)
         self.assertIn('echo "### Released ${TAG}"', release)
         self.assertIn('cat "${RUNNER_TEMP}/version-comment.md" >> "$GITHUB_STEP_SUMMARY"', release)
-        self.assertIn("needs: [version, windows-build, documentation, secrets-guard, signing-policy, windows-sign, cleanup-signing-input]", release)
+        self.assertIn("needs: [version, windows-build, sign, documentation, secrets-guard, signing-policy, windows-sign, cleanup-signing-input]", release)
         self.assertIn("needs.windows-sign.result == 'success'", release)
         self.assertIn("needs.cleanup-signing-input.result == 'success'", release)
 
     def test_actions_keep_the_reviewed_major_version_policy(self):
         workflow = (ROOT / ".github/workflows/build.yml").read_text()
         actions = re.findall(r"uses:\s+([^\s]+)", workflow)
-        self.assertEqual(len(actions), 15)
+        self.assertEqual(len(actions), 20)  # certificate-store plus existing SSL.com backend
         for action in actions:
             with self.subTest(action=action):
                 self.assertRegex(action, r"@v\d+$")

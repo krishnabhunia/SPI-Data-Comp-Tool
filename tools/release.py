@@ -158,6 +158,10 @@ def signing_notice(status):
     if status == "signed":
         return ("**Windows signing: signed and verified.** Authenticode publisher signatures and RFC 3161 timestamps "
                 "were verified for this build. SmartScreen reputation is independent; warnings can still appear.")
+    if status == "signed-app-and-setup":
+        return ("**Windows signing: application and installer signed.** The SSL.com backend verified signatures "
+                "and timestamps on the portable app, installed app and outer installer. Its uninstaller and temporary "
+                "setup copies are not covered by this backend. SmartScreen warnings can still appear.")
     raise ValueError("Unknown Windows signing status")
 
 

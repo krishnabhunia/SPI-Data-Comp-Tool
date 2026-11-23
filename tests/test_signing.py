@@ -132,6 +132,12 @@ class SigningReleaseStatus(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.signing_notice("success")
 
+    def test_cloud_backend_does_not_claim_complete_installer_coverage(self):
+        text = release.comment_body("stable", "owner/repo", "v4.4.1", "a" * 40, "signed-app-and-setup")
+        self.assertIn("application and installer signed", text)
+        self.assertIn("not covered by this backend", text)
+        self.assertNotIn("signing: signed and verified", text)
+
 
 if __name__ == "__main__":
     unittest.main()

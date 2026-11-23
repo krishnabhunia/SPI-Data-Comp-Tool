@@ -6,9 +6,19 @@ A valid public-trust Authenticode signature displays the validated certificate i
 
 ## What the workflow does
 
+### Backend selection after integrating PR #115
+
+| Configuration | Selected backend and reported coverage |
+|---|---|
+| `WINDOWS_SIGNING_MODE=store` | The isolated `windows-sign` job uses the `windows-code-signing` environment. It signs and verifies the portable app, x64 payload, setup, temporary setup copies and uninstall. The SSL.com job is skipped. |
+| Mode missing or `off` | The inherited master-only SSL.com `sign` job uses the separate `code-signing` environment. With all four SSL.com secrets configured, it signs the portable app, installed app and outer installer. Its uninstaller/temporary setup copies are not covered. With no secrets, output remains unsigned; partial configuration fails. See [SSL.com setup](CODE_SIGNING.md). |
+| Any pull request | Both production signing jobs are skipped. No signing environment or signing credentials are used; the beta is explicitly unsigned. |
+
+`off` disables the certificate-store backend; it preserves the independently configured SSL.com path merged in PR #115. The two jobs never process the same release. A selected store signing failure blocks publication and never falls back to SSL.com. Release notes use the successful backend's actual result: unsigned, app/setup signing, or complete store verification.
+
 `Build and checks` is the existing Windows build/release workflow. PRs, including same-repository PRs, use GitHub-hosted Windows runners and remain unsigned even if signing is enabled for releases. They never select the signing environment or signing runner. Fork PR publication remains excluded by the existing release rule.
 
-With signing off, the existing build, regression, install/uninstall and publication paths continue. With `store` enabled, signing is eligible **only for a push to protected master**. A manual run or another ref is rejected, rather than silently publishing unsigned output. Invalid modes and incomplete enabled configuration fail closed. The isolated signing job waits for the build and source/documentation checks.
+With no signing backend configured, the existing build, regression, install/uninstall and unsigned publication paths continue. With `store` selected, that backend is eligible **only for a push to protected master**. A manual run or another ref is rejected, rather than silently publishing unsigned output. Invalid modes and incomplete enabled store configuration fail closed. Both production signing jobs wait for the build and source/documentation checks.
 
 The build stages only an exact, allowlisted portable payload, x64 EXE/config and notice, with a SHA-256 manifest binding its version, source commit, workflow run and attempt. The signing job downloads the named input from the same run, checks that manifest and rejects extra files, links, altered bytes and other provenance. The manifest is a same-run integrity check, not a signature or a substitute for admitting only trusted builds.
 
@@ -18,7 +28,7 @@ The final portable EXE is signed after version stamping and Costura weaving. The
 
 The internal handoff contains no key or credentials, has one-day retention and is deleted by a separate job with narrowly scoped Actions write permission. Publication of an enabled signing release requires both signing and cleanup to succeed. On a completed successful build, exactly one final `SPI_Data_Comp_Tool_<version>.zip` is downloadable in this workflow's Artifacts group. Platform contents are uploaded directly, so its first extraction reveals `portable/` and `windows-x64/`, without a nested ZIP. Existing notices and updater compatibility anchors remain intact. A forced termination or infrastructure failure can leave a nonsecret temporary input until cleanup/retention; it cannot promote an unsigned release as signed.
 
-The release ZIP and standalone setup checksums are calculated after signing. Release notes and the PR version comment distinguish **unsigned** from **signed and verified**. The latter is reachable only after successful verification and smoke checks. Old releases/tags are not converted to signed releases by this change. Other diagnostic workflows retain their existing evidence artifacts.
+The release ZIP and standalone setup checksums are calculated after the selected backend completes. Release notes and the PR version comment distinguish **unsigned**, SSL.com **application and installer signed**, and store **signed and verified**. Complete store coverage is claimed only after its verification and smoke checks. Old releases/tags are not converted to signed releases by this change. Other diagnostic workflows retain their existing evidence artifacts.
 
 ## Required external certificate acquisition
 
