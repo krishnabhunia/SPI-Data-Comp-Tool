@@ -59,4 +59,4 @@ Partner Center rejects a package whose identity does not match the reserved prod
 |---|---|
 | 1 | The package version is `x.y.z.0`; a beta packs with its plain number, so submit only normal releases |
 | 2 | Each Store submission must have a higher version than the last one |
-| 3 | Downloads from GitHub (portable zip, installer) still show SmartScreen until they are code-signed (see `docs/CODE_SIGNING.md` once that change is merged) |
+| 3 | Downloads from GitHub (portable zip, installer) still show SmartScreen until they are code-signed; once the signing secrets are set, master releases are signed (see `docs/CODE_SIGNING.md`) |
