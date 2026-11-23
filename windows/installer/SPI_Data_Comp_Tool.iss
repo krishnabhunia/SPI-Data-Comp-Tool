@@ -44,6 +44,13 @@ OutputBaseFilename=SPI_Data_Comp_Tool_{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
+#ifdef SpiSigning
+; Fail compilation if the CI-supplied callback is missing. It signs setup, temporary
+; setup self-copies and uninstall; the application payload is signed before packing.
+SignTool=spi_authenticode
+SignedUninstaller=yes
+SignedUninstallerDir={#SigningWorkDir}
+#endif
 CloseApplications=yes
 RestartApplications=no
 

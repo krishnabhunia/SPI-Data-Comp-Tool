@@ -103,7 +103,8 @@ class VersionOnThePullRequest(unittest.TestCase):
         self.assertIn("can differ from this beta's number", body)
         self.assertIn("Requires Microsoft .NET Framework 4.8 or later", body)
         self.assertIn("before updating an older portable copy", body)
-        self.assertIn("--notes-file docs/RELEASE_PREREQUISITES.md", self.WORKFLOW)
+        self.assertIn('--notes-file "${RUNNER_TEMP}/release-notes.md"', self.WORKFLOW)
+        self.assertIn('python3 tools/release.py notes', self.WORKFLOW)
 
     def test_stable_comment_names_the_normal_version(self):
         body = release.comment_body("stable", self.REPO, "v2.5.3", "abcdef1234567")

@@ -25,7 +25,8 @@ class CodeSigning(unittest.TestCase):
     def test_pull_requests_never_see_the_signing_secrets(self) -> None:
         # Codex security review on #115: unmerged code must not read the secrets or get itself signed.
         sign = job("sign")
-        self.assertIn("if: github.event_name == 'push' && github.ref == 'refs/heads/master'", sign)
+        self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/master'", sign)
+        self.assertIn("needs.signing-policy.outputs.enabled == 'false'", sign)
         self.assertIn("environment: code-signing", sign)
         self.assertNotIn("secrets.SIGN_ES_", job("windows-build"))
         for name in SECRETS:
@@ -48,9 +49,21 @@ class CodeSigning(unittest.TestCase):
         self.assertIn("overwrite: true", sign)
         self.assertEqual(sign.count("if: steps.setup.outputs.configured == 'true'"), 9)
         release = job("release")
-        self.assertIn("needs: [version, windows-build, sign, documentation, secrets-guard]", release)
+        self.assertIn("needs: [version, windows-build, sign, documentation, secrets-guard, signing-policy, windows-sign, cleanup-signing-input]", release)
         self.assertIn('contains(fromJSON(\'["success", "skipped"]\'), needs.sign.result)', release)
         self.assertIn("sha256sum", release)  # checksums come from the uploaded (signed) files
+
+    def test_backends_are_mutually_exclusive_and_release_uses_actual_coverage(self) -> None:
+        self.assertIn("needs.signing-policy.outputs.enabled == 'false'", job("sign"))
+        self.assertIn("needs.signing-policy.outputs.enabled == 'true'", job("windows-sign"))
+        release = job("release")
+        self.assertIn("github.event_name == 'push' && needs.sign.result == 'success'", release)
+        self.assertIn("github.event_name == 'pull_request' && needs.sign.result == 'skipped'", release)
+        self.assertIn("needs.sign.result == 'skipped'", release)
+        self.assertIn("needs.windows-sign.result == 'success'", release)
+        self.assertIn("needs.cleanup-signing-input.result == 'success'", release)
+        self.assertIn("signed-app-and-setup", job("sign"))
+        self.assertIn("needs.sign.outputs.signing_status", release)
 
     def test_unconfigured_signing_is_skipped_quietly_and_partial_set_up_fails(self) -> None:
         self.assertIn("if ($set.Count -eq 0) { return $false }", SCRIPT)

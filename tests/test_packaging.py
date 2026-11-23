@@ -54,7 +54,7 @@ class Packaging(unittest.TestCase):
         self.assertIn("Where-Object Length -ne 0", package)
         self.assertIn("Retired SQL templates leaked into the build output", package)
         self.assertIn("Retired SQL templates leaked into the 64-bit build output", workflow)
-        self.assertIn("Retired SQL templates or portable compatibility anchors leaked into the clean install", workflow)
+        self.assertIn("Retired SQL templates or portable compatibility anchors leaked into the clean install", text(REPO / "tools/test_windows_installer.ps1"))
 
 
 if __name__ == "__main__":

@@ -1,12 +1,14 @@
 # Microsoft Store package (MSIX)
 
-Windows SmartScreen shows **"Windows protected your PC — Unknown publisher"** for any downloaded exe
-that has no code-signing certificate. No code change can remove that warning. The free way to remove
-it is the Microsoft Store: Partner Center re-signs every submitted package with a Microsoft
-certificate, so a Store install opens without the warning.
+Windows SmartScreen can warn about unsigned GitHub downloads. Microsoft Store distribution uses a
+separate publisher-validation and certification process. After approval, the Store signs and distributes
+the MSIX package. Building an MSIX in CI does not establish Store certification or publication.
 
 Every CI build now also produces `SPI_Data_Comp_Tool_<version>_x64.msix`, the Store package of the
-64-bit app. The portable zip and the `_x64_setup.exe` installer are unchanged and still unsigned.
+64-bit app. **The published CI MSIX is unsigned and intended for Partner Center submission.** Configure
+the reserved product identity before submitting it. The portable ZIP and `_x64_setup.exe` retain their
+separate [EXE signing backends](WINDOWS_SIGNING.md); their actual signing status is shown in release notes.
+The disposable certificate used by the CI installation test is never shipped.
 
 ## What CI does
 

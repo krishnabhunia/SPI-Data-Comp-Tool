@@ -2,6 +2,8 @@
 
 Generic Windows Forms (.NET Framework 4.8) desktop utility for database and Excel comparison, workbook audits and data exports. It works against Oracle and SQL Server.
 
+Windows releases remain unsigned until a public-trust certificate and secure CI signing provider are configured. See [Windows publisher signing and required setup](docs/WINDOWS_SIGNING.md); signatures cannot guarantee SmartScreen reputation.
+
 The main window's left rail lists 6 tasks in three groups: **Comparison** (Compare databases, Compare workbooks), **Data & Reports** (Export, Merge logs) and **Settings**. Compare databases (One table / A list of tables), Compare workbooks (Values / Values and formatting / Identical?, for One pair / Two folders) and Export (From a database / From a workbook) choose their workflow with a mode bar. Switching tasks or modes preserves each page's inputs and results. The SQL Scripts workspace and both its generation/execution forms have been removed. Database comparison and database-to-Excel export remain available.
 
 The earlier Analysis & Migration and Pre-merge Checks workspaces, their task forms and their dedicated supporting code also remain removed. The application before that retirement is preserved in [release v2.16.0](https://github.com/krishnabhunia/SPI-Data-Comp-Tool/releases/tag/v2.16.0).
