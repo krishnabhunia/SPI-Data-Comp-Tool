@@ -329,6 +329,75 @@ jobs:
           for ($i = 0; $i -lt 30 -and (Test-Path $exe); $i++) { Start-Sleep 1 }
           if (Test-Path $exe) { throw 'uninstall left the exe behind' }
           Write-Host "64-bit installer: installed, 64-bit exe, no DLL files, libraries load, uninstalled cleanly"
+      - name: Build Microsoft Store package (MSIX)
+        shell: pwsh
+        env:
+          # Copy these three from Partner Center (Product identity) into repository variables;
+          # until then the package builds with placeholder values (see docs/MICROSOFT_STORE.md).
+          MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME || 'krishnabhunia.SPIDataComparisonTool' }}
+          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER || 'CN=krishnabhunia' }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME || 'Krishna Bhunia' }}
+          MSIX_FROM_PARTNER_CENTER: ${{ vars.MSIX_IDENTITY_NAME != '' && vars.MSIX_PUBLISHER != '' && vars.MSIX_PUBLISHER_DISPLAY_NAME != '' }}
+        run: |
+          $ver = '${{ steps.ver.outputs.version }}'
+          & tools/build_msix.ps1 -SourceDir 'SPI Data Comp Tool/bin/x64/Release' -Version $ver `
+            -IdentityName $env:MSIX_IDENTITY_NAME -Publisher $env:MSIX_PUBLISHER `
+            -PublisherDisplayName $env:MSIX_PUBLISHER_DISPLAY_NAME -OutFile "dist/store/SPI_Data_Comp_Tool_${ver}_x64.msix"
+          if ($env:MSIX_FROM_PARTNER_CENTER -ne 'true') {
+            Write-Host 'Store identity: placeholder values. Set MSIX_IDENTITY_NAME, MSIX_PUBLISHER and MSIX_PUBLISHER_DISPLAY_NAME from Partner Center before submitting.'
+          }
+      - name: Test the Store package (install, run, uninstall)
+        # Windows PowerShell: the Appx cmdlets do not load in PowerShell 7 on the runner
+        shell: powershell
+        run: |
+          $ver = '${{ steps.ver.outputs.version }}'
+          # Outside a package the app must report no package identity.
+          $plain = Join-Path $env:RUNNER_TEMP 'unpackaged-check.txt'
+          $u = Start-Process (Resolve-Path 'SPI Data Comp Tool/bin/x64/Release/SPI Data Comp Tool.exe') -ArgumentList '--check-package', "`"$plain`"", 'unpackaged' -Wait -PassThru
+          if (Test-Path $plain) { Get-Content $plain | ForEach-Object { Write-Host $_ } }
+          if ($u.ExitCode -ne 0) { throw 'the unpackaged app reported a package identity' }
+          # Windows installs only signed packages, so this test copy is signed with a throwaway
+          # certificate that exists only on this runner. The Store signs the real package itself.
+          $name = 'SPIDataCompTool.CITest'; $subject = 'CN=SPI CI Test'
+          $test = Join-Path $env:RUNNER_TEMP 'spi-msix-test.msix'
+          & tools/build_msix.ps1 -SourceDir 'SPI Data Comp Tool/bin/x64/Release' -Version $ver `
+            -IdentityName $name -Publisher $subject -PublisherDisplayName 'SPI CI Test' -OutFile $test
+          $cert = New-SelfSignedCertificate -Type Custom -Subject $subject -KeyUsage DigitalSignature `
+            -CertStoreLocation 'Cert:\CurrentUser\My' -NotAfter (Get-Date).AddDays(1) `
+            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
+          $cer = Join-Path $env:RUNNER_TEMP 'spi-msix-test.cer'
+          Export-Certificate -Cert $cert -FilePath $cer | Out-Null
+          $trusted = Import-Certificate -FilePath $cer -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople'
+          try {
+            $signtool = Get-ChildItem (Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin') -Recurse -Filter signtool.exe |
+              Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
+            if (-not $signtool) { throw 'signtool.exe (Windows SDK) not found' }
+            & $signtool.FullName sign /q /fd SHA256 /sha1 $cert.Thumbprint $test
+            if ($LASTEXITCODE -ne 0) { throw "signtool failed ($LASTEXITCODE)" }
+            Add-AppxPackage -Path $test
+            $pkg = Get-AppxPackage -Name $name
+            if (-not $pkg) { throw 'the Store package did not install' }
+            if ($pkg.Version -ne "$(($ver -split '-')[0]).0") { throw "installed package version $($pkg.Version)" }
+            $alias = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\spi-data-comp-tool.exe'
+            for ($i = 0; $i -lt 30 -and -not (Test-Path $alias); $i++) { Start-Sleep 1 }
+            if (-not (Test-Path $alias)) { throw 'the app execution alias was not created' }
+            foreach ($check in @(@('--check-package', 'packaged'), @('--check-assemblies'))) {
+              $log = Join-Path $env:RUNNER_TEMP ("msix" + $check[0] + '.txt')
+              $p = Start-Process $alias -ArgumentList (@($check[0], "`"$log`"") + @($check | Select-Object -Skip 1)) -Wait -PassThru
+              for ($i = 0; $i -lt 60 -and -not (Test-Path $log); $i++) { Start-Sleep 1 }
+              if (-not (Test-Path $log)) { throw "packaged $($check[0]) wrote no log" }
+              Get-Content $log | ForEach-Object { Write-Host $_ }
+              if ((Get-Content $log) -match '^FAIL') { throw "packaged $($check[0]) failed" }
+            }
+            Remove-AppxPackage -Package $pkg.PackageFullName
+            if (Get-AppxPackage -Name $name) { throw 'the Store package did not uninstall' }
+            Write-Host 'Store package: installs, has its package identity, never self-updates, libraries load, uninstalls cleanly'
+          }
+          finally {
+            Get-AppxPackage -Name $name | Remove-AppxPackage -ErrorAction SilentlyContinue
+            Remove-Item -Path "Cert:\LocalMachine\TrustedPeople\$($trusted.Thumbprint)" -ErrorAction SilentlyContinue
+            Remove-Item -Path "Cert:\CurrentUser\My\$($cert.Thumbprint)" -ErrorAction SilentlyContinue
+          }
       - uses: actions/upload-artifact@v6
         with:
           name: SPI_Data_Comp_Tool_${{ steps.ver.outputs.version }}
@@ -478,13 +547,18 @@ jobs:
           # release asset; the installer also carries its own installed copy.
           notice_name="SPI_Data_Comp_Tool_${VERSION}_THIRD_PARTY_NOTICES.md"
           mv dist/THIRD_PARTY_NOTICES.md "${notice_name}"
+          # The Store package is its own release asset, never inside the updater's zip.
+          msix_name="SPI_Data_Comp_Tool_${VERSION}_x64.msix"
+          mv "dist/store/${msix_name}" "${msix_name}"
+          rmdir dist/store
           (cd dist && zip -qr "../${zip_name}" .)
           # the 64-bit installer also goes on the release page by itself, for a one-click download
           setup_name="SPI_Data_Comp_Tool_${VERSION}_x64_setup.exe"
           cp "dist/windows-x64/SPI_Data_Comp_Tool_${VERSION}.exe" "${setup_name}"
           sha256sum "${zip_name}" "${setup_name}" > "${zip_name}.sha256"
           cat "${zip_name}.sha256"
-          assets=("${zip_name}" "${zip_name}.sha256" "${setup_name}" "${notice_name}")
+          sha256sum "${msix_name}" > "${msix_name}.sha256"
+          assets=("${zip_name}" "${zip_name}.sha256" "${setup_name}" "${notice_name}" "${msix_name}" "${msix_name}.sha256")
           if gh release view "${TAG}" >/dev/null 2>&1; then
             gh release upload "${TAG}" "${assets[@]}" --clobber
           else

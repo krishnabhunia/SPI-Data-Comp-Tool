@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
@@ -62,7 +62,7 @@ namespace SPI_Data_Comp_Tool
         public static void Initialize()
         {
             if (initialized) return;
-            storageDirectory = GetStorageDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            storageDirectory = ResolveStorageDirectory();
             string stableFile = Path.Combine(storageDirectory, "preferences.json");
             string currentConfig = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
             currentUserConfig = currentConfig;
@@ -307,6 +307,23 @@ namespace SPI_Data_Comp_Tool
             foreach (string value in new[] { snapshot.ProfilePathUser, snapshot.RuleFilePath })
                 if (value != null && (value.Length > 32760 || value.IndexOf('\0') >= 0))
                     throw new InvalidDataException("A saved preference path is invalid.");
+        }
+
+        /// <summary>A Microsoft Store copy moves to a new versioned folder on every Store update, so its
+        /// preferences are keyed by the package family instead of the folder; other copies keep the folder key.</summary>
+        internal static string ResolveStorageDirectory()
+        {
+            string family = PackagedApp.FamilyName;
+            return family != null ? GetPackageStorageDirectory(family)
+                : GetStorageDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+        }
+
+        internal static string GetPackageStorageDirectory(string packageFamilyName)
+        {
+            using (var sha = SHA256.Create())
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "SPI Data Comp Tool", "Updates", "package-" + BitConverter.ToString(
+                        sha.ComputeHash(Encoding.UTF8.GetBytes(packageFamilyName.ToUpperInvariant()))).Replace("-", string.Empty).ToLowerInvariant());
         }
 
         internal static string GetStorageDirectory(string installationDirectory)
