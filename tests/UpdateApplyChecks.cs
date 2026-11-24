@@ -495,7 +495,9 @@ namespace SPI_Data_Comp_Tool
             using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
             {
                 string name = "portable/SPI_Data_Comp_Tool_" + version + ".exe";
-                foreach (var pair in new[] { new KeyValuePair<string, string>(name, executable), new KeyValuePair<string, string>(name + ".config", executable + ".config") })
+                // A portable copy runs as one exe; an installed copy also has its .config.
+                foreach (var pair in new[] { new KeyValuePair<string, string>(name, executable), new KeyValuePair<string, string>(name + ".config", executable + ".config") }
+                    .Where(pair => File.Exists(pair.Value)))
                     using (var input = File.OpenRead(pair.Value))
                     using (var output = zip.CreateEntry(pair.Key).Open()) input.CopyTo(output);
             }
