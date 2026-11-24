@@ -23,7 +23,7 @@ class WixSource(unittest.TestCase):
         upgrade = self.package.find("w:MajorUpgrade", NS)
         # the in-app updater can choose an older version or the normal build of a beta's number
         self.assertEqual(upgrade.get("AllowDowngrades"), "yes")
-        self.assertEqual(upgrade.get("AllowSameVersionUpgrades"), "yes")
+        self.assertIsNone(upgrade.get("AllowSameVersionUpgrades"))  # implied by AllowDowngrades (WIX0035)
         self.assertEqual(self.package.find("w:MediaTemplate", NS).get("EmbedCab"), "yes")
 
     def test_installs_into_its_own_local_app_data_folder(self):
