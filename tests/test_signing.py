@@ -59,10 +59,11 @@ class Handoff(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.dist, self.x64, self.bundle = (self.root / n for n in ("dist", "x64", "input"))
-        for path in handoff.portable_paths(self.version) | {"windows-x64/SPI_Data_Comp_Tool_4.4.1.exe", "THIRD_PARTY_NOTICES.md", handoff.store_path(self.version)}:
+        for path in handoff.portable_paths(self.version) | {"windows-x64/SPI_Data_Comp_Tool_4.4.1.exe", handoff.msi_path(self.version),
+                                                            "THIRD_PARTY_NOTICES.md", handoff.store_path(self.version)}:
             file = self.dist / path
             file.parent.mkdir(parents=True, exist_ok=True)
-            file.write_bytes(b"" if path.endswith("instrument.txt") else b"test build bytes")
+            file.write_bytes(b"test build bytes")
         self.x64.mkdir()
         for name in ("SPI Data Comp Tool.exe", "SPI Data Comp Tool.exe.config"):
             (self.x64 / name).write_bytes(b"x64 test bytes")
@@ -76,6 +77,21 @@ class Handoff(unittest.TestCase):
     def test_valid_exact_current_run_handoff_and_distribution(self):
         self.verify()
         handoff.check_distribution(self.dist, self.version)
+
+    def test_distribution_is_one_file_per_folder(self):
+        self.assertEqual(handoff.portable_paths(self.version), {"portable/SPI_Data_Comp_Tool_4.4.1.exe"})
+        self.assertEqual(handoff.store_path(self.version), "microsoft-store/SPI_Data_Comp_Tool_4.4.1_x64.msix")
+        self.assertEqual(handoff.msi_path(self.version), "windows-msi/SPI_Data_Comp_Tool_4.4.1_x64.msi")
+        for extra in ("portable/SPI_Data_Comp_Tool_4.4.1.exe.config", "portable/PNID_Reports/Source/instrument.txt"):
+            file = self.dist / extra
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_bytes(b"")
+            with self.subTest(extra=extra), self.assertRaises(ValueError):
+                handoff.check_distribution(self.dist, self.version)
+            file.unlink()
+        (self.dist / handoff.msi_path(self.version)).unlink()
+        with self.assertRaises(ValueError):
+            handoff.check_distribution(self.dist, self.version)
 
     def test_altered_payload_is_rejected(self):
         (self.bundle / "x64/SPI Data Comp Tool.exe").write_bytes(b"altered")
@@ -113,17 +129,14 @@ class Handoff(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.verify()
 
-    def test_extra_or_missing_files_and_nonempty_anchors_are_rejected(self):
+    def test_extra_or_missing_files_are_rejected(self):
         extra = self.bundle / "extra.exe"
         extra.write_bytes(b"extra")
         with self.assertRaises(ValueError):
             self.verify()
         extra.unlink()
-        anchor = self.bundle / "portable/PNID_Reports/Source/instrument.txt"
-        anchor.write_bytes(b"unexpected content")
-        with self.assertRaises(ValueError):
-            self.verify()
-        anchor.unlink()
+        portable = self.bundle / "portable/SPI_Data_Comp_Tool_4.4.1.exe"
+        portable.unlink()
         with self.assertRaises(ValueError):
             self.verify()
 

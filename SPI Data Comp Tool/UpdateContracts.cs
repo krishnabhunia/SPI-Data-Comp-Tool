@@ -7,13 +7,16 @@ using System.Windows.Forms;
 namespace SPI_Data_Comp_Tool
 {
     internal enum UpdateChannel { Normal, Beta, All }
-    internal enum UpdateInstallKind { Installed, Portable }
+    // Values are persisted in update manifests: append new kinds, never reorder.
+    internal enum UpdateInstallKind { Installed, Portable, Msi }
 
     internal sealed class UpdateAsset
     {
         public string Name { get; set; }
         public Uri DownloadUri { get; set; }
         public long Size { get; set; }
+        /// <summary>SHA-256 that GitHub reports for the uploaded asset ("digest"), or null.</summary>
+        public string Sha256 { get; set; }
     }
 
     internal sealed class UpdateRelease
@@ -28,10 +31,16 @@ namespace SPI_Data_Comp_Tool
         public UpdateAsset Portable { get; set; }
         public UpdateAsset Checksums { get; set; }
 
+        /// <summary>True when the release zip can be verified: a GitHub digest or the legacy checksum file.</summary>
+        public bool HasVerifiedPackage { get { return Portable != null && (Portable.Sha256 != null || Checksums != null); } }
+
         public bool IsCompatible(UpdateInstallKind kind, bool is64BitOperatingSystem)
         {
-            return Checksums != null && (kind == UpdateInstallKind.Portable
-                ? Portable != null : is64BitOperatingSystem && Installer != null);
+            // Every release zip carries portable/ and windows-x64/; from 4.6.0 it also carries windows-msi/.
+            if (kind == UpdateInstallKind.Portable) return HasVerifiedPackage;
+            if (!is64BitOperatingSystem) return false;
+            if (kind == UpdateInstallKind.Installed) return HasVerifiedPackage || (Installer != null && Checksums != null);
+            return kind == UpdateInstallKind.Msi && HasVerifiedPackage;
         }
     }
 

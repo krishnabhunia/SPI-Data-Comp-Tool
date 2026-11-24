@@ -268,22 +268,11 @@ jobs:
           $src = "SPI Data Comp Tool/bin/Release"
           $dst = "dist/portable"
           New-Item -ItemType Directory -Force $dst | Out-Null
-          # Portable copy only: skip debug symbols, XML docs and ClickOnce publish output/manifests
-          Get-ChildItem $src -File | Where-Object { $_.Extension -notin '.pdb','.xml','.application','.manifest' } |
-            Copy-Item -Destination $dst
+          # The portable copy is one exe: libraries are embedded and it runs without a .config.
           if (Test-Path "$src/PNID_Reports") { throw 'Retired SQL templates leaked into the build output' }
-          # Released portable updaters require these two paths. Generate empty compatibility
-          # anchors only in the distribution; no SQL templates remain in the app or installer.
-          foreach ($t in 'Source/instrument.txt','Target_IPEP/instrument.txt') {
-            $anchor = Join-Path $dst "PNID_Reports/$t"
-            New-Item -ItemType Directory -Force (Split-Path $anchor) | Out-Null
-            [IO.File]::WriteAllBytes($anchor, [byte[]]@())
-          }
-          $anchors = @(Get-ChildItem "$dst/PNID_Reports" -Recurse -File)
-          if ($anchors.Count -ne 2 -or @($anchors | Where-Object Length -ne 0).Count -ne 0) { throw 'Portable compatibility anchors must be exactly two empty files' }
-          Rename-Item "$dst/SPI Data Comp Tool.exe" "$name.exe"
-          Rename-Item "$dst/SPI Data Comp Tool.exe.config" "$name.exe.config"
-          if (Test-Path "$dst/app.publish") { throw 'ClickOnce output leaked into portable/' }
+          Copy-Item "$src/SPI Data Comp Tool.exe" -Destination "$dst/$name.exe"
+          $files = @(Get-ChildItem $dst -Recurse -Force)
+          if ($files.Count -ne 1) { $files | ForEach-Object { Write-Host "::error::$($_.FullName)" }; throw 'portable/ must hold exactly one exe' }
           Get-ChildItem dist -Recurse | ForEach-Object { $_.FullName }
       - name: Portable build is one exe (libraries embedded)
         shell: pwsh
@@ -291,10 +280,20 @@ jobs:
           $dlls = Get-ChildItem dist/portable -Recurse -Filter *.dll
           if ($dlls) { $dlls | ForEach-Object { Write-Host "::error::$($_.FullName)" }; throw 'DLL files next to the portable exe' }
           $exe = (Get-ChildItem dist/portable -Filter *.exe).FullName
-          $log = Join-Path $env:RUNNER_TEMP 'portable-assemblies.txt'
-          $p = Start-Process $exe -ArgumentList '--check-assemblies', "`"$log`"" -Wait -PassThru
-          Get-Content $log | ForEach-Object { Write-Host $_ }
-          if ($p.ExitCode -ne 0) { throw 'a library failed to load from the portable exe' }
+          if (Test-Path "$exe.config") { throw 'The portable exe must run without a .config' }
+          # Run the single exe on its own in a fresh folder: libraries, UI checks and updater kind.
+          $alone = Join-Path $env:RUNNER_TEMP 'portable-alone'
+          New-Item -ItemType Directory -Force $alone | Out-Null
+          $copy = Join-Path $alone (Split-Path $exe -Leaf)
+          Copy-Item $exe $copy
+          foreach ($check in @(@('--check-assemblies'), @('--check-ui'), @('--check-install-kind', 'portable'), @('--check-package', 'unpackaged'))) {
+            $log = Join-Path $env:RUNNER_TEMP ("portable" + $check[0] + '.txt')
+            $p = Start-Process $copy -ArgumentList (@($check[0], "`"$log`"") + @($check | Select-Object -Skip 1)) -PassThru
+            if (-not $p.WaitForExit(120000)) { Stop-Process -Id $p.Id -Force; throw "portable $($check[0]) timed out" }
+            if (Test-Path $log) { Get-Content $log | ForEach-Object { Write-Host $_ } }
+            if ($p.ExitCode -ne 0 -or -not (Test-Path $log)) { throw "portable $($check[0]) failed without a .config" }
+          }
+          if (Get-ChildItem $alone -Filter *.config) { throw 'The portable exe wrote a .config beside itself' }
       - name: Build 64-bit application
         shell: pwsh
         run: msbuild "SPI Data Comp Tool.sln" /m /p:Configuration=Release /p:Platform=x64 /warnaserror
@@ -318,6 +317,16 @@ jobs:
         env:
           VERSION: ${{ steps.ver.outputs.version }}
         run: ./tools/test_windows_installer.ps1 -SetupPath "dist/windows-x64/SPI_Data_Comp_Tool_$env:VERSION.exe" -NoticePath 'dist/THIRD_PARTY_NOTICES.md'
+      - name: Build per-user MSI
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: ./tools/build_msi.ps1 -SourceDir 'SPI Data Comp Tool/bin/x64/Release' -Version $env:VERSION -OutFile "dist/windows-msi/SPI_Data_Comp_Tool_$($env:VERSION)_x64.msi"
+      - name: Test the MSI (silent install, check, upgrade, uninstall)
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: ./tools/test_windows_msi.ps1 -MsiPath "dist/windows-msi/SPI_Data_Comp_Tool_$($env:VERSION)_x64.msi" -Version $env:VERSION -NoticePath 'dist/THIRD_PARTY_NOTICES.md'
       - name: Build Microsoft Store package (MSIX)
         shell: pwsh
         env:
@@ -331,7 +340,7 @@ jobs:
           $ver = '${{ steps.ver.outputs.version }}'
           & tools/build_msix.ps1 -SourceDir 'SPI Data Comp Tool/bin/x64/Release' -Version $ver `
             -IdentityName $env:MSIX_IDENTITY_NAME -Publisher $env:MSIX_PUBLISHER `
-            -PublisherDisplayName $env:MSIX_PUBLISHER_DISPLAY_NAME -OutFile "dist/store/SPI_Data_Comp_Tool_${ver}_x64.msix"
+            -PublisherDisplayName $env:MSIX_PUBLISHER_DISPLAY_NAME -OutFile "dist/microsoft-store/SPI_Data_Comp_Tool_${ver}_x64.msix"
           if ($env:MSIX_FROM_PARTNER_CENTER -ne 'true') {
             Write-Host 'Store identity: placeholder values. Set MSIX_IDENTITY_NAME, MSIX_PUBLISHER and MSIX_PUBLISHER_DISPLAY_NAME from Partner Center before submitting.'
           }
@@ -485,6 +494,10 @@ jobs:
           Get-ChildItem -LiteralPath $out -Filter *.exe -File | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
           & $iscc /Qp "/DAppVersion=$ver" "/DNumericVersion=$num" "/DSourceDir=$src" "/DOutputDir=$out" windows/installer/SPI_Data_Comp_Tool.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC failed ($LASTEXITCODE)" }
+      - name: Rebuild the MSI around the signed exe
+        if: steps.setup.outputs.configured == 'true'
+        shell: pwsh
+        run: ./tools/build_msi.ps1 -SourceDir 'SPI Data Comp Tool/bin/x64/Release' -Version '${{ needs.version.outputs.version }}' -OutFile 'dist/windows-msi/SPI_Data_Comp_Tool_${{ needs.version.outputs.version }}_x64.msi'
       - name: Sign the installer
         if: steps.setup.outputs.configured == 'true'
         shell: pwsh
@@ -493,7 +506,7 @@ jobs:
           SIGN_ES_PASSWORD: ${{ secrets.SIGN_ES_PASSWORD }}
           SIGN_ES_CREDENTIAL_ID: ${{ secrets.SIGN_ES_CREDENTIAL_ID }}
           SIGN_ES_TOTP_SECRET: ${{ secrets.SIGN_ES_TOTP_SECRET }}
-        run: ./tools/sign_windows.ps1 -Path (Get-ChildItem dist/windows-x64 -Filter *.exe).FullName
+        run: ./tools/sign_windows.ps1 -Path (Get-ChildItem dist/windows-x64 -Filter *.exe).FullName, (Get-ChildItem dist/windows-msi -Filter *.msi).FullName
       - name: Signed installer still installs a signed app
         if: steps.setup.outputs.configured == 'true'
         shell: pwsh
@@ -505,6 +518,12 @@ jobs:
           $exe = Join-Path $dir 'SPI Data Comp Tool.exe'
           if ((Get-AuthenticodeSignature $exe).Status -ne 'Valid') { throw 'the installed app is not signed' }
           Start-Process (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -WindowStyle Hidden -Wait
+      - name: Signed MSI installs a signed app
+        if: steps.setup.outputs.configured == 'true'
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: ./tools/test_windows_msi.ps1 -MsiPath "dist/windows-msi/SPI_Data_Comp_Tool_$($env:VERSION)_x64.msi" -Version $env:VERSION -NoticePath 'dist/THIRD_PARTY_NOTICES.md' -RequireSignature
       - uses: actions/upload-artifact@v6
         if: steps.setup.outputs.configured == 'true'
         with:
@@ -559,6 +578,9 @@ jobs:
       - name: Verify installed signatures and exercise signed installer
         shell: pwsh
         run: ./tools/test_windows_installer.ps1 -SetupPath "dist-signed/windows-x64/SPI_Data_Comp_Tool_$env:VERSION.exe" -NoticePath 'dist-signed/THIRD_PARTY_NOTICES.md' -PayloadPath 'signing-input/x64/SPI Data Comp Tool.exe' -RequireSignature
+      - name: Verify the signed MSI installs a signed app
+        shell: pwsh
+        run: ./tools/test_windows_msi.ps1 -MsiPath "dist-signed/windows-msi/SPI_Data_Comp_Tool_$($env:VERSION)_x64.msi" -Version $env:VERSION -NoticePath 'dist-signed/THIRD_PARTY_NOTICES.md' -RequireSignature
       - name: Verify final signed bytes after smoke checks
         shell: pwsh
         run: ./tools/verify_windows_distribution.ps1 -Root dist-signed -Version $env:VERSION
@@ -640,23 +662,13 @@ jobs:
           fi
           python3 tools/release.py notes > "${RUNNER_TEMP}/release-notes.md"
           zip_name="SPI_Data_Comp_Tool_${VERSION}.zip"
-          # Older portable updaters accept only the original executable/configuration,
-          # compatibility anchors and installer paths. Keep the notice as a separate
-          # release asset; the installer also carries its own installed copy.
-          notice_name="SPI_Data_Comp_Tool_${VERSION}_THIRD_PARTY_NOTICES.md"
-          mv dist/THIRD_PARTY_NOTICES.md "${notice_name}"
-          # The Store package is its own release asset, never inside the updater's zip.
-          msix_name="SPI_Data_Comp_Tool_${VERSION}_x64.msix"
-          mv "dist/store/${msix_name}" "${msix_name}"
-          rmdir dist/store
+          # The release page has one file: the zip is the main folder with portable/, windows-x64/,
+          # windows-msi/ and microsoft-store/ (one file each) and the dependency notices.
+          # The updater verifies the zip with the SHA-256 digest GitHub publishes for it.
           (cd dist && zip -qr "../${zip_name}" .)
-          # the 64-bit installer also goes on the release page by itself, for a one-click download
-          setup_name="SPI_Data_Comp_Tool_${VERSION}_x64_setup.exe"
-          cp "dist/windows-x64/SPI_Data_Comp_Tool_${VERSION}.exe" "${setup_name}"
-          sha256sum "${zip_name}" "${setup_name}" > "${zip_name}.sha256"
-          cat "${zip_name}.sha256"
-          sha256sum "${msix_name}" > "${msix_name}.sha256"
-          assets=("${zip_name}" "${zip_name}.sha256" "${setup_name}" "${notice_name}" "${msix_name}" "${msix_name}.sha256")
+          unzip -Z1 "${zip_name}" | sort
+          sha256sum "${zip_name}"
+          assets=("${zip_name}")
           if gh release view "${TAG}" >/dev/null 2>&1; then
             gh release upload "${TAG}" "${assets[@]}" --clobber
           else

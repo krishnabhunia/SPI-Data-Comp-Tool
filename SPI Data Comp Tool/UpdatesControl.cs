@@ -86,7 +86,7 @@ namespace SPI_Data_Comp_Tool
                 Margin = new Padding(0, 0, 0, 10),
                 Text = "Current version: v" + currentVersionText + "  |  " +
                     (this.currentVersion == null ? "Manual / unrecognised build" : this.currentVersion.IsBeta ? "Beta" : "Normal / stable") +
-                    "  |  " + installer.Installation.Kind + "  |  " + (this.is64BitOperatingSystem ? "64-bit Windows" : "32-bit Windows"),
+                    "  |  " + (installer.Installation.Kind == UpdateInstallKind.Msi ? "MSI" : installer.Installation.Kind.ToString()) + "  |  " + (this.is64BitOperatingSystem ? "64-bit Windows" : "32-bit Windows"),
             };
             root.Controls.Add(installed, 0, 0);
             var choices = new FlowLayoutPanel { Name = "flp_UpdateChoices", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 0, 0, 8) };

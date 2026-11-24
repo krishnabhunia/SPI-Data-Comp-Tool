@@ -29,7 +29,7 @@ namespace SPI_Data_Comp_Tool
                 CheckArchiveGuards(root, version);
                 passed("Update ZIP guards reject traversal, alternate data streams, duplicate paths, link attributes, unsupported files and oversized entries.");
                 CheckPackageVariants(root, version);
-                passed("Core-only portable packages and two empty upgrade-compatibility anchors are accepted; partial legacy packages still fail validation.");
+                passed("Single-exe and core-only portable packages and two empty upgrade-compatibility anchors are accepted; partial legacy packages still fail; a stale .config is removed with a backup.");
                 CheckRuntimePrerequisites(root, version);
                 passed("Portable updates reject missing/unknown runtimes before changing files; .NET 4.8 minimum/newer release keys and legacy 4.6.2 packages are recognized.");
                 CheckPackage(root, version);
@@ -155,6 +155,34 @@ namespace SPI_Data_Comp_Tool
             Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(incomplete, version, "MySPI.exe"), "A partial legacy package without both compatibility anchors was accepted.");
         }
 
+        /// <summary>A single-exe update removes the older .config (with a backup) and puts it back on failure.</summary>
+        private static void CheckSingleExeApply(string root, UpdateVersion version, IList<KeyValuePair<string, string>> entries)
+        {
+            string package = Archive(root, entries);
+            foreach (bool fail in new[] { false, true })
+            {
+                string target = Path.Combine(root, "single-exe-target-" + fail), stage = Path.Combine(root, "single-exe-stage-" + fail);
+                Directory.CreateDirectory(target); Directory.CreateDirectory(stage);
+                File.WriteAllText(Path.Combine(target, "MySPI.exe"), "original-binary");
+                File.WriteAllText(Path.Combine(target, "MySPI.exe.config"), "original-config");
+                File.WriteAllText(Path.Combine(target, "notes.txt"), "user file");
+                Action migrate = fail ? (Action)(() => { throw new IOException("Synthetic settings failure."); }) : null;
+                if (fail)
+                    Expect<IOException>(() => UpdateApplyWorker.ApplyPortable(package, target, "MySPI.exe", version, stage, migrate, null, (path, v) => { }),
+                        "A failing single-exe update was reported as successful.");
+                else UpdateApplyWorker.ApplyPortable(package, target, "MySPI.exe", version, stage, migrate, null, (path, v) => { });
+                string config = Path.Combine(target, "MySPI.exe.config");
+                Require(File.ReadAllText(Path.Combine(target, "notes.txt")) == "user file", "A single-exe update touched a user file.");
+                Require(File.ReadAllText(Path.Combine(stage, "backup", "MySPI.exe.config")) == "original-config", "The older .config was not backed up.");
+                if (fail)
+                    Require(File.ReadAllText(Path.Combine(target, "MySPI.exe")) == "original-binary" && File.ReadAllText(config) == "original-config",
+                        "A failed single-exe update did not restore the exe and its older .config.");
+                else
+                    Require(File.ReadAllText(Path.Combine(target, "MySPI.exe")) == "synthetic-new-binary" && !File.Exists(config),
+                        "A single-exe update kept the older .config beside the new exe.");
+            }
+        }
+
         private static void CheckPackageVariants(string root, UpdateVersion version)
         {
             const string legacyPrefix = "portable/PNID_Reports/";
@@ -163,13 +191,27 @@ namespace SPI_Data_Comp_Tool
             Require(core.Count == 2 && core.Any(file => file.RelativePath == "MySPI.exe")
                 && core.Any(file => file.RelativePath == "MySPI.exe.config"),
                 "A core-only portable package was rejected or mapped unexpected files.");
-            foreach (string required in new[] { ".exe", ".exe.config" })
+            string exeName = "portable/SPI_Data_Comp_Tool_" + version + ".exe";
+            var withoutExe = coreEntries.Where(entry => entry.Key != exeName).ToList();
+            Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(Archive(root, withoutExe), version, "MySPI.exe"),
+                "A core-only package without its executable was accepted.");
+            // 4.6.0 onwards: portable/ holds only the exe, and the zip also carries the MSI,
+            // the Store package and the notices, none of which a portable update extracts.
+            var singleExe = new List<KeyValuePair<string, string>>
             {
-                string name = "portable/SPI_Data_Comp_Tool_" + version + required;
-                var missing = coreEntries.Where(entry => entry.Key != name).ToList();
-                Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(Archive(root, missing), version, "MySPI.exe"),
-                    "A core-only package without its executable or configuration was accepted.");
-            }
+                new KeyValuePair<string, string>(exeName, "synthetic-new-binary"),
+                new KeyValuePair<string, string>("windows-x64/SPI_Data_Comp_Tool_" + version + ".exe", "ignored synthetic setup"),
+                new KeyValuePair<string, string>("windows-msi/SPI_Data_Comp_Tool_" + version + "_x64.msi", "ignored synthetic msi"),
+                new KeyValuePair<string, string>("microsoft-store/SPI_Data_Comp_Tool_" + version + "_x64.msix", "ignored synthetic msix"),
+                new KeyValuePair<string, string>("THIRD_PARTY_NOTICES.md", "ignored synthetic notices"),
+            };
+            var single = UpdateApplyWorker.ValidatePortableArchive(Archive(root, singleExe), version, "MySPI.exe");
+            Require(single.Count == 1 && single[0].RelativePath == "MySPI.exe", "A single-exe portable package was rejected or mapped other packages.");
+            var renamedMsi = singleExe.Select(entry => entry.Key.StartsWith("windows-msi/", StringComparison.Ordinal)
+                ? new KeyValuePair<string, string>("windows-msi/other.msi", entry.Value) : entry).ToList();
+            Expect<InvalidDataException>(() => UpdateApplyWorker.ValidatePortableArchive(Archive(root, renamedMsi), version, "MySPI.exe"),
+                "An unexpected file in windows-msi/ was accepted.");
+            CheckSingleExeApply(root, version, singleExe);
 
             var compatibilityEntries = Entries(version).Select(entry => entry.Key.StartsWith(legacyPrefix, StringComparison.Ordinal)
                 ? new KeyValuePair<string, string>(entry.Key, string.Empty) : entry).ToList();

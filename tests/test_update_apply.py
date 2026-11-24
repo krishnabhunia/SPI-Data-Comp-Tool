@@ -76,7 +76,12 @@ class UpdateApplyContracts(unittest.TestCase):
     def test_core_only_and_legacy_archives_keep_a_closed_file_allowlist(self):
         worker = (APP / "UpdateApplyWorker.cs").read_text()
         self.assertIn("LegacyTemplateNames", worker)
-        self.assertIn('var requiredFiles = new List<string> { executableName, executableName + ".config" };', worker)
+        # 4.6.0 onwards: the exe is the only required file; a .config is optional and validated when present.
+        self.assertIn('var requiredFiles = new List<string> { executableName };', worker)
+        self.assertIn('"windows-msi/SPI_Data_Comp_Tool_" + version + "_x64.msi"', worker)
+        self.assertIn('"microsoft-store/SPI_Data_Comp_Tool_" + version + "_x64.msix"', worker)
+        self.assertIn("if (bundled.Contains(name)) continue;", worker)
+        self.assertIn("staleConfig", worker)
         self.assertIn('if (files.Any(x => x.RelativePath.StartsWith("PNID_Reports/", StringComparison.OrdinalIgnoreCase)))', worker)
         self.assertIn('"PNID_Reports/Source/instrument.txt", "PNID_Reports/Target_IPEP/instrument.txt"', worker)
         self.assertIn("!allowed.TryGetValue(name, out destination)", worker)
@@ -84,6 +89,8 @@ class UpdateApplyContracts(unittest.TestCase):
         self.assertIn("anchors.All(entry => entry.Length == 0)", checks)
         self.assertIn("File.ReadAllText(legacyTemplate)", checks)
         self.assertIn("File.ReadAllText(userLegacyFile)", checks)
+        self.assertIn("CheckSingleExeApply", checks)
+        self.assertIn("A single-exe update kept the older .config beside the new exe.", checks)
 
     def test_previous_channel_migration_is_read_only_bounded_and_keeps_canonical_precedence(self):
         preferences = (APP / "UpdatePreferences.cs").read_text()

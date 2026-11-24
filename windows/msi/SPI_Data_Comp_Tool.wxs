@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Per-user Windows Installer package of the 64-bit app (no admin rights needed).
+  Built by tools/build_msi.ps1 with WiX Toolset v5:
+    -d Version=x.y.z  -d SourceDir=<64-bit build folder>  -d IconFile=<app.ico>
+  Never change the UpgradeCode: it is how a newer MSI finds and replaces the installed copy.
+  The InstallLocation value under HKCU\Software\SPI Data Comp Tool\MSI is how the app's
+  updater recognises an MSI copy (UpdateInstaller.MsiRegistryKey).
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="SPI Data Comparison Tool" Manufacturer="Krishna Bhunia" Version="$(var.Version)"
+           UpgradeCode="{B361868A-E052-46BA-BB36-F0DDF1D47CD9}" Scope="perUser" Compressed="yes" Language="1033">
+    <SummaryInformation Description="SPI Data Comparison Tool $(var.Version) (per-user MSI)" Manufacturer="Krishna Bhunia" />
+    <!-- The in-app updater may install an older or the same version on purpose (version selection, beta to normal). -->
+    <MajorUpgrade AllowDowngrades="yes" AllowSameVersionUpgrades="yes" Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" />
+    <Icon Id="AppIcon.ico" SourceFile="$(var.IconFile)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/krishnabhunia/SPI-Data-Comp-Tool" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="SPI Data Comp Tool (MSI)" />
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <!-- Per-user components keep an HKCU value as key path; the files are not key paths. -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Component Id="Registration" Guid="{4C1F3B8E-2A6D-4F0B-9E57-7D2C9A41B6E3}">
+        <RegistryValue Root="HKCU" Key="Software\SPI Data Comp Tool\MSI" Name="InstallLocation" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="Software\SPI Data Comp Tool\MSI" Name="Version" Type="string" Value="$(var.Version)" />
+        <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+        <RemoveFolder Id="RemoveProgramsFolder" Directory="ProgramsFolder" On="uninstall" />
+      </Component>
+      <Component Id="AppExe" Guid="{9B2E6D41-7C3A-4E8F-A1D5-0F6B3C8E2D97}">
+        <File Id="AppExeFile" Source="$(var.SourceDir)\SPI Data Comp Tool.exe" KeyPath="no" />
+        <RegistryValue Root="HKCU" Key="Software\SPI Data Comp Tool\MSI\Files" Name="exe" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+      <Component Id="AppConfig" Guid="{1E7A5C92-4B3F-4D6E-8A0C-5F2D9B7E1A34}">
+        <File Id="AppConfigFile" Source="$(var.SourceDir)\SPI Data Comp Tool.exe.config" KeyPath="no" />
+        <RegistryValue Root="HKCU" Key="Software\SPI Data Comp Tool\MSI\Files" Name="config" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+      <Component Id="Notices" Guid="{6D3B9F15-8E2C-4A7D-B0F4-3C1E5A9D2B68}">
+        <File Id="NoticesFile" Source="$(var.SourceDir)\THIRD_PARTY_NOTICES.md" KeyPath="no" />
+        <RegistryValue Root="HKCU" Key="Software\SPI Data Comp Tool\MSI\Files" Name="notices" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="Shortcuts" Directory="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut" Guid="{F2A8C4D6-1B9E-4F3A-8D7C-6E5B0A2C9F14}">
+        <Shortcut Id="AppShortcut" Name="SPI Data Comparison Tool" Description="Compare databases and Excel workbooks"
+                  Target="[INSTALLFOLDER]SPI Data Comp Tool.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon.ico" />
+        <RegistryValue Root="HKCU" Key="Software\SPI Data Comp Tool\MSI\Files" Name="shortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Feature Id="Main" Title="SPI Data Comparison Tool" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentGroupRef Id="Shortcuts" />
+    </Feature>
+  </Package>
+</Wix>

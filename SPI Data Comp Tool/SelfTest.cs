@@ -29,6 +29,7 @@ namespace SPI_Data_Comp_Tool
     ///                                                           the one before is done) in the step-by-step windows
     ///   "SPI Data Comp Tool.exe" --check-themes OUT_FILE       builds every window in every colour theme and checks
     ///                                                          that its text stays readable (tests/ThemeChecks.cs)
+    ///   "SPI Data Comp Tool.exe" --check-install-kind OUT_FILE portable|installed|msi  checks how the updater sees this copy
     ///   "SPI Data Comp Tool.exe" --check-package OUT_FILE packaged|unpackaged  checks the Microsoft Store package
     ///                                                          identity and that a Store copy never self-updates
     /// </summary>
@@ -42,7 +43,7 @@ namespace SPI_Data_Comp_Tool
             if (args == null || args.Length < 2) return false;
             string[] commands = { "--check-excel-audit", "--check-updates", "--check-inputs", "--list-forms",
                 "--check-assemblies", "--check-ui", "--check-sql-integration", "--measure-comparison", "--check-startup", "--check-workspace-exit",
-                "--check-groups", "--check-steps", "--check-themes", "--check-package", "--open-form" };
+                "--check-groups", "--check-steps", "--check-themes", "--check-package", "--check-install-kind", "--open-form" };
             if (!commands.Contains(args[0], StringComparer.Ordinal) ||
                 (args[0] == "--open-form" && args.Length < 3)) return false;
 
@@ -71,6 +72,11 @@ namespace SPI_Data_Comp_Tool
             if (args[0] == "--list-forms" && args.Length >= 2)
             {
                 File.WriteAllLines(args[1], FormTypes().Select(t => t.FullName));
+                return true;
+            }
+            if (args[0] == "--check-install-kind" && args.Length >= 3)
+            {
+                Environment.ExitCode = CheckInstallKind(args[1], args[2]);
                 return true;
             }
             if (args[0] == "--check-package" && args.Length >= 3)
@@ -130,6 +136,24 @@ namespace SPI_Data_Comp_Tool
             }
             IsRunning = false;
             return false;
+        }
+
+        /// <summary>Checks how the updater sees this copy (Portable, Installed or Msi), as CI installs it.</summary>
+        private static int CheckInstallKind(string outFile, string expected)
+        {
+            var installer = new UpdateInstaller();
+            UpdateInstallation installation = installer.Installation;
+            string reason;
+            installer.CanInstall(out reason);
+            bool ok = string.Equals(installation.Kind.ToString(), expected, StringComparison.OrdinalIgnoreCase) &&
+                (reason == null || !reason.Contains("claim this folder"));
+            File.WriteAllLines(outFile, new[]
+            {
+                "install kind=" + installation.Kind + " (" + installation.Directory + ")",
+                "updater=" + (reason ?? "ready"),
+                ok ? "ok   install kind" : "FAIL install kind: expected " + expected,
+            });
+            return ok ? 0 : 1;
         }
 
         /// <summary>Checks the Microsoft Store package identity ("packaged" or "unpackaged" expected) and,

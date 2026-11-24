@@ -16,7 +16,7 @@ $env:TMP = $env:SPI_SIGNING_TEMP_ROOT
 Copy-Item -LiteralPath "$inputDir/portable" -Destination $outputDir -Recurse
 # MSIX is an unsigned Partner Center submission asset. Preserve its hash-bound
 # bytes; the EXE signing backend does not certify or publish a Store package.
-Copy-Item -LiteralPath "$inputDir/store" -Destination $outputDir -Recurse
+Copy-Item -LiteralPath "$inputDir/microsoft-store" -Destination $outputDir -Recurse
 Copy-Item -LiteralPath "$inputDir/THIRD_PARTY_NOTICES.md" -Destination $outputDir
 Copy-Item -LiteralPath "$inputDir/THIRD_PARTY_NOTICES.md" -Destination "$inputDir/x64"
 Sign-SpiFile -Path "$outputDir/portable/SPI_Data_Comp_Tool_$Version.exe"
@@ -38,6 +38,11 @@ $arguments = @('/Qp', "/DAppVersion=$Version", "/DNumericVersion=$(($Version -sp
 & $iscc @arguments
 if ($LASTEXITCODE -ne 0) { throw "Signed installer compilation failed ($LASTEXITCODE)" }
 Test-SpiSignedFile -Path "$setupDir/SPI_Data_Comp_Tool_$Version.exe" -Thumbprint $env:WINDOWS_SIGNING_THUMBPRINT
+# The MSI wraps the same signed x64 exe and is signed itself (WiX via the .NET SDK on this image).
+$msi = "$outputDir/windows-msi/SPI_Data_Comp_Tool_${Version}_x64.msi"
+& "$PSScriptRoot/build_msi.ps1" -SourceDir "$inputDir/x64" -Version $Version -OutFile $msi
+Sign-SpiFile -Path $msi
+Test-SpiSignedFile -Path $msi -Thumbprint $env:WINDOWS_SIGNING_THUMBPRINT
 python "$PSScriptRoot/signing_handoff.py" distribution --root $outputDir --version $Version
 if ($LASTEXITCODE -ne 0) { throw 'Signed distribution layout failed validation' }
 Write-Host "Signing complete for $env:GITHUB_SHA, run $env:GITHUB_RUN_ID/$env:GITHUB_RUN_ATTEMPT; installer smoke checks still required"

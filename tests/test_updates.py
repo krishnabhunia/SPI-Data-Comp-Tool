@@ -42,8 +42,10 @@ class Updater(unittest.TestCase):
         self.assertIn("request.UserAgent", feed)
         self.assertIn('"_x64_setup.exe" : ".zip"', feed)
         self.assertIn('GetAssetName(version, UpdateInstallKind.Portable) + ".sha256"', feed)
-        self.assertIn('setup_name="SPI_Data_Comp_Tool_${VERSION}_x64_setup.exe"', workflow)
-        self.assertIn('"${zip_name}.sha256"', workflow)
+        # The release page carries only the zip; installed and MSI copies read their package out of it.
+        self.assertIn('assets=("${zip_name}")', workflow)
+        self.assertNotIn('setup_name=', workflow)
+        self.assertIn("ExtractArchiveEntry(finalPath, GetArchiveEntryName(snapshot.Version, kind), resultPath, deadline.Token)", feed)
 
     def test_only_the_verified_selected_package_can_reach_the_installer(self) -> None:
         ui = code("UpdatesControl.cs")

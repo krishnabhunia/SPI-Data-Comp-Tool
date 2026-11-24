@@ -154,7 +154,7 @@ namespace SPI_Data_Comp_Tool
                 Releases = new List<UpdateRelease>
                 {
                     Release("2.9.0"), Release("2.10.0-beta001"), Release("10.0.0"), Release("2.10.0"),
-                    Release("2.10.0-beta002"), Release("20.0.0", installer: false),
+                    Release("2.10.0-beta002"), Release("20.0.0", installer: false, portable: false),
                     Release("30.0.0", checksum: false),
                 },
             };
@@ -211,6 +211,24 @@ namespace SPI_Data_Comp_Tool
                 Complete(updates32.CheckForUpdatesAsync());
                 Require(Find<ListView>(updates32, "lv_UpdateReleases").Items.Count == 1,
                     "The compatible portable build was hidden on 32-bit Windows or missing checksums were accepted.");
+            }
+            // From 4.6.0 the release page has only the zip: installed and MSI copies read their
+            // package out of it, so a zip-only release is offered to them on 64-bit Windows.
+            var zipOnlyFeed = new FakeFeed { Releases = new List<UpdateRelease> { Release("21.0.0", installer: false) } };
+            foreach (UpdateInstallKind kind in new[] { UpdateInstallKind.Installed, UpdateInstallKind.Msi })
+            {
+                using (var zipOnly = Host(new UpdatesControl(zipOnlyFeed, new FakeInstaller(kind), false, "20.0.0", true)))
+                {
+                    var zipUpdates = zipOnly.Controls.OfType<UpdatesControl>().Single();
+                    Complete(zipUpdates.CheckForUpdatesAsync());
+                    Require(Find<ListView>(zipUpdates, "lv_UpdateReleases").Items.Count == 1, "A zip-only release was hidden from a " + kind + " copy.");
+                }
+                using (var zipOnly32 = Host(new UpdatesControl(zipOnlyFeed, new FakeInstaller(kind), false, "20.0.0", false)))
+                {
+                    var zipUpdates32 = zipOnly32.Controls.OfType<UpdatesControl>().Single();
+                    Complete(zipUpdates32.CheckForUpdatesAsync());
+                    Require(Find<ListView>(zipUpdates32, "lv_UpdateReleases").Items.Count == 0, "A 64-bit " + kind + " package was offered to 32-bit Windows.");
+                }
             }
             var manualFeed = new FakeFeed();
             using (var manual = Host(new UpdatesControl(manualFeed, new FakeInstaller(), false, "2.9.0-dev", true)))

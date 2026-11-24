@@ -6,7 +6,7 @@ the MSIX package. Building an MSIX in CI does not establish Store certification 
 
 Every CI build now also produces `SPI_Data_Comp_Tool_<version>_x64.msix`, the Store package of the
 64-bit app. **The published CI MSIX is unsigned and intended for Partner Center submission.** Configure
-the reserved product identity before submitting it. The portable ZIP and `_x64_setup.exe` retain their
+the reserved product identity before submitting it. It sits in the release zip's `microsoft-store/` folder. The portable exe, the setup and the MSI keep their
 separate [EXE signing backends](WINDOWS_SIGNING.md); their actual signing status is shown in release notes.
 The disposable certificate used by the CI installation test is never shipped.
 
@@ -19,7 +19,7 @@ The disposable certificate used by the CI installation test is never shipped.
 | 3 | The test copy is installed with `Add-AppxPackage` | Installed version, app execution alias `spi-data-comp-tool.exe` |
 | 4 | The installed app runs `--check-package` and `--check-assemblies` | It has its package identity, its own updater refuses to install updates, every library loads |
 | 5 | The test copy and certificate are removed | Clean uninstall |
-| 6 | The release page gets the `.msix` and its `.msix.sha256` | The `.msix` is never put inside the updater's zip |
+| 6 | The `.msix` goes into the release zip's `microsoft-store/` folder | A portable update validates it by name and never extracts it |
 
 ## The Store copy never updates itself
 
@@ -49,7 +49,7 @@ Partner Center rejects a package whose identity does not match the reserved prod
 
 | SrNo. | Step |
 |---|---|
-| 1 | Download `SPI_Data_Comp_Tool_<version>_x64.msix` from the GitHub release (a normal release, not a beta) |
+| 1 | Download `SPI_Data_Comp_Tool_<version>.zip` from the GitHub release (a normal release, not a beta) and take `microsoft-store/SPI_Data_Comp_Tool_<version>_x64.msix` out of it |
 | 2 | Partner Center › the product › **Start update** (first time: Start submission) › Packages › upload the `.msix` |
 | 3 | Fill pricing (Free), properties, age rating and the Store listing on the first submission |
 | 4 | The app uses the restricted capability `runFullTrust` (a normal desktop app); in *Submission options* explain: "Windows Forms desktop app that compares databases and Excel files" |

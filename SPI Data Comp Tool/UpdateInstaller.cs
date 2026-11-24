@@ -17,6 +17,8 @@ namespace SPI_Data_Comp_Tool
     {
         internal const string UninstallKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DF6AFF7A-0A5A-4F1E-BF54-F5301F101D26}_is1";
         internal const string InstalledExecutableName = "SPI Data Comp Tool.exe";
+        /// <summary>Written by the per-user MSI (windows/msi/SPI_Data_Comp_Tool.wxs); never by the Inno setup.</summary>
+        internal const string MsiRegistryKey = @"Software\SPI Data Comp Tool\MSI";
         private readonly string detectionError;
         public UpdateInstallation Installation { get; private set; }
         internal static bool IsApplying { get; private set; }
@@ -49,7 +51,20 @@ namespace SPI_Data_Comp_Tool
                                 matches.Add(hive == RegistryHive.LocalMachine);
                         }
                     }
-                if (matches.Distinct().Count() > 1) error = "Both per-user and all-users installations claim this folder. Resolve the installation registration first.";
+                bool msi = false;
+                using (var key = Registry.CurrentUser.OpenSubKey(MsiRegistryKey, false))
+                {
+                    string msiAt = key == null ? null : key.GetValue("InstallLocation") as string;
+                    msi = !string.IsNullOrWhiteSpace(msiAt) && SameDirectory(msiAt, directory);
+                }
+                if (msi && matches.Count > 0) error = "Both the MSI and the setup installer claim this folder. Uninstall one of them first.";
+                else if (msi)
+                {
+                    if (!string.Equals(Path.GetFileName(executable), InstalledExecutableName, StringComparison.OrdinalIgnoreCase))
+                        error = "An installed application was renamed. Use the registered application executable to update it.";
+                    else result.Kind = UpdateInstallKind.Msi;
+                }
+                else if (matches.Distinct().Count() > 1) error = "Both per-user and all-users installations claim this folder. Resolve the installation registration first.";
                 else if (matches.Count > 0)
                 {
                     if (!string.Equals(Path.GetFileName(executable), InstalledExecutableName, StringComparison.OrdinalIgnoreCase))
@@ -83,7 +98,7 @@ namespace SPI_Data_Comp_Tool
             {
                 UpdateApplyWorker.ValidateTargetDirectory(Installation.Directory);
                 UpdateApplyWorker.EnsureNoOtherInstance(Installation.ExecutablePath, Process.GetCurrentProcess().Id);
-                if (Installation.Kind == UpdateInstallKind.Installed && !Environment.Is64BitOperatingSystem)
+                if (Installation.Kind != UpdateInstallKind.Portable && !Environment.Is64BitOperatingSystem)
                     throw new InvalidOperationException("The installer requires 64-bit Windows.");
             }
             catch (Exception ex)
@@ -162,14 +177,19 @@ namespace SPI_Data_Comp_Tool
             if (!UpdateVersion.TryParse(package.Release.Tag, out version) || package.Release.Tag != "v" + version ||
                 package.Release.Version.ToString() != version.ToString()) throw new InvalidDataException("The release version is inconsistent.");
             string baseName = "SPI_Data_Comp_Tool_" + version;
-            var asset = expectedKind == UpdateInstallKind.Portable ? package.Release.Portable : package.Release.Installer;
-            string expectedName = baseName + (expectedKind == UpdateInstallKind.Portable ? ".zip" : "_x64_setup.exe");
-            ValidateAsset(asset, package.Release.Tag, expectedName);
-            ValidateAsset(package.Release.Checksums, package.Release.Tag, baseName + ".zip.sha256");
+            // The setup and the MSI of 4.6.0+ come out of the verified release zip; older releases
+            // could also publish the setup on its own with a checksum file.
+            UpdateAsset asset = UpdateFeedClient.SelectDownloadAsset(package.Release, expectedKind);
+            bool fromZip = asset == package.Release.Portable;
+            ValidateAsset(asset, package.Release.Tag, fromZip ? baseName + ".zip" : baseName + "_x64_setup.exe");
+            if (asset.Sha256 == null) ValidateAsset(package.Release.Checksums, package.Release.Tag, baseName + ".zip.sha256");
             if (string.IsNullOrWhiteSpace(package.FilePath) || !File.Exists(package.FilePath)) throw new FileNotFoundException("The verified download is no longer available.");
             UpdateApplyWorker.RejectReparsePoints(package.FilePath);
             long length = new FileInfo(package.FilePath).Length;
-            if (length <= 0 || length > UpdateApplyWorker.MaximumPackageBytes || length != asset.Size)
+            // A package read out of the zip has no published size of its own; its hash was taken
+            // while it was extracted from the verified zip.
+            bool readFromZip = fromZip && expectedKind != UpdateInstallKind.Portable;
+            if (length <= 0 || length > UpdateApplyWorker.MaximumPackageBytes || (!readFromZip && length != asset.Size))
                 throw new InvalidDataException("The downloaded package size changed.");
             UpdateApplyWorker.VerifyHash(package.FilePath, package.Sha256);
             return version;
@@ -198,13 +218,15 @@ namespace SPI_Data_Comp_Tool
             if (Directory.Exists(stage)) throw new IOException("The update staging folder already exists.");
             Directory.CreateDirectory(stage);
             string stagedPackage = Path.Combine(stage, Path.GetFileName(package.FilePath));
-            string expectedPackageName = "SPI_Data_Comp_Tool_" + version + (package.Kind == UpdateInstallKind.Portable ? ".zip" : "_x64_setup.exe");
+            string expectedPackageName = UpdateFeedClient.GetPackageFileName(version, package.Kind);
             if (Path.GetFileName(stagedPackage) != expectedPackageName) throw new InvalidDataException("The download filename changed.");
             File.Copy(package.FilePath, stagedPackage, false);
             UpdateApplyWorker.VerifyHash(stagedPackage, package.Sha256);
             string helper = Path.Combine(stage, UpdateApplyWorker.HelperName);
             File.Copy(Assembly.GetExecutingAssembly().Location, helper, false);
-            File.Copy(Assembly.GetExecutingAssembly().Location + ".config", helper + ".config", false);
+            // A portable copy is one exe with no .config beside it (4.6.0 onwards).
+            if (File.Exists(Assembly.GetExecutingAssembly().Location + ".config"))
+                File.Copy(Assembly.GetExecutingAssembly().Location + ".config", helper + ".config", false);
             var snapshot = UpdatePreferences.Capture();
             UpdatePreferences.WriteSnapshot(Path.Combine(stage, "settings-before-update.json"), snapshot);
             var manifest = new UpdateApplyManifest

@@ -101,7 +101,7 @@ class WorkflowTests(unittest.TestCase):
         for name in ("MSIX_IDENTITY_NAME", "MSIX_PUBLISHER", "MSIX_PUBLISHER_DISPLAY_NAME"):
             self.assertIn(f"vars.{name}", build)
         self.assertNotIn("secrets.", build)
-        self.assertIn('-OutFile "dist/store/SPI_Data_Comp_Tool_${ver}_x64.msix"', build)
+        self.assertIn('-OutFile "dist/microsoft-store/SPI_Data_Comp_Tool_${ver}_x64.msix"', build)
 
     def test_install_test_signs_only_a_throwaway_copy_and_cleans_up(self):
         test = step("Test the Store package (install, run, uninstall)")
@@ -118,13 +118,12 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("Cert:\\LocalMachine\\TrustedPeople", finally_block)
         self.assertIn("Cert:\\CurrentUser\\My", finally_block)
 
-    def test_release_keeps_the_msix_out_of_the_updater_zip(self):
-        publish = WORKFLOW.split("- name: Publish release", 1)[1]
-        self.assertLess(publish.index('mv "dist/store/${msix_name}" "${msix_name}"'), publish.index('zip -qr'))
-        self.assertLess(publish.index("rmdir dist/store"), publish.index('zip -qr'))
-        self.assertIn('"${msix_name}" "${msix_name}.sha256"', publish)
-        # the updater's checksum file keeps listing only the zip and the installer
-        self.assertIn('sha256sum "${zip_name}" "${setup_name}" > "${zip_name}.sha256"', publish)
+    def test_release_publishes_only_the_zip_with_the_msix_inside(self):
+        publish = WORKFLOW.split("- name: Publish release", 1)[1].split("- name: Show the version", 1)[0]
+        self.assertIn('assets=("${zip_name}")', publish)
+        self.assertIn('(cd dist && zip -qr "../${zip_name}" .)', publish)
+        self.assertNotIn("msix_name", publish)
+        self.assertNotIn("setup_name", publish)
 
 
 class StoreCopyNeverSelfUpdatesTests(unittest.TestCase):

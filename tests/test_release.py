@@ -99,7 +99,11 @@ class VersionOnThePullRequest(unittest.TestCase):
         self.assertIn("### Beta version: `v2.5.3-beta004`", body)
         self.assertIn("commit `abcdef1`", body)
         self.assertIn("https://github.com/owner/repo/releases/tag/v2.5.3-beta004", body)
-        self.assertIn("https://github.com/owner/repo/releases/download/v2.5.3-beta004/SPI_Data_Comp_Tool_2.5.3-beta004_x64_setup.exe", body)
+        self.assertIn("https://github.com/owner/repo/releases/download/v2.5.3-beta004/SPI_Data_Comp_Tool_2.5.3-beta004.zip", body)
+        self.assertNotIn("_x64_setup.exe", body)
+        for folder in ("`portable/`", "`windows-x64/`", "`windows-msi/`", "`microsoft-store/`"):
+            self.assertIn(folder, body)
+        self.assertIn("`SPI_Data_Comp_Tool_2.5.3-beta004_x64.msi`", body)
         self.assertIn("can differ from this beta's number", body)
         self.assertIn("Requires Microsoft .NET Framework 4.8 or later", body)
         self.assertIn("before updating an older portable copy", body)
@@ -126,8 +130,6 @@ class VersionOnThePullRequest(unittest.TestCase):
 
     def test_comment_links_match_the_files_the_workflow_uploads(self):
         for _, name in release_assets_as_workflow_names():
-            if name.endswith(".zip.sha256"):   # the workflow builds this name from the zip's name
-                name = '"${zip_name}.sha256"'
             self.assertTrue(name in self.WORKFLOW, f"{name} is not uploaded by build.yml")
 
     def test_workflow_shows_the_version_and_skips_an_outdated_beta(self):

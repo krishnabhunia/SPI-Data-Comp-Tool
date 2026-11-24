@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -24,6 +26,7 @@ namespace SPI_Data_Comp_Tool
         internal const long MaximumPackageBytes = 512L * 1024 * 1024;
         private static readonly Encoding Utf8 = new UTF8Encoding(false, true);
         private static readonly Regex ChecksumLine = new Regex(@"\A([a-fA-F0-9]{64}) [ *]([^\r\n]+)\z", RegexOptions.CultureInvariant);
+        private static readonly Regex DigestValue = new Regex(@"\Asha256:([a-f0-9]{64})\z", RegexOptions.CultureInvariant);
         private readonly IUpdateTransport transport;
         private readonly string cacheRoot;
         private readonly object cacheGate = new object();
@@ -90,7 +93,7 @@ namespace SPI_Data_Comp_Tool
             cancellationToken.ThrowIfCancellationRequested();
             // Snapshot mutable display models before the first await, then revalidate everything used for a download.
             UpdateRelease snapshot = SnapshotForDownload(release, kind);
-            UpdateAsset asset = kind == UpdateInstallKind.Installed ? snapshot.Installer : snapshot.Portable;
+            UpdateAsset asset = SelectDownloadAsset(snapshot, kind);
             string directory = null;
             bool complete = false;
             using (var deadline = CreateDeadline(cancellationToken))
@@ -98,10 +101,15 @@ namespace SPI_Data_Comp_Tool
                 deadline.CancelAfter(TimeSpan.FromMinutes(20));
                 try
                 {
-                    byte[] manifest;
-                    using (UpdateResponse response = await transport.OpenAsync(snapshot.Checksums.DownloadUri, false, deadline.Token).ConfigureAwait(false))
-                        manifest = await ReadBoundedAsync(response, MaximumChecksumBytes, snapshot.Checksums.Size, deadline.Token).ConfigureAwait(false);
-                    string expectedHash = ParseChecksum(DecodeUtf8(manifest), asset.Name);
+                    string expectedHash = asset.Sha256;
+                    if (expectedHash == null)
+                    {
+                        // Releases before 4.6.0 publish a checksum file; newer ones rely on GitHub's asset digest.
+                        byte[] manifest;
+                        using (UpdateResponse response = await transport.OpenAsync(snapshot.Checksums.DownloadUri, false, deadline.Token).ConfigureAwait(false))
+                            manifest = await ReadBoundedAsync(response, MaximumChecksumBytes, snapshot.Checksums.Size, deadline.Token).ConfigureAwait(false);
+                        expectedHash = ParseChecksum(DecodeUtf8(manifest), asset.Name);
+                    }
                     deadline.Token.ThrowIfCancellationRequested();
 
                     UpdateApplyWorker.RejectReparsePoints(cacheRoot);
@@ -159,7 +167,22 @@ namespace SPI_Data_Comp_Tool
                     UpdateApplyWorker.RejectReparsePoints(finalPath);
                     File.Move(partialPath, finalPath);
                     deadline.Token.ThrowIfCancellationRequested();
-                    var downloaded = new DownloadedUpdate { Release = snapshot, Kind = kind, FilePath = finalPath, Sha256 = actualHash };
+                    string resultPath = finalPath, resultHash = actualHash;
+                    if (asset.Name != GetPackageFileName(snapshot.Version, kind))
+                    {
+                        // The installer and the MSI are read out of the verified release zip.
+                        string packageName = GetPackageFileName(snapshot.Version, kind);
+                        lock (cacheGate) ownedDirectories[directory] = packageName;
+                        resultPath = Path.Combine(directory, packageName);
+                        try { resultHash = ExtractArchiveEntry(finalPath, GetArchiveEntryName(snapshot.Version, kind), resultPath, deadline.Token); }
+                        finally
+                        {
+                            // The zip is never kept beside the package; cleanup then removes only the package files.
+                            UpdateApplyWorker.RejectReparsePoints(finalPath);
+                            if (File.Exists(finalPath)) File.Delete(finalPath);
+                        }
+                    }
+                    var downloaded = new DownloadedUpdate { Release = snapshot, Kind = kind, FilePath = resultPath, Sha256 = resultHash };
                     lock (cacheGate)
                     {
                         deadline.Token.ThrowIfCancellationRequested();
@@ -186,6 +209,71 @@ namespace SPI_Data_Comp_Tool
             if (version == null) throw new ArgumentNullException(nameof(version));
             if (kind != UpdateInstallKind.Installed && kind != UpdateInstallKind.Portable) throw new ArgumentOutOfRangeException(nameof(kind));
             return "SPI_Data_Comp_Tool_" + version + (kind == UpdateInstallKind.Installed ? "_x64_setup.exe" : ".zip");
+        }
+
+        /// <summary>The file the updater stages and hands to the helper for each kind of installation.</summary>
+        internal static string GetPackageFileName(UpdateVersion version, UpdateInstallKind kind)
+        {
+            if (version == null) throw new ArgumentNullException(nameof(version));
+            switch (kind)
+            {
+                case UpdateInstallKind.Portable: return "SPI_Data_Comp_Tool_" + version + ".zip";
+                case UpdateInstallKind.Installed: return "SPI_Data_Comp_Tool_" + version + "_x64_setup.exe";
+                case UpdateInstallKind.Msi: return "SPI_Data_Comp_Tool_" + version + "_x64.msi";
+                default: throw new ArgumentOutOfRangeException(nameof(kind));
+            }
+        }
+
+        /// <summary>Where the release zip keeps the installer or the MSI.</summary>
+        internal static string GetArchiveEntryName(UpdateVersion version, UpdateInstallKind kind)
+        {
+            if (version == null) throw new ArgumentNullException(nameof(version));
+            if (kind == UpdateInstallKind.Installed) return "windows-x64/SPI_Data_Comp_Tool_" + version + ".exe";
+            if (kind == UpdateInstallKind.Msi) return "windows-msi/SPI_Data_Comp_Tool_" + version + "_x64.msi";
+            throw new ArgumentOutOfRangeException(nameof(kind));
+        }
+
+        /// <summary>Copies one exact entry out of an already verified release zip and returns its SHA-256.</summary>
+        internal static string ExtractArchiveEntry(string archive, string entryName, string destination, CancellationToken token)
+        {
+            UpdateApplyWorker.RejectReparsePoints(destination);
+            using (var input = new FileStream(archive, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var zip = new ZipArchive(input, ZipArchiveMode.Read))
+            {
+                if (zip.Entries.Count > 128) throw new InvalidDataException("The update archive contains too many entries.");
+                var matches = zip.Entries.Where(x => string.Equals(x.FullName, entryName, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (matches.Count == 0)
+                    throw new InvalidDataException(entryName.StartsWith("windows-msi/", StringComparison.Ordinal)
+                        ? "This release does not include an MSI package. Choose version 4.6.0 or later."
+                        : "The release zip does not contain the expected installer.");
+                if (matches.Count != 1 || matches[0].FullName != entryName) throw new InvalidDataException("The release zip contains duplicate or renamed packages.");
+                ZipArchiveEntry entry = matches[0];
+                if (entry.Length <= 0 || entry.Length > MaximumPackageBytes) throw new InvalidDataException("The packaged installer has an unsafe size.");
+                string partial = destination + ".partial";
+                UpdateApplyWorker.RejectReparsePoints(partial);
+                long written = 0;
+                using (var hash = SHA256.Create())
+                {
+                    using (var source = entry.Open())
+                    using (var output = new FileStream(partial, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        var buffer = new byte[65536];
+                        int count;
+                        while ((count = source.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            token.ThrowIfCancellationRequested();
+                            written += count;
+                            if (written > entry.Length) throw new InvalidDataException("The packaged installer is larger than declared.");
+                            output.Write(buffer, 0, count);
+                            hash.TransformBlock(buffer, 0, count, buffer, 0);
+                        }
+                    }
+                    if (written != entry.Length) throw new InvalidDataException("The packaged installer is incomplete.");
+                    hash.TransformFinalBlock(new byte[0], 0, 0);
+                    File.Move(partial, destination);
+                    return ToHex(hash.Hash);
+                }
+            }
         }
 
         internal static string GetChecksumsName(UpdateVersion version)
@@ -243,7 +331,10 @@ namespace SPI_Data_Comp_Tool
             UpdateAsset installer = FindAsset(assets, tag, GetAssetName(version, UpdateInstallKind.Installed), MaximumPackageBytes);
             UpdateAsset portable = FindAsset(assets, tag, GetAssetName(version, UpdateInstallKind.Portable), MaximumPackageBytes);
             UpdateAsset checksums = FindAsset(assets, tag, GetChecksumsName(version), MaximumChecksumBytes);
-            if (checksums == null || (installer == null && portable == null)) return null;
+            // A release is usable when its zip has a GitHub digest (4.6.0 onwards) or, for older
+            // releases, when the checksum file covers the zip or the separate installer.
+            bool verifiable = (portable != null && portable.Sha256 != null) || (checksums != null && (installer != null || portable != null));
+            if (!verifiable) return null;
             return new UpdateRelease
             {
                 Version = version, Tag = tag, Name = BoundedText(item["name"], 512) ?? tag,
@@ -281,24 +372,35 @@ namespace SPI_Data_Comp_Tool
             if (release == null || release.Version == null || !UpdateVersion.TryParse(release.Tag, out version) ||
                 release.Tag != "v" + version || version.CompareTo(release.Version) != 0 || !IsPageUri(release.PageUri, release.Tag))
                 throw new InvalidDataException("The selected release is invalid. Check for updates again.");
-            if (kind != UpdateInstallKind.Installed && kind != UpdateInstallKind.Portable) throw new ArgumentOutOfRangeException(nameof(kind));
+            if (!Enum.IsDefined(typeof(UpdateInstallKind), kind)) throw new ArgumentOutOfRangeException(nameof(kind));
             var result = new UpdateRelease
             {
                 Version = version, Tag = release.Tag, Name = release.Name, Notes = release.Notes, PublishedAt = release.PublishedAt,
                 PageUri = release.PageUri, Installer = CopyAsset(release.Installer), Portable = CopyAsset(release.Portable), Checksums = CopyAsset(release.Checksums)
             };
-            UpdateAsset selected = kind == UpdateInstallKind.Installed ? result.Installer : result.Portable;
-            if (!ValidAsset(selected, result.Tag, GetAssetName(version, kind), MaximumPackageBytes) ||
-                !ValidAsset(result.Checksums, result.Tag, GetChecksumsName(version), MaximumChecksumBytes))
-                throw new InvalidDataException("The selected release does not contain a valid package and checksum file.");
-            if (kind == UpdateInstallKind.Installed && !Environment.Is64BitOperatingSystem)
+            UpdateAsset selected = SelectDownloadAsset(result, kind);
+            bool selectedIsZip = selected == result.Portable;
+            if (!ValidAsset(selected, result.Tag, selectedIsZip ? GetAssetName(version, UpdateInstallKind.Portable) : GetAssetName(version, UpdateInstallKind.Installed), MaximumPackageBytes) ||
+                (selected.Sha256 == null && !ValidAsset(result.Checksums, result.Tag, GetChecksumsName(version), MaximumChecksumBytes)))
+                throw new InvalidDataException("The selected release does not contain a valid package and checksum.");
+            if (kind != UpdateInstallKind.Portable && !Environment.Is64BitOperatingSystem)
                 throw new InvalidOperationException("The installer requires 64-bit Windows. Use the portable package instead.");
             return result;
         }
 
         private static UpdateAsset CopyAsset(UpdateAsset asset)
         {
-            return asset == null ? null : new UpdateAsset { Name = asset.Name, DownloadUri = asset.DownloadUri, Size = asset.Size };
+            return asset == null ? null : new UpdateAsset { Name = asset.Name, DownloadUri = asset.DownloadUri, Size = asset.Size, Sha256 = asset.Sha256 };
+        }
+
+        /// <summary>Portable and MSI copies download the release zip. An installed copy uses the separate
+        /// setup of an older release when that release has one, otherwise the setup inside the zip.</summary>
+        internal static UpdateAsset SelectDownloadAsset(UpdateRelease release, UpdateInstallKind kind)
+        {
+            if (kind == UpdateInstallKind.Installed && release.Installer != null && release.Checksums != null &&
+                (release.Portable == null || release.Portable.Sha256 == null)) return release.Installer;
+            if (release.Portable == null) throw new InvalidDataException("The selected release does not contain the release zip.");
+            return release.Portable;
         }
 
         private static UpdateAsset FindAsset(JArray assets, string tag, string filename, long limit)
@@ -316,7 +418,9 @@ namespace SPI_Data_Comp_Tool
                 if (Text(item["state"]) != "uploaded" || item["size"] == null || item["size"].Type != JTokenType.Integer ||
                     !long.TryParse(item["size"].ToString(), NumberStyles.None, CultureInfo.InvariantCulture, out size) ||
                     !Uri.TryCreate(Text(item["browser_download_url"]), UriKind.Absolute, out uri)) continue;
-                var asset = new UpdateAsset { Name = filename, Size = size, DownloadUri = uri };
+                string digest = Text(item["digest"]);
+                Match digestMatch = digest == null ? null : DigestValue.Match(digest);
+                var asset = new UpdateAsset { Name = filename, Size = size, DownloadUri = uri, Sha256 = digestMatch != null && digestMatch.Success ? digestMatch.Groups[1].Value : null };
                 if (ValidAsset(asset, tag, filename, limit)) found = asset;
             }
             return found;

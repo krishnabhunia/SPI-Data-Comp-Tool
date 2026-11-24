@@ -47,11 +47,16 @@ class CodeSigning(unittest.TestCase):
         self.assertLess(setup, step_index(sign, "Signed installer still installs a signed app"))
         self.assertLess(setup, sign.index("actions/upload-artifact"))
         self.assertIn("overwrite: true", sign)
-        self.assertEqual(sign.count("if: steps.setup.outputs.configured == 'true'"), 9)
+        msi = step_index(sign, "Rebuild the MSI around the signed exe")
+        self.assertLess(both, msi)
+        self.assertLess(msi, setup)  # the MSI is signed with the installer
+        self.assertIn("(Get-ChildItem dist/windows-msi -Filter *.msi).FullName", sign)
+        self.assertLess(setup, step_index(sign, "Signed MSI installs a signed app"))
+        self.assertEqual(sign.count("if: steps.setup.outputs.configured == 'true'"), 11)
         release = job("release")
         self.assertIn("needs: [version, windows-build, sign, documentation, secrets-guard, signing-policy, windows-sign, cleanup-signing-input]", release)
         self.assertIn('contains(fromJSON(\'["success", "skipped"]\'), needs.sign.result)', release)
-        self.assertIn("sha256sum", release)  # checksums come from the uploaded (signed) files
+        self.assertIn("sha256sum", release)  # the zip is hashed after the (signed) files are uploaded
 
     def test_backends_are_mutually_exclusive_and_release_uses_actual_coverage(self) -> None:
         self.assertIn("needs.signing-policy.outputs.enabled == 'false'", job("sign"))

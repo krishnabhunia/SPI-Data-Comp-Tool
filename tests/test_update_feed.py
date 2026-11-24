@@ -49,14 +49,19 @@ class UpdateFeedContracts(unittest.TestCase):
         self.assertIn('(bool)item["prerelease"] != version.IsBeta', release)
         self.assertIn('tag != "v" + version', release)
         self.assertIn('Text(item["published_at"])', release)
-        self.assertIn("checksums == null || (installer == null && portable == null)", release)
+        # 4.6.0 onwards the zip is the only asset, verified by GitHub's digest; older releases keep their checksum file.
+        self.assertIn("(portable != null && portable.Sha256 != null) || (checksums != null && (installer != null || portable != null))", release)
+        self.assertIn('Text(item["digest"])', feed)
+        self.assertIn('@"\\Asha256:([a-f0-9]{64})\\z"', feed)
         self.assertIn('"SPI_Data_Comp_Tool_" + version', feed)
         self.assertIn('"_x64_setup.exe" : ".zip"', feed)
         self.assertIn('GetAssetName(version, UpdateInstallKind.Portable) + ".sha256"', feed)
+        self.assertIn('"windows-x64/SPI_Data_Comp_Tool_" + version + ".exe"', feed)
+        self.assertIn('"windows-msi/SPI_Data_Comp_Tool_" + version + "_x64.msi"', feed)
         workflow = (ROOT / ".github" / "workflows" / "build.yml").read_text()
-        self.assertIn('SPI_Data_Comp_Tool_${VERSION}_x64_setup.exe', workflow)
-        self.assertIn('SPI_Data_Comp_Tool_${VERSION}.zip', workflow)
-        self.assertIn('sha256sum "${zip_name}" "${setup_name}"', workflow)
+        self.assertIn('zip_name="SPI_Data_Comp_Tool_${VERSION}.zip"', workflow)
+        self.assertIn('assets=("${zip_name}")', workflow)
+        self.assertIn('-OutFile "dist/windows-msi/SPI_Data_Comp_Tool_$($env:VERSION)_x64.msi"', workflow)
 
     def test_only_scoped_https_and_explicit_redirects(self) -> None:
         feed = source("UpdateFeedClient.cs")
@@ -136,7 +141,7 @@ class UpdateFeedContracts(unittest.TestCase):
     def test_windows_runtime_checks_exercise_real_parser_and_streaming(self) -> None:
         checks = (ROOT / "tests" / "UpdateFeedChecks.cs").read_text()
         for scenario in ("CheckVersions()", "CheckReleaseFilters()", "CheckUrisAndChecksums()", "CheckPagination(directory)",
-                         "CheckVerifiedDownloads(directory)", "CheckDownloadFailures(directory)", "CheckDisposal(directory)", "CheckCacheGuards(directory)"):
+                         "CheckVerifiedDownloads(directory)", "CheckDownloadFailures(directory)", "CheckZipOnlyReleases(directory)", "CheckDisposal(directory)", "CheckCacheGuards(directory)"):
             self.assertIn(scenario, checks)
         self.assertIn("IUpdateTransport", checks)
         self.assertIn("InterruptingStream", checks)
