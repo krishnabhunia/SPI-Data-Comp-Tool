@@ -26,6 +26,19 @@ class WixSource(unittest.TestCase):
         self.assertIsNone(upgrade.get("AllowSameVersionUpgrades"))  # implied by AllowDowngrades (WIX0035)
         self.assertEqual(self.package.find("w:MediaTemplate", NS).get("EmbedCab"), "yes")
 
+    def test_requires_dotnet_48_like_the_setup(self):
+        launch = self.package.find("w:Launch", NS)
+        self.assertEqual(launch.get("Condition"), 'Installed OR (NETFX4RELEASE AND NETFX4RELEASE >= "#528040")')
+        search = self.package.find("w:Property[@Id='NETFX4RELEASE']/w:RegistrySearch", NS)
+        self.assertEqual((search.get("Root"), search.get("Key"), search.get("Name"), search.get("Type")),
+                         ("HKLM", "SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full", "Release", "raw"))
+        self.assertIn("528040", (ROOT / "windows" / "installer" / "SPI_Data_Comp_Tool.iss").read_text())
+
+    def test_shortcut_never_collides_with_the_setup(self):
+        shortcut = self.package.find(".//w:Shortcut", NS)
+        self.assertEqual(shortcut.get("Name"), "SPI Data Comparison Tool (MSI)")
+        self.assertNotIn("SPI Data Comparison Tool (MSI)", (ROOT / "windows" / "installer" / "SPI_Data_Comp_Tool.iss").read_text())
+
     def test_installs_into_its_own_local_app_data_folder(self):
         local = self.package.find("w:StandardDirectory[@Id='LocalAppDataFolder']", NS)
         folder = local.find("w:Directory/w:Directory", NS)
@@ -88,6 +101,17 @@ class BuildAndTest(unittest.TestCase):
         self.assertIn('manifest.Kind != UpdateInstallKind.Installed && manifest.IsMachineInstall', worker)
         contracts = (APP / "UpdateContracts.cs").read_text(encoding="utf-8-sig")
         self.assertIn("internal enum UpdateInstallKind { Installed, Portable, Msi }", contracts)
+        self.assertIn('FirstMsiVersion = ParseKnown("4.6.0-beta001")', contracts)
+        self.assertIn("Version.CompareTo(FirstMsiVersion) >= 0", contracts)
+
+    def test_single_exe_updates_write_a_self_contained_user_config(self):
+        worker = (APP / "UpdateApplyWorker.cs").read_text(encoding="utf-8-sig")
+        self.assertEqual(worker.count("RunsWithoutConfiguration(stage, manifest, version)"), 2)
+        preferences = (APP / "UpdatePreferences.cs").read_text(encoding="utf-8-sig")
+        self.assertIn("if (declareSettingsSections) DeclareSettingsSections(xml.Root);", preferences)
+        self.assertIn('allowExeDefinition", "MachineToLocalUser"', preferences)
+        checks = (ROOT / "tests" / "UpdateApplyChecks.cs").read_text(encoding="utf-8-sig")
+        self.assertIn("OpenMappedExeConfiguration", checks)
 
 
 if __name__ == "__main__":

@@ -18,6 +18,13 @@
     <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
     <Property Id="ARPURLINFOABOUT" Value="https://github.com/krishnabhunia/SPI-Data-Comp-Tool" />
     <Property Id="ARPNOMODIFY" Value="1" />
+    <!-- Same prerequisite as the setup: .NET Framework 4.8 (Release 528040) or later. The raw DWORD
+         reads as "#528040"; six-digit values compare correctly as strings. -->
+    <Property Id="NETFX4RELEASE">
+      <RegistrySearch Id="NetFx4Release" Root="HKLM" Key="SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" Name="Release" Type="raw" Bitness="always64" />
+    </Property>
+    <Launch Condition="Installed OR (NETFX4RELEASE AND NETFX4RELEASE &gt;= &quot;#528040&quot;)"
+            Message="SPI Data Comparison Tool needs Microsoft .NET Framework 4.8 or later. Install it from https://dotnet.microsoft.com/download/dotnet-framework/net48, then run this MSI again." />
 
     <StandardDirectory Id="LocalAppDataFolder">
       <Directory Id="ProgramsFolder" Name="Programs">
@@ -50,7 +57,8 @@
 
     <ComponentGroup Id="Shortcuts" Directory="ProgramMenuFolder">
       <Component Id="StartMenuShortcut" Guid="{F2A8C4D6-1B9E-4F3A-8D7C-6E5B0A2C9F14}">
-        <Shortcut Id="AppShortcut" Name="SPI Data Comparison Tool" Description="Compare databases and Excel workbooks"
+        <!-- Its own name, so the MSI and the setup never share or remove each other's shortcut. -->
+        <Shortcut Id="AppShortcut" Name="SPI Data Comparison Tool (MSI)" Description="Compare databases and Excel workbooks"
                   Target="[INSTALLFOLDER]SPI Data Comp Tool.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon.ico" />
         <RegistryValue Root="HKCU" Key="Software\SPI Data Comp Tool\MSI\Files" Name="shortcut" Type="integer" Value="1" KeyPath="yes" />
       </Component>

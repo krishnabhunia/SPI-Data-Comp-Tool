@@ -230,6 +230,16 @@ namespace SPI_Data_Comp_Tool
                     Require(Find<ListView>(zipUpdates32, "lv_UpdateReleases").Items.Count == 0, "A 64-bit " + kind + " package was offered to 32-bit Windows.");
                 }
             }
+            // Releases before 4.6.0 have no MSI in their zip, so an MSI copy is not offered them.
+            var olderFeed = new FakeFeed { Releases = new List<UpdateRelease> { Release("4.5.1"), Release("4.6.0-beta003"), Release("4.6.0") } };
+            using (var msiCopy = Host(new UpdatesControl(olderFeed, new FakeInstaller(UpdateInstallKind.Msi), false, "4.6.0-beta003", true)))
+            {
+                var msiUpdates = msiCopy.Controls.OfType<UpdatesControl>().Single();
+                Complete(msiUpdates.CheckForUpdatesAsync());
+                Find<ComboBox>(msiUpdates, "cb_UpdateChannel").SelectedIndex = (int)UpdateChannel.All;
+                var shown = Find<ListView>(msiUpdates, "lv_UpdateReleases").Items.Cast<ListViewItem>().Select(item => item.Text).ToList();
+                Require(shown.SequenceEqual(new[] { "v4.6.0", "v4.6.0-beta003" }), "An MSI copy was offered a release without an MSI: " + string.Join(", ", shown));
+            }
             var manualFeed = new FakeFeed();
             using (var manual = Host(new UpdatesControl(manualFeed, new FakeInstaller(), false, "2.9.0-dev", true)))
             {

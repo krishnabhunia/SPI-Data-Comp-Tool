@@ -156,6 +156,39 @@ namespace SPI_Data_Comp_Tool
         }
 
         /// <summary>A single-exe update removes the older .config (with a backup) and puts it back on failure.</summary>
+        /// <summary>A single-exe update writes a user.config that .NET can read with no exe configuration.</summary>
+        private static void CheckSelfContainedSettings(string target, string source, UpdateVersion version,
+            UpdatePreferenceSnapshot snapshot, string root, string local)
+        {
+            string saved = File.ReadAllText(target);
+            foreach (bool existing in new[] { false, true })
+            {
+                if (existing) File.WriteAllText(target, saved); else File.Delete(target);
+                var migration = UpdatePreferences.PrepareMigration(source, "1.0.0.0", version, snapshot,
+                    Path.Combine(root, "self-contained-backup-" + existing), local, true);
+                migration.Apply();
+                var document = XDocument.Load(target);
+                Require(document.Root.Elements().First().Name == "configSections" &&
+                    document.Root.Element("configSections").Elements("sectionGroup").Count(x => (string)x.Attribute("name") == "userSettings") == 1,
+                    "A config-free user.config does not declare its settings section first.");
+                // Read it the way the app does, with an exe configuration that declares nothing.
+                string exeConfig = Path.Combine(root, "self-contained-exe-" + existing + ".config");
+                File.WriteAllText(exeConfig, "<?xml version=\"1.0\" encoding=\"utf-8\"?><configuration />");
+                var map = new System.Configuration.ExeConfigurationFileMap
+                {
+                    ExeConfigFilename = exeConfig, RoamingUserConfigFilename = Path.Combine(root, "self-contained-roaming-" + existing + ".config"),
+                    LocalUserConfigFilename = target,
+                };
+                var configuration = System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(map, System.Configuration.ConfigurationUserLevel.PerUserRoamingAndLocal);
+                var section = configuration.GetSection("userSettings/" + UpdatePreferences.SettingsSection) as System.Configuration.ClientSettingsSection;
+                Require(section != null && section.Settings.Get("RuleFilePath") != null &&
+                    section.Settings.Get("RuleFilePath").Value.ValueXml.InnerText == snapshot.RuleFilePath,
+                    "The .NET settings reader could not read a config-free user.config.");
+                migration.Rollback();
+            }
+            File.WriteAllText(target, saved);
+        }
+
         private static void CheckSingleExeApply(string root, UpdateVersion version, IList<KeyValuePair<string, string>> entries)
         {
             string package = Archive(root, entries);
@@ -342,6 +375,7 @@ namespace SPI_Data_Comp_Tool
             Require(!File.ReadAllText(Path.Combine(backup, "previous-target-preferences.json")).Contains("not-for-backup"), "Unknown settings were copied to a backup.");
             migration.Rollback();
             Require(File.ReadAllText(target) == original, "A canceled settings migration did not restore its original content.");
+            CheckSelfContainedSettings(target, source, version, snapshot, root, local);
             Expect<InvalidDataException>(() => UpdatePreferences.PrepareMigration(Path.Combine(root, "outside", "1.0.0.0", "user.config"), "1.0.0.0", version, snapshot, backup, local), "An arbitrary settings path was accepted.");
             File.WriteAllText(target, "<!DOCTYPE configuration [<!ENTITY x SYSTEM 'file:///synthetic-not-read'>]><configuration>&x;</configuration>");
             Expect<XmlException>(() => UpdatePreferences.PrepareMigration(source, "1.0.0.0", version, snapshot, backup, local), "DTD settings were accepted.");

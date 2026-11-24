@@ -34,7 +34,7 @@ try {
     $location = (Get-ItemProperty -LiteralPath $key -Name InstallLocation).InstallLocation
     if ([IO.Path]::GetFullPath($location).TrimEnd('\') -ne [IO.Path]::GetFullPath($dir).TrimEnd('\')) { throw "MSI InstallLocation is $location" }
     if ((Get-ItemProperty -LiteralPath $key -Name Version).Version -ne ($Version -split '-')[0]) { throw 'MSI registered the wrong version' }
-    $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'SPI Data Comparison Tool.lnk'
+    $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'SPI Data Comparison Tool (MSI).lnk'
     if (-not (Test-Path -LiteralPath $shortcut)) { throw 'The Start menu shortcut is missing' }
     $notice = Join-Path $dir 'THIRD_PARTY_NOTICES.md'
     if ((Get-FileHash -LiteralPath $notice).Hash -ne (Get-FileHash -LiteralPath $NoticePath).Hash) { throw 'Installed dependency notices differ' }
@@ -60,4 +60,5 @@ finally {
 for ($i = 0; $i -lt 30 -and (Test-Path -LiteralPath $exe); $i++) { Start-Sleep 1 }
 if (Test-Path -LiteralPath $exe) { throw 'The MSI uninstall left the exe behind' }
 if (Test-Path -LiteralPath $key) { throw 'The MSI uninstall left its registration behind' }
+if (Test-Path -LiteralPath (Join-Path ([Environment]::GetFolderPath('Programs')) 'SPI Data Comparison Tool (MSI).lnk')) { throw 'The MSI uninstall left its shortcut behind' }
 Write-Host 'Per-user MSI: installs without admin, registers its folder, app runs as an MSI copy, upgrades in place, uninstalls cleanly'

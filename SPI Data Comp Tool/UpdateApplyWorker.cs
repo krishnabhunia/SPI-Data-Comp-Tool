@@ -91,7 +91,7 @@ namespace SPI_Data_Comp_Tool
                     // Recheck registry kind/scope and original binary after waiting, too.
                     Preflight(stage, manifest);
                     var settings = UpdatePreferences.PrepareMigration(manifest.SourceUserConfig, manifest.CurrentAssemblyVersion,
-                        version, manifest.Preferences, stage);
+                        version, manifest.Preferences, stage, null, RunsWithoutConfiguration(stage, manifest, version));
                     WriteLog(stage, "Starting " + manifest.Kind + " update to " + manifest.Tag + ".");
                     if (manifest.Kind == UpdateInstallKind.Portable)
                     {
@@ -153,7 +153,17 @@ namespace SPI_Data_Comp_Tool
             }
             // Reading/merging a bounded configuration must succeed before any application file changes.
             UpdatePreferences.PrepareMigration(manifest.SourceUserConfig, manifest.CurrentAssemblyVersion,
-                version, manifest.Preferences, stage);
+                version, manifest.Preferences, stage, null, RunsWithoutConfiguration(stage, manifest, version));
+        }
+
+        /// <summary>True when a portable update installs a single exe: its .config is removed, so the
+        /// migrated user.config must declare its own settings section.</summary>
+        internal static bool RunsWithoutConfiguration(string stage, UpdateApplyManifest manifest, UpdateVersion version)
+        {
+            if (manifest.Kind != UpdateInstallKind.Portable) return false;
+            string executable = Path.GetFileName(manifest.TargetExecutable);
+            return !ValidatePortableArchive(Path.Combine(stage, manifest.PackageFileName), version, executable)
+                .Any(x => string.Equals(x.RelativePath, executable + ".config", StringComparison.OrdinalIgnoreCase));
         }
 
         private static void ValidateManifest(string stage, UpdateApplyManifest manifest, bool executingHelper)

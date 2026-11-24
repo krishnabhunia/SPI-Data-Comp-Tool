@@ -31,6 +31,16 @@ namespace SPI_Data_Comp_Tool
         public UpdateAsset Portable { get; set; }
         public UpdateAsset Checksums { get; set; }
 
+        /// <summary>The first release whose zip carries windows-msi/ (and its betas).</summary>
+        internal static readonly UpdateVersion FirstMsiVersion = ParseKnown("4.6.0-beta001");
+
+        private static UpdateVersion ParseKnown(string text)
+        {
+            UpdateVersion version;
+            if (!UpdateVersion.TryParse(text, out version)) throw new InvalidOperationException("Invalid built-in version.");
+            return version;
+        }
+
         /// <summary>True when the release zip can be verified: a GitHub digest or the legacy checksum file.</summary>
         public bool HasVerifiedPackage { get { return Portable != null && (Portable.Sha256 != null || Checksums != null); } }
 
@@ -40,7 +50,7 @@ namespace SPI_Data_Comp_Tool
             if (kind == UpdateInstallKind.Portable) return HasVerifiedPackage;
             if (!is64BitOperatingSystem) return false;
             if (kind == UpdateInstallKind.Installed) return HasVerifiedPackage || (Installer != null && Checksums != null);
-            return kind == UpdateInstallKind.Msi && HasVerifiedPackage;
+            return kind == UpdateInstallKind.Msi && HasVerifiedPackage && Version != null && Version.CompareTo(FirstMsiVersion) >= 0;
         }
     }
 
