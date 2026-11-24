@@ -44,17 +44,21 @@ class Packaging(unittest.TestCase):
         self.assertEqual(sources, [r"{#SourceDir}\{#ExeName}", r"{#SourceDir}\{#ExeName}.config",
                                    r"{#SourceDir}\THIRD_PARTY_NOTICES.md"])
 
-    def test_portable_compatibility_files_are_generated_empty_and_not_installed(self) -> None:
+    def test_portable_is_one_exe_without_config_or_compatibility_files(self) -> None:
         workflow = text(REPO / ".github/workflows/build.yml")
         package = workflow.split("- name: Package portable build", 1)[1].split("- name: Portable build is one exe", 1)[0]
         self.assertNotIn('Copy-Item "$src/PNID_Reports"', package)
-        self.assertIn("'Source/instrument.txt','Target_IPEP/instrument.txt'", package)
-        self.assertIn("[IO.File]::WriteAllBytes($anchor, [byte[]]@())", package)
-        self.assertIn("$anchors.Count -ne 2", package)
-        self.assertIn("Where-Object Length -ne 0", package)
+        self.assertNotIn("instrument.txt", package)
+        self.assertNotIn(".exe.config", package)
+        self.assertIn('Copy-Item "$src/SPI Data Comp Tool.exe" -Destination "$dst/$name.exe"', package)
+        self.assertIn("portable/ must hold exactly one exe", package)
         self.assertIn("Retired SQL templates leaked into the build output", package)
         self.assertIn("Retired SQL templates leaked into the 64-bit build output", workflow)
         self.assertIn("Retired SQL templates or portable compatibility anchors leaked into the clean install", text(REPO / "tools/test_windows_installer.ps1"))
+        alone = workflow.split("- name: Portable build is one exe", 1)[1].split("\n      - name:", 1)[0]
+        for check in ("'--check-assemblies'", "'--check-ui'", "'--check-install-kind', 'portable'"):
+            self.assertIn(check, alone)
+        self.assertIn("The portable exe must run without a .config", alone)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -32,6 +33,8 @@ namespace SPI_Data_Comp_Tool
                 passed("Updater streams and verifies SHA-256 before publishing a selected package; release snapshots and progress remain consistent.");
                 CheckDownloadFailures(directory).GetAwaiter().GetResult();
                 passed("Updater rejects tampered/truncated/oversized downloads and cleans staged files on I/O failure or cancellation.");
+                CheckZipOnlyReleases(directory).GetAwaiter().GetResult();
+                passed("Updater verifies a zip-only release by GitHub's digest and reads the setup and the MSI out of it; a missing MSI or a wrong digest is rejected.");
                 CheckDisposal(directory).GetAwaiter().GetResult();
                 passed("Updater disposal cancels active downloads and removes only its own staging directories, preserving unrelated cache contents.");
                 bool checkedLinks = CheckCacheGuards(directory).GetAwaiter().GetResult();
@@ -279,6 +282,86 @@ namespace SPI_Data_Comp_Tool
             var never = new FakeTransport((uri, metadata, token) => TextResponse(manifest));
             await ExpectInvalidAsync(() => new UpdateFeedClient(never, cache).DownloadAsync(unsafeRelease, UpdateInstallKind.Portable, null, CancellationToken.None)).ConfigureAwait(false);
             Require(never.Requests.Count == 0, "An unsafe model was not revalidated before downloading.");
+        }
+
+        private static async Task CheckZipOnlyReleases(string directory)
+        {
+            UpdateVersion version = Parse("4.6.0");
+            byte[] setup = SampleBytes(), msi = SampleBytes();
+            setup[0] = 1; msi[0] = 0xD0;
+            byte[] zip = ReleaseZip(version, setup, msi);
+            JObject json = ZipOnlyJson(version, zip.Length, "sha256:" + Hash(zip));
+            UpdateRelease release = UpdateFeedClient.ParseRelease(json);
+            Require(release != null && release.Checksums == null && release.Installer == null && release.Portable.Sha256 == Hash(zip),
+                "A zip-only release with a GitHub digest was rejected.");
+            Require(release.IsCompatible(UpdateInstallKind.Portable, false) && release.IsCompatible(UpdateInstallKind.Installed, true) &&
+                release.IsCompatible(UpdateInstallKind.Msi, true) && !release.IsCompatible(UpdateInstallKind.Msi, false),
+                "Zip-only compatibility per installation kind is wrong.");
+            foreach (string bad in new[] { null, "md5:" + new string('a', 32), "sha256:" + new string('A', 64), "sha256:" + new string('a', 63) })
+                Require(UpdateFeedClient.ParseRelease(ZipOnlyJson(version, zip.Length, bad)) == null, "A zip-only release without a valid digest was accepted.");
+
+            var expected = new Dictionary<UpdateInstallKind, byte[]>
+            {
+                { UpdateInstallKind.Portable, zip }, { UpdateInstallKind.Installed, setup }, { UpdateInstallKind.Msi, msi },
+            };
+            foreach (var pair in expected)
+            {
+                if (pair.Key != UpdateInstallKind.Portable && !Environment.Is64BitOperatingSystem) continue;
+                string cache = Path.Combine(directory, "zip-only-" + pair.Key);
+                var transport = new FakeTransport((uri, metadata, token) => new UpdateResponse(new MemoryStream(zip), zip.Length));
+                DownloadedUpdate downloaded = await new UpdateFeedClient(transport, cache)
+                    .DownloadAsync(release, pair.Key, null, CancellationToken.None).ConfigureAwait(false);
+                Require(transport.Requests.Count == 1 && transport.Requests[0].AbsolutePath.EndsWith("/SPI_Data_Comp_Tool_4.6.0.zip", StringComparison.Ordinal),
+                    "A zip-only release made a checksum request or downloaded something other than the zip.");
+                Require(Path.GetFileName(downloaded.FilePath) == UpdateFeedClient.GetPackageFileName(version, pair.Key) &&
+                    downloaded.Sha256 == Hash(pair.Value) && File.ReadAllBytes(downloaded.FilePath).Length == pair.Value.Length,
+                    "The " + pair.Key + " package was not read out of the verified zip.");
+                Require(Directory.GetFiles(Path.GetDirectoryName(downloaded.FilePath)).Length == 1, "The release zip was kept next to the extracted package.");
+                UpdateInstaller.ValidatePackage(downloaded, pair.Key);
+            }
+
+            byte[] noMsi = ReleaseZip(version, setup, null);
+            UpdateRelease older = UpdateFeedClient.ParseRelease(ZipOnlyJson(version, noMsi.Length, "sha256:" + Hash(noMsi)));
+            string missing = Path.Combine(directory, "zip-only-missing");
+            var noMsiTransport = new FakeTransport((uri, metadata, token) => new UpdateResponse(new MemoryStream(noMsi), noMsi.Length));
+            await ExpectInvalidAsync(() => new UpdateFeedClient(noMsiTransport, missing).DownloadAsync(older, UpdateInstallKind.Msi, null, CancellationToken.None)).ConfigureAwait(false);
+            RequireNoStaging(missing);
+
+            byte[] tampered = (byte[])zip.Clone();
+            tampered[tampered.Length / 2] ^= 1;
+            string rejected = Path.Combine(directory, "zip-only-tampered");
+            var tamperedTransport = new FakeTransport((uri, metadata, token) => new UpdateResponse(new MemoryStream(tampered), tampered.Length));
+            await ExpectInvalidAsync(() => new UpdateFeedClient(tamperedTransport, rejected).DownloadAsync(release, UpdateInstallKind.Portable, null, CancellationToken.None)).ConfigureAwait(false);
+            RequireNoStaging(rejected);
+        }
+
+        private static byte[] ReleaseZip(UpdateVersion version, byte[] setup, byte[] msi)
+        {
+            using (var memory = new MemoryStream())
+            {
+                using (var zip = new ZipArchive(memory, ZipArchiveMode.Create, true))
+                {
+                    var entries = new Dictionary<string, byte[]>
+                    {
+                        { "portable/SPI_Data_Comp_Tool_" + version + ".exe", SampleBytes() },
+                        { "windows-x64/SPI_Data_Comp_Tool_" + version + ".exe", setup },
+                    };
+                    if (msi != null) entries.Add("windows-msi/SPI_Data_Comp_Tool_" + version + "_x64.msi", msi);
+                    foreach (var entry in entries)
+                        using (var stream = zip.CreateEntry(entry.Key).Open()) stream.Write(entry.Value, 0, entry.Value.Length);
+                }
+                return memory.ToArray();
+            }
+        }
+
+        private static JObject ZipOnlyJson(UpdateVersion version, int size, string digest)
+        {
+            string tag = "v" + version, name = UpdateFeedClient.GetAssetName(version, UpdateInstallKind.Portable);
+            var asset = new JObject { ["name"] = name, ["state"] = "uploaded", ["size"] = size, ["browser_download_url"] = AssetUri(tag, name).AbsoluteUri };
+            if (digest != null) asset["digest"] = digest;
+            return new JObject { ["draft"] = false, ["prerelease"] = version.IsBeta, ["tag_name"] = tag, ["name"] = tag, ["body"] = "Synthetic release notes.",
+                ["published_at"] = "2026-11-24T12:00:00Z", ["html_url"] = "https://github.com/" + UpdateFeedClient.Repository + "/releases/tag/" + tag,
+                ["assets"] = new JArray(asset) };
         }
 
         private static async Task CheckDisposal(string directory)

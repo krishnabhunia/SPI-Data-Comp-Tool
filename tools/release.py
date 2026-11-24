@@ -143,19 +143,26 @@ COMMENT_MARKER = "<!-- spi-version -->"
 
 
 def release_assets(version):
-    """(what it is, file name) of the files CI puts on a release page."""
+    """(what it is, file name) of the files CI puts on a release page: only the zip."""
     return [
-        ("64-bit installer", f"SPI_Data_Comp_Tool_{version}_x64_setup.exe"),
-        ("Portable + installer (zip)", f"SPI_Data_Comp_Tool_{version}.zip"),
-        ("Checksums (SHA-256)", f"SPI_Data_Comp_Tool_{version}.zip.sha256"),
-        ("Partner Center submission (unsigned MSIX)", f"SPI_Data_Comp_Tool_{version}_x64.msix"),
+        ("All Windows downloads (zip)", f"SPI_Data_Comp_Tool_{version}.zip"),
+    ]
+
+
+def zip_layout(version):
+    """(folder, what it is, file name) inside the release zip, one file per folder."""
+    return [
+        ("portable", "Portable app (one exe)", f"SPI_Data_Comp_Tool_{version}.exe"),
+        ("windows-x64", "64-bit installer", f"SPI_Data_Comp_Tool_{version}.exe"),
+        ("windows-msi", "Per-user MSI", f"SPI_Data_Comp_Tool_{version}_x64.msi"),
+        ("microsoft-store", "Microsoft Store package (unsigned MSIX)", f"SPI_Data_Comp_Tool_{version}_x64.msix"),
     ]
 
 
 def signing_notice(status):
     if status == "unsigned":
         return ("**Windows signing: unsigned.** No trusted signing identity was used; "
-                "the SmartScreen warning is not fixed. SHA-256 checksums verify download integrity, not publisher identity.")
+                "the SmartScreen warning is not fixed. GitHub's SHA-256 digest of the zip verifies download integrity, not publisher identity.")
     if status == "signed":
         return ("**Windows signing: signed and verified.** Authenticode publisher signatures and RFC 3161 timestamps "
                 "were verified for this build. SmartScreen reputation is independent; warnings can still appear.")
@@ -210,6 +217,9 @@ def comment_body(state, repo, tag, sha, signing="unsigned"):
     ]
     for i, (what, name) in enumerate(release_assets(version), 1):
         lines.append(f"| {i} | {what} | [{name}]({base}/download/{tag}/{name}) |")
+    lines += ["", "Inside the zip:", "", "| SrNo. | Folder | Download | File |", "|---|---|---|---|"]
+    for i, (folder, what, name) in enumerate(zip_layout(version), 1):
+        lines.append(f"| {i} | `{folder}/` | {what} | `{name}` |")
     if state == "beta":
         lines += [
             "",

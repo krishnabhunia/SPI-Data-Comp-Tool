@@ -10,15 +10,18 @@ import shutil
 def portable_paths(version):
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:-beta\d{3}|-manual)?", version):
         raise ValueError("Invalid distribution version")
-    return {f"portable/SPI_Data_Comp_Tool_{version}.exe",
-            f"portable/SPI_Data_Comp_Tool_{version}.exe.config",
-            "portable/PNID_Reports/Source/instrument.txt",
-            "portable/PNID_Reports/Target_IPEP/instrument.txt"}
+    # From 4.6.0 the portable copy is one exe with no .config beside it.
+    return {f"portable/SPI_Data_Comp_Tool_{version}.exe"}
 
 
 def store_path(version):
     portable_paths(version)  # validate before constructing a path from metadata
-    return f"store/SPI_Data_Comp_Tool_{version}_x64.msix"
+    return f"microsoft-store/SPI_Data_Comp_Tool_{version}_x64.msix"
+
+
+def msi_path(version):
+    portable_paths(version)
+    return f"windows-msi/SPI_Data_Comp_Tool_{version}_x64.msi"
 
 
 def handoff_paths(version):
@@ -37,9 +40,6 @@ def check_files(root, expected):
         raise ValueError(f"Unexpected artifact files: missing={sorted(set(expected)-actual)}, extra={sorted(actual-set(expected))}")
     if any((root / p).stat().st_size > 256 * 1024 * 1024 for p in expected):
         raise ValueError("Artifact file exceeds 256 MiB limit")
-    for anchor in (p for p in expected if p.endswith("instrument.txt")):
-        if (root / anchor).stat().st_size:
-            raise ValueError("Portable compatibility anchors must be empty")
 
 
 def digest(path):
@@ -90,7 +90,8 @@ def verify(root, version, sha, run_id, attempt):
 
 
 def check_distribution(root, version):
-    check_files(root, portable_paths(version) | {f"windows-x64/SPI_Data_Comp_Tool_{version}.exe", "THIRD_PARTY_NOTICES.md", store_path(version)})
+    check_files(root, portable_paths(version) | {f"windows-x64/SPI_Data_Comp_Tool_{version}.exe", msi_path(version),
+                                                 "THIRD_PARTY_NOTICES.md", store_path(version)})
 
 
 def main():
@@ -110,7 +111,7 @@ def main():
         verify(args.root, args.version, args.sha, args.run_id, args.attempt)
     else:
         check_distribution(args.root, args.version)
-        print("Final distribution has the exact updater-compatible platform layout")
+        print("Final distribution has the exact layout: portable/, windows-x64/, windows-msi/, microsoft-store/ and the notices")
 
 
 if __name__ == "__main__":

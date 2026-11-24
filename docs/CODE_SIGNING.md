@@ -12,9 +12,10 @@ This is the SSL.com backend inherited from PR #115. It runs when `WINDOWS_SIGNIN
 |---|---|---|
 | 1 | Portable exe (`portable/SPI_Data_Comp_Tool_x.y.z.exe`) | The tested exe from the build is signed |
 | 2 | 64-bit app exe that the installer copies | Rebuilt from the same commit (deterministic build) and signed, so the installed app is signed too |
-| 3 | 64-bit installer (`SPI_Data_Comp_Tool_x.y.z_x64_setup.exe`) | Rebuilt around the signed exe, signed, then installed once to check the installed app is signed |
+| 3 | 64-bit installer (`windows-x64/SPI_Data_Comp_Tool_x.y.z.exe` in the release zip) | Rebuilt around the signed exe, signed, then installed once to check the installed app is signed |
+| 4 | Per-user MSI (`windows-msi/SPI_Data_Comp_Tool_x.y.z_x64.msi`) | Rebuilt around the signed exe, signed, then installed once to check the MSI and the installed app are signed |
 
-This happens in the `sign` job, which runs only for a push to `master`, after the normal build, source and documentation checks and before publication. Each signature must have a timestamp; Windows trust and revocation policy still apply. `tools/sign_windows.ps1` checks each file with `Get-AuthenticodeSignature` and fails the build if a signature is missing or invalid. The release checksums are computed from the resulting signed files, so the in-app updater keeps verifying them.
+This happens in the `sign` job, which runs only for a push to `master`, after the normal build, source and documentation checks and before publication. Each signature must have a timestamp; Windows trust and revocation policy still apply. `tools/sign_windows.ps1` checks each file with `Get-AuthenticodeSignature` and fails the build if a signature is missing or invalid. The release zip is built from the resulting signed files; GitHub's digest of that zip is what the in-app updater verifies.
 
 ## One-time set-up (owner)
 

@@ -19,7 +19,7 @@ The existing **Ocean**, **Berry**, **Forest** and **Midnight** colour themes rem
 | 1 | Architecture, feature inventory, diagrams, setup, testing, limitations | [docs/PROJECT_GUIDE.md](docs/PROJECT_GUIDE.md) |
 | 2 | Connection-profile template (no real servers or passwords) | `SPI Data Comp Tool/UserProfile/userProfile.example.json` |
 | 3 | App icon and pictures (original, regenerate with `python tools/make_app_images.py`) | `SPI Data Comp Tool/app.ico`, `SPI Data Comp Tool/Resources/*.png` |
-| 4 | CI build: portable exe and 64-bit installer (one exe each, libraries embedded) | `.github/workflows/build.yml` → Actions → artifact `SPI_Data_Comp_Tool_<version>`, or the release page (`…_x64_setup.exe`) |
+| 4 | CI build: one zip per release with `portable/` (one exe), `windows-x64/` (setup), `windows-msi/` (per-user MSI) and `microsoft-store/` (MSIX); libraries embedded | `.github/workflows/build.yml` → the release page has only `SPI_Data_Comp_Tool_<version>.zip` (also the Actions artifact `SPI_Data_Comp_Tool_<version>`) |
 | 5 | In-app normal/beta updates, version selection and recovery | [docs/UPDATING.md](docs/UPDATING.md) |
 | 6 | Current workspace/task map, independent sessions and retirement boundary | [docs/WORKSPACES.md](docs/WORKSPACES.md) |
 | 7 | Separate Excel Sheet Audit: Design A, key mappings, two-sheet report and limits | [docs/EXCEL_SHEET_AUDIT.md](docs/EXCEL_SHEET_AUDIT.md) |

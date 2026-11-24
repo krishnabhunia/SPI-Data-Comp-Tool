@@ -91,13 +91,14 @@ namespace SPI_Data_Comp_Tool
                     // Recheck registry kind/scope and original binary after waiting, too.
                     Preflight(stage, manifest);
                     var settings = UpdatePreferences.PrepareMigration(manifest.SourceUserConfig, manifest.CurrentAssemblyVersion,
-                        version, manifest.Preferences, stage);
+                        version, manifest.Preferences, stage, null, RunsWithoutConfiguration(stage, manifest, version));
                     WriteLog(stage, "Starting " + manifest.Kind + " update to " + manifest.Tag + ".");
                     if (manifest.Kind == UpdateInstallKind.Portable)
                     {
                         ApplyPortable(Path.Combine(stage, manifest.PackageFileName), manifest.TargetDirectory,
                             Path.GetFileName(manifest.TargetExecutable), version, stage, settings.Apply);
                     }
+                    else if (manifest.Kind == UpdateInstallKind.Msi) ApplyMsi(stage, manifest, version, settings);
                     else ApplyInstalled(stage, manifest, version, settings);
                 }
                 VerifyApplicationVersion(manifest.TargetExecutable, version);
@@ -138,6 +139,11 @@ namespace SPI_Data_Comp_Tool
                 throw new InvalidOperationException("The installation type or scope changed; the update was not applied.");
             var version = ParseTag(manifest.Tag);
             if (manifest.Kind == UpdateInstallKind.Portable) ValidatePortableArchive(package, version, Path.GetFileName(manifest.TargetExecutable));
+            else if (manifest.Kind == UpdateInstallKind.Msi)
+            {
+                if (!Environment.Is64BitOperatingSystem) throw new InvalidOperationException("This MSI requires 64-bit Windows.");
+                RequireMsiPackage(package);
+            }
             else
             {
                 if (!Environment.Is64BitOperatingSystem) throw new InvalidOperationException("This installer requires 64-bit Windows.");
@@ -147,7 +153,17 @@ namespace SPI_Data_Comp_Tool
             }
             // Reading/merging a bounded configuration must succeed before any application file changes.
             UpdatePreferences.PrepareMigration(manifest.SourceUserConfig, manifest.CurrentAssemblyVersion,
-                version, manifest.Preferences, stage);
+                version, manifest.Preferences, stage, null, RunsWithoutConfiguration(stage, manifest, version));
+        }
+
+        /// <summary>True when a portable update installs a single exe: its .config is removed, so the
+        /// migrated user.config must declare its own settings section.</summary>
+        internal static bool RunsWithoutConfiguration(string stage, UpdateApplyManifest manifest, UpdateVersion version)
+        {
+            if (manifest.Kind != UpdateInstallKind.Portable) return false;
+            string executable = Path.GetFileName(manifest.TargetExecutable);
+            return !ValidatePortableArchive(Path.Combine(stage, manifest.PackageFileName), version, executable)
+                .Any(x => string.Equals(x.RelativePath, executable + ".config", StringComparison.OrdinalIgnoreCase));
         }
 
         private static void ValidateManifest(string stage, UpdateApplyManifest manifest, bool executingHelper)
@@ -161,8 +177,8 @@ namespace SPI_Data_Comp_Tool
                 !string.Equals(Path.GetExtension(target), ".exe", StringComparison.OrdinalIgnoreCase) || !File.Exists(target))
                 throw new InvalidDataException("The target application path is invalid.");
             RejectReparsePoints(target);
-            if (manifest.Kind == UpdateInstallKind.Portable && manifest.IsMachineInstall) throw new InvalidDataException("Portable scope cannot be elevated.");
-            if (manifest.Kind == UpdateInstallKind.Installed && !string.Equals(Path.GetFileName(target), UpdateInstaller.InstalledExecutableName, StringComparison.OrdinalIgnoreCase))
+            if (manifest.Kind != UpdateInstallKind.Installed && manifest.IsMachineInstall) throw new InvalidDataException("Portable and MSI scope cannot be elevated.");
+            if (manifest.Kind != UpdateInstallKind.Portable && !string.Equals(Path.GetFileName(target), UpdateInstaller.InstalledExecutableName, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Unexpected installed executable filename.");
             string stagingRoot = Path.Combine(UpdatePreferences.GetStorageDirectory(manifest.TargetDirectory), "staging");
             Guid identifier;
@@ -170,7 +186,7 @@ namespace SPI_Data_Comp_Tool
                 throw new InvalidDataException("The helper is not in an application-owned staging folder.");
             RejectReparsePoints(stage);
             var version = ParseTag(manifest.Tag);
-            string expected = "SPI_Data_Comp_Tool_" + version + (manifest.Kind == UpdateInstallKind.Portable ? ".zip" : "_x64_setup.exe");
+            string expected = UpdateFeedClient.GetPackageFileName(version, manifest.Kind);
             if (manifest.PackageFileName != expected || manifest.CurrentAssemblyVersion != Assembly.GetExecutingAssembly().GetName().Version.ToString())
                 throw new InvalidDataException("The staged package/helper version is inconsistent.");
             string package = Path.Combine(stage, expected);
@@ -354,13 +370,20 @@ namespace SPI_Data_Comp_Tool
             if (Path.GetFileName(executableName) != executableName || !executableName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Invalid portable executable filename.");
             string archiveExe = "SPI_Data_Comp_Tool_" + version + ".exe";
+            // From 4.6.0 portable/ holds only the exe; older releases also carry its .config.
             var allowed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "portable/" + archiveExe, executableName },
                 { "portable/" + archiveExe + ".config", executableName + ".config" },
             };
+            // The other packages of the release zip are validated by name and never extracted here.
+            var bundled = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "windows-x64/" + archiveExe, "windows-msi/SPI_Data_Comp_Tool_" + version + "_x64.msi",
+                "microsoft-store/SPI_Data_Comp_Tool_" + version + "_x64.msix", "THIRD_PARTY_NOTICES.md",
+            };
             foreach (string name in LegacyTemplateNames) allowed.Add("portable/PNID_Reports/" + name, "PNID_Reports/" + name);
-            var allowedDirectories = new HashSet<string>(new[] { "portable", "portable/PNID_Reports", "portable/PNID_Reports/Source", "portable/PNID_Reports/Target_IPEP", "windows-x64" }, StringComparer.OrdinalIgnoreCase);
+            var allowedDirectories = new HashSet<string>(new[] { "portable", "portable/PNID_Reports", "portable/PNID_Reports/Source", "portable/PNID_Reports/Target_IPEP", "windows-x64", "windows-msi", "microsoft-store" }, StringComparer.OrdinalIgnoreCase);
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var files = new List<UpdatePortableFile>();
             long total = 0;
@@ -395,7 +418,7 @@ namespace SPI_Data_Comp_Tool
                         }
                         // Current releases intentionally bundle the installer beside portable/. Validate
                         // its exact name and metadata, but never extract or execute it in portable mode.
-                        if (name == "windows-x64/" + archiveExe) continue;
+                        if (bundled.Contains(name)) continue;
                         string destination;
                         if (!allowed.TryGetValue(name, out destination)) throw new InvalidDataException("The archive contains an unsupported application file.");
                         if (string.Equals(destination, executableName + ".config", StringComparison.OrdinalIgnoreCase))
@@ -414,7 +437,7 @@ namespace SPI_Data_Comp_Tool
                     }
                 }
             }
-            var requiredFiles = new List<string> { executableName, executableName + ".config" };
+            var requiredFiles = new List<string> { executableName };
             // Core-only packages are complete now. If legacy files are supplied, keep the old
             // two-anchor requirement: a partially formed legacy package must still fail closed.
             // New portable releases include only empty anchors for already-released updaters.
@@ -422,7 +445,7 @@ namespace SPI_Data_Comp_Tool
                 requiredFiles.AddRange(new[] { "PNID_Reports/Source/instrument.txt", "PNID_Reports/Target_IPEP/instrument.txt" });
             foreach (string required in requiredFiles)
                 if (!files.Any(x => string.Equals(x.RelativePath, required, StringComparison.OrdinalIgnoreCase)))
-                    throw new InvalidDataException("The portable archive is missing an executable, configuration, or required legacy compatibility anchor.");
+                    throw new InvalidDataException("The portable archive is missing the executable or a required legacy compatibility anchor.");
             return files;
         }
 
@@ -541,7 +564,13 @@ namespace SPI_Data_Comp_Tool
                     }
                 }
             (validateExecutable ?? VerifyApplicationVersion)(Path.Combine(payload, executableName), version);
-            UpdatePreferences.ParseXml(UpdatePreferences.ReadBoundedXmlText(Path.Combine(payload, executableName + ".config")));
+            string configName = executableName + ".config";
+            bool packageHasConfig = files.Any(x => string.Equals(x.RelativePath, configName, StringComparison.OrdinalIgnoreCase));
+            if (packageHasConfig) UpdatePreferences.ParseXml(UpdatePreferences.ReadBoundedXmlText(Path.Combine(payload, configName)));
+            // A single-exe release has no .config: an older one beside the exe would apply stale
+            // assembly redirects, so it is backed up and removed with the update (and restored on failure).
+            string staleConfig = packageHasConfig ? null : Path.Combine(targetDirectory, configName);
+            if (staleConfig != null) { RejectReparsePoints(staleConfig); if (!File.Exists(staleConfig)) staleConfig = null; }
             var originals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var stagedHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var file in files)
@@ -560,7 +589,17 @@ namespace SPI_Data_Comp_Tool
                 else originals[relative] = null;
                 stagedHashes[relative] = HashFile(Path.Combine(payload, relative));
             }
+            string staleBackup = null, staleHash = null;
+            if (staleConfig != null)
+            {
+                staleBackup = Path.Combine(backup, configName);
+                if (File.Exists(staleBackup)) throw new IOException("A previous backup already exists; it will not be overwritten.");
+                File.Copy(staleConfig, staleBackup, false);
+                staleHash = HashFile(staleBackup);
+                originals[configName] = staleHash;
+            }
             UpdatePreferences.AtomicWrite(Path.Combine(stage, "portable-backup-index.json"), JsonConvert.SerializeObject(originals, Formatting.Indented));
+            bool staleRemoved = false;
             var applied = new List<string>();
             try
             {
@@ -574,11 +613,23 @@ namespace SPI_Data_Comp_Tool
                     (replaceFile ?? AtomicCopy)(Path.Combine(payload, relative), target);
                     applied.Add(relative);
                 }
+                if (staleConfig != null)
+                {
+                    RejectReparsePoints(staleConfig);
+                    if (!File.Exists(staleConfig) || HashFile(staleConfig) != staleHash) throw new IOException("An application file changed while the update was prepared.");
+                    File.Delete(staleConfig);
+                    staleRemoved = true;
+                }
                 migrateSettings?.Invoke();
             }
             catch (Exception originalError)
             {
                 var failures = new List<Exception>();
+                if (staleRemoved)
+                {
+                    try { RejectReparsePoints(staleConfig); AtomicCopy(staleBackup, staleConfig); }
+                    catch (Exception rollbackError) { failures.Add(rollbackError); }
+                }
                 foreach (string relative in applied.AsEnumerable().Reverse())
                 {
                     try
@@ -638,6 +689,47 @@ namespace SPI_Data_Comp_Tool
                 var current = UpdateInstaller.DetectInstallation(manifest.TargetExecutable, out error);
                 if (error != null || current.Kind != UpdateInstallKind.Installed || current.IsMachineInstall != manifest.IsMachineInstall)
                     throw new IOException("Setup did not preserve the installation location and scope.");
+                VerifyApplicationVersion(manifest.TargetExecutable, version);
+            }
+            catch
+            {
+                settings.Rollback();
+                throw;
+            }
+        }
+
+        /// <summary>An MSI is a compound document; anything else is not handed to Windows Installer.</summary>
+        internal static void RequireMsiPackage(string package)
+        {
+            var header = new byte[8];
+            using (var file = new FileStream(package, FileMode.Open, FileAccess.Read, FileShare.Read))
+                if (file.Read(header, 0, 8) != 8 || !header.SequenceEqual(new byte[] { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 }))
+                    throw new InvalidDataException("The staged MSI is not a Windows Installer package.");
+        }
+
+        private static void ApplyMsi(string stage, UpdateApplyManifest manifest, UpdateVersion version, UpdateSettingsMigration settings)
+        {
+            string msi = Path.Combine(stage, manifest.PackageFileName);
+            VerifyHash(msi, manifest.PackageSha256);
+            RequireMsiPackage(msi);
+            settings.Apply();
+            try
+            {
+                // Per-user MSI with a fixed folder: no elevation. The major upgrade replaces the installed version in place.
+                string msiexec = Path.Combine(Environment.SystemDirectory, "msiexec.exe");
+                using (var lockedPackage = new FileStream(msi, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var process = Process.Start(new ProcessStartInfo(msiexec,
+                    "/i \"" + msi + "\" /passive /norestart /l*v \"" + Path.Combine(stage, "msi.log") + "\"")
+                { UseShellExecute = false, WorkingDirectory = stage }))
+                {
+                    if (process == null) throw new IOException("Windows did not start the MSI installer.");
+                    process.WaitForExit();
+                    if (process.ExitCode != 0) throw new IOException("The MSI was canceled, failed, or requires a restart (exit code " + process.ExitCode + "). No automatic restart was attempted.");
+                }
+                string error;
+                var current = UpdateInstaller.DetectInstallation(manifest.TargetExecutable, out error);
+                if (error != null || current.Kind != UpdateInstallKind.Msi)
+                    throw new IOException("The MSI did not keep the installation location.");
                 VerifyApplicationVersion(manifest.TargetExecutable, version);
             }
             catch

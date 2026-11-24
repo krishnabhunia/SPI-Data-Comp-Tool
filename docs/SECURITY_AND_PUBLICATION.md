@@ -24,7 +24,7 @@ python tools/generate_third_party_notices.py --packages-root packages --output d
 
 The generator reads each exact package/version from `packages.config`, checks the restored `.nuspec` identity, records authors/copyright/license metadata and its SHA-256, and includes declared license files and top-level license/notice files. For a legacy restore that omits a loose `.nuspec`, it reads the single root manifest directly from the exact restored `.nupkg` without extracting archive paths. Missing packages, mismatched metadata and unsafe file paths fail instead of silently omitting a dependency. External license URLs are recorded without downloading or substituting today's terms for the pinned package's terms. Build-only tools are identified separately.
 
-CI includes the notice in the build artifact and the installed application. Each GitHub release also publishes it as a separate versioned `THIRD_PARTY_NOTICES.md` asset. The portable ZIP keeps its existing accepted layout so earlier strict updaters remain compatible; the release page supplies the accompanying notice.
+CI includes the notice at the top of the release zip and in the installed application (setup and MSI). Releases before 4.6.0 also published it as a separate asset.
 
 The notice is factual package provenance, not a complete legal clearance or a new license for this repository. Microsoft documents the distinction between [license expressions, packaged license files and older license URLs](https://learn.microsoft.com/nuget/reference/nuspec#license).
 

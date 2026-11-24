@@ -380,7 +380,8 @@ namespace SPI_Data_Comp_Tool
         // Version-directory bridging also supports releases that predate the updater. No assumptions
         // about an Inno AppId or a new version's startup code are needed: the executable path is stable.
         internal static UpdateSettingsMigration PrepareMigration(string sourceConfig, string currentVersion,
-            UpdateVersion target, UpdatePreferenceSnapshot snapshot, string backupDirectory, string allowedRoot = null)
+            UpdateVersion target, UpdatePreferenceSnapshot snapshot, string backupDirectory, string allowedRoot = null,
+            bool declareSettingsSections = false)
         {
             ValidateSnapshot(snapshot);
             string root = Path.GetFullPath(allowedRoot ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
@@ -404,6 +405,9 @@ namespace SPI_Data_Comp_Tool
             string original = File.Exists(destination) ? ReadBoundedXmlText(destination) : null;
             var xml = original == null ? new XDocument(new XElement("configuration")) : ParseXml(original);
             if (xml.Root == null || xml.Root.Name != "configuration") throw new InvalidDataException("Invalid user configuration document.");
+            // A single-exe portable copy has no .exe.config, so its user.config must declare its own
+            // settings section, as .NET does when it writes settings without an exe configuration.
+            if (declareSettingsSections) DeclareSettingsSections(xml.Root);
             var userGroups = xml.Root.Elements("userSettings").ToList();
             if (userGroups.Count > 1) throw new InvalidDataException("Duplicate user-settings groups are not supported.");
             var group = userGroups.SingleOrDefault();
@@ -430,6 +434,30 @@ namespace SPI_Data_Comp_Tool
             }
             AtomicWrite(Path.Combine(backupDirectory, "previous-target-preferences.json"), JsonConvert.SerializeObject(previous, Newtonsoft.Json.Formatting.Indented));
             return new UpdateSettingsMigration(destination, original, xml.ToString());
+        }
+
+        private const string SystemAssembly = "System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089";
+
+        internal static void DeclareSettingsSections(XElement configuration)
+        {
+            var declarations = configuration.Elements("configSections").ToList();
+            if (declarations.Count > 1) throw new InvalidDataException("Duplicate configuration declarations are not supported.");
+            XElement sections = declarations.SingleOrDefault();
+            if (sections == null) { sections = new XElement("configSections"); configuration.AddFirst(sections); }
+            else if (configuration.Elements().First() != sections) throw new InvalidDataException("Configuration declarations must come first.");
+            var groups = sections.Elements("sectionGroup").Where(x => (string)x.Attribute("name") == "userSettings").ToList();
+            if (groups.Count > 1) throw new InvalidDataException("Duplicate user-settings declarations are not supported.");
+            XElement group = groups.SingleOrDefault();
+            if (group == null)
+            {
+                group = new XElement("sectionGroup", new XAttribute("name", "userSettings"),
+                    new XAttribute("type", "System.Configuration.UserSettingsGroup, " + SystemAssembly));
+                sections.Add(group);
+            }
+            if (!group.Elements("section").Any(x => (string)x.Attribute("name") == SettingsSection))
+                group.Add(new XElement("section", new XAttribute("name", SettingsSection),
+                    new XAttribute("type", "System.Configuration.ClientSettingsSection, " + SystemAssembly),
+                    new XAttribute("allowExeDefinition", "MachineToLocalUser"), new XAttribute("requirePermission", "false")));
         }
 
         internal static string ReadBoundedXmlText(string path)
